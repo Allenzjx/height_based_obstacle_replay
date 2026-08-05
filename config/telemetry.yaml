@@ -1,0 +1,58 @@
+schema_version: height_replay_telemetry.v1
+
+telemetry:
+  enabled: true
+  sample_hz: 50
+  flush_interval_s: 5
+  output_root: runs
+  env_id: 0
+  save_npz: true
+  save_csv: true
+  save_contacts: true
+  save_events: true
+  max_full_samples: 200000
+  enable_contact_sensor: false
+  live_queue_max_frames: 5
+
+visualization:
+  live_enabled: true
+  update_hz: 20
+  show_com: true
+  show_com_trail: true
+  com_trail_duration_s: 5
+  show_com_projection: true
+  show_support_polygon: true
+  show_equilibrium_region: true
+  show_contact_points: true
+  show_contact_forces: true
+  show_base_trajectory: true
+  show_hud: true
+  force_arrow_scale: 0.002
+  marker_limit: 256
+  visualized_env_id: 0
+
+stability:
+  contact_force_threshold_n: 2
+  safe_margin_m: 0.05
+  warning_margin_m: 0.02
+  equilibrium_enabled: true
+  equilibrium_hz: 5
+  friction_pyramid_sides: 8
+  direction_samples: 48
+  solver_tolerance: 1.0e-7
+  friction_coefficient_default: 1.05
+
+filters:
+  acceleration_filter_enabled: true
+  acceleration_cutoff_hz: 10
+  contact_force_filter_enabled: true
+  contact_force_cutoff_hz: 20
+
+warnings:
+  torque_utilization: 0.9
+  friction_utilization: 0.8
+  wheel_slip_ratio: 0.2
+  roll_rad: 0.35
+  pitch_rad: 0.35
+  replay_position_rmse_rad: 0.1
+  impact_force_n: 200

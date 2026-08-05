@@ -1,0 +1,11 @@
+{
+  "profile_id": "height-obstacle-environment-v2",
+  "old_obstacle_width_m": 0.8822007310718405,
+  "obstacle_width_m": 1.20,
+  "obstacle_length_m": 2.057375557085507,
+  "obstacle_front_face_x_m": 0.5213121737735307,
+  "obstacle_center_y_m": 0.0,
+  "obstacle_bottom_z_m": 0.0,
+  "robot_collision_width_m": 0.44110036553592025,
+  "width_source": "fixed from prior live-stage measurement; no runtime bbox inference"
+}
