@@ -248,6 +248,8 @@ class HeightReplayController:
         self.servo_wheel_staged_dirty = False
         self.servo_wheel_last_launch_status: dict[str, Any] = {}
         self._motion_batch_acks_merged: set[str] = set()
+        self.pending_selected_playback: dict[str, Any] | None = None
+        self.last_selected_restore_result: dict[str, Any] = {}
 
         self.playback = PlaybackManager(self)
         self.playback.set_profile(str(getattr(args, "profile", self.playback.profile) or self.playback.profile))
@@ -1428,6 +1430,7 @@ class HeightReplayController:
             break
 
     def shutdown(self) -> None:
+        self._cancel_pending_selected_playback(reason="UI shutdown")
         self.playback.stop(silent=True, stop_wheels=False)
         try:
             self.stop_wheels(reason="ui_close")
@@ -1457,6 +1460,7 @@ class HeightReplayController:
                 worker_status_age_s=max(0.0, time.monotonic() - float(getattr(self.sim_client, "last_status_time", time.monotonic()) or time.monotonic())),
             )
             self.sim_ready = bool(status.get("runtime_ready", status.get("ready", False)))
+            self._update_pending_selected_playback()
             if status.get("height_mm") is not None:
                 self.loaded_sim_height_mm = int(status["height_mm"])
             elif status.get("height_cm") is not None:
@@ -1774,6 +1778,7 @@ class HeightReplayController:
             else:
                 self._warn("[WARN] Recording baseline FAIL: " + "; ".join(result["mismatches"][:5]))
         elif verb in {"e_stop", "estop", "space"}:
+            self._cancel_pending_selected_playback(reason="emergency stop")
             self.playback.stop(silent=True)
             self.stop_wheels(reason="emergency_stop")
             self.mode = MODE_E_STOP
@@ -1823,7 +1828,8 @@ class HeightReplayController:
         elif verb == "resume_play":
             self.playback.resume()
         elif verb in {"stop_play", "stop_playback"}:
-            self.playback.stop()
+            if not self._cancel_pending_selected_playback(reason="Stop Play clicked during restore"):
+                self.playback.stop()
         elif verb == "analyze_playback_timing":
             self.detail_text = self.playback.analyze_steps(self.manager.steps)
             self._info("[INFO] " + self.detail_text)
@@ -2584,12 +2590,458 @@ class HeightReplayController:
             f"events={len(normalized.get('events', []))}"
         )
         profile = "fast" if "fast" in [arg.lower() for arg in args[1:]] else self.playback.profile
-        self.start_playback(
-            [raw_step],
-            label=f"{self.current_height_mm}mm step {index:03d}",
-            profile=profile,
-            restore_start_state=self.restore_step_start_state_before_selected_playback,
+        self.start_selected_step_playback(index, profile=profile)
+
+    @staticmethod
+    def _saved_state_is_available(value: Any) -> bool:
+        return isinstance(value, dict) and bool(value)
+
+    @staticmethod
+    def _nested_values_close(left: Any, right: Any, *, tolerance: float = 1.0e-6) -> bool:
+        if isinstance(left, dict) and isinstance(right, dict):
+            common = set(left).intersection(right)
+            return bool(common) and all(
+                HeightReplayController._nested_values_close(left[key], right[key], tolerance=tolerance)
+                for key in common
+            )
+        if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
+            return len(left) == len(right) and all(
+                HeightReplayController._nested_values_close(a, b, tolerance=tolerance)
+                for a, b in zip(left, right)
+            )
+        try:
+            return abs(float(left) - float(right)) <= tolerance
+        except (TypeError, ValueError):
+            return left == right
+
+    @classmethod
+    def _continuity_states_match(cls, left: dict[str, Any], right: dict[str, Any]) -> bool:
+        continuity_keys = ("root_pose", "root_velocity", "joint_pos", "joint_vel", "command_state")
+        common = [key for key in continuity_keys if key in left and key in right]
+        if common:
+            return all(cls._nested_values_close(left[key], right[key]) for key in common)
+        return cls._nested_values_close(left, right)
+
+    def resolve_selected_step_restore_state(self, selected_index: int) -> dict[str, Any]:
+        """Resolve, without mutation, the authoritative saved state for Selected playback."""
+
+        index = int(selected_index)
+        if index < 1 or index > self.manager.count:
+            raise IndexError(f"Selected step index {index} is outside 1..{self.manager.count}.")
+        selected = self.manager.get_step(index)
+        previous = self.manager.get_step(index - 1) if index > 1 else None
+        source_step_index = index
+        source_field = ""
+        source_value: dict[str, Any] | None = None
+        fallback_used = False
+
+        if previous is not None and self._saved_state_is_available(previous.get("sim_state_after")):
+            source_step_index = index - 1
+            source_field = "sim_state_after"
+            source_value = previous["sim_state_after"]
+        elif previous is not None and self._saved_state_is_available(previous.get("command_state_after")):
+            source_step_index = index - 1
+            source_field = "command_state_after"
+            source_value = previous["command_state_after"]
+        elif self._saved_state_is_available(selected.get("sim_state_before")):
+            source_field = "sim_state_before"
+            source_value = selected["sim_state_before"]
+            fallback_used = index > 1
+        elif self._saved_state_is_available(selected.get("command_state_before")):
+            source_field = "command_state_before"
+            source_value = selected["command_state_before"]
+            fallback_used = True
+
+        continuity_warning = ""
+        continuity = "NOT_AVAILABLE"
+        if previous is not None:
+            previous_sim = previous.get("sim_state_after")
+            selected_sim = selected.get("sim_state_before")
+            previous_command = previous.get("command_state_after")
+            selected_command = selected.get("command_state_before")
+            if self._saved_state_is_available(previous_sim) and self._saved_state_is_available(selected_sim):
+                continuity = "PASS" if self._continuity_states_match(previous_sim, selected_sim) else "WARNING"
+            elif self._saved_state_is_available(previous_command) and self._saved_state_is_available(selected_command):
+                continuity = "PASS" if self._continuity_states_match(previous_command, selected_command) else "WARNING"
+            if continuity == "WARNING":
+                continuity_warning = (
+                    f"Selected playback continuity warning: Step {index - 1} saved end state differs "
+                    f"from Step {index} saved start state. Restoring authoritative previous-step end state."
+                )
+
+        restore_sim_state: dict[str, Any] | None = None
+        restore_command_state: dict[str, Any] | None = None
+        if source_value is not None:
+            if source_field.startswith("sim_state"):
+                restore_sim_state = copy.deepcopy(source_value)
+                embedded = source_value.get("command_state")
+                if isinstance(embedded, dict):
+                    restore_command_state = clone_command_state(embedded)
+            else:
+                restore_command_state = clone_command_state(source_value)
+                restore_sim_state = {"command_state": clone_command_state(source_value)}
+        return {
+            "selected_step": selected,
+            "selected_step_index": index,
+            "restore_source_step_index": source_step_index if source_field else None,
+            "restore_source_field": source_field,
+            "restore_sim_state": restore_sim_state,
+            "restore_command_state": restore_command_state,
+            "fallback_used": fallback_used,
+            "continuity": continuity,
+            "continuity_warning": continuity_warning,
+        }
+
+    def start_selected_step_playback(self, selected_index: int, *, profile: str) -> bool:
+        ok, reason = self.can_playback()
+        if not ok:
+            self._warn("[WARN] " + reason)
+            return False
+        if self.servo_wheel_staging_active and self.servo_wheel_staged_dirty:
+            self._warn("[WARN] Dirty Servo-Wheel staging blocks Selected playback; Launch, Clear, or Cancel first.")
+            return False
+        try:
+            resolved = self.resolve_selected_step_restore_state(selected_index)
+        except Exception as exc:
+            self._warn(f"[WARN] Cannot play selected step {int(selected_index)}: {exc}")
+            return False
+        index = int(resolved["selected_step_index"])
+        if not resolved["restore_source_field"] or not resolved["restore_sim_state"]:
+            message = (
+                f"Cannot play selected step {index}: no saved previous-step end state "
+                "or selected-step start state is available."
+            )
+            self.playback.last_error = message
+            self.playback.last_info = message
+            self.playback.active = False
+            self.playback.start_requested = False
+            self.playback.scheduled_start_at = 0.0
+            self.playback.progress.playback_state = PlaybackState.ERROR.value
+            self.playback.progress.status_text = "Error"
+            self.playback.progress.last_error = message
+            self.detail_text = message
+            self.operation.finish()
+            self.mode = MODE_TEST
+            self._warn("[ERROR] " + message)
+            return False
+        if not self.operation.begin(
+            OperationState.PLAYBACK,
+            detail=f"Restoring saved state before Selected Step {index}.",
+        ):
+            self._warn("[WARN] " + (self.operation.reason or "Another operation is active."))
+            return False
+
+        now = time.monotonic()
+        request_id = uuid.uuid4().hex
+        source_index = int(resolved["restore_source_step_index"])
+        source_field = str(resolved["restore_source_field"])
+        self.playback.set_profile(profile)
+        self.playback.active = False
+        self.playback.start_requested = True
+        self.playback.scheduled_start_at = 0.0
+        self.playback.plan = None
+        self.playback.progress.playback_state = PlaybackState.RESTORING.value
+        self.playback.progress.status_text = f"Restoring saved end state from Step {source_index}..."
+        self.playback.progress.current_step_index = index
+        self.playback.progress.total_steps = self.manager.count
+        self.playback.progress.selected_playback = True
+        self.playback.progress.command_phase = "restore_previous_saved_state"
+        self.playback.last_error = ""
+        self.playback.last_info = (
+            f"Restoring Step {source_index}.{source_field} before Selected Step {index}."
         )
+        self.mode = MODE_PLAYBACK
+        self.pending_selected_playback = {
+            **resolved,
+            "profile": str(profile),
+            "label": f"{self.current_height_mm}mm step {index:03d}",
+            "request_id": request_id,
+            "restore_count_before": int(self.latest_sim_status.get("restore_count", 0) or 0),
+            "requested_at": now,
+            "deadline": now + max(2.0, float(self.playback.worker_ack_timeout_s)),
+            "verification_requested": False,
+            "manager_revision": self.manager.revision,
+            "height_mm": self.current_height_mm,
+            "version_id": self.current_version_id,
+            "trace": [{"event": "operation_acquired", "monotonic_s": now}],
+        }
+        self.status = (
+            f"Restoring saved end state from Step {source_index}... "
+            f"Restore source: Step {source_index}.{source_field}; Selected target: Step {index}."
+        )
+        self.detail_text = self.status
+        if resolved["continuity_warning"]:
+            self._warn("[WARN] " + str(resolved["continuity_warning"]))
+        try:
+            self.stop_wheels(reason="selected_restore_boundary")
+            self.pending_selected_playback["trace"].append(
+                {"event": "stop_wheels_sent", "monotonic_s": time.monotonic()}
+            )
+            self.transport.restore_sim_state(resolved["restore_sim_state"], request_id=request_id)
+            self.pending_selected_playback["trace"].append(
+                {"event": "restore_sent", "monotonic_s": time.monotonic(), "request_id": request_id}
+            )
+        except Exception as exc:
+            self._fail_pending_selected_playback(f"previous saved state restore failed: {exc}")
+            return False
+
+        if self.no_sim:
+            if hasattr(self.transport.adapter, "stop_wheels"):
+                self.transport.adapter.stop_wheels()
+            self.pending_selected_playback["trace"].append(
+                {"event": "restore_acknowledged", "monotonic_s": time.monotonic(), "request_id": request_id}
+            )
+            observed = self.transport.capture_sim_state()
+            verified, verify_detail = self._verify_selected_restore_state(
+                self.pending_selected_playback,
+                observed,
+            )
+            if not verified:
+                self._fail_pending_selected_playback("restored state verification failed: " + verify_detail)
+                return False
+            self.pending_selected_playback["trace"].append(
+                {"event": "state_verified", "monotonic_s": time.monotonic(), "detail": verify_detail}
+            )
+            return self._start_pending_selected_playback()
+        return True
+
+    @staticmethod
+    def _flatten_numeric_values(value: Any) -> list[float]:
+        if isinstance(value, (list, tuple)):
+            flattened: list[float] = []
+            for item in value:
+                flattened.extend(HeightReplayController._flatten_numeric_values(item))
+            return flattened
+        try:
+            return [float(value)]
+        except (TypeError, ValueError):
+            return []
+
+    def _verify_selected_restore_state(
+        self,
+        pending: dict[str, Any],
+        observed_sim_state: dict[str, Any],
+    ) -> tuple[bool, str]:
+        if not isinstance(observed_sim_state, dict) or not observed_sim_state:
+            return False, "worker did not return a detailed sim_state after restore acknowledgment"
+        comparisons: list[str] = []
+        expected_command = pending.get("restore_command_state")
+        observed_command = observed_sim_state.get("command_state")
+        if isinstance(expected_command, dict) and isinstance(observed_command, dict):
+            expected_servos = dict(expected_command.get("servos", {}) or {})
+            observed_servos = dict(observed_command.get("servos", {}) or {})
+            for name, target in expected_servos.items():
+                if name not in observed_servos or abs(float(observed_servos[name]) - float(target)) > 1.0e-4:
+                    return False, f"restored servo command mismatch for {name}"
+            comparisons.append("servo_command_state")
+        expected_sim = pending.get("restore_sim_state")
+        if str(pending.get("restore_source_field", "")).startswith("sim_state") and isinstance(expected_sim, dict):
+            for key, tolerance in (("root_pose", 0.05), ("joint_pos", 0.20)):
+                expected_values = self._flatten_numeric_values(expected_sim.get(key))
+                observed_values = self._flatten_numeric_values(observed_sim_state.get(key))
+                if expected_values and observed_values:
+                    if len(expected_values) != len(observed_values):
+                        return False, f"restored {key} size mismatch"
+                    if max(abs(left - right) for left, right in zip(expected_values, observed_values)) > tolerance:
+                        return False, f"restored {key} differs beyond tolerance {tolerance}"
+                    comparisons.append(key)
+        if not comparisons:
+            comparisons.append("worker_detailed_state_received")
+        return True, "+".join(comparisons)
+
+    def _selected_restore_transaction_is_current(self, pending: dict[str, Any]) -> bool:
+        return bool(
+            self.pending_selected_playback is pending
+            and self.operation.state is OperationState.PLAYBACK
+            and self.playback.start_requested
+            and self.manager.revision == int(pending["manager_revision"])
+            and self.current_height_mm == int(pending["height_mm"])
+            and self.current_version_id == str(pending["version_id"])
+        )
+
+    def _update_pending_selected_playback(self) -> None:
+        pending = self.pending_selected_playback
+        if pending is None or self.no_sim:
+            return
+        if not self._selected_restore_transaction_is_current(pending):
+            self._cancel_pending_selected_playback(reason="selected restore transaction was cancelled")
+            return
+        if time.monotonic() > float(pending["deadline"]):
+            self._fail_pending_selected_playback("previous saved state restore timed out")
+            return
+        status = dict(self.latest_sim_status)
+        matching_restore = (
+            str(status.get("last_restore_request_id", "") or "") == str(pending["request_id"])
+            and int(status.get("restore_count", 0) or 0) > int(pending["restore_count_before"])
+        )
+        if matching_restore and str(status.get("last_restore_result", "") or "") != "ok":
+            error = str(status.get("last_restore_error", "") or status.get("error", "") or "unknown restore error")
+            self._fail_pending_selected_playback("previous saved state restore failed: " + error)
+            return
+        if not matching_restore or not bool(status.get("runtime_ready", status.get("ready", False))):
+            return
+        if not pending["verification_requested"]:
+            pending["trace"].append(
+                {
+                    "event": "restore_acknowledged",
+                    "monotonic_s": time.monotonic(),
+                    "request_id": pending["request_id"],
+                    "restore_count": status.get("restore_count"),
+                }
+            )
+            pending["verification_requested"] = True
+            self.transport.request_state(detailed=True)
+            pending["trace"].append({"event": "state_requested", "monotonic_s": time.monotonic()})
+            return
+        detailed = dict(getattr(self.sim_client, "latest_detailed_status", {}) or {})
+        detailed_matches = (
+            str(detailed.get("last_restore_request_id", "") or "") == str(pending["request_id"])
+            and int(detailed.get("restore_count", 0) or 0) > int(pending["restore_count_before"])
+            and str(detailed.get("last_restore_result", "") or "") == "ok"
+            and bool(detailed.get("runtime_ready", detailed.get("ready", False)))
+        )
+        if not detailed_matches:
+            return
+        verified, verify_detail = self._verify_selected_restore_state(
+            pending,
+            dict(detailed.get("sim_state", {}) or {}),
+        )
+        if not verified:
+            self._fail_pending_selected_playback("restored state verification failed: " + verify_detail)
+            return
+        pending["trace"].append(
+            {"event": "state_verified", "monotonic_s": time.monotonic(), "detail": verify_detail}
+        )
+        self._start_pending_selected_playback()
+
+    def _start_pending_selected_playback(self) -> bool:
+        pending = self.pending_selected_playback
+        if pending is None or not self._selected_restore_transaction_is_current(pending):
+            return False
+        index = int(pending["selected_step_index"])
+        step = self.manager.get_step(index)
+        try:
+            plan = plan_from_steps(
+                [step],
+                profile=str(pending["profile"]),
+                max_wheel_speed=self.max_wheel_speed,
+                label=str(pending["label"]),
+                sequence_total_steps=self.manager.count,
+            )
+        except Exception as exc:
+            self._fail_pending_selected_playback(f"selected step plan failed after restore: {exc}")
+            return False
+        plan.selected_playback = True
+        if not plan.events or any(int(event.source_step or 0) != index for event in plan.events):
+            self._fail_pending_selected_playback(
+                f"selected step plan is empty or contains events outside Step {index}"
+            )
+            return False
+        plan.timing["selected_restore_source_step_index"] = pending["restore_source_step_index"]
+        plan.timing["selected_restore_source_field"] = pending["restore_source_field"]
+        plan.timing["selected_restore_request_id"] = pending["request_id"]
+        plan.timing["selected_restore_trace"] = copy.deepcopy(pending["trace"])
+        self.playback.progress.status_text = f"Restore complete. Starting selected Step {index}..."
+        self.status = f"Restore complete. Starting selected Step {index}..."
+        pending["trace"].append({"event": "playback_start_requested", "monotonic_s": time.monotonic()})
+        plan.timing["selected_restore_trace"] = copy.deepcopy(pending["trace"])
+        if self._use_worker_playback_scheduler():
+            ok = self.playback.start_worker_plan(plan, start_delay_s=self.playback_pre_step_settle_s)
+        else:
+            ok = self.playback.start_plan(plan, start_delay_s=self.playback_pre_step_settle_s)
+        result = {
+            key: copy.deepcopy(value)
+            for key, value in pending.items()
+            if key not in {"selected_step", "restore_sim_state", "restore_command_state"}
+        }
+        result.update(
+            {
+                "started": bool(ok),
+                "plan_event_count": len(plan.events),
+                "plan_source_steps": sorted({int(event.source_step or 0) for event in plan.events}),
+                "plan_selected_playback": plan.selected_playback,
+            }
+        )
+        self.last_selected_restore_result = result
+        self.pending_selected_playback = None
+        if not ok:
+            self._fail_pending_selected_playback(
+                self.playback.last_error or "worker rejected selected playback start",
+                pending_override=pending,
+            )
+            return False
+        self.mode = MODE_PLAYBACK
+        self._info(
+            f"[INFO] Restore complete from Step {pending['restore_source_step_index']}."
+            f"{pending['restore_source_field']}; starting only Selected Step {index}."
+        )
+        return True
+
+    def _fail_pending_selected_playback(
+        self,
+        reason: str,
+        *,
+        pending_override: dict[str, Any] | None = None,
+    ) -> None:
+        pending = pending_override or self.pending_selected_playback or {}
+        index = int(pending.get("selected_step_index", self.selected_step_index or 0) or 0)
+        self.pending_selected_playback = None
+        self.playback.active = False
+        self.playback.start_requested = False
+        self.playback.scheduled_start_at = 0.0
+        self.playback.worker_managed = False
+        self.playback.plan = None
+        self.playback.last_error = str(reason)
+        self.playback.last_info = str(reason)
+        self.playback.progress.playback_state = PlaybackState.ERROR.value
+        self.playback.progress.status_text = "Error"
+        self.playback.progress.current_step_index = index
+        self.playback.progress.total_steps = self.manager.count
+        self.playback.progress.selected_playback = True
+        self.playback.progress.command_phase = "restore_failed"
+        self.playback.progress.last_error = str(reason)
+        self.operation.finish(OperationState.PLAYBACK)
+        self.mode = MODE_TEST
+        self.last_selected_restore_result = {
+            "selected_step_index": index,
+            "restore_source_step_index": pending.get("restore_source_step_index"),
+            "restore_source_field": pending.get("restore_source_field", ""),
+            "request_id": pending.get("request_id", ""),
+            "started": False,
+            "error": str(reason),
+            "trace": copy.deepcopy(pending.get("trace", [])),
+        }
+        message = f"Selected Step {index} was not started: {reason}."
+        self.detail_text = message
+        self._warn("[ERROR] " + message)
+
+    def _cancel_pending_selected_playback(self, *, reason: str = "stopped during restore") -> bool:
+        pending = self.pending_selected_playback
+        if pending is None:
+            return False
+        pending["trace"].append({"event": "restore_cancelled", "monotonic_s": time.monotonic(), "reason": reason})
+        self.last_selected_restore_result = {
+            "selected_step_index": pending.get("selected_step_index"),
+            "restore_source_step_index": pending.get("restore_source_step_index"),
+            "restore_source_field": pending.get("restore_source_field", ""),
+            "request_id": pending.get("request_id", ""),
+            "started": False,
+            "cancelled": True,
+            "trace": copy.deepcopy(pending.get("trace", [])),
+        }
+        self.pending_selected_playback = None
+        self.playback.active = False
+        self.playback.start_requested = False
+        self.playback.scheduled_start_at = 0.0
+        self.playback.plan = None
+        self.playback.progress.playback_state = PlaybackState.IDLE.value
+        self.playback.progress.status_text = "Stopped"
+        self.playback.progress.command_phase = "restore_cancelled"
+        self.operation.finish(OperationState.PLAYBACK)
+        self.mode = MODE_TEST
+        self.stop_wheels(reason="selected_restore_cancelled")
+        self._info(f"[INFO] Selected playback restore cancelled: {reason}; no plan was started.")
+        return True
 
     def _handle_play_to_step(self, args: list[str]) -> None:
         if not args:
@@ -3014,7 +3466,7 @@ class RealRobotStyleHeightReplayUi:
         self.height_var = tk.StringVar(value=f"{controller.current_height_mm} mm")
         self.motion_profile_var = tk.StringVar(value="Motion profile: Fixed 100%")
         self.play_profile_var = tk.StringVar(value=str(controller.playback.profile))
-        self.restore_step_start_var = tk.BooleanVar(value=controller.restore_step_start_state_before_selected_playback)
+        self.restore_step_start_var = tk.BooleanVar(value=True)
         self.restore_full_sim_pose_var = tk.BooleanVar(value=controller.restore_full_sim_pose_if_available)
         self.fallback_command_state_var = tk.BooleanVar(value=controller.fallback_to_command_state_before)
         self._last_playback_highlight_step = 0
@@ -3646,7 +4098,13 @@ class RealRobotStyleHeightReplayUi:
 
     def _build_playback_tab(self, parent: Any) -> None:
         self.ttk.Label(parent, text="Fast removes implicit UI idle only; actuator commands are unchanged.", wraplength=560).grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 6))
-        self.ttk.Checkbutton(parent, text="Restore step start state before selected playback", variable=self.restore_step_start_var, command=self._apply_playback_options).grid(
+        self.ttk.Checkbutton(
+            parent,
+            text="Selected playback always restores previous saved step end state",
+            variable=self.restore_step_start_var,
+            command=self._apply_playback_options,
+            state="disabled",
+        ).grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(2, 2)
         )
         self.ttk.Checkbutton(parent, text="Restore full sim pose if available", variable=self.restore_full_sim_pose_var, command=self._apply_playback_options).grid(
@@ -4133,7 +4591,8 @@ class RealRobotStyleHeightReplayUi:
         self._refresh(force=False)
 
     def _apply_playback_options(self) -> None:
-        self.controller.restore_step_start_state_before_selected_playback = bool(self.restore_step_start_var.get())
+        self.restore_step_start_var.set(True)
+        self.controller.restore_step_start_state_before_selected_playback = True
         self.controller.restore_full_sim_pose_if_available = bool(self.restore_full_sim_pose_var.get())
         self.controller.fallback_to_command_state_before = bool(self.fallback_command_state_var.get())
 

@@ -152,7 +152,7 @@ class PlaySelectedPlaybackTest(unittest.TestCase):
             self.assertEqual(respawn_calls, [])
             self.assertTrue(controller.playback.active)
             self.assertTrue(controller.playback.status_dict()["scheduled"])
-            self.assertIn("Playback scheduled", controller.status)
+            self.assertIn("starting only Selected Step 1", controller.status)
 
     def test_playback_debug_selected_reports_plan_count(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

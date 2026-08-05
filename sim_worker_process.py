@@ -601,6 +601,7 @@ def run_worker(args: argparse.Namespace) -> int:
     last_restore_at = 0.0
     last_restore_result = ""
     last_restore_error = ""
+    last_restore_request_id = ""
     obstacle_revision = 0
     last_set_height_source = "startup"
     last_set_height_request_id = ""
@@ -644,6 +645,7 @@ def run_worker(args: argparse.Namespace) -> int:
             last_restore_at=last_restore_at,
             last_restore_result=last_restore_result,
             last_restore_error=last_restore_error,
+            last_restore_request_id=last_restore_request_id,
             obstacle_revision=obstacle_revision,
             last_set_height_source=last_set_height_source,
             last_set_height_request_id=last_set_height_request_id,
@@ -1019,6 +1021,7 @@ def run_worker(args: argparse.Namespace) -> int:
                     logger.log("[worker] restore_sim_state")
                     restore_count += 1
                     last_restore_at = time.time()
+                    last_restore_request_id = str(message.get("request_id", "") or "")
                     if hasattr(adapter, "restore_sim_state"):
                         try:
                             adapter.restore_sim_state(message.get("sim_state", {}))
@@ -1155,6 +1158,7 @@ def build_status(
     last_restore_at: float = 0.0,
     last_restore_result: str = "",
     last_restore_error: str = "",
+    last_restore_request_id: str = "",
     obstacle_revision: int = 0,
     last_set_height_source: str = "",
     last_set_height_request_id: str = "",
@@ -1206,6 +1210,7 @@ def build_status(
         "restore_count": int(restore_count),
         "last_restore_result": str(last_restore_result or ""),
         "last_restore_error": str(last_restore_error or ""),
+        "last_restore_request_id": str(last_restore_request_id or ""),
         "perf": dict(ipc_status or {}),
     }
     status.update(build_common_worker_status(args=args, adapter=adapter, scene_handle=scene_handle, detailed=detailed))

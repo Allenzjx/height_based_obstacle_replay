@@ -154,11 +154,13 @@ class SimTransport:
             return self.adapter.capture_sim_state()
         return {"command_state": self.capture_command_state()}
 
-    def restore_sim_state(self, sim_state: dict[str, Any]) -> None:
+    def restore_sim_state(self, sim_state: dict[str, Any], *, request_id: str = "") -> str:
+        resolved_request_id = str(request_id or uuid.uuid4().hex)
         if self.process_client is not None:
-            self.process_client.restore_sim_state(sim_state)
+            return self.process_client.restore_sim_state(sim_state, request_id=resolved_request_id)
         elif hasattr(self.adapter, "restore_sim_state"):
             self.adapter.restore_sim_state(sim_state)
+        return resolved_request_id
 
     def capture_command_state(self) -> dict[str, dict[str, float]]:
         status_state = self.last_worker_status.get("command_state")

@@ -789,8 +789,16 @@ class SimProcessClient:
     def respawn(self) -> None:
         self._send_or_queue(make_message("respawn"))
 
-    def restore_sim_state(self, sim_state: dict[str, Any]) -> None:
-        self._send_or_queue(make_message("restore_sim_state", sim_state=dict(sim_state or {})))
+    def restore_sim_state(self, sim_state: dict[str, Any], *, request_id: str = "") -> str:
+        resolved_request_id = str(request_id or uuid.uuid4().hex)
+        self._send_or_queue(
+            make_message(
+                "restore_sim_state",
+                sim_state=dict(sim_state or {}),
+                request_id=resolved_request_id,
+            )
+        )
+        return resolved_request_id
 
     def stop_wheels(
         self,
