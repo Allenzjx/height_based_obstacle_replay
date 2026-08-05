@@ -94,7 +94,7 @@ class HeightGeneratePanel:
         if not self._select_height():
             return
         request_id = self.controller.generate_or_update_height_obstacle()
-        self.status_var.set(f"Updating {self.controller.current_height_mm} mm… request {request_id[:8]}; controls remain available.")
+        self.status_var.set(f"Updating {self.controller.current_height_mm} mm… request {request_id[:8]}; motion controls are locked until geometry verification.")
 
     def generate_and_respawn(self) -> None:
         if not self._select_height():
@@ -144,6 +144,8 @@ class HeightGeneratePanel:
         metadata = dict(height.get("current_version_metadata", {}) or {})
         self.status_var.set(
             f"Target={height['current_mm']} mm | Scene={height.get('scene_mm') if height.get('scene_mm') is not None else '-'} mm | "
+            f"Measured={height.get('measured_height_mm') if height.get('measured_height_mm') is not None else '-'} mm | "
+            f"Width={float(height.get('measured_width_m') or 0.0):.3f} m | revision={height.get('obstacle_revision', 0)} | "
             f"control_ready={snapshot['sim']['motion_ready']} | request={self.controller.pending_height_request_id[:8] or '-'}"
         )
         self.version_detail_var.set(

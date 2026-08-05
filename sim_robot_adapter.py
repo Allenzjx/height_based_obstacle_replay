@@ -31,7 +31,7 @@ from command_model import (
     validate_motion_command,
 )
 from playback import PlaybackPlan, plan_from_steps
-from motion_speed import MotionReference, SpeedScale, load_motion_reference
+from motion_speed import MotionReference, load_motion_reference
 from recording_baseline import WHEEL_PHYSICAL_STOP_NOISE_FLOOR_RAD_S
 from robot_ground_diagnostics import (
     COLLIDER_RESOLUTION_FAILED,
@@ -162,7 +162,6 @@ class SimRobotAdapter:
         self.command_state = empty_command_state()
         self.telemetry_collector: Any | None = None
         self.motion_reference: MotionReference = load_motion_reference()
-        self.speed_scale = SpeedScale(self.motion_reference)
         self.motion_batch_status: dict[str, Any] = {}
 
         self.servo_joint_ids = self._resolve_exact_joint_ids(SERVO_JOINT_NAMES)
@@ -248,21 +247,13 @@ class SimRobotAdapter:
             "wheels": {name: round(float(self.wheel_speeds[name]), 6) for name in WHEEL_JOINT_NAMES},
         }
 
-    def set_speed_percent(self, value: float) -> dict[str, Any]:
-        """Atomically update the sole speed percentage used by this executor."""
-
-        self.speed_scale.set_percent(value)
-        status = self.speed_scale.status()
-        status.update(updated_wall_time=time.time(), updated_sim_time=float(self.sim_time))
-        return status
-
     def apply_motion_batch(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Stage all logical targets and perform one articulation apply/write."""
 
         received_wall = time.time()
         batch_id = str(payload.get("batch_id", "") or uuid.uuid4().hex)
         servo_targets = dict(payload.get("servo_targets_deg", {}) or {})
-        wheel_payload = payload.get("wheel_base_velocity_rad_s", {})
+        wheel_payload = payload.get("wheel_targets_rad_s", {})
         if isinstance(wheel_payload, (int, float)):
             wheel_targets = {name: float(wheel_payload) for name in WHEEL_JOINT_NAMES}
         else:
@@ -270,6 +261,34 @@ class SimRobotAdapter:
                 name: float(dict(wheel_payload or {}).get(name, self.wheel_speeds[name]))
                 for name in WHEEL_JOINT_NAMES
             }
+        unknown_servos = sorted(set(servo_targets) - set(SERVO_JOINT_NAMES))
+        unknown_wheels = sorted(set(dict(wheel_payload or {})) - set(WHEEL_JOINT_NAMES)) if isinstance(wheel_payload, dict) else []
+        incoming_generation = self.wheel_generation if payload.get("wheel_generation") is None else int(payload["wheel_generation"])
+        nonzero_wheels = any(abs(float(value)) > 1.0e-9 for value in wheel_targets.values())
+        validation_error = ""
+        if unknown_servos:
+            validation_error = f"unknown servo targets: {unknown_servos}"
+        elif unknown_wheels:
+            validation_error = f"unknown wheel targets: {unknown_wheels}"
+        elif nonzero_wheels and incoming_generation < self.wheel_generation:
+            validation_error = (
+                f"stale wheel generation: received={incoming_generation} current={self.wheel_generation}"
+            )
+        if validation_error:
+            ack = {
+                "batch_id": batch_id,
+                "source": str(payload.get("source", "ui") or "ui"),
+                "received_wall_time": received_wall,
+                "applied_sim_time": float(self.sim_time),
+                "applied_sim_step": int(self.sim_steps),
+                "servo_targets_applied": {},
+                "wheel_targets_applied": {},
+                "motion_start_skew_s": None,
+                "wheel_generation": int(self.wheel_generation),
+                "error": validation_error,
+            }
+            self.motion_batch_status = ack
+            return dict(ack)
         for name, target in servo_targets.items():
             if name in self.joint_command_deg:
                 self._set_joint_command_deg(name, float(target))
@@ -283,14 +302,19 @@ class SimRobotAdapter:
         self.apply_commands_to_robot()
         self.robot.write_data_to_sim()
         dt = float(self.sim.get_physics_dt())
-        servo_requested, servo_effective = self.speed_scale.servo_velocity()
+        servo_requested = float(self.motion_reference.servo_reference_velocity_deg_s)
+        servo_limit = self.motion_reference.servo_velocity_limit_deg_s
+        servo_effective = servo_requested if servo_limit is None else min(servo_requested, float(servo_limit))
         effective_wheels = {name: self._effective_wheel_speed(value)[1] for name, value in self.wheel_speeds.items()}
         ack = {
             "batch_id": batch_id,
             "source": str(payload.get("source", "ui") or "ui"),
             "batch_received_wall_time": received_wall,
+            "received_wall_time": received_wall,
             "batch_applied_wall_time": time.time(),
             "batch_applied_sim_time": float(self.sim_time),
+            "applied_sim_time": float(self.sim_time),
+            "applied_sim_step": int(self.sim_steps),
             "servo_applied": bool(servo_targets),
             "wheel_applied": bool(wheel_applied),
             "first_physics_step": int(self.sim_steps + 1),
@@ -298,12 +322,14 @@ class SimRobotAdapter:
             "wheel_motion_start_sim_time": float(self.sim_time + dt),
             "motion_start_skew_s": 0.0,
             "physics_dt_s": dt,
-            "speed_percent_snapshot": float(payload.get("speed_percent_snapshot", self.speed_scale.speed_percent)),
-            "executor_speed_percent": self.speed_scale.speed_percent,
+            "motion_profile": "fixed_100_percent",
             "requested_servo_velocity_deg_s": servo_requested,
             "effective_servo_velocity_deg_s": servo_effective,
             "canonical_servo_targets_deg": {name: float(value) for name, value in servo_targets.items()},
             "canonical_wheel_velocity_rad_s": dict(self.wheel_speeds),
+            "servo_targets_applied": {name: float(value) for name, value in servo_targets.items()},
+            "wheel_targets_applied": dict(self.wheel_speeds),
+            "wheel_generation": int(self.wheel_generation),
             "effective_wheel_velocity_rad_s": effective_wheels,
             "recording_metadata": dict(payload.get("recording_metadata", {}) or {}),
             "high_priority": False,
@@ -1014,7 +1040,7 @@ class SimRobotAdapter:
             "applied_target_rad_s": dict(self.wheel_speeds),
             "canonical_target_rad_s": dict(self.wheel_speeds),
             "effective_target_rad_s": {name: self._effective_wheel_speed(value)[1] for name, value in self.wheel_speeds.items()},
-            "speed_percent": self.speed_scale.speed_percent,
+            "motion_profile": "fixed_100_percent",
         }
         self.command_state = self.capture_command_state()
         return True
@@ -1105,7 +1131,7 @@ class SimRobotAdapter:
                 target_applied_sim_time=float(self.sim_time),
                 applied_target_rad_s={name: self._effective_wheel_speed(value)[1] for name, value in self.wheel_speeds.items()},
                 canonical_target_rad_s=dict(self.wheel_speeds),
-                speed_percent=self.speed_scale.speed_percent,
+                motion_profile="fixed_100_percent",
             )
 
     def _advance_servo_targets(self, dt: float) -> None:
@@ -1113,7 +1139,9 @@ class SimRobotAdapter:
 
         if not self.servo_motion_enabled:
             return
-        _requested_rate, rate = self.speed_scale.servo_velocity()
+        rate = float(self.motion_reference.servo_reference_velocity_deg_s)
+        if self.motion_reference.servo_velocity_limit_deg_s is not None:
+            rate = min(rate, float(self.motion_reference.servo_velocity_limit_deg_s))
         maximum_delta = rate * max(0.0, float(dt))
         if maximum_delta <= 0.0:
             return
@@ -1619,7 +1647,7 @@ class SimRobotAdapter:
         return clamp(float(speed), -self.max_wheel_speed, self.max_wheel_speed)
 
     def _effective_wheel_speed(self, canonical_speed: float) -> tuple[float, float]:
-        requested = float(canonical_speed) * self.speed_scale.scale
+        requested = float(canonical_speed)
         effective = clamp(requested, -self.max_wheel_speed, self.max_wheel_speed)
         return requested, effective
 
@@ -1865,7 +1893,6 @@ class NullSimRobotAdapter:
         self.max_wheel_speed = REAL_MOTION_REFERENCE.wheel_velocity_limit_rad_s
         self.motion_reference = load_motion_reference()
         self.default_wheel_speed = self.motion_reference.wheel_reference_velocity_rad_s
-        self.speed_scale = SpeedScale(self.motion_reference)
         self.motion_batch_status: dict[str, Any] = {}
         self.sim_time = 0.0
         self.sim_steps = 0
@@ -1895,10 +1922,6 @@ class NullSimRobotAdapter:
     def capture_command_state(self) -> dict[str, dict[str, float]]:
         return clone_command_state(self.command_state)
 
-    def set_speed_percent(self, value: float) -> dict[str, Any]:
-        self.speed_scale.set_percent(value)
-        return self.speed_scale.status()
-
     def apply_motion_batch(self, payload: dict[str, Any]) -> dict[str, Any]:
         from sequence_model import apply_command_to_state
 
@@ -1906,7 +1929,7 @@ class NullSimRobotAdapter:
         for name, value in dict(payload.get("servo_targets_deg", {}) or {}).items():
             if name in self.command_state["servos"]:
                 apply_command_to_state(self.command_state, f"servo {name} {float(value):.9g}")
-        wheels = payload.get("wheel_base_velocity_rad_s", {})
+        wheels = payload.get("wheel_targets_rad_s", {})
         if isinstance(wheels, (int, float)):
             wheels = {name: float(wheels) for name in WHEEL_JOINT_NAMES}
         self.apply_wheel_velocity(dict(wheels or {}), command_id=batch_id)
@@ -1915,8 +1938,11 @@ class NullSimRobotAdapter:
             "batch_id": batch_id,
             "source": str(payload.get("source", "ui") or "ui"),
             "batch_received_wall_time": now,
+            "received_wall_time": now,
             "batch_applied_wall_time": now,
             "batch_applied_sim_time": float(self.sim_time),
+            "applied_sim_time": float(self.sim_time),
+            "applied_sim_step": int(self.sim_steps),
             "servo_applied": bool(payload.get("servo_targets_deg")),
             "wheel_applied": True,
             "first_physics_step": int(self.sim_steps + 1),
@@ -1924,12 +1950,14 @@ class NullSimRobotAdapter:
             "wheel_motion_start_sim_time": float(self.sim_time),
             "motion_start_skew_s": 0.0,
             "physics_dt_s": 0.0,
-            "speed_percent_snapshot": float(payload.get("speed_percent_snapshot", self.speed_scale.speed_percent)),
-            "executor_speed_percent": self.speed_scale.speed_percent,
+            "motion_profile": "fixed_100_percent",
             "canonical_servo_targets_deg": dict(payload.get("servo_targets_deg", {}) or {}),
             "canonical_wheel_velocity_rad_s": dict(self.command_state["wheels"]),
+            "servo_targets_applied": dict(payload.get("servo_targets_deg", {}) or {}),
+            "wheel_targets_applied": dict(self.command_state["wheels"]),
+            "wheel_generation": int(self.wheel_generation),
             "effective_wheel_velocity_rad_s": {
-                name: max(-self.max_wheel_speed, min(self.max_wheel_speed, value * self.speed_scale.scale))
+                name: max(-self.max_wheel_speed, min(self.max_wheel_speed, value))
                 for name, value in self.command_state["wheels"].items()
             },
             "recording_metadata": dict(payload.get("recording_metadata", {}) or {}),
@@ -2011,10 +2039,10 @@ class NullSimRobotAdapter:
             "applied_target_rad_s": dict(self.command_state["wheels"]),
             "canonical_target_rad_s": dict(self.command_state["wheels"]),
             "effective_target_rad_s": {
-                name: max(-self.max_wheel_speed, min(self.max_wheel_speed, value * self.speed_scale.scale))
+                name: max(-self.max_wheel_speed, min(self.max_wheel_speed, value))
                 for name, value in self.command_state["wheels"].items()
             },
-            "speed_percent": self.speed_scale.speed_percent,
+            "motion_profile": "fixed_100_percent",
             "measured_velocity_rad_s": dict(self.command_state["wheels"]),
         }
         return True

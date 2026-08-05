@@ -76,6 +76,8 @@ class SimTransport:
         *,
         start_delay_sim_s: float = 0.0,
         plan_id: str = "",
+        request_id: str = "",
+        plan_sha256: str = "",
     ) -> None:
         payload = playback_plan_to_payload(plan)
         if self.process_client is not None:
@@ -83,6 +85,8 @@ class SimTransport:
                 payload,
                 start_delay_sim_s=start_delay_sim_s,
                 plan_id=plan_id,
+                request_id=request_id,
+                plan_sha256=plan_sha256 or plan.plan_sha256,
             )
         elif hasattr(self.adapter, "play_plan_blocking"):
             self.adapter.play_plan_blocking(plan)
@@ -128,16 +132,11 @@ class SimTransport:
         else:
             raise RuntimeError("Recalibration requires an attached simulation worker.")
 
-    def set_speed_scale(self, speed_percent: float, **payload: Any) -> None:
-        if self.process_client is not None:
-            self.process_client.set_speed_scale(speed_percent, **payload)
-        else:
-            self.adapter.set_speed_percent(speed_percent)
-
     def apply_motion_batch(self, payload: dict[str, Any]) -> str:
         batch = dict(payload or {})
         batch_id = str(batch.get("batch_id", "") or uuid.uuid4().hex)
         batch["batch_id"] = batch_id
+        batch.setdefault("wheel_generation", self.wheel_generation)
         if self.process_client is not None:
             return self.process_client.apply_motion_batch(batch)
         self.adapter.apply_motion_batch(batch)
@@ -171,6 +170,17 @@ class SimTransport:
         self.last_worker_status = dict(status)
         self.ready = bool(status.get("runtime_ready", status.get("ready", False)))
         self.last_error = str(status.get("error", "") or "")
+        wheel_status = dict(status.get("wheel_command", {}) or {})
+        try:
+            worker_generation = int(wheel_status.get("generation", self.wheel_generation))
+        except (TypeError, ValueError):
+            worker_generation = self.wheel_generation
+        self.wheel_generation = max(self.wheel_generation, worker_generation)
+        if self.process_client is not None:
+            self.process_client.wheel_generation = max(
+                int(getattr(self.process_client, "wheel_generation", 0) or 0),
+                self.wheel_generation,
+            )
 
     def status(self) -> dict[str, Any]:
         return {

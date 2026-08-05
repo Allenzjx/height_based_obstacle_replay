@@ -1,4 +1,4 @@
-"""Single worker-owned motion speed model for manual control and playback."""
+"""Fixed real-robot motion profile shared by manual control and playback."""
 
 from __future__ import annotations
 
@@ -37,60 +37,6 @@ class MotionReference:
             "wheel_transmission_ratio": self.wheel_transmission_ratio,
             "verified": self.verified,
             "verification_method": self.verification_method,
-        }
-
-
-class SpeedScale:
-    """The only percentage model. Scaling is consumed only by the adapter."""
-
-    MIN_PERCENT = 0.0
-    MAX_PERCENT = 300.0
-
-    def __init__(self, reference: MotionReference | None = None, *, speed_percent: float = 100.0):
-        self.reference = reference or load_motion_reference()
-        self._speed_percent = 100.0
-        self.set_percent(speed_percent)
-
-    @property
-    def speed_percent(self) -> float:
-        return self._speed_percent
-
-    @property
-    def scale(self) -> float:
-        return self._speed_percent / 100.0
-
-    def set_percent(self, value: float) -> float:
-        percent = float(value)
-        if not math.isfinite(percent):
-            raise ValueError("speed_percent must be finite")
-        self._speed_percent = max(self.MIN_PERCENT, min(self.MAX_PERCENT, percent))
-        return self._speed_percent
-
-    def servo_velocity(self) -> tuple[float, float]:
-        requested = self.reference.servo_reference_velocity_deg_s * self.scale
-        limit = self.reference.servo_velocity_limit_deg_s
-        effective = requested if limit is None else min(requested, float(limit))
-        return requested, effective
-
-    def wheel_velocity(self, canonical_rad_s: float) -> tuple[float, float]:
-        requested = float(canonical_rad_s) * self.scale
-        limit = abs(self.reference.wheel_velocity_limit_rad_s)
-        effective = max(-limit, min(limit, requested))
-        return requested, effective
-
-    def status(self) -> dict[str, Any]:
-        servo_requested, servo_effective = self.servo_velocity()
-        wheel_requested, wheel_effective = self.wheel_velocity(self.reference.wheel_reference_velocity_rad_s)
-        return {
-            "speed_percent": self.speed_percent,
-            "speed_scale": self.scale,
-            "reference_profile_id": self.reference.profile_id,
-            "reference_verified": self.reference.verified,
-            "requested_servo_velocity_deg_s": servo_requested,
-            "effective_servo_velocity_deg_s": servo_effective,
-            "requested_reference_wheel_velocity_rad_s": wheel_requested,
-            "effective_reference_wheel_velocity_rad_s": wheel_effective,
-            "semantics_version": "worker-motion-executor-v1",
         }
 
 

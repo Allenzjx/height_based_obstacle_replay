@@ -11,7 +11,7 @@ MODULE_ROOT = Path(__file__).resolve().parents[1]
 if str(MODULE_ROOT) not in sys.path:
     sys.path.insert(0, str(MODULE_ROOT))
 
-from playback import PlaybackEvent, PlaybackManager, PlaybackPlan, SimTimePlaybackService, playback_plan_to_payload  # noqa: E402
+from playback import PlaybackEvent, PlaybackManager, PlaybackPlan, PlaybackSegment, SimTimePlaybackService, plan_fingerprint, playback_plan_to_payload  # noqa: E402
 from sim_process_client import SimProcessClient  # noqa: E402
 
 
@@ -32,7 +32,7 @@ class FakeAdapter:
 
 class FakeWorkerTransport:
     def __init__(self) -> None:
-        self.started: list[tuple[PlaybackPlan, float, str]] = []
+        self.started: list[dict[str, Any]] = []
         self.stopped: list[str] = []
 
     def start_playback_plan(
@@ -41,8 +41,16 @@ class FakeWorkerTransport:
         *,
         start_delay_sim_s: float = 0.0,
         plan_id: str = "",
+        request_id: str = "",
+        plan_sha256: str = "",
     ) -> None:
-        self.started.append((plan, float(start_delay_sim_s), str(plan_id)))
+        self.started.append({
+            "plan": plan,
+            "delay": float(start_delay_sim_s),
+            "plan_id": str(plan_id),
+            "request_id": str(request_id),
+            "plan_sha256": str(plan_sha256),
+        })
 
     def stop_playback(self, *, reason: str = "stopped", stop_wheels: bool = True) -> None:
         self.stopped.append(str(reason))
@@ -64,6 +72,32 @@ def _plan() -> PlaybackPlan:
         final_time_s=0.1,
         label="unit sim-time plan",
     )
+    return plan
+
+
+def _worker_plan() -> PlaybackPlan:
+    plan = _plan()
+    plan.segments = [
+        PlaybackSegment(
+            segment_index=0,
+            source_step=1,
+            source_step_id="step-1",
+            event_start_index=0,
+            event_count=2,
+            planned_start_s=0.0,
+            planned_end_s=0.1,
+            base_duration_s=0.1,
+            servo_base_duration_s=0.0,
+            servo_duration_s=0.0,
+        )
+    ]
+    plan.timing["plan_integrity"] = {
+        "input_step_count": 1,
+        "required_step_indices": [1],
+        "represented_step_indices": [1],
+        "missing_required_step_indices": [],
+    }
+    plan.plan_sha256 = plan_fingerprint(plan)
     return plan
 
 
@@ -152,25 +186,41 @@ class SimTimePlaybackServiceTest(unittest.TestCase):
     def test_manager_waits_for_matching_worker_ack_before_syncing_idle(self) -> None:
         controller = FakePlaybackController()
         manager = PlaybackManager(controller)
-        plan = _plan()
+        plan = _worker_plan()
         self.assertTrue(manager.start_worker_plan(plan))
 
         manager.sync_worker_status({"active": False, "paused": False, "plan_id": "", "index": 0, "events_sent": 0})
-        self.assertTrue(manager.active)
+        self.assertFalse(manager.active)
+        self.assertTrue(manager.start_requested)
         self.assertTrue(manager.worker_managed)
         self.assertFalse(manager.worker_acknowledged)
-        self.assertIn("acknowledgement", manager.last_info)
+        self.assertEqual(manager.progress.playback_state, "START_REQUESTED")
 
+        ack = {
+            "operation": "start_playback_plan",
+            "request_id": manager.worker_request_id,
+            "accepted": True,
+            "plan_id": manager.worker_plan_id,
+            "plan_sha256": plan.plan_sha256,
+            "event_count": len(plan.events),
+            "segment_count": len(plan.segments),
+            "worker_session_id": "session-1",
+        }
         manager.sync_worker_status(
             {
                 "active": True,
                 "paused": False,
                 "plan_id": manager.worker_plan_id,
+                "request_id": manager.worker_request_id,
+                "worker_session_id": "session-1",
+                "started": True,
+                "first_command_applied": True,
                 "index": 1,
                 "events_sent": 1,
                 "stop_reason": "",
                 "last_info": "worker playback running",
-            }
+            },
+            operation_ack=ack,
         )
         self.assertTrue(manager.active)
         self.assertTrue(manager.worker_acknowledged)
@@ -179,7 +229,7 @@ class SimTimePlaybackServiceTest(unittest.TestCase):
     def test_repeated_identical_plan_uses_unique_request_ids_and_ignores_stale_status(self) -> None:
         controller = FakePlaybackController()
         manager = PlaybackManager(controller)
-        plan = _plan()
+        plan = _worker_plan()
 
         self.assertTrue(manager.start_worker_plan(plan))
         first_id = manager.worker_plan_id
@@ -188,8 +238,9 @@ class SimTimePlaybackServiceTest(unittest.TestCase):
         second_id = manager.worker_plan_id
 
         self.assertNotEqual(first_id, second_id)
-        self.assertEqual(controller.transport.started[0][2], first_id)
-        self.assertEqual(controller.transport.started[1][2], second_id)
+        self.assertEqual(controller.transport.started[0]["plan_id"], first_id)
+        self.assertEqual(controller.transport.started[1]["plan_id"], second_id)
+        self.assertNotEqual(controller.transport.started[0]["request_id"], controller.transport.started[1]["request_id"])
         manager.sync_worker_status(
             {
                 "active": False,
@@ -199,18 +250,34 @@ class SimTimePlaybackServiceTest(unittest.TestCase):
                 "events_sent": 1,
             }
         )
-        self.assertTrue(manager.active)
+        self.assertFalse(manager.active)
+        self.assertTrue(manager.start_requested)
         self.assertTrue(manager.worker_managed)
         self.assertFalse(manager.worker_acknowledged)
 
+        ack = {
+            "operation": "start_playback_plan",
+            "request_id": manager.worker_request_id,
+            "accepted": True,
+            "plan_id": second_id,
+            "plan_sha256": plan.plan_sha256,
+            "event_count": len(plan.events),
+            "segment_count": len(plan.segments),
+            "worker_session_id": "session-2",
+        }
         manager.sync_worker_status(
             {
                 "active": True,
                 "paused": False,
                 "plan_id": second_id,
+                "request_id": manager.worker_request_id,
+                "worker_session_id": "session-2",
+                "started": True,
+                "first_command_applied": True,
                 "stop_reason": "",
                 "events_sent": 1,
-            }
+            },
+            operation_ack=ack,
         )
         self.assertTrue(manager.active)
         self.assertTrue(manager.worker_acknowledged)

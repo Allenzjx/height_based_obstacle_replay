@@ -204,8 +204,6 @@ class HeightVersionStore:
                 "robot_asset_sha256": self.robot_asset_sha256 or str(extra.pop("robot_asset_sha256", "")),
                 "actuator_baseline_id": str(extra.pop("actuator_baseline_id", "")),
                 "environment_baseline_id": str(extra.pop("environment_baseline_id", "")),
-                "speed_reference_profile_id": str(extra.pop("speed_reference_profile_id", "")),
-                "speed_percent_at_save": float(extra.pop("speed_percent_at_save", 100.0)),
                 "obstacle_width_m": extra.pop("obstacle_width_m", None),
                 "obstacle_length_m": extra.pop("obstacle_length_m", None),
                 "obstacle_front_face_x_m": extra.pop("obstacle_front_face_x_m", None),

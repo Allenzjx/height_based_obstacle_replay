@@ -19,7 +19,7 @@ from robot_ground_diagnostics import (
     motion_status_from_worker_status,
     respawn_status_from_worker_status,
 )
-from sim_obstacle_scene import update_obstacle_height
+from sim_obstacle_scene import measure_obstacle_geometry, update_obstacle_height
 from sim_robot_adapter import SimRobotAdapterConfig
 
 
@@ -72,15 +72,39 @@ def handle_set_height(
 ) -> dict[str, Any]:
     resolved_mm = normalize_height_mm(height_mm if height_mm is not None else int(height_cm or 0) * 10)
     update_started = time.perf_counter()
-    update_obstacle_height(scene_handle, obstacle_height_m_mm(resolved_mm))
+    try:
+        transaction = update_obstacle_height(scene_handle, obstacle_height_m_mm(resolved_mm))
+        physics_dt = float(scene_handle.sim.get_physics_dt())
+        for _tick in range(2):
+            adapter.step(physics_dt)
+        if hasattr(scene_handle.sim, "render"):
+            scene_handle.sim.render()
+        measured = measure_obstacle_geometry(scene_handle)
+        update_error = str(measured.get("error", "") or "")
+    except Exception as exc:
+        transaction = {"old_geometry": measure_obstacle_geometry(scene_handle), "update_mode": "error"}
+        measured = measure_obstacle_geometry(scene_handle)
+        update_error = str(exc)
     obstacle_update_s = time.perf_counter() - update_started
+    old_geometry = dict(transaction.get("old_geometry", {}) or {})
+    measured_height_mm = float(measured.get("height_m", -1.0) or -1.0) * 1000.0
+    requested_height_m = obstacle_height_m_mm(resolved_mm)
+    visual_updated = bool(measured.get("visual_valid", False)) and abs(float(measured.get("height_m", -1.0)) - requested_height_m) <= 0.001
+    collision_updated = bool(measured.get("collision_valid", False)) and abs(float(measured.get("collision_height_m", -1.0)) - requested_height_m) <= 0.001
+    geometry_ok = (
+        bool(measured.get("prim_valid", False))
+        and visual_updated
+        and collision_updated
+        and abs(measured_height_mm - float(resolved_mm)) <= 1.0
+        and not update_error
+    )
     policy = str(respawn_policy or "required").lower()
     if policy not in {"required", "if_motion_ready", "never"}:
         policy = "required"
     motion_ready = _adapter_motion_ready(adapter)
     respawn_result: dict[str, Any] = {"ok": True, "respawned": False, "skipped": True}
     warning = ""
-    if policy == "required" or (policy == "if_motion_ready" and motion_ready):
+    if geometry_ok and (policy == "required" or (policy == "if_motion_ready" and motion_ready)):
         respawn_result = _respawn_with_ground_policy(adapter)
     elif policy == "if_motion_ready":
         warning = "respawn skipped because motion_ready=false"
@@ -92,24 +116,43 @@ def handle_set_height(
             "ground_diagnostics": dict(getattr(adapter, "robot_ground_diagnostics", default_robot_ground_diagnostics("not checked"))),
         }
     return {
-        "ok": bool(respawn_result.get("ok", True)) if policy == "required" else True,
+        "ok": geometry_ok and (bool(respawn_result.get("ok", True)) if policy == "required" else True),
+        "accepted": geometry_ok,
+        "old_height_mm": None if old_geometry.get("height_m") is None else float(old_geometry["height_m"]) * 1000.0,
+        "requested_height_mm": resolved_mm,
+        "measured_height_mm": measured_height_mm,
         "height_mm": resolved_mm,
         "height_cm": resolved_mm / 10.0,
         "source": str(source or ""),
         "request_id": str(request_id or ""),
         "obstacle_revision": int(obstacle_revision),
-        "obstacle_updated": True,
+        "obstacle_updated": geometry_ok,
+        "visual_updated": visual_updated,
+        "collision_updated": collision_updated,
+        "prim_path": str(measured.get("prim_path", "/World/Obstacle")),
+        "prim_valid": bool(measured.get("prim_valid", False)),
+        "measured_bounds": dict(measured.get("measured_bounds", {}) or {}),
+        "visual_bounds": dict(measured.get("visual_bounds", {}) or {}),
+        "collision_bounds": dict(measured.get("collision_bounds", {}) or {}),
+        "measured_width_m": measured.get("width_m"),
+        "measured_length_m": measured.get("length_m"),
+        "front_face_x_m": measured.get("front_face_x_m"),
+        "center_y_m": measured.get("center_y_m"),
+        "bottom_z_m": measured.get("bottom_z_m"),
+        "top_z_m": measured.get("top_z_m"),
+        "update_mode": str(transaction.get("update_mode", "")),
         "obstacle_update_s": obstacle_update_s,
         "scene_height_mm": resolved_mm,
         "scene_height_cm": resolved_mm / 10.0,
-        "scene_ready": True,
+        "scene_ready": geometry_ok,
         "respawn_policy": policy,
         "respawn_requested": policy != "never",
         "respawned": bool(respawn_result.get("respawned", False)),
         "motion_ready": bool(motion_ready),
         "respawn_warning": warning or str(respawn_result.get("warning", "")),
         "respawn_result": respawn_result,
-        "error": str(respawn_result.get("error", "")) if policy == "required" else "",
+        "control_ready": bool(geometry_ok and _adapter_motion_ready(adapter)),
+        "error": update_error or (str(respawn_result.get("error", "")) if policy == "required" else ""),
     }
 
 
@@ -204,7 +247,7 @@ def _build_light_worker_status(*, args: Any, adapter: Any, scene_handle: Any | N
             "control_ready": False,
             "ground_state": "UNVERIFIED",
             "wheel_command": {},
-            "speed": {},
+            "motion_profile": {},
             "motion_batch": {},
             "physics_dt": float(getattr(args, "physics_dt", 0.0) or 0.0),
         }
@@ -237,8 +280,14 @@ def _build_light_worker_status(*, args: Any, adapter: Any, scene_handle: Any | N
     }
     motion_ready, motion_reason, ground_state = motion_status_from_worker_status(readiness)
     respawn_ready, respawn_reason = respawn_status_from_worker_status(readiness)
-    speed_model = getattr(adapter, "speed_scale", None)
-    speed_status = speed_model.status() if speed_model is not None and hasattr(speed_model, "status") else {}
+    motion_reference = getattr(adapter, "motion_reference", None)
+    motion_profile = {
+        "mode": "fixed_100_percent",
+        "profile_id": str(getattr(motion_reference, "profile_id", "")),
+        "servo_velocity_deg_s": float(getattr(motion_reference, "servo_reference_velocity_deg_s", 0.0) or 0.0),
+        "wheel_reference_velocity_rad_s": float(getattr(motion_reference, "wheel_reference_velocity_rad_s", 0.0) or 0.0),
+        "wheel_velocity_limit_rad_s": float(getattr(motion_reference, "wheel_velocity_limit_rad_s", 0.0) or 0.0),
+    }
     return {
         "command_state": command_state,
         "servo_target_deg": [float(command_state.get("servos", {}).get(name, 0.0)) for name in SERVO_JOINT_NAMES],
@@ -265,7 +314,7 @@ def _build_light_worker_status(*, args: Any, adapter: Any, scene_handle: Any | N
         "control_ready": bool(motion_ready),
         "ground_state": ground_state,
         "wheel_command": dict(getattr(adapter, "wheel_command_status", {}) or {}),
-        "speed": speed_status,
+        "motion_profile": motion_profile,
         "motion_batch": dict(getattr(adapter, "motion_batch_status", {}) or {}),
         "physics_dt": _safe_physics_dt(adapter, args),
         "sim_step_hz": 1.0 / _safe_physics_dt(adapter, args) if _safe_physics_dt(adapter, args) > 0.0 else 0.0,

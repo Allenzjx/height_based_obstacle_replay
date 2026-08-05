@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 import shlex
 import time
 import uuid
@@ -80,6 +81,8 @@ class PlaybackSegment:
     explicit_hold_s: float = 0.0
     implicit_idle_before_s: float = 0.0
     gap_reason: str = "none"
+    servo_tolerance_deg: float = 1.0
+    recorded_servo_residual_deg: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -111,6 +114,10 @@ def plan_from_steps(
     normalized_profile = "raw" if str(profile).lower() == "raw" else "motion_only"
     servo_reference_velocity_deg_s = max(1.0e-9, float(servo_reference_velocity_deg_s))
     normalized_steps = [normalize_step(step) for step in steps]
+    normalized_by_index = {
+        int(step.get("index", index) or index): step
+        for index, step in enumerate(normalized_steps, start=1)
+    }
     groups, step_timing = semantic_motion_groups(normalized_steps)
     raw_sequence_duration = sum(float(step.get("duration", 0.0)) for step in normalized_steps)
     fast_end = max([float(row.get("fast_sequence_end_s", 0.0)) for row in step_timing] + [0.0])
@@ -249,6 +256,10 @@ def plan_from_steps(
                 explicit_hold_s=explicit_hold,
                 implicit_idle_before_s=implicit_idle_before,
                 gap_reason=gap_reason,
+                **_recorded_servo_completion_policy(
+                    normalized_by_index.get(step_index, {}),
+                    servo_targets,
+                ),
             )
         )
         cursor = planned_end
@@ -260,6 +271,13 @@ def plan_from_steps(
         final_idle_s = max(0.0, raw_sequence_duration - float(groups[-1].get("raw_time", 0.0)) - previous_recorded_motion_duration)
         cursor += final_idle_s
     total_steps = int(sequence_total_steps) if sequence_total_steps is not None else max([int(step.get("index", 0)) for step in normalized_steps] + [len(normalized_steps)])
+    input_step_indices = [int(step.get("index", index) or index) for index, step in enumerate(normalized_steps, start=1)]
+    required_step_indices = [
+        int(step.get("index", index) or index)
+        for index, step in enumerate(normalized_steps, start=1)
+        if event_playback_commands(step) or float(step.get("duration", 0.0) or 0.0) > 0.0
+    ]
+    represented_step_indices = sorted({int(event.source_step) for event in events if event.source_step is not None})
     plan = PlaybackPlan(
         path=None,
         events=events,
@@ -282,10 +300,92 @@ def plan_from_steps(
             "actuator_command_semantics": "direct_recorded_values_v1",
             "wheel_duration_source": "recorded_simulation_time",
             "servo_reference_velocity_deg_s": servo_reference_velocity_deg_s,
+            "plan_integrity": {
+                "input_step_count": len(normalized_steps),
+                "input_step_indices": input_step_indices,
+                "required_step_indices": required_step_indices,
+                "represented_step_indices": represented_step_indices,
+                "missing_required_step_indices": sorted(set(required_step_indices) - set(represented_step_indices)),
+                "event_count": len(events),
+                "segment_count": len(segments),
+            },
         },
     )
     plan.plan_sha256 = plan_fingerprint(plan)
     return plan
+
+
+def _recorded_servo_completion_policy(step: dict[str, Any], targets: dict[str, float]) -> dict[str, Any]:
+    """Use the recorded loaded endpoint as contact-load evidence, never as a target rewrite."""
+
+    actual = dict(dict(step.get("sim_state_after", {}) or {}).get("actual_joint_state", {}) or {})
+    actual_servos = dict(actual.get("servos", {}) or {})
+    target_state = dict(dict(step.get("sim_state_after", {}) or {}).get("target_joint_state", {}) or {})
+    recorded_targets = dict(target_state.get("servos", {}) or {})
+    residuals: dict[str, float] = {}
+    for name in targets:
+        actual_row = actual_servos.get(name, {})
+        target_row = recorded_targets.get(name, {})
+        if not isinstance(actual_row, dict) or not isinstance(target_row, dict):
+            continue
+        measured = actual_row.get("deg")
+        expected = target_row.get("target_actual_deg", target_row.get("actual_target_deg"))
+        try:
+            if measured is not None and expected is not None:
+                residuals[name] = float(measured) - float(expected)
+        except (TypeError, ValueError):
+            continue
+    recorded_max = max([abs(value) for value in residuals.values()] or [0.0])
+    # 1 degree remains the normal threshold.  Real formal-replay measurements
+    # showed that a 0.5 degree margin sat on the edge of normal contact jitter,
+    # so loaded endpoints use a measured 0.75 degree margin.  The independent
+    # hard 3 degree safety ceiling is unchanged.
+    tolerance = min(3.0, max(1.0, recorded_max + 0.75))
+    return {
+        "servo_tolerance_deg": tolerance,
+        "recorded_servo_residual_deg": residuals,
+    }
+
+
+def validate_plan_integrity(
+    plan: PlaybackPlan,
+    *,
+    expected_plan_sha256: str = "",
+    expected_event_count: int | None = None,
+    expected_segment_count: int | None = None,
+) -> dict[str, Any]:
+    actual_sha = plan_fingerprint(plan)
+    integrity = dict(plan.timing.get("plan_integrity", {}) or {})
+    missing = [int(value) for value in list(integrity.get("missing_required_step_indices", []) or [])]
+    errors: list[str] = []
+    if not plan.events:
+        errors.append("plan is empty")
+    if not plan.segments:
+        errors.append("plan has no segments")
+    if expected_event_count is not None and len(plan.events) != int(expected_event_count):
+        errors.append(f"event count mismatch expected={int(expected_event_count)} decoded={len(plan.events)}")
+    if expected_segment_count is not None and len(plan.segments) != int(expected_segment_count):
+        errors.append(f"segment count mismatch expected={int(expected_segment_count)} decoded={len(plan.segments)}")
+    if expected_plan_sha256 and actual_sha != str(expected_plan_sha256):
+        errors.append(f"plan sha mismatch expected={expected_plan_sha256} decoded={actual_sha}")
+    if missing:
+        errors.append(f"missing required step boundaries: {missing}")
+    for index, segment in enumerate(plan.segments):
+        start = int(segment.event_start_index)
+        stop = start + int(segment.event_count)
+        if start < 0 or stop > len(plan.events) or stop < start:
+            errors.append(f"segment {index} event range is invalid: {start}:{stop}/{len(plan.events)}")
+            break
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "plan_sha256": actual_sha,
+        "event_count": len(plan.events),
+        "segment_count": len(plan.segments),
+        "input_step_count": int(integrity.get("input_step_count", plan.total_steps) or 0),
+        "represented_step_indices": list(integrity.get("represented_step_indices", []) or []),
+        "missing_required_step_indices": missing,
+    }
 
 
 def _explicit_wait_duration(command: str) -> float:
@@ -429,6 +529,20 @@ def plan_fingerprint(plan: PlaybackPlan) -> str:
             }
             for event in plan.events
         ],
+        "segments": [
+            {
+                "segment_index": int(segment.segment_index),
+                "source_step": int(segment.source_step),
+                "event_start_index": int(segment.event_start_index),
+                "event_count": int(segment.event_count),
+                "servo_tolerance_deg": round(float(segment.servo_tolerance_deg), 9),
+                "recorded_servo_residual_deg": {
+                    name: round(float(value), 9)
+                    for name, value in sorted(segment.recorded_servo_residual_deg.items())
+                },
+            }
+            for segment in plan.segments
+        ],
     }
     text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -440,6 +554,8 @@ def playback_plan_to_payload(plan: PlaybackPlan) -> dict[str, Any]:
         "label": str(plan.label or ""),
         "final_time_s": float(plan.final_time_s),
         "plan_sha256": plan.plan_sha256 or plan_fingerprint(plan),
+        "declared_event_count": len(plan.events),
+        "declared_segment_count": len(plan.segments),
         "source_sha256": str(plan.source_sha256 or ""),
         "profile": str(plan.profile or "raw"),
         "total_steps": int(plan.total_steps),
@@ -466,6 +582,8 @@ def playback_plan_to_payload(plan: PlaybackPlan) -> dict[str, Any]:
                 "explicit_hold_s": float(segment.explicit_hold_s),
                 "implicit_idle_before_s": float(segment.implicit_idle_before_s),
                 "gap_reason": str(segment.gap_reason),
+                "servo_tolerance_deg": float(segment.servo_tolerance_deg),
+                "recorded_servo_residual_deg": dict(segment.recorded_servo_residual_deg),
             }
             for segment in plan.segments
         ],
@@ -558,6 +676,11 @@ def playback_plan_from_payload(payload: dict[str, Any]) -> PlaybackPlan:
             explicit_hold_s=float(row.get("explicit_hold_s", 0.0) or 0.0),
             implicit_idle_before_s=float(row.get("implicit_idle_before_s", 0.0) or 0.0),
             gap_reason=str(row.get("gap_reason", "none") or "none"),
+            servo_tolerance_deg=float(row.get("servo_tolerance_deg", 1.0) or 1.0),
+            recorded_servo_residual_deg={
+                str(name): float(value)
+                for name, value in dict(row.get("recorded_servo_residual_deg", {}) or {}).items()
+            },
         )
         for index, row in enumerate(list(data.get("segments", []) or []))
         if isinstance(row, dict)
@@ -587,9 +710,10 @@ class SimTimePlaybackService:
         self.max_events_per_step = max(1, int(max_events_per_step))
         self.plan: PlaybackPlan | None = None
         self.plan_id = ""
+        self.request_id = ""
+        self.worker_session_id = ""
         self.active = False
         self.paused = False
-        self.speed_scale_paused = False
         self.started = False
         self.index = 0
         self.events_sent = 0
@@ -626,6 +750,23 @@ class SimTimePlaybackService:
         self.resume_servo_motion_pending = False
         self.segment_best_servo_error_deg = float("inf")
         self.segment_last_servo_improvement_elapsed_s = 0.0
+        self.first_command_applied = False
+        self.first_command_applied_sim_time_s = 0.0
+        self.first_command_applied_sim_step = 0
+        self.first_motion_planned_s = 0.0
+        self.servo_residual_warnings: list[dict[str, Any]] = []
+        self.contact_residual_grace_s = 0.25
+        self.contact_residual_stable_s = 0.10
+        # Ordinary out-of-tolerance stalls still fail after 0.75 s.  Once a
+        # loaded joint has entered its recording-derived contact tolerance,
+        # allow a separate bounded window for the pre-entry transient to leave
+        # the 0.10 s stability history.
+        self.contact_residual_grace_cap_s = 1.50
+        self.segment_last_servo_error_deg: float | None = None
+        self.segment_last_servo_change_elapsed_s = 0.0
+        self.segment_last_servo_worsening_elapsed_s = 0.0
+        self.segment_contact_within_tolerance_since_s: float | None = None
+        self.segment_contact_error_history: list[tuple[float, float]] = []
         # A genuinely stalled actuator now fails quickly instead of making a
         # short command look like a multi-second UI/playback hang.
         self.servo_stall_window_s = 0.75
@@ -639,13 +780,16 @@ class SimTimePlaybackService:
         current_wall_time_s: float,
         start_delay_sim_s: float = 0.0,
         plan_id: str = "",
+        request_id: str = "",
+        worker_session_id: str = "",
     ) -> bool:
         self.plan = copy.deepcopy(plan)
         self.plan.plan_sha256 = self.plan.plan_sha256 or plan_fingerprint(self.plan)
         self.plan_id = str(plan_id or self.plan.plan_sha256[:16])
+        self.request_id = str(request_id or "")
+        self.worker_session_id = str(worker_session_id or "")
         self.active = bool(self.plan.events)
         self.paused = False
-        self.speed_scale_paused = False
         self.started = False
         self.index = 0
         self.events_sent = 0
@@ -687,6 +831,17 @@ class SimTimePlaybackService:
         self.resume_servo_motion_pending = False
         self.segment_best_servo_error_deg = float("inf")
         self.segment_last_servo_improvement_elapsed_s = 0.0
+        self.first_command_applied = False
+        self.first_command_applied_sim_time_s = 0.0
+        self.first_command_applied_sim_step = 0
+        motion_events = [event for event in self.plan.events if not _is_timing_only_command(event.command)]
+        self.first_motion_planned_s = float(motion_events[0].time_s) if motion_events else 0.0
+        self.servo_residual_warnings = []
+        self.segment_last_servo_error_deg = None
+        self.segment_last_servo_change_elapsed_s = 0.0
+        self.segment_last_servo_worsening_elapsed_s = 0.0
+        self.segment_contact_within_tolerance_since_s = None
+        self.segment_contact_error_history = []
         first = self.plan.events[0] if self.plan.events else None
         self.progress = PlaybackProgress(
             playback_state=PlaybackState.PREPARING.value if self.active else PlaybackState.ERROR.value,
@@ -733,10 +888,10 @@ class SimTimePlaybackService:
             if hasattr(adapter, "apply_motion_batch"):
                 adapter.apply_motion_batch(
                     {
-                        "batch_id": f"playback-speed-resume-{self.plan_id}-{uuid.uuid4().hex[:8]}",
+                        "batch_id": f"playback-resume-{self.plan_id}-{uuid.uuid4().hex[:8]}",
                         "source": "playback",
                         "servo_targets_deg": {},
-                        "wheel_base_velocity_rad_s": dict(self.paused_wheel_state),
+                        "wheel_targets_rad_s": dict(self.paused_wheel_state),
                     }
                 )
             else:
@@ -839,14 +994,87 @@ class SimTimePlaybackService:
             if not self.segment_active:
                 if elapsed + 1.0e-9 < self.next_segment_start_elapsed_s:
                     return
-                self._start_segment(adapter, segment, elapsed=elapsed, sim_time=sim_time, wall_time=wall_time)
+                self._start_segment(
+                    adapter,
+                    segment,
+                    elapsed=elapsed,
+                    sim_time=sim_time,
+                    current_sim_step=current_sim_step,
+                    wall_time=wall_time,
+                )
 
             segment_elapsed = max(0.0, elapsed - self.segment_start_elapsed_s)
             servo_planned_done = segment_elapsed + 1.0e-9 >= float(segment.servo_duration_s)
-            servo_done, errors = self._servo_targets_complete(adapter, segment.servo_targets) if servo_planned_done else (False, {})
+            servo_done, errors = (
+                self._servo_targets_complete(
+                    adapter,
+                    segment.servo_targets,
+                    tolerance_deg=float(segment.servo_tolerance_deg),
+                )
+                if servo_planned_done
+                else (False, {})
+            )
             if not segment.servo_targets:
                 servo_done = True
             self.current_servo_errors = errors
+            max_error_now = max([abs(float(value)) for value in errors.values()] or [0.0])
+            if any(not math.isfinite(float(value)) for value in errors.values()):
+                self.last_error = (
+                    f"invalid_joint_state: non-finite servo error step={segment.source_step} "
+                    f"segment={segment.segment_index} errors={errors}"
+                )
+                self._finish(
+                    adapter,
+                    success=False,
+                    reason="invalid_joint_state",
+                    current_sim_time_s=sim_time,
+                    current_wall_time_s=wall_time,
+                )
+                return
+            previous_error = self.segment_last_servo_error_deg
+            if previous_error is None or abs(max_error_now - previous_error) > self.servo_improvement_epsilon_deg:
+                self.segment_last_servo_change_elapsed_s = float(elapsed)
+            if previous_error is not None and max_error_now > previous_error + self.servo_improvement_epsilon_deg:
+                self.segment_last_servo_worsening_elapsed_s = float(elapsed)
+            self.segment_last_servo_error_deg = max_error_now
+            contact_candidate = (
+                servo_done
+                and max_error_now > self.servo_position_tolerance_deg
+                and max_error_now <= float(segment.servo_tolerance_deg)
+                and bool(segment.recorded_servo_residual_deg)
+            )
+            if contact_candidate:
+                if self.segment_contact_within_tolerance_since_s is None:
+                    self.segment_contact_within_tolerance_since_s = float(elapsed)
+            else:
+                self.segment_contact_within_tolerance_since_s = None
+            if servo_planned_done and segment.recorded_servo_residual_deg:
+                self.segment_contact_error_history.append((float(elapsed), max_error_now))
+                window_start = float(elapsed) - self.contact_residual_stable_s
+                while len(self.segment_contact_error_history) > 1 and self.segment_contact_error_history[1][0] <= window_start:
+                    self.segment_contact_error_history.pop(0)
+            contact_extension = max(0.0, segment_elapsed - float(segment.servo_duration_s))
+            contact_window_errors = [value for _at, value in self.segment_contact_error_history]
+            contact_window_ready = bool(
+                len(self.segment_contact_error_history) >= 2
+                and self.segment_contact_error_history[-1][0] - self.segment_contact_error_history[0][0]
+                >= self.contact_residual_stable_s * 0.90
+            )
+            # Contact-loaded articulated joints can alternate by a fraction of
+            # a degree at 120 Hz even though their position residual is bounded.
+            # Treat the position as stable only when a complete recent window
+            # stays under the independent 3 degree cap and has no material net
+            # worsening.  The current sample must still be inside the narrower
+            # recording-derived effective tolerance.
+            contact_window_cap = min(3.0, float(segment.servo_tolerance_deg) + 0.5)
+            contact_stable = (
+                contact_candidate
+                and contact_window_ready
+                and max(contact_window_errors or [float("inf")]) <= contact_window_cap
+                and contact_window_errors[-1] <= contact_window_errors[0] + 0.25
+            )
+            if contact_candidate:
+                servo_done = bool(contact_extension >= self.contact_residual_grace_s and contact_stable)
             wheel_done = segment_elapsed + 1.0e-9 >= float(segment.wheel_active_duration_s)
             hold_done = segment_elapsed + 1.0e-9 >= float(segment.explicit_hold_s)
             segment_done = servo_done and wheel_done and hold_done
@@ -863,14 +1091,51 @@ class SimTimePlaybackService:
                 if servo_planned_done and segment.servo_targets:
                     extension = max(0.0, segment_elapsed - float(segment.servo_duration_s))
                     max_error = max([abs(float(value)) for value in errors.values()] or [0.0])
+                    within_recorded_contact_tolerance = (
+                        max_error > self.servo_position_tolerance_deg
+                        and max_error <= float(segment.servo_tolerance_deg)
+                        and bool(segment.recorded_servo_residual_deg)
+                    )
+                    if within_recorded_contact_tolerance:
+                        if extension >= self.contact_residual_grace_cap_s and not contact_stable:
+                            self.last_error = (
+                                f"actuator_unstable: recorded contact residual did not stabilize; "
+                                f"step={segment.source_step} segment={segment.segment_index} "
+                                f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f}"
+                            )
+                            self._finish(
+                                adapter,
+                                success=False,
+                                reason="actuator_unstable",
+                                current_sim_time_s=sim_time,
+                                current_wall_time_s=wall_time,
+                            )
+                            return
+                        self.last_info = (
+                            f"contact_residual_grace step={segment.source_step} segment={segment.segment_index} "
+                            f"extension={extension:.3f}s stable={contact_stable} error={max_error:.3f}deg"
+                        )
+                        self.progress.command_phase = "contact_residual_grace"
+                        return
                     if max_error + self.servo_improvement_epsilon_deg < self.segment_best_servo_error_deg:
                         self.segment_best_servo_error_deg = max_error
                         self.segment_last_servo_improvement_elapsed_s = float(elapsed)
                     stalled_for = max(0.0, float(elapsed) - self.segment_last_servo_improvement_elapsed_s)
                     if extension > 0.0 and stalled_for >= self.servo_stall_window_s:
+                        worst_joint = max(errors, key=lambda name: abs(float(errors[name]))) if errors else "unknown"
+                        command_target = segment.servo_targets.get(worst_joint)
+                        actual_target = (
+                            float(adapter.command_to_actual_target_deg(worst_joint, command_target))
+                            if command_target is not None and hasattr(adapter, "command_to_actual_target_deg")
+                            else command_target
+                        )
+                        actual_deg = None if actual_target is None else float(actual_target) + float(errors.get(worst_joint, 0.0))
                         self.last_error = (
                             f"actuator_limit: servo target did not improve for {stalled_for:.3f}s sim; "
-                            f"segment={segment.segment_index} max_error_deg={max_error:.6f}"
+                            f"step={segment.source_step} segment={segment.segment_index} joint={worst_joint} "
+                            f"requested_command_deg={command_target} expected_actual_deg={actual_target} "
+                            f"measured_actual_deg={actual_deg} error_deg={errors.get(worst_joint)} "
+                            f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f}"
                         )
                         self._finish(
                             adapter,
@@ -884,6 +1149,24 @@ class SimTimePlaybackService:
                     self.progress.command_phase = "servo_completion_extension"
                 return
 
+            max_completed_error = max([abs(float(value)) for value in errors.values()] or [0.0])
+            if max_completed_error > self.servo_position_tolerance_deg:
+                warning = {
+                    "step_index": int(segment.source_step),
+                    "segment_index": int(segment.segment_index),
+                    "max_error_deg": max_completed_error,
+                    "effective_tolerance_deg": float(segment.servo_tolerance_deg),
+                    "recorded_residual_deg": dict(segment.recorded_servo_residual_deg),
+                    "measured_errors_deg": dict(errors),
+                    "stability_basis": "bounded_recent_contact_residual_window",
+                    "stability_window_s": float(self.contact_residual_stable_s),
+                    "stability_window_cap_deg": float(contact_window_cap),
+                }
+                self.servo_residual_warnings.append(warning)
+                self.last_info = (
+                    f"contact-load residual accepted step={segment.source_step} segment={segment.segment_index} "
+                    f"error={max_completed_error:.3f}deg tolerance={segment.servo_tolerance_deg:.3f}deg"
+                )
             self._finish_segment(adapter, segment, elapsed=elapsed, sim_time=sim_time, wall_time=wall_time, servo_errors=errors)
             self.segment_index += 1
             self.segment_active = False
@@ -909,7 +1192,16 @@ class SimTimePlaybackService:
             # No UI/IPC/progress barrier: loop and start the next segment in
             # this same scheduler cycle (zero simulation ticks of fixed pad).
 
-    def _start_segment(self, adapter: Any, segment: PlaybackSegment, *, elapsed: float, sim_time: float, wall_time: float) -> None:
+    def _start_segment(
+        self,
+        adapter: Any,
+        segment: PlaybackSegment,
+        *,
+        elapsed: float,
+        sim_time: float,
+        current_sim_step: int,
+        wall_time: float,
+    ) -> None:
         if self.plan is None:
             return
         if segment.servo_targets:
@@ -918,11 +1210,9 @@ class SimTimePlaybackService:
                 [abs(float(target) - float(current_commands.get(name, 0.0))) for name, target in segment.servo_targets.items()]
                 or [0.0]
             )
-            reference = float(getattr(getattr(adapter, "speed_scale", None), "reference", MOTION_REFERENCE).servo_reference_velocity_deg_s)
-            effective = reference
-            speed_scale = getattr(adapter, "speed_scale", None)
-            if speed_scale is not None and hasattr(speed_scale, "servo_velocity"):
-                effective = float(speed_scale.servo_velocity()[1])
+            reference = float(getattr(getattr(adapter, "motion_reference", MOTION_REFERENCE), "servo_reference_velocity_deg_s", SERVO_REFERENCE_VELOCITY_DEG_S))
+            velocity_limit = getattr(getattr(adapter, "motion_reference", MOTION_REFERENCE), "servo_velocity_limit_deg_s", None)
+            effective = reference if velocity_limit is None else min(reference, float(velocity_limit))
             segment.servo_base_duration_s = servo_delta / max(reference, 1.0e-9)
             segment.servo_duration_s = servo_delta / max(effective, 1.0e-9)
         self.segment_active = True
@@ -930,6 +1220,11 @@ class SimTimePlaybackService:
         self.segment_wheel_stopped = False
         self.segment_best_servo_error_deg = float("inf")
         self.segment_last_servo_improvement_elapsed_s = float(elapsed)
+        self.segment_last_servo_error_deg = None
+        self.segment_last_servo_change_elapsed_s = float(elapsed)
+        self.segment_last_servo_worsening_elapsed_s = float(elapsed)
+        self.segment_contact_within_tolerance_since_s = None
+        self.segment_contact_error_history = []
         self.segment_start_joint_positions = self._joint_positions_by_name(adapter)
         start = int(segment.event_start_index)
         stop = start + int(segment.event_count)
@@ -942,8 +1237,7 @@ class SimTimePlaybackService:
                     "batch_id": f"playback-{self.plan_id}-{segment.segment_index}-{uuid.uuid4().hex[:8]}",
                     "source": "playback",
                     "servo_targets_deg": dict(segment.servo_targets),
-                    "wheel_base_velocity_rad_s": dict(segment.wheel_base_velocity),
-                    "speed_percent_snapshot": float(getattr(getattr(adapter, "speed_scale", None), "speed_percent", 100.0)),
+                    "wheel_targets_rad_s": dict(segment.wheel_base_velocity),
                     "recording_metadata": {
                         "plan_id": self.plan_id,
                         "source_step": int(segment.source_step),
@@ -988,6 +1282,11 @@ class SimTimePlaybackService:
             self.index += 1
             self.events_sent += 1
 
+        if not self.first_command_applied and any(not _is_timing_only_command(event.command) for event in segment_events):
+            self.first_command_applied = True
+            self.first_command_applied_sim_time_s = float(sim_time)
+            self.first_command_applied_sim_step = int(current_sim_step)
+
         if segment.servo_targets and hasattr(adapter, "begin_servo_tracking"):
             adapter.begin_servo_tracking(segment.servo_targets)
 
@@ -1001,7 +1300,7 @@ class SimTimePlaybackService:
                             "batch_id": f"playback-resume-{self.plan_id}-{segment.segment_index}",
                             "source": "playback",
                             "servo_targets_deg": {},
-                            "wheel_base_velocity_rad_s": dict(segment.wheel_base_velocity),
+                            "wheel_targets_rad_s": dict(segment.wheel_base_velocity),
                         }
                     )
                 else:
@@ -1010,14 +1309,20 @@ class SimTimePlaybackService:
                 self.wheel_stopped_for_channel_completion = False
         self.last_info = f"worker segment {segment.segment_index} started"
 
-    def _servo_targets_complete(self, adapter: Any, targets: dict[str, float]) -> tuple[bool, dict[str, float]]:
+    def _servo_targets_complete(
+        self,
+        adapter: Any,
+        targets: dict[str, float],
+        *,
+        tolerance_deg: float | None = None,
+    ) -> tuple[bool, dict[str, float]]:
         if not targets:
             return True, {}
         try:
             actual_state = adapter.get_actual_joint_state()
             actual_servos = dict(actual_state.get("servos", {}) or {})
         except Exception:
-            return True, {}
+            return False, {"__joint_state_unreadable__": float("nan")}
         errors: dict[str, float] = {}
         any_measured = False
         for name, command_target in targets.items():
@@ -1036,8 +1341,9 @@ class SimTimePlaybackService:
             except (TypeError, ValueError):
                 continue
         if not any_measured:
-            return True, errors
-        return bool(errors) and max(abs(value) for value in errors.values()) <= self.servo_position_tolerance_deg, errors
+            return False, {"__joint_state_unreadable__": float("nan")}
+        tolerance = self.servo_position_tolerance_deg if tolerance_deg is None else min(3.0, max(1.0, float(tolerance_deg)))
+        return bool(errors) and max(abs(value) for value in errors.values()) <= tolerance, errors
 
     def _finish_segment(
         self,
@@ -1223,12 +1529,17 @@ class SimTimePlaybackService:
             "scheduled": bool(self.active and not self.started),
             "started": bool(self.started),
             "plan_id": self.plan_id,
+            "request_id": self.request_id,
+            "worker_session_id": self.worker_session_id,
             "plan_sha256": str(plan.plan_sha256 if plan is not None else ""),
             "source_sha256": str(plan.source_sha256 if plan is not None else ""),
             "label": str(plan.label if plan is not None else ""),
             "path": str(plan.path) if plan is not None and plan.path is not None else "",
             "index": int(self.index),
             "count": int(count),
+            "event_count": int(count),
+            "segment_count": len(plan.segments) if plan is not None else 0,
+            "segment_index": int(self.segment_index),
             "events_sent": int(self.events_sent),
             "final_time_s": float(plan.final_time_s if plan is not None else 0.0),
             "sim_elapsed_s": float(elapsed),
@@ -1244,6 +1555,13 @@ class SimTimePlaybackService:
             "stop_reason": self.stop_reason,
             "last_error": self.last_error,
             "last_info": self.last_info,
+            "first_motion_planned_s": float(self.first_motion_planned_s),
+            "first_command_applied": bool(self.first_command_applied),
+            "first_command_applied_sim_time_s": float(self.first_command_applied_sim_time_s),
+            "first_command_applied_sim_step": int(self.first_command_applied_sim_step),
+            "current_servo_errors": dict(self.current_servo_errors),
+            "servo_residual_warning_count": len(self.servo_residual_warnings),
+            "last_servo_residual_warning": dict(self.servo_residual_warnings[-1]) if self.servo_residual_warnings else {},
             "progress_detail": self.progress.to_dict(),
             "timing": {} if compact else copy.deepcopy(self.timing_trace),
         }
@@ -1415,9 +1733,13 @@ class PlaybackManager:
         self.max_events_per_update = 50
         self.worker_managed = False
         self.worker_plan_id = ""
+        self.worker_request_id = ""
+        self.worker_session_id = ""
         self.worker_acknowledged = False
+        self.start_requested = False
         self.worker_requested_at = 0.0
-        self.worker_ack_timeout_s = 30.0
+        self.worker_ack_timeout_s = 10.0
+        self.first_command_watchdog_s = 2.0
         self.dispatch_clock = "wall_clock"
         self.max_dispatch_jitter_s = 0.0
         self.progress = PlaybackProgress()
@@ -1463,14 +1785,27 @@ class PlaybackManager:
             return self.start_plan(plan, start_delay_s=start_delay_s)
         plan = copy.deepcopy(plan)
         plan.plan_sha256 = plan.plan_sha256 or plan_fingerprint(plan)
-        playback_request_id = f"{plan.plan_sha256[:8]}-{uuid.uuid4().hex[:16]}"
+        integrity = validate_plan_integrity(
+            plan,
+            expected_plan_sha256=plan.plan_sha256,
+            expected_event_count=len(plan.events),
+            expected_segment_count=len(plan.segments),
+        )
+        if not integrity["ok"]:
+            self.last_error = "Playback plan integrity failed: " + "; ".join(integrity["errors"])
+            self.last_info = self.last_error
+            return False
+        playback_request_id = uuid.uuid4().hex
+        plan_id = f"{plan.plan_sha256[:12]}-{uuid.uuid4().hex[:12]}"
         if not self._enter_operation(label):
             return False
         try:
             self.controller.transport.start_playback_plan(
                 plan,
                 start_delay_sim_s=max(0.0, float(start_delay_s)),
-                plan_id=playback_request_id,
+                plan_id=plan_id,
+                request_id=playback_request_id,
+                plan_sha256=plan.plan_sha256,
             )
         except Exception as exc:
             self.last_error = str(exc)
@@ -1479,29 +1814,32 @@ class PlaybackManager:
             return False
         self.plan = plan
         self.worker_managed = True
-        self.worker_plan_id = playback_request_id
+        self.worker_plan_id = plan_id
+        self.worker_request_id = playback_request_id
+        self.worker_session_id = ""
         self.worker_acknowledged = False
+        self.start_requested = True
         self.worker_requested_at = time.monotonic()
         self.dispatch_clock = "simulation_time"
-        self.active = True
+        self.active = False
         self.paused = False
         self.index = 0
         self.events_sent = 0
         self.scheduled_start_at = 0.0
         self.start_time = 0.0
-        self.started_at = time.time()
+        self.started_at = 0.0
         self.pause_started = 0.0
         self.completed_at = 0.0
         self.stop_reason = ""
         self.last_error = ""
-        self.last_info = f"worker playback scheduled: {label} ({len(plan.events)} events)"
+        self.last_info = f"worker playback start requested: {label} ({len(plan.events)} events)"
         self.last_event_command = ""
         self.last_event_time = 0.0
         self.max_dispatch_jitter_s = 0.0
         first = plan.events[0]
         self.progress = PlaybackProgress(
-            playback_state=PlaybackState.PREPARING.value,
-            status_text="Waiting for simulation ready...",
+            playback_state=PlaybackState.START_REQUESTED.value,
+            status_text="Start requested; waiting for worker acceptance...",
             current_step_index=int(first.source_step or 0),
             total_steps=int(plan.total_steps),
             current_step_id=first.source_step_id,
@@ -1509,7 +1847,7 @@ class PlaybackManager:
             total_commands=len(plan.events),
             playback_profile=plan.profile,
             selected_playback=plan.selected_playback,
-            command_phase="waiting",
+            command_phase="start_handshake",
         )
         self.timing_trace = copy.deepcopy(plan.timing)
         return True
@@ -1533,7 +1871,10 @@ class PlaybackManager:
             self.last_info = self.last_error
             self.worker_managed = False
             self.worker_plan_id = ""
+            self.worker_request_id = ""
+            self.worker_session_id = ""
             self.worker_acknowledged = False
+            self.start_requested = False
             self.worker_requested_at = 0.0
             self.dispatch_clock = "wall_clock"
             self.progress = PlaybackProgress(
@@ -1564,7 +1905,10 @@ class PlaybackManager:
         self.last_error = ""
         self.worker_managed = False
         self.worker_plan_id = ""
+        self.worker_request_id = ""
+        self.worker_session_id = ""
         self.worker_acknowledged = False
+        self.start_requested = False
         self.worker_requested_at = 0.0
         self.dispatch_clock = "wall_clock"
         self.max_dispatch_jitter_s = 0.0
@@ -1644,36 +1988,94 @@ class PlaybackManager:
             self.stop(silent=True, reason="complete")
             self.last_info = "playback complete"
 
-    def sync_worker_status(self, status: dict[str, Any] | None = None) -> None:
+    def sync_worker_status(
+        self,
+        status: dict[str, Any] | None = None,
+        *,
+        operation_ack: dict[str, Any] | None = None,
+        worker_status_age_s: float = 0.0,
+    ) -> None:
         if not self.worker_managed:
             return
         if status is None:
             latest = getattr(self.controller, "latest_sim_status", {}) or {}
             status = latest.get("worker_playback", latest.get("playback_service", {}))
-        if not isinstance(status, dict) or not status:
-            return
-        if self.worker_plan_id:
-            status_plan_id = str(status.get("plan_id", "") or "")
-            if status_plan_id != self.worker_plan_id:
-                elapsed = time.monotonic() - float(self.worker_requested_at or time.monotonic())
-                if elapsed < float(self.worker_ack_timeout_s):
-                    self.active = True
+            operation_ack = dict(latest.get("last_operation_ack", {}) or {})
+        status = dict(status or {})
+        ack = dict(operation_ack or {})
+        now = time.monotonic()
+
+        if self.start_requested:
+            ack_matches = (
+                str(ack.get("operation", "") or "") == "start_playback_plan"
+                and str(ack.get("request_id", "") or "") == self.worker_request_id
+            )
+            if ack_matches:
+                accepted = bool(ack.get("accepted", False))
+                identity_ok = (
+                    str(ack.get("plan_id", "") or "") == self.worker_plan_id
+                    and str(ack.get("plan_sha256", "") or "") == str(self.plan.plan_sha256 if self.plan else "")
+                    and int(ack.get("event_count", -1) or -1) == len(self.plan.events if self.plan else [])
+                    and int(ack.get("segment_count", -1) or -1) == len(self.plan.segments if self.plan else [])
+                    and bool(str(ack.get("worker_session_id", "") or ""))
+                )
+                if not accepted or not identity_ok:
+                    rejection = str(ack.get("rejection_reason", ack.get("error", "")) or "worker rejected playback")
+                    if accepted and not identity_ok:
+                        rejection = "worker acceptance identity/count mismatch"
+                    self.active = False
                     self.paused = False
-                    self.last_info = f"waiting for worker playback acknowledgement: plan={self.worker_plan_id}"
+                    self.start_requested = False
+                    self.worker_managed = False
+                    self.stop_reason = "start_rejected"
+                    self.last_error = rejection
+                    self.last_info = f"Playback start failed: {rejection}"
+                    self.progress.playback_state = PlaybackState.ERROR.value
+                    self.progress.status_text = "Error"
+                    self.progress.last_error = rejection
+                    self._finish_operation()
                     return
+                self.worker_acknowledged = True
+                self.start_requested = False
+                self.worker_session_id = str(ack.get("worker_session_id", "") or "")
+                self.progress.playback_state = PlaybackState.PREPARING.value
+                self.progress.status_text = "Worker accepted; preparing..."
+                self.progress.command_phase = "accepted_waiting_for_start"
+                self.last_info = f"worker accepted playback plan={self.worker_plan_id}"
+            elif now - float(self.worker_requested_at or now) >= float(self.worker_ack_timeout_s):
                 self.active = False
                 self.paused = False
+                self.start_requested = False
                 self.worker_managed = False
                 self.stop_reason = "worker_ack_timeout"
                 self.last_error = (
-                    f"Worker playback did not acknowledge plan {self.worker_plan_id} "
+                    f"Worker did not explicitly accept request {self.worker_request_id} "
                     f"within {self.worker_ack_timeout_s:.1f}s."
                 )
                 self.last_info = self.last_error
-                self.plan = None
+                self.progress.playback_state = PlaybackState.ERROR.value
+                self.progress.status_text = "Error"
+                self.progress.last_error = self.last_error
                 self._finish_operation()
                 return
-            self.worker_acknowledged = True
+            else:
+                self.active = False
+                self.paused = False
+                return
+
+        if not self.worker_acknowledged or not status:
+            return
+        if worker_status_age_s > 3.0:
+            self.last_info = f"waiting for fresh worker playback status ({worker_status_age_s:.2f}s old)"
+            return
+        if (
+            str(status.get("plan_id", "") or "") != self.worker_plan_id
+            or str(status.get("request_id", "") or "") != self.worker_request_id
+            or str(status.get("worker_session_id", "") or "") != self.worker_session_id
+        ):
+            self.last_info = "ignoring stale playback status from another request/session"
+            return
+
         self.active = bool(status.get("active", False))
         self.paused = bool(status.get("paused", False))
         self.index = int(status.get("index", self.index) or 0)
@@ -1684,16 +2086,44 @@ class PlaybackManager:
         self.stop_reason = str(status.get("stop_reason", self.stop_reason) or "")
         self.last_error = str(status.get("last_error", self.last_error) or "")
         self.last_info = str(status.get("last_info", self.last_info) or "")
-        self.worker_plan_id = str(status.get("plan_id", self.worker_plan_id) or "")
         self.dispatch_clock = str(status.get("dispatch_clock", self.dispatch_clock) or self.dispatch_clock)
         self.max_dispatch_jitter_s = float(status.get("max_dispatch_jitter_s", self.max_dispatch_jitter_s) or 0.0)
+        if bool(status.get("started", False)) and not self.started_at:
+            self.started_at = time.time()
         if isinstance(status.get("progress_detail"), dict):
             self.progress = PlaybackProgress.from_dict(status.get("progress_detail"))
         if isinstance(status.get("timing"), dict):
             self.timing_trace = copy.deepcopy(status.get("timing"))
+
+        first_deadline = float(status.get("first_motion_planned_s", 0.0) or 0.0) + float(self.first_command_watchdog_s)
+        if (
+            bool(status.get("started", False))
+            and self.active
+            and not bool(status.get("first_command_applied", False))
+            and float(status.get("sim_elapsed_s", 0.0) or 0.0) > first_deadline
+        ):
+            self.last_error = (
+                f"First motion command was not applied within {self.first_command_watchdog_s:.1f}s "
+                f"of its planned simulation time."
+            )
+            self.last_info = self.last_error
+            self.progress.playback_state = PlaybackState.ERROR.value
+            self.progress.status_text = "Error"
+            self.progress.last_error = self.last_error
+            try:
+                self.controller.transport.stop_playback(reason="first_command_watchdog", stop_wheels=True)
+            except Exception:
+                pass
+            self.active = False
+            self.worker_managed = False
+            self.stop_reason = "first_command_watchdog"
+            self._finish_operation()
+            return
+
         if not self.active and self.stop_reason:
             self.worker_managed = False
             self.worker_acknowledged = False
+            self.start_requested = False
             self.scheduled_start_at = 0.0
             self._finish_operation()
 
@@ -1710,6 +2140,7 @@ class PlaybackManager:
             self.paused = False
             self.worker_managed = False
             self.worker_acknowledged = False
+            self.start_requested = False
             self.worker_requested_at = 0.0
             self.index = 0
             self.scheduled_start_at = 0.0
@@ -1803,6 +2234,7 @@ class PlaybackManager:
         starts_in_s = max(0.0, self.scheduled_start_at - now) if self.scheduled_start_at else 0.0
         return {
             "active": self.active,
+            "start_requested": bool(self.start_requested),
             "paused": self.paused,
             "scheduled": bool(self.active and self.scheduled_start_at > 0.0),
             "scheduled_start_at": self.scheduled_start_at,
@@ -1821,6 +2253,8 @@ class PlaybackManager:
             "last_info": self.last_info,
             "worker_managed": bool(self.worker_managed),
             "worker_plan_id": self.worker_plan_id,
+            "worker_request_id": self.worker_request_id,
+            "worker_session_id": self.worker_session_id,
             "worker_acknowledged": bool(self.worker_acknowledged),
             "dispatch_clock": self.dispatch_clock,
             "plan_sha256": self.plan.plan_sha256 if self.plan else "",

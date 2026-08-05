@@ -14,7 +14,6 @@ MESSAGE_TYPES = {
     "set_height",
     "set_height_respawn",
     "recalibrate_ground_reference",
-    "set_speed_scale",
     "apply_motion_batch",
     "respawn",
     "stop_wheels",

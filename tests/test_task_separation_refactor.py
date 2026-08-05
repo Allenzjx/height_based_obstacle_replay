@@ -143,7 +143,6 @@ class UiStructureTest(unittest.TestCase):
                         "Sim Connection",
                         "Run Manager",
                         "Record / Servo+Wheel",
-                        "Speed Scale",
                         "Playback",
                         "Height Generate",
                         "Combine",

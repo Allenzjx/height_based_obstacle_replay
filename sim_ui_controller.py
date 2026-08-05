@@ -155,7 +155,6 @@ class HeightReplayController:
         self.args = args
         self.no_sim = bool(getattr(args, "no_sim", False))
         self.motion_reference = load_motion_reference()
-        self.speed_percent = 100.0
         self.store = HeightVersionStore(
             getattr(args, "store_root", None) or None,
             robot_asset_path=getattr(args, "robot_usd", None),
@@ -182,6 +181,7 @@ class HeightReplayController:
             self.no_sim = True
         self.pending_height_mm: int | None = None
         self.pending_height_request_id = ""
+        self.pending_height_requested_revision = 0
         self.pending_height_with_respawn = False
         self.sim_ready = False
         self.loaded_sim_height_mm: int | None = None
@@ -211,7 +211,6 @@ class HeightReplayController:
 
         self.record_start_wall_time = 0.0
         self.record_start_sim_time: float | None = None
-        self.record_start_speed_percent = 100.0
         self.record_command_state_before: dict[str, Any] | None = None
         self.record_reference_state: dict[str, Any] | None = None
         self.record_sim_state_before: dict[str, Any] | None = None
@@ -244,6 +243,11 @@ class HeightReplayController:
         self.playback_pre_step_settle_s = max(0.0, float(getattr(args, "playback_pre_step_settle_s", 0.30)))
         self.respawn_play_settle_s = max(0.0, float(getattr(args, "respawn_play_settle_s", 0.30)))
         self.servo_wheel_last_launch_time: float | None = None
+        self.servo_wheel_staging_active = False
+        self.servo_wheel_staged_state = clone_command_state(None)
+        self.servo_wheel_staged_dirty = False
+        self.servo_wheel_last_launch_status: dict[str, Any] = {}
+        self._motion_batch_acks_merged: set[str] = set()
 
         self.playback = PlaybackManager(self)
         self.playback.set_profile(str(getattr(args, "profile", self.playback.profile) or self.playback.profile))
@@ -332,7 +336,7 @@ class HeightReplayController:
             sequence_count=self.manager.count,
             selected_step_valid=bool(selected is not None and 1 <= int(selected) <= self.manager.count),
             operation_state=self.operation.state,
-            playback_active=bool(self.playback.active),
+            playback_active=bool(self.playback.active or self.playback.start_requested),
             playback_paused=bool(self.playback.paused),
             playback_scheduled=bool(self.playback.active and self.playback.scheduled_start_at > 0.0),
         )
@@ -388,6 +392,26 @@ class HeightReplayController:
     def motion_ready(self) -> bool:
         return self.motion_readiness()[0]
 
+    def manual_motion_readiness(self, *, allow_staging: bool = False) -> tuple[bool, str]:
+        """One readiness policy for manual servo and wheel commands."""
+
+        if self.mode == MODE_E_STOP:
+            return False, "E-stop is active. Return to TEST mode before commanding motion."
+        if not self.sim_connected:
+            return False, "Simulation is disconnected."
+        if not self.runtime_ready:
+            return False, "Simulation runtime is not ready."
+        motion_ok, motion_reason = self.motion_readiness()
+        if not motion_ok:
+            return False, motion_reason or "Robot motion is not ready."
+        if self.playback.active or self.playback.start_requested:
+            return False, "Playback is active or starting."
+        if self.operation.state not in {OperationState.IDLE, OperationState.RECORDING}:
+            return False, self.operation.reason or f"Operation {self.operation.state.value} blocks manual motion."
+        if self.servo_wheel_staging_active and not allow_staging:
+            return False, "Servo-Wheel Mode is staging targets; use Launch or Cancel."
+        return True, ""
+
     def respawn_readiness(self) -> tuple[bool, str]:
         if self.no_sim:
             return True, ""
@@ -440,8 +464,9 @@ class HeightReplayController:
         if not self.no_sim:
             if not self.runtime_ready:
                 return False, "Simulation worker is not ready."
-            if not bool(self.latest_sim_status.get("grounded_reference_valid", False)):
-                return False, "Grounded respawn reference is not valid."
+            motion_ready, motion_reason = self.motion_readiness()
+            if not motion_ready:
+                return False, motion_reason or "Robot motion is not ready."
         if self.operation_busy:
             return False, self.busy_name
         playback = self.playback.status_dict()
@@ -540,7 +565,7 @@ class HeightReplayController:
             return False, self.busy_name
         if self.recording_active:
             return False, "Stop recording before switching height."
-        if self.playback.active:
+        if self.playback.active or self.playback.start_requested:
             return False, "Stop playback before switching height."
         if self.pending_step is not None or self.pending_replacement is not None:
             return False, "Accept or discard pending step before switching height."
@@ -717,21 +742,13 @@ class HeightReplayController:
         self.record_reference_state = clone_command_state(after)
         return before, after
 
-    def _motion_event_speed_metadata(
+    def _motion_event_metadata(
         self,
         before: dict[str, Any],
         after: dict[str, Any],
         *,
         batch_id: str = "",
     ) -> dict[str, Any]:
-        percent = float(self.speed_percent)
-        scale = percent / 100.0
-        servo_requested = self.motion_reference.servo_reference_velocity_deg_s * scale
-        servo_effective = (
-            servo_requested
-            if self.motion_reference.servo_velocity_limit_deg_s is None
-            else min(servo_requested, self.motion_reference.servo_velocity_limit_deg_s)
-        )
         changed_servos = {
             name: float(after["servos"].get(name, 0.0))
             for name in SERVO_JOINT_NAMES
@@ -742,25 +759,14 @@ class HeightReplayController:
             )
         }
         canonical_wheels = {name: float(after["wheels"].get(name, 0.0)) for name in WHEEL_JOINT_NAMES}
-        effective_wheels = {
-            name: max(
-                -self.motion_reference.wheel_velocity_limit_rad_s,
-                min(self.motion_reference.wheel_velocity_limit_rad_s, value * scale),
-            )
-            for name, value in canonical_wheels.items()
-        }
         return {
             "canonical_servo_target_deg": changed_servos,
             "canonical_servo_velocity_deg_s": self.motion_reference.servo_reference_velocity_deg_s,
             "canonical_wheel_velocity_rad_s": canonical_wheels,
-            "recorded_speed_percent": percent,
-            "effective_servo_velocity_deg_s": servo_effective,
-            "effective_wheel_velocity_rad_s": effective_wheels,
             "command_start_sim_time": self._current_record_sim_time(),
             "wheel_active_duration_s": None,
             "batch_id": str(batch_id or ""),
-            "speed_semantics_version": "worker-motion-executor-v1",
-            "actuator_command_semantics": "canonical-command-worker-scaled-v1",
+            "actuator_command_semantics": "fixed-100-percent-direct-v1",
         }
 
     @staticmethod
@@ -809,7 +815,6 @@ class HeightReplayController:
         derived = {name: 0.0 for name in WHEEL_JOINT_NAMES}
         effective_derived = {name: 0.0 for name in WHEEL_JOINT_NAMES}
         wheel_active_duration = {name: 0.0 for name in WHEEL_JOINT_NAMES}
-        speed_percent = float(self.record_start_speed_percent)
         wheel_velocity_history = {
             name: [float(state["wheels"].get(name, 0.0))] for name in WHEEL_JOINT_NAMES
         }
@@ -819,7 +824,7 @@ class HeightReplayController:
                     -self.motion_reference.wheel_velocity_limit_rad_s,
                     min(
                         self.motion_reference.wheel_velocity_limit_rad_s,
-                        float(state["wheels"].get(name, 0.0)) * speed_percent / 100.0,
+                        float(state["wheels"].get(name, 0.0)),
                     ),
                 )
             ]
@@ -831,10 +836,7 @@ class HeightReplayController:
             for name in WHEEL_JOINT_NAMES:
                 velocity = float(state["wheels"].get(name, 0.0))
                 derived[name] += velocity * interval
-                effective_velocity = max(
-                    -self.motion_reference.wheel_velocity_limit_rad_s,
-                    min(self.motion_reference.wheel_velocity_limit_rad_s, velocity * speed_percent / 100.0),
-                )
+                effective_velocity = max(-self.motion_reference.wheel_velocity_limit_rad_s, min(self.motion_reference.wheel_velocity_limit_rad_s, velocity))
                 effective_derived[name] += effective_velocity * interval
                 if abs(velocity) > 1.0e-12:
                     wheel_active_duration[name] += interval
@@ -844,11 +846,10 @@ class HeightReplayController:
                 value = float(state["wheels"].get(name, 0.0))
                 if not math.isclose(value, wheel_velocity_history[name][-1], abs_tol=1.0e-12):
                     wheel_velocity_history[name].append(value)
-            speed_percent = float(event.get("recorded_speed_percent", speed_percent) or speed_percent)
             for name in WHEEL_JOINT_NAMES:
                 value = max(
                     -self.motion_reference.wheel_velocity_limit_rad_s,
-                    min(self.motion_reference.wheel_velocity_limit_rad_s, float(state["wheels"].get(name, 0.0)) * speed_percent / 100.0),
+                    min(self.motion_reference.wheel_velocity_limit_rad_s, float(state["wheels"].get(name, 0.0))),
                 )
                 if not math.isclose(value, effective_wheel_velocity_history[name][-1], abs_tol=1.0e-12):
                     effective_wheel_velocity_history[name].append(value)
@@ -857,10 +858,7 @@ class HeightReplayController:
         for name in WHEEL_JOINT_NAMES:
             velocity = float(state["wheels"].get(name, 0.0))
             derived[name] += velocity * final_interval
-            effective_velocity = max(
-                -self.motion_reference.wheel_velocity_limit_rad_s,
-                min(self.motion_reference.wheel_velocity_limit_rad_s, velocity * speed_percent / 100.0),
-            )
+            effective_velocity = max(-self.motion_reference.wheel_velocity_limit_rad_s, min(self.motion_reference.wheel_velocity_limit_rad_s, velocity))
             effective_derived[name] += effective_velocity * final_interval
             if abs(velocity) > 1.0e-12:
                 wheel_active_duration[name] += final_interval
@@ -928,9 +926,7 @@ class HeightReplayController:
         }
 
         return {
-            "actuator_command_semantics": "canonical-command-worker-scaled-v1",
-            "speed_semantics_version": "worker-motion-executor-v1",
-            "recorded_speed_percent": self.record_start_speed_percent,
+            "actuator_command_semantics": "fixed-100-percent-direct-v1",
             "reference_duration_s": reference_duration_s,
             "actual_recording_duration_s": reference_duration_s,
             "wheel_active_duration_clock": "actual_recording_time",
@@ -1098,10 +1094,18 @@ class HeightReplayController:
         return self.sim_client.copy_display_command()
 
     def generate_or_update_height_obstacle(self, *, respawn: bool = False) -> str:
-        """Queue one lightweight height update; ordinary generation never takes an operation lock."""
+        """Queue one verified USD geometry transaction."""
+
+        target_operation = OperationState.RESPAWNING if respawn else OperationState.SCENE_UPDATE
+        detail = f"Updating obstacle to {self.current_height_mm} mm"
+        if not self.operation.begin(target_operation, detail=detail):
+            self._warn(f"[WARN] Cannot update obstacle: {self.operation.reason}")
+            return ""
 
         self.pending_height_mm = self.current_height_mm
         self.pending_height_request_id = uuid.uuid4().hex
+        current_revision = int(self.latest_sim_status.get("obstacle_revision", 0) or 0)
+        self.pending_height_requested_revision = current_revision + 1
         self.pending_height_with_respawn = bool(respawn)
         self.scene_update_requested_at = time.monotonic()
         self.scene_update_sent = False
@@ -1109,6 +1113,7 @@ class HeightReplayController:
             self.loaded_sim_height_mm = self.current_height_mm
             self.status = f"No-sim: current height set to {self.current_height_mm} mm."
             self.pending_height_mm = None
+            self.operation.finish(target_operation)
             return self.pending_height_request_id
         try:
             if self.sim_launch_mode == "subprocess":
@@ -1123,12 +1128,14 @@ class HeightReplayController:
                         self.sim_client.set_height_respawn(
                             self.current_height_mm,
                             request_id=self.pending_height_request_id,
+                            requested_revision=self.pending_height_requested_revision,
                             source="ui",
                         )
                     else:
                         self.sim_client.set_height_mm(
                             self.current_height_mm,
                             request_id=self.pending_height_request_id,
+                            requested_revision=self.pending_height_requested_revision,
                             source="ui",
                         )
                     self.scene_update_sent = True
@@ -1139,6 +1146,7 @@ class HeightReplayController:
         except Exception:
             self.pending_height_mm = None
             self.scene_update_sent = False
+            self.operation.finish(target_operation)
             raise
         return self.pending_height_request_id
 
@@ -1295,7 +1303,6 @@ class HeightReplayController:
                 self._warn(f"[WARN] Current {self.current_height_mm} mm sequence has no accepted steps to save.")
                 return None
             parent = self.current_version_id
-            status_speed = dict(self.latest_sim_status.get("speed", {}) or {})
             path = self.store.save_new_version(
                 self.current_height_mm,
                 self.manager.steps,
@@ -1305,13 +1312,13 @@ class HeightReplayController:
                 metadata={
                     "actuator_baseline_id": self.recording_baseline.get("baseline_version", ""),
                     "environment_baseline_id": "fixed-wide-obstacle-v2",
-                    "speed_reference_profile_id": self.motion_reference.profile_id,
-                    "speed_percent_at_save": float(status_speed.get("speed_percent", self.speed_percent)),
+                    "motion_profile_id": self.motion_reference.profile_id,
+                    "motion_profile_mode": "fixed_100_percent",
                     "obstacle_width_m": OBSTACLE_WIDTH_M,
                     "obstacle_length_m": OBSTACLE_LENGTH_M,
                     "obstacle_front_face_x_m": OBSTACLE_FRONT_FACE_X_M,
                     "robot_respawn_pose": self.latest_sim_status.get("grounded_respawn_root_pose"),
-                    "speed_semantics_version": "worker-motion-executor-v1",
+                    "actuator_command_semantics": "fixed-100-percent-direct-v1",
                 },
             )
             self.current_version_id = str(self.store.last_save_report.get("version_id", ""))
@@ -1389,9 +1396,36 @@ class HeightReplayController:
 
     def stop_wheels(self, *, reason: str = "controller_stop") -> dict[str, Any]:
         result = self.transport.stop_wheels(reason=reason)
+        if self.servo_wheel_staging_active:
+            self.servo_wheel_staged_state["wheels"] = {name: 0.0 for name in WHEEL_JOINT_NAMES}
+            self.servo_wheel_staged_dirty = True
         self.last_wheel_stop_request = dict(result)
         self.status = "Stopping wheels..."
         return result
+
+    def _merge_motion_batch_ack(self, ack: dict[str, Any]) -> None:
+        batch_id = str(ack.get("batch_id", "") or "")
+        if not batch_id or batch_id in self._motion_batch_acks_merged:
+            return
+        self._motion_batch_acks_merged.add(batch_id)
+        if batch_id == str(self.servo_wheel_last_launch_status.get("batch_id", "") or ""):
+            self.servo_wheel_last_launch_status = {
+                "state": "error" if str(ack.get("error", "") or "") else "applied",
+                "batch_id": batch_id,
+                "applied_sim_time": ack.get("applied_sim_time", ack.get("batch_applied_sim_time")),
+                "applied_sim_step": ack.get("applied_sim_step", ack.get("first_physics_step")),
+                "servo_targets_applied": dict(ack.get("servo_targets_applied", ack.get("canonical_servo_targets_deg", {})) or {}),
+                "wheel_targets_applied": dict(ack.get("wheel_targets_applied", ack.get("canonical_wheel_velocity_rad_s", {})) or {}),
+                "motion_start_skew_s": ack.get("motion_start_skew_s"),
+                "error": str(ack.get("error", "") or ""),
+            }
+        for event in reversed(self.record_events):
+            if str(event.get("batch_id", "") or "") != batch_id:
+                continue
+            event["batch_ack"] = dict(ack)
+            event["applied_sim_time"] = ack.get("applied_sim_time", ack.get("batch_applied_sim_time"))
+            event["applied_sim_step"] = ack.get("applied_sim_step", ack.get("first_physics_step"))
+            break
 
     def shutdown(self) -> None:
         self.playback.stop(silent=True, stop_wheels=False)
@@ -1405,7 +1439,7 @@ class HeightReplayController:
 
     def update(self) -> None:
         self.playback.update()
-        if self.playback.active:
+        if self.playback.active or self.playback.start_requested:
             self.mode = MODE_PLAYBACK_PAUSED if self.playback.paused else MODE_PLAYBACK
         elif self.mode in {MODE_PLAYBACK, MODE_PLAYBACK_PAUSED}:
             self.mode = MODE_TEST
@@ -1414,7 +1448,14 @@ class HeightReplayController:
             status = self.sim_client.status()
             self.latest_sim_status = status
             self.transport.update_worker_status(status)
-            self.playback.sync_worker_status(status.get("worker_playback") if isinstance(status.get("worker_playback"), dict) else None)
+            last_ack = dict(status.get("last_operation_ack", {}) or {})
+            if str(last_ack.get("operation", "") or "") == "apply_motion_batch":
+                self._merge_motion_batch_ack(last_ack)
+            self.playback.sync_worker_status(
+                status.get("worker_playback") if isinstance(status.get("worker_playback"), dict) else None,
+                operation_ack=last_ack,
+                worker_status_age_s=max(0.0, time.monotonic() - float(getattr(self.sim_client, "last_status_time", time.monotonic()) or time.monotonic())),
+            )
             self.sim_ready = bool(status.get("runtime_ready", status.get("ready", False)))
             if status.get("height_mm") is not None:
                 self.loaded_sim_height_mm = int(status["height_mm"])
@@ -1424,9 +1465,6 @@ class HeightReplayController:
             warning = str(status.get("startup_timeout_warning", "") or status.get("status_timeout_warning", "") or "")
             if error:
                 self.status = f"[WARN] Isaac subprocess worker: {error}"
-                if self.pending_height_mm is not None:
-                    self.pending_height_mm = None
-                    self.scene_update_sent = False
             elif warning:
                 self.status = f"[WARN] {warning}"
                 if "No Isaac worker status" in warning and not self._command_timeout_stopped:
@@ -1447,12 +1485,14 @@ class HeightReplayController:
                     self.sim_client.set_height_respawn(
                         self.pending_height_mm,
                         request_id=self.pending_height_request_id,
+                        requested_revision=self.pending_height_requested_revision,
                         source="ui",
                     )
                 else:
                     self.sim_client.set_height_mm(
                         self.pending_height_mm,
                         request_id=self.pending_height_request_id,
+                        requested_revision=self.pending_height_requested_revision,
                         source="ui",
                     )
                 self.scene_update_sent = True
@@ -1464,29 +1504,58 @@ class HeightReplayController:
             )
             scene_height = self.latest_sim_status.get("scene_height_mm", self.latest_sim_status.get("height_mm"))
             if ack_matches:
-                completed_height = int(ack.get("height_mm", scene_height if scene_height is not None else self.pending_height_mm))
-                self.loaded_sim_height_mm = completed_height
+                requested = int(self.pending_height_mm)
+                measured = float(ack.get("measured_height_mm", -1.0) or -1.0)
+                revision = int(ack.get("obstacle_revision", ack.get("revision", 0)) or 0)
+                accepted = (
+                    bool(ack.get("accepted", False))
+                    and bool(ack.get("prim_valid", False))
+                    and abs(measured - requested) <= 1.0
+                    and bool(ack.get("visual_updated", False))
+                    and bool(ack.get("collision_updated", False))
+                    and revision >= int(self.pending_height_requested_revision)
+                    and bool(ack.get("control_ready", False))
+                    and not str(ack.get("error", "") or "")
+                )
                 elapsed = max(0.0, time.monotonic() - self.scene_update_requested_at)
-                error = str(ack.get("error", "") or "") if ack_matches else ""
+                error = str(ack.get("error", "") or "")
                 self.pending_height_mm = None
                 self.scene_update_sent = False
-                if error:
-                    self._warn(f"[WARN] Obstacle update failed after {elapsed:.3f}s: {error}")
+                expected_operation = OperationState.RESPAWNING if self.pending_height_with_respawn else OperationState.SCENE_UPDATE
+                self.operation.finish(expected_operation)
+                if not accepted:
+                    reason = error or (
+                        f"geometry verification failed: requested={requested}mm measured={measured:.3f}mm "
+                        f"prim_valid={bool(ack.get('prim_valid', False))} visual={bool(ack.get('visual_updated', False))} "
+                        f"collision={bool(ack.get('collision_updated', False))} revision={revision}/"
+                        f"{self.pending_height_requested_revision} control_ready={bool(ack.get('control_ready', False))}"
+                    )
+                    self.status = f"ERROR: Obstacle update failed: {reason}"
+                    self._warn(f"[ERROR] Obstacle update failed after {elapsed:.3f}s: {reason}")
                 else:
-                    self._info(f"[INFO] Obstacle update completed at {completed_height} mm in {elapsed:.3f}s; control ready.")
-            elif time.monotonic() - self.scene_update_requested_at > self.scene_update_timeout_s:
+                    self.loaded_sim_height_mm = int(round(measured))
+                    self._info(
+                        f"[INFO] Obstacle geometry verified at {measured:.3f} mm, "
+                        f"width={float(ack.get('measured_width_m', 0.0) or 0.0):.3f} m, "
+                        f"revision={revision}, in {elapsed:.3f}s; control ready."
+                    )
+            elif self.scene_update_sent and time.monotonic() - self.scene_update_requested_at > self.scene_update_timeout_s:
                 target = self.pending_height_mm
                 self.pending_height_mm = None
                 self.scene_update_sent = False
-                self._warn(f"[WARN] Obstacle update timed out for {target} mm; robot control remained available.")
+                expected_operation = OperationState.RESPAWNING if self.pending_height_with_respawn else OperationState.SCENE_UPDATE
+                self.operation.finish(expected_operation)
+                self.status = f"ERROR: Obstacle update timed out for {target} mm."
+                self._warn(f"[ERROR] Obstacle update timed out for {target} mm; operation lock released.")
         self._try_finalize_record_stop()
 
     def snapshot(self) -> dict[str, Any]:
         playback = self.playback.status_dict()
         availability = self.playback_availability()
         state = self.transport.capture_command_state()
+        display_state = clone_command_state(self.servo_wheel_staged_state if self.servo_wheel_staging_active else state)
         wheels_short = {
-            short: state["wheels"].get(full, 0.0)
+            short: display_state["wheels"].get(full, 0.0)
             for short, full in WHEEL_SHORT_NAMES.items()
         }
         visible_rows = self.visible_step_rows()
@@ -1516,23 +1585,13 @@ class HeightReplayController:
                 "zero_target_applied": False,
                 "physically_stopped": False,
             }
-        speed_status = dict(sim_status.get("speed", {}) or {})
-        if not speed_status:
-            speed_model = getattr(self.transport.adapter, "speed_scale", None)
-            if speed_model is not None and hasattr(speed_model, "status"):
-                speed_status = dict(speed_model.status())
-        if not speed_status:
-            scale = self.speed_percent / 100.0
-            speed_status = {
-                "speed_percent": self.speed_percent,
-                "requested_servo_velocity_deg_s": self.motion_reference.servo_reference_velocity_deg_s * scale,
-                "effective_servo_velocity_deg_s": self.motion_reference.servo_reference_velocity_deg_s * scale,
-                "requested_reference_wheel_velocity_rad_s": self.motion_reference.wheel_reference_velocity_rad_s * scale,
-                "effective_reference_wheel_velocity_rad_s": min(
-                    self.motion_reference.wheel_velocity_limit_rad_s,
-                    self.motion_reference.wheel_reference_velocity_rad_s * scale,
-                ),
-            }
+        motion_profile = dict(sim_status.get("motion_profile", {}) or {}) or {
+            "mode": "fixed_100_percent",
+            "profile_id": self.motion_reference.profile_id,
+            "servo_velocity_deg_s": self.motion_reference.servo_reference_velocity_deg_s,
+            "wheel_reference_velocity_rad_s": self.motion_reference.wheel_reference_velocity_rad_s,
+            "wheel_velocity_limit_rad_s": self.motion_reference.wheel_velocity_limit_rad_s,
+        }
         return {
             "sim": {
                 **sim_status,
@@ -1574,6 +1633,10 @@ class HeightReplayController:
                 "current_m": obstacle_height_m_mm(self.current_height_mm),
                 "scene_mm": self.loaded_sim_height_mm,
                 "scene_cm": self.loaded_sim_height_cm,
+                "measured_height_mm": dict(sim_status.get("last_set_height_result", {}) or {}).get("measured_height_mm", sim_status.get("measured_height_mm")),
+                "measured_width_m": dict(sim_status.get("last_set_height_result", {}) or {}).get("measured_width_m", sim_status.get("measured_width_m")),
+                "measured_bounds": dict(dict(sim_status.get("last_set_height_result", {}) or {}).get("measured_bounds", sim_status.get("measured_bounds", {})) or {}),
+                "obstacle_revision": int(sim_status.get("obstacle_revision", 0) or 0),
                 "steps_path": str(self._current_steps_path()),
                 "current_version_id": self.current_version_id,
                 "current_version_metadata": dict(self.current_version_metadata),
@@ -1634,7 +1697,7 @@ class HeightReplayController:
                 "can_export": availability.can_export,
                 "unavailable_reason": availability.reason,
             },
-            "servos": state["servos"],
+            "servos": display_state["servos"],
             "wheels": wheels_short,
             "target_joint_state": sim_status.get("target_joint_state"),
             "actual_joint_state": sim_status.get("actual_joint_state"),
@@ -1653,17 +1716,21 @@ class HeightReplayController:
                 "allow_conflicts": self.allow_combine_conflicts,
             },
             "servo_wheel": {
+                "active": self.servo_wheel_staging_active,
+                "dirty": self.servo_wheel_staged_dirty,
+                "staged_state": clone_command_state(self.servo_wheel_staged_state),
                 "last_launch_time": self.servo_wheel_last_launch_time,
-                "status": "One MotionBatch sends every servo and wheel target in one IPC frame and applies them in one physics tick.",
+                "last_launch_status": dict(self.servo_wheel_last_launch_status),
+                "status": "Staging never moves the robot; Launch sends one MotionBatch and applies both channels in one physics tick.",
             },
             "actuator_command": {
-                "semantics": "worker-motion-executor-v1",
+                "semantics": "fixed-100-percent-direct-v1",
                 "wheel_unit": "rad/s",
                 "last_command": self.last_motion_command,
                 "last_wheel_targets": list(self.last_wheel_targets),
                 "last_warnings": list(self.last_motion_warnings),
             },
-            "speed": speed_status,
+            "motion_profile": motion_profile,
             "revisions": {
                 "sequence": self.manager.revision,
                 "height_sequence": self.manager.revision,
@@ -1768,16 +1835,100 @@ class HeightReplayController:
             self._warn(f"[WARN] Unsupported command: {command}")
 
     def _handle_servo_wheel(self, args: list[str]) -> None:
-        sub = args[0].lower() if args else "apply"
-        if sub in {"apply", "launch"}:
-            state = self._manual_reference_state()
-            self.apply_servo_wheel_together(state["servos"], state["wheels"], source="servo_wheel_command")
+        sub = args[0].lower() if args else "status"
+        if sub in {"start", "mode"}:
+            self.start_servo_wheel_mode()
+        elif sub in {"apply", "launch"}:
+            self.launch_servo_wheel()
+        elif sub in {"clear", "clear_staged"}:
+            self.clear_servo_wheel_staged()
         elif sub == "cancel":
-            self.stop_wheels(reason="servo_wheel_cancel")
-            self.mode = MODE_TEST
-            self._info("[INFO] Servo+Wheel controls closed; wheels stopped.")
+            self.cancel_servo_wheel_mode()
         else:
-            self._warn("[WARN] Usage: servo_wheel apply|cancel")
+            self._info(
+                f"[SERVO-WHEEL] active={self.servo_wheel_staging_active} "
+                f"dirty={self.servo_wheel_staged_dirty} last={self.servo_wheel_last_launch_status}"
+            )
+
+    def start_servo_wheel_mode(self) -> bool:
+        ok, reason = self.manual_motion_readiness(allow_staging=True)
+        if not ok:
+            self._warn("[WARN] Cannot start Servo-Wheel Mode: " + reason)
+            return False
+        self.servo_wheel_staged_state = clone_command_state(self.transport.capture_command_state())
+        self.servo_wheel_staging_active = True
+        self.servo_wheel_staged_dirty = False
+        self.servo_wheel_last_launch_status = {"state": "staging", "error": ""}
+        self._info("[INFO] Servo-Wheel Mode started; sliders now stage targets without moving the robot.")
+        return True
+
+    def stage_servo_wheel_servo(self, joint_name: str, value: float) -> bool:
+        if not self.servo_wheel_staging_active:
+            return False
+        command = validate_motion_command(
+            f"servo {joint_name} {float(value):.9g}",
+            default_wheel_speed_rad_s=self.default_wheel_speed,
+            max_wheel_speed_rad_s=self.max_wheel_speed,
+        ).command
+        apply_command_to_state(self.servo_wheel_staged_state, command)
+        self.servo_wheel_staged_dirty = True
+        return True
+
+    def stage_servo_wheel_wheel(self, wheel_name: str, value: float) -> bool:
+        if not self.servo_wheel_staging_active:
+            return False
+        short = WHEEL_NAME_TO_SHORT.get(wheel_name, wheel_name)
+        command = validate_motion_command(
+            f"wheel {short} {float(value):.9g}",
+            default_wheel_speed_rad_s=self.default_wheel_speed,
+            max_wheel_speed_rad_s=self.max_wheel_speed,
+        ).command
+        apply_command_to_state(self.servo_wheel_staged_state, command)
+        self.servo_wheel_staged_dirty = True
+        return True
+
+    def clear_servo_wheel_staged(self) -> bool:
+        if not self.servo_wheel_staging_active:
+            self._warn("[WARN] Start Servo-Wheel Mode before clearing staged targets.")
+            return False
+        self.servo_wheel_staged_state = clone_command_state(self.transport.capture_command_state())
+        self.servo_wheel_staged_dirty = False
+        self.servo_wheel_last_launch_status = {"state": "staging_reset_to_live", "error": ""}
+        self._info("[INFO] Staged targets reset to current live state; no actuator command was sent.")
+        return True
+
+    def launch_servo_wheel(self) -> str:
+        if not self.servo_wheel_staging_active:
+            self._warn("[WARN] Start Servo-Wheel Mode before Launch.")
+            return ""
+        ok, reason = self.manual_motion_readiness(allow_staging=True)
+        if not ok:
+            self._warn("[WARN] Servo-Wheel Launch blocked: " + reason)
+            return ""
+        staged_before = clone_command_state(self.transport.capture_command_state())
+        staged_after = clone_command_state(self.servo_wheel_staged_state)
+        batch_id = self.apply_servo_wheel_together(
+            staged_after["servos"],
+            staged_after["wheels"],
+            source="servo_wheel_launch",
+            staged_state_before=staged_before,
+            staged_state_after=staged_after,
+        )
+        self.servo_wheel_staged_dirty = False
+        self.servo_wheel_last_launch_status = {"state": "launch_requested", "batch_id": batch_id, "error": ""}
+        return batch_id
+
+    def cancel_servo_wheel_mode(self) -> bool:
+        if self.sim_connected:
+            self.stop_wheels(reason="servo_wheel_cancel")
+        self.servo_wheel_staging_active = False
+        self.servo_wheel_staged_dirty = False
+        self.servo_wheel_staged_state = clone_command_state(self.transport.capture_command_state())
+        self.servo_wheel_last_launch_status = {"state": "cancelled", "error": ""}
+        if not self.recording_active:
+            self.mode = MODE_TEST
+        self._info("[INFO] Servo-Wheel Mode cancelled; staged targets cleared and wheels stopped.")
+        return True
 
     def respawn_robot(self, *, source: str = "manual") -> bool:
         if not self.no_sim and not self.runtime_ready:
@@ -1839,20 +1990,14 @@ class HeightReplayController:
         lowered = [token.lower() for token in tokens]
         return lowered == ["stop"] or lowered == ["wheel", "stop"] or lowered == ["wheels", "stop"]
 
-    def set_speed_percent(self, value: float) -> float:
-        percent = max(0.0, min(300.0, float(value)))
-        self.speed_percent = percent
-        request_id = uuid.uuid4().hex
-        self.transport.set_speed_scale(percent, request_id=request_id, source="ui")
-        self.status = f"Requested Speed: {percent:.0f}%"
-        return percent
-
     def apply_servo_wheel_together(
         self,
         servo_targets_deg: dict[str, float],
-        wheel_base_velocity_rad_s: dict[str, float],
+        wheel_targets_rad_s: dict[str, float],
         *,
         source: str = "ui",
+        staged_state_before: dict[str, Any] | None = None,
+        staged_state_after: dict[str, Any] | None = None,
     ) -> str:
         before_state = clone_command_state(self.transport.capture_command_state())
         after_state = clone_command_state(before_state)
@@ -1871,7 +2016,7 @@ class HeightReplayController:
             commands.append(validated.command)
         for name in WHEEL_JOINT_NAMES:
             short = WHEEL_NAME_TO_SHORT.get(name, name)
-            target = wheel_base_velocity_rad_s.get(name, wheel_base_velocity_rad_s.get(short, after_state["wheels"].get(name, 0.0)))
+            target = wheel_targets_rad_s.get(name, wheel_targets_rad_s.get(short, after_state["wheels"].get(name, 0.0)))
             validated = validate_motion_command(
                 f"wheel {short} {float(target):.9g}",
                 default_wheel_speed_rad_s=self.default_wheel_speed,
@@ -1886,13 +2031,25 @@ class HeightReplayController:
             "source": str(source or "ui"),
             "requested_sim_boundary": "next_physics_tick",
             "servo_targets_deg": canonical_servos,
-            "wheel_base_velocity_rad_s": canonical_wheels,
-            "speed_percent_snapshot": float(self.speed_percent),
+            "wheel_targets_rad_s": canonical_wheels,
+            "wheel_generation": self.transport.wheel_generation,
+            "requested_wall_time": time.time(),
+            "recording_active": self.recording_active,
+            "source_step": (
+                int(self.replace_target_index)
+                if self.replace_target_index is not None
+                else int(self.manager.count + 1) if self.recording_active else None
+            ),
+            "metadata": {
+                "height_mm": self.current_height_mm,
+                "version_id": self.current_version_id,
+                "atomicity": "single_worker_cycle_single_articulation_write",
+            },
             "recording_metadata": {
                 "recording_active": self.recording_active,
                 "height_mm": self.current_height_mm,
                 "version_id": self.current_version_id,
-                "speed_semantics_version": "worker-motion-executor-v1",
+                "actuator_command_semantics": "fixed-100-percent-direct-v1",
             },
             "high_priority": False,
         }
@@ -1903,10 +2060,11 @@ class HeightReplayController:
         if self.recording_active and source != "playback":
             event_time, actual_time, timing_source = self._record_reference_time_s()
             self.record_reference_state = clone_command_state(after_state)
+            is_launch = source == "servo_wheel_launch"
             event = make_event(
                 event_time,
-                "apply_motion_batch",
-                kind="motion_batch",
+                "servo_wheel launch" if is_launch else "apply_motion_batch",
+                kind="servo_wheel_launch" if is_launch else "motion_batch",
                 command_state_before=before_state,
                 command_state_after=after_state,
                 expanded_commands=commands,
@@ -1914,7 +2072,10 @@ class HeightReplayController:
             event.update(
                 actual_recording_time_s=actual_time,
                 recording_timing_source=timing_source,
-                **self._motion_event_speed_metadata(before_state, after_state, batch_id=batch_id),
+                staged_state_before=clone_command_state(staged_state_before or before_state),
+                staged_state_after=clone_command_state(staged_state_after or after_state),
+                batch_ack=None,
+                **self._motion_event_metadata(before_state, after_state, batch_id=batch_id),
             )
             self.record_events.append(event)
         self.status = f"MotionBatch {batch_id} queued: servo+wheel apply on one physics tick."
@@ -1939,7 +2100,7 @@ class HeightReplayController:
                     executed_command=command,
                     actual_recording_time_s=actual_time,
                     recording_timing_source=timing_source,
-                    **self._motion_event_speed_metadata(reference_before, reference_after),
+                    **self._motion_event_metadata(reference_before, reference_after),
                 )
                 self.record_events.append(event)
             self.status = f"Command: {command}"
@@ -1947,9 +2108,11 @@ class HeightReplayController:
         if self.record_stop_pending is not None and source != "playback":
             self._warn("[WARN] Recording is stopping; new manual actuator commands are rejected.")
             return
-        if source != "playback" and self.operation.state in {OperationState.PLAYBACK, OperationState.RESPAWNING, OperationState.SCENE_UPDATE}:
-            self._warn(f"[WARN] Manual motion is disabled: {self.operation.reason}")
-            return
+        if source != "playback":
+            manual_ok, manual_reason = self.manual_motion_readiness()
+            if not manual_ok:
+                self._warn(f"[WARN] Manual motion is disabled: {manual_reason}")
+                return
         before_state = clone_command_state(self.transport.capture_command_state())
         validated = validate_motion_command(
             command,
@@ -1978,7 +2141,7 @@ class HeightReplayController:
                 executed_command=outgoing_command,
                 actual_recording_time_s=actual_time,
                 recording_timing_source=timing_source,
-                **self._motion_event_speed_metadata(reference_before, reference_after),
+                **self._motion_event_metadata(reference_before, reference_after),
             )
             self.record_events.append(event)
         self.status = f"Command: {outgoing_command}"
@@ -2024,14 +2187,13 @@ class HeightReplayController:
             self._warn(f"[WARN] step_record start is only valid in TEST or REPLACE_STEP_READY. Current mode={self.mode}")
             return
         self.record_start_wall_time = time.monotonic()
-        self.record_start_speed_percent = float(self.speed_percent)
         self.transport.request_state()
         self.record_start_sim_time = self._current_record_sim_time()
         self.record_command_state_before = clone_command_state(self.transport.capture_command_state())
         self.record_reference_state = clone_command_state(self.record_command_state_before)
         self.record_sim_state_before = self.capture_current_sim_state()
         self.record_events = []
-        self._info(f"[INFO] Step recording started. mode={self.mode}; MotionBatch events retain canonical targets and one speed snapshot.")
+        self._info(f"[INFO] Step recording started. mode={self.mode}; actuator commands use the fixed 100% profile.")
 
     def stop_step_recording(self) -> None:
         if not self.recording_active or self.record_command_state_before is None:
@@ -2051,7 +2213,7 @@ class HeightReplayController:
             actual_recording_time_s=actual_duration,
             recording_timing_source=timing_source,
             final_stop_command=True,
-            **self._motion_event_speed_metadata(before, after),
+            **self._motion_event_metadata(before, after),
         )
         self.record_events.append(stop_event)
         stop_request = self.stop_wheels(reason="stop_recording")
@@ -2136,9 +2298,8 @@ class HeightReplayController:
                 "sim_state_after": sim_state_after,
                 "wheel_stop_status": dict(wheel_stop_status),
                 "recording_timing": {
-                    "actuator_command_semantics": "canonical-command-worker-scaled-v1",
-                    "speed_semantics_version": "worker-motion-executor-v1",
-                    "recorded_speed_percent": self.record_start_speed_percent,
+                    "actuator_command_semantics": "fixed-100-percent-direct-v1",
+                    "actuator_command_semantics": "fixed-100-percent-direct-v1",
                     "source": timing_source,
                     "actual_duration_s": actual_duration,
                     "wheel_active_duration_s": duration,
@@ -2292,7 +2453,7 @@ class HeightReplayController:
         if self.recording_active:
             self._warn("[WARN] Stop recording before Show Selected Before/After.")
             return
-        if self.playback.active:
+        if self.playback.active or self.playback.start_requested:
             self._warn("[WARN] Stop playback before Show Selected Before/After.")
             return
         if not self.no_sim and not self.runtime_ready:
@@ -2525,7 +2686,12 @@ class HeightReplayController:
             ok = self.playback.start_plan(plan, start_delay_s=pre_start_delay_s)
         if ok:
             self.mode = MODE_PLAYBACK
-            if pre_start_delay_s > 0.0:
+            if self.playback.worker_managed:
+                self._info(
+                    f"[INFO] Playback start requested: {label}; waiting for explicit worker acceptance "
+                    f"request={self.playback.worker_request_id[:8]} plan={self.playback.worker_plan_id}."
+                )
+            elif pre_start_delay_s > 0.0:
                 self._info(f"[INFO] Playback scheduled in {pre_start_delay_s:.2f}s: {label}")
             else:
                 self._info(f"[INFO] Playback started: {label}")
@@ -2813,7 +2979,6 @@ class RealRobotStyleHeightReplayUi:
         self._smoke_after_ids: list[Any] = []
         self._closing = False
         self.wheel_stop_latched = False
-        self.speed_scale_after_id: Any | None = None
         self.save_in_progress = False
 
         self.servo_vars: dict[str, Any] = {}
@@ -2832,6 +2997,9 @@ class RealRobotStyleHeightReplayUi:
         self.playback_label_var = tk.StringVar(value="Playback: inactive")
         self.playback_unavailable_var = tk.StringVar(value="")
         self.record_label_var = tk.StringVar(value="Record: idle")
+        self.servo_wheel_mode_var = tk.StringVar(value="Servo-Wheel Mode: inactive")
+        self.servo_wheel_preview_var = tk.StringVar(value="Staged/live delta: none")
+        self.servo_wheel_launch_var = tk.StringVar(value="Last launch: none")
         self.recording_path_var = tk.StringVar(value=f"Recording output: {controller._current_steps_path()}")
         self.baseline_status_var = tk.StringVar(value="Recording baseline: not validated")
         self.busy_label_var = tk.StringVar(value="")
@@ -2844,10 +3012,7 @@ class RealRobotStyleHeightReplayUi:
         self.left_speed_var = tk.StringVar(value=f"{default_speed:.2f}")
         self.right_speed_var = tk.StringVar(value=f"{default_speed:.2f}")
         self.height_var = tk.StringVar(value=f"{controller.current_height_mm} mm")
-        self.speed_percent_var = tk.DoubleVar(value=100.0)
-        self.requested_speed_var = tk.StringVar(value="Requested Speed: 100%")
-        self.effective_servo_speed_var = tk.StringVar(value="Effective Servo Speed: waiting for worker")
-        self.effective_wheel_speed_var = tk.StringVar(value="Effective Wheel Speed: waiting for worker")
+        self.motion_profile_var = tk.StringVar(value="Motion profile: Fixed 100%")
         self.play_profile_var = tk.StringVar(value=str(controller.playback.profile))
         self.restore_step_start_var = tk.BooleanVar(value=controller.restore_step_start_state_before_selected_playback)
         self.restore_full_sim_pose_var = tk.BooleanVar(value=controller.restore_full_sim_pose_if_available)
@@ -2885,12 +3050,6 @@ class RealRobotStyleHeightReplayUi:
             except Exception:
                 pass
         self.slider_after_ids.clear()
-        if self.speed_scale_after_id is not None:
-            try:
-                self.root.after_cancel(self.speed_scale_after_id)
-            except Exception:
-                pass
-            self.speed_scale_after_id = None
         for after_id in self._smoke_after_ids:
             try:
                 self.root.after_cancel(after_id)
@@ -3334,7 +3493,6 @@ class RealRobotStyleHeightReplayUi:
             ("Sim Connection", self._build_connection_tab),
             ("Run Manager", self._build_run_manager_tab),
             ("Record / Servo+Wheel", self._build_record_servo_wheel_tab),
-            ("Speed Scale", self._build_speed_scale_tab),
             ("Playback", self._build_playback_tab),
             ("Height Generate", self._build_height_generate_tab),
             ("Combine", self._build_combine_tab),
@@ -3400,21 +3558,29 @@ class RealRobotStyleHeightReplayUi:
         self.run_manager_text = self._make_scrolled_text(parent, row=1, height=16, width=72)
 
     def _build_record_servo_wheel_tab(self, parent: Any) -> None:
-        sw = self.ttk.LabelFrame(parent, text="Servo+Wheel")
+        sw = self.ttk.LabelFrame(parent, text="Servo-Wheel Mode")
         sw.grid(row=0, column=0, sticky="ew", pady=(0, 6))
-        self.ttk.Button(sw, text="Apply Servo + Wheel Together", command=self._apply_servo_wheel_together_ui).grid(
-            row=0, column=0, columnspan=2, sticky="ew", padx=2, pady=2
-        )
+        buttons = [
+            ("Start Servo-Wheel Mode", self._start_servo_wheel_mode_ui),
+            ("Launch Servo-Wheel", self._launch_servo_wheel_ui),
+            ("Clear Staged", self._clear_servo_wheel_ui),
+            ("Cancel Servo-Wheel Mode", self._cancel_servo_wheel_ui),
+        ]
+        for index, (label, callback) in enumerate(buttons):
+            self.ttk.Button(sw, text=label, command=callback).grid(
+                row=index // 2, column=index % 2, sticky="ew", padx=2, pady=2
+            )
         self.ttk.Label(sw, text="Reads the visible canonical servo and wheel targets, sends one MotionBatch, and applies one articulation write on the next physics tick.", wraplength=540).grid(
-            row=1, column=0, columnspan=2, sticky="ew", padx=3, pady=(4, 2)
+            row=2, column=0, columnspan=2, sticky="ew", padx=3, pady=(4, 2)
         )
-        self.ttk.Label(
-            parent,
-            text="No staging state: the button reads current controls and sends one atomic batch.",
-            wraplength=560,
-        ).grid(row=1, column=0, sticky="ew", pady=(0, 6))
+        self.ttk.Label(sw, textvariable=self.servo_wheel_mode_var, wraplength=560).grid(row=3, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
+        self.ttk.Label(sw, textvariable=self.servo_wheel_preview_var, wraplength=560).grid(row=4, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
+        self.ttk.Label(sw, textvariable=self.servo_wheel_launch_var, wraplength=560).grid(row=5, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
+        self.ttk.Label(sw, textvariable=self.motion_profile_var, wraplength=560).grid(row=6, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
+        sw.columnconfigure(0, weight=1)
+        sw.columnconfigure(1, weight=1)
         record = self.ttk.LabelFrame(parent, text="Record")
-        record.grid(row=2, column=0, sticky="ew", pady=(6, 4))
+        record.grid(row=1, column=0, sticky="ew", pady=(6, 4))
         record_buttons = [
             ("Validate Recording Baseline", "validate_recording_baseline"),
             ("Start Record Step", "step_record start"),
@@ -3437,7 +3603,7 @@ class RealRobotStyleHeightReplayUi:
         self.ttk.Label(record, textvariable=self.baseline_status_var, wraplength=560).grid(row=5, column=0, columnspan=2, sticky="w", padx=3, pady=2)
         self.ttk.Label(record, textvariable=self.pending_label_var).grid(row=6, column=0, columnspan=2, sticky="w", padx=3, pady=2)
         replace = self.ttk.LabelFrame(parent, text="Replacement")
-        replace.grid(row=3, column=0, sticky="ew")
+        replace.grid(row=2, column=0, sticky="ew")
         replace_buttons = [
             ("Prepare Replacement", self._replace_selected),
             ("Start Replacement Recording", lambda: self._post("replace_step start")),
@@ -3462,63 +3628,21 @@ class RealRobotStyleHeightReplayUi:
         replace.columnconfigure(0, weight=1)
         replace.columnconfigure(1, weight=1)
 
-    def _build_speed_scale_tab(self, parent: Any) -> None:
-        frame = self.ttk.LabelFrame(parent, text="Speed Scale")
-        frame.grid(row=0, column=0, sticky="ew", pady=(0, 6))
-        slider = self.ttk.Scale(
-            frame,
-            from_=0.0,
-            to=300.0,
-            orient="horizontal",
-            variable=self.speed_percent_var,
-            command=self._schedule_speed_scale,
-        )
-        slider.grid(row=0, column=0, columnspan=2, sticky="ew", padx=6, pady=6)
-        self.ttk.Label(frame, textvariable=self.requested_speed_var).grid(row=1, column=0, columnspan=2, sticky="w", padx=6, pady=2)
-        self.ttk.Label(frame, textvariable=self.effective_servo_speed_var).grid(row=2, column=0, columnspan=2, sticky="w", padx=6, pady=2)
-        self.ttk.Label(frame, textvariable=self.effective_wheel_speed_var).grid(row=3, column=0, columnspan=2, sticky="w", padx=6, pady=2)
-        self.ttk.Button(frame, text="Reset to 100%", command=self._reset_speed_scale).grid(row=4, column=0, sticky="w", padx=6, pady=6)
-        reference = self.controller.motion_reference
-        verified = "VERIFIED speed fields / UNVERIFIED radius & transmission" if not reference.verified else "VERIFIED"
-        self.ttk.Label(
-            frame,
-            text=(
-                f"100% reference source: {reference.profile_id} ({verified})\n"
-                f"Servo {reference.servo_reference_velocity_deg_s:g} deg/s; wheel {reference.wheel_reference_velocity_rad_s:.6f} rad/s.\n"
-                "Servo targets never scale. Wheel duration never shortens. 0% holds servo progress and commands wheel velocity 0."
-            ),
-            wraplength=550,
-            justify="left",
-        ).grid(row=5, column=0, columnspan=2, sticky="ew", padx=6, pady=6)
-        frame.columnconfigure(0, weight=1)
+    def _start_servo_wheel_mode_ui(self) -> None:
+        self.controller.start_servo_wheel_mode()
+        self._refresh(force=False)
 
-    def _schedule_speed_scale(self, value: str) -> None:
-        percent = max(0.0, min(300.0, float(value)))
-        self.requested_speed_var.set(f"Requested Speed: {percent:.0f}%")
-        if self.speed_scale_after_id is not None:
-            try:
-                self.root.after_cancel(self.speed_scale_after_id)
-            except Exception:
-                pass
-        self.speed_scale_after_id = self.root.after(100, self._flush_speed_scale)
+    def _launch_servo_wheel_ui(self) -> None:
+        self.controller.launch_servo_wheel()
+        self._refresh(force=False)
 
-    def _flush_speed_scale(self) -> None:
-        self.speed_scale_after_id = None
-        self.controller.set_speed_percent(float(self.speed_percent_var.get()))
+    def _clear_servo_wheel_ui(self) -> None:
+        self.controller.clear_servo_wheel_staged()
+        self._refresh(force=False)
 
-    def _reset_speed_scale(self) -> None:
-        self.speed_percent_var.set(100.0)
-        self.requested_speed_var.set("Requested Speed: 100%")
-        self._schedule_speed_scale("100")
-
-    def _apply_servo_wheel_together_ui(self) -> None:
-        servo_targets = {name: float(var.get()) for name, var in self.servo_vars.items()}
-        wheel_targets = {
-            full: float(self.wheel_vars[short].get())
-            for short, full in WHEEL_SHORT_NAMES.items()
-            if short in self.wheel_vars
-        }
-        self.controller.apply_servo_wheel_together(servo_targets, wheel_targets, source="ui")
+    def _cancel_servo_wheel_ui(self) -> None:
+        self.controller.cancel_servo_wheel_mode()
+        self._refresh(force=False)
 
     def _build_playback_tab(self, parent: Any) -> None:
         self.ttk.Label(parent, text="Fast removes implicit UI idle only; actuator commands are unchanged.", wraplength=560).grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 6))
@@ -3659,12 +3783,18 @@ class RealRobotStyleHeightReplayUi:
         if self.updating:
             return
         angle = float(value)
+        if self.controller.servo_wheel_staging_active:
+            self.controller.stage_servo_wheel_servo(joint_name, angle)
+            return
         self._schedule_slider(joint_name, f"servo {joint_name} {angle:.1f}", angle, 0.5)
 
     def _wheel_slider(self, short_name: str, value: str) -> None:
         if self.updating or self.wheel_stop_latched:
             return
         speed = float(value)
+        if self.controller.servo_wheel_staging_active:
+            self.controller.stage_servo_wheel_wheel(short_name, speed)
+            return
         self._schedule_slider(short_name, f"wheel {short_name} {speed:.3f}", speed, 0.02)
 
     def _begin_wheel_drag(self, short_name: str) -> None:
@@ -4166,6 +4296,29 @@ class RealRobotStyleHeightReplayUi:
                 f"Record: active={snapshot['recording']['active']} stop_pending={snapshot['recording']['stop_pending']} "
                 f"events={snapshot['recording']['events']} dirty={snapshot['recording']['dirty']}"
             )
+            sw = dict(snapshot.get("servo_wheel", {}) or {})
+            self.servo_wheel_mode_var.set(
+                f"Servo-Wheel Mode: {'ACTIVE' if sw.get('active') else 'inactive'} | "
+                f"staged dirty={bool(sw.get('dirty', False))}"
+            )
+            staged = clone_command_state(sw.get("staged_state"))
+            live = clone_command_state(self.controller.transport.capture_command_state())
+            servo_delta = sum(
+                1 for name in SERVO_JOINT_NAMES
+                if not math.isclose(float(staged["servos"].get(name, 0.0)), float(live["servos"].get(name, 0.0)), abs_tol=1.0e-6)
+            )
+            wheel_delta = sum(
+                1 for name in WHEEL_JOINT_NAMES
+                if not math.isclose(float(staged["wheels"].get(name, 0.0)), float(live["wheels"].get(name, 0.0)), abs_tol=1.0e-9)
+            )
+            self.servo_wheel_preview_var.set(
+                f"Staged/live delta: servos={servo_delta}, wheels={wheel_delta}; sliders do not dispatch while staging."
+            )
+            launch = dict(sw.get("last_launch_status", {}) or {})
+            self.servo_wheel_launch_var.set(
+                f"Last launch: {launch.get('state', 'none')} | batch={str(launch.get('batch_id', '') or '-')[:12]} "
+                f"step={launch.get('applied_sim_step', '-')} error={launch.get('error', '') or '-'}"
+            )
             self.recording_path_var.set(
                 f"Output root: {snapshot['recording']['output_root']}\n"
                 f"Height folder: {snapshot['recording']['height_folder']}\n"
@@ -4191,20 +4344,11 @@ class RealRobotStyleHeightReplayUi:
             )
             self.height_var.set(f"{snapshot['height']['current_mm']} mm")
 
-            speed = dict(snapshot.get("speed", {}) or {})
-            worker_percent = float(speed.get("speed_percent", self.controller.speed_percent) or 0.0)
-            if self.speed_scale_after_id is None:
-                self.speed_percent_var.set(worker_percent)
-            self.requested_speed_var.set(f"Requested Speed: {float(self.speed_percent_var.get()):.0f}%")
-            self.effective_servo_speed_var.set(
-                "Effective Servo Speed: "
-                f"{float(speed.get('effective_servo_velocity_deg_s', 0.0) or 0.0):.3f} deg/s "
-                f"(requested {float(speed.get('requested_servo_velocity_deg_s', 0.0) or 0.0):.3f})"
-            )
-            self.effective_wheel_speed_var.set(
-                "Effective Wheel Speed: "
-                f"{float(speed.get('effective_reference_wheel_velocity_rad_s', 0.0) or 0.0):.6f} rad/s "
-                f"(requested {float(speed.get('requested_reference_wheel_velocity_rad_s', 0.0) or 0.0):.6f})"
+            motion_profile = dict(snapshot.get("motion_profile", {}) or {})
+            self.motion_profile_var.set(
+                "Motion profile: Fixed 100% | "
+                f"Servo {float(motion_profile.get('servo_velocity_deg_s', self.controller.motion_reference.servo_reference_velocity_deg_s)):.3f} deg/s | "
+                f"Wheel ref {float(motion_profile.get('wheel_reference_velocity_rad_s', self.controller.motion_reference.wheel_reference_velocity_rad_s)):.6f} rad/s"
             )
 
             servo_display = snapshot["servos"]

@@ -156,20 +156,23 @@ class WorkflowRegressionTest(unittest.TestCase):
             self.assertEqual(calls, ["respawn"])
             self.assertTrue(controller.playback.active)
 
-    def test_servo_wheel_command_is_stateless_atomic_alias(self) -> None:
+    def test_servo_wheel_commands_drive_staging_workflow(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
             controller.handle_command("servo front_left_hip 10")
-            controller.handle_command("servo_wheel apply")
-            self.assertEqual(controller.mode, MODE_TEST)
+            controller.handle_command("servo_wheel mode")
+            controller.stage_servo_wheel_servo("front_left_hip", 20.0)
             self.assertEqual(controller.transport.capture_command_state()["servos"]["front_left_hip"], 10.0)
+            controller.handle_command("servo_wheel launch")
+            self.assertEqual(controller.mode, MODE_TEST)
+            self.assertEqual(controller.transport.capture_command_state()["servos"]["front_left_hip"], 20.0)
             controller.handle_command("servo_wheel cancel")
             self.assertEqual(controller.mode, MODE_TEST)
 
-    def test_start_record_allowed_after_stateless_servo_wheel_apply(self) -> None:
+    def test_start_record_allowed_after_entering_servo_wheel_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
-            controller.handle_command("servo_wheel apply")
+            controller.handle_command("servo_wheel mode")
             controller.handle_command("step_record start")
             self.assertTrue(controller.recording_active)
 

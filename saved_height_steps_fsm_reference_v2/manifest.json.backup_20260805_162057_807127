@@ -24,26 +24,12 @@
       ]
     },
     "50": {
-      "active_version_id": "v001_20260805_162057_740045_manual",
+      "active_version_id": "",
       "folder": "height_050mm",
       "height_mm": 50,
-      "last_saved_at": "2026-08-05T16:20:57-04:00",
-      "version_count": 1,
-      "versions": [
-        {
-          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual\\accepted_steps.jsonl",
-          "accepted_steps_sha256": "e48143e0c9528640510404ebaba5ab47e9cdb1fa62c4193b1aeffa234c1058ea",
-          "command_count": 50,
-          "created_at": "2026-08-05T16:20:57-04:00",
-          "legacy": false,
-          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual",
-          "read_only": false,
-          "step_count": 10,
-          "updated_at": "2026-08-05T16:20:57-04:00",
-          "version_id": "v001_20260805_162057_740045_manual",
-          "version_name": "manual"
-        }
-      ]
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
     },
     "75": {
       "active_version_id": "",
@@ -60,5 +46,5 @@
     75,
     100
   ],
-  "updated_at": "2026-08-05T16:20:57-04:00"
+  "updated_at": "2026-08-04T21:37:50-04:00"
 }

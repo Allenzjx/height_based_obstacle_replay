@@ -778,15 +778,11 @@ class SimProcessClient:
         message.update(payload)
         self._send_or_queue(message)
 
-    def set_speed_scale(self, speed_percent: float, **payload: Any) -> None:
-        message = make_message("set_speed_scale", speed_percent=max(0.0, min(300.0, float(speed_percent))))
-        message.update(payload)
-        self._send_or_queue(message)
-
     def apply_motion_batch(self, payload: dict[str, Any]) -> str:
         batch = dict(payload or {})
         batch_id = str(batch.get("batch_id", "") or uuid.uuid4().hex)
         batch["batch_id"] = batch_id
+        batch.setdefault("wheel_generation", self.wheel_generation)
         self._send_or_queue(make_message("apply_motion_batch", **batch))
         return batch_id
 
@@ -826,12 +822,18 @@ class SimProcessClient:
         *,
         start_delay_sim_s: float = 0.0,
         plan_id: str = "",
+        request_id: str = "",
+        plan_sha256: str = "",
     ) -> None:
         self._send_or_queue(
             make_message(
                 "start_playback_plan",
                 plan=dict(plan_payload or {}),
                 plan_id=str(plan_id or ""),
+                request_id=str(request_id or ""),
+                plan_sha256=str(plan_sha256 or dict(plan_payload or {}).get("plan_sha256", "") or ""),
+                event_count=len(list(dict(plan_payload or {}).get("events", []) or [])),
+                segment_count=len(list(dict(plan_payload or {}).get("segments", []) or [])),
                 start_delay_sim_s=max(0.0, float(start_delay_sim_s)),
             )
         )
@@ -990,10 +992,6 @@ class SimProcessClient:
     def _send_or_queue(self, message: dict[str, Any], *, high_priority: bool = False) -> None:
         message.setdefault("enqueued_wall_time", time.time())
         kind = str(message.get("type", "") or "")
-        if kind == "set_speed_scale":
-            before = len(self.pending_messages)
-            self.pending_messages = [row for row in self.pending_messages if row.get("type") != "set_speed_scale"]
-            self.dropped_or_replaced_messages += before - len(self.pending_messages)
         if self.conn is None:
             if high_priority:
                 self.pending_messages.insert(0, message)

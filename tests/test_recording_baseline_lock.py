@@ -119,7 +119,7 @@ def _live_status_for_baseline(data: dict) -> dict:
 
 
 class RemovalAndBaselineLockTest(unittest.TestCase):
-    def test_a_one_speed_scale_and_legacy_metadata_is_opaque(self) -> None:
+    def test_a_speed_scale_runtime_removed_and_legacy_metadata_is_opaque(self) -> None:
         runtime_files = [
             path
             for path in PROJECT_ROOT.glob("*.py")
@@ -131,20 +131,20 @@ class RemovalAndBaselineLockTest(unittest.TestCase):
             if "class SpeedScale" in source:
                 class_hits.append(path.name)
             self.assertNotIn("preserve_wheel_distance", source.lower())
-        self.assertEqual(class_hits, ["motion_speed.py"])
+        self.assertEqual(class_hits, [])
 
         ui_source = inspect.getsource(RealRobotStyleHeightReplayUi._build_right_notebook)
         for tab in (
             "Sim Connection",
             "Run Manager",
             "Record / Servo+Wheel",
-            "Speed Scale",
             "Playback",
             "Height Generate",
             "Combine",
             "Sim State",
         ):
             self.assertIn(tab, ui_source)
+        self.assertNotIn("Speed Scale", ui_source)
 
         option_strings = {
             option

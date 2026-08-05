@@ -14,6 +14,7 @@ import socket
 import sys
 import time
 import traceback
+import uuid
 from collections import deque
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,7 @@ from height_manifest import (
     normalize_height_mm,
     obstacle_height_m_mm,
 )
-from playback import SimTimePlaybackService, playback_plan_from_payload
+from playback import SimTimePlaybackService, playback_plan_from_payload, validate_plan_integrity
 from motion_speed import load_motion_reference
 from sim_ipc_protocol import JsonLineBuffer, encode_message, make_message
 from sim_obstacle_scene import (
@@ -38,6 +39,7 @@ from sim_obstacle_scene import (
     create_scene,
     ensure_simulation_app,
     finalize_scene_after_grounding,
+    measure_obstacle_geometry,
     measure_scene_baseline,
 )
 from sim_robot_adapter import SimRobotAdapter
@@ -607,6 +609,7 @@ def run_worker(args: argparse.Namespace) -> int:
     worker_error = ""
     smoke_deadline = started_wall + float(args.worker_smoke_test_s) if float(args.worker_smoke_test_s) > 0 else None
     playback_service = SimTimePlaybackService()
+    worker_session_id = uuid.uuid4().hex
 
     def publish_status(*, ready: bool, starting: bool, error: str = "", tb: str = "", detailed: bool = False) -> None:
         nonlocal rtf_last_wall, rtf_last_sim
@@ -661,6 +664,7 @@ def run_worker(args: argparse.Namespace) -> int:
             current_wall_time_s=time.time(),
             compact=not detailed,
         )
+        status["worker_session_id"] = worker_session_id
         envelope = make_message("status", **status)
         envelope["status_payload_bytes"] = len(encode_message(envelope))
         ipc.send(envelope)
@@ -727,6 +731,30 @@ def run_worker(args: argparse.Namespace) -> int:
         set_phase("hidden_ground_settle_completed")
         set_phase("grounded_reference_saved", {"valid": bool(ground_init.get("grounded_reference_valid", False))})
         finalize_scene_after_grounding(scene_handle, phase_callback=lambda name, details=None: set_phase(name, details))
+        startup_geometry = measure_obstacle_geometry(scene_handle)
+        obstacle_revision = 1
+        last_set_height_result = {
+            "accepted": bool(startup_geometry.get("prim_valid", False))
+            and bool(startup_geometry.get("visual_valid", False))
+            and bool(startup_geometry.get("collision_valid", False)),
+            "old_height_mm": None,
+            "requested_height_mm": height_mm,
+            "measured_height_mm": float(startup_geometry.get("height_m", 0.0) or 0.0) * 1000.0,
+            "measured_width_m": startup_geometry.get("width_m"),
+            "measured_length_m": startup_geometry.get("length_m"),
+            "measured_bounds": dict(startup_geometry.get("measured_bounds", {}) or {}),
+            "visual_bounds": dict(startup_geometry.get("visual_bounds", {}) or {}),
+            "collision_bounds": dict(startup_geometry.get("collision_bounds", {}) or {}),
+            "visual_updated": bool(startup_geometry.get("visual_valid", False)),
+            "collision_updated": bool(startup_geometry.get("collision_valid", False)),
+            "prim_valid": bool(startup_geometry.get("prim_valid", False)),
+            "prim_path": str(startup_geometry.get("prim_path", "/World/Obstacle")),
+            "obstacle_revision": obstacle_revision,
+            "control_ready": bool(ground_init.get("grounded_reference_valid", False)),
+            "scene_ready": True,
+            "update_mode": "startup_create_verified",
+            "error": str(startup_geometry.get("error", "") or ""),
+        }
         adapter.scene_baseline_metrics = {
             "measurement": "cached-lightweight-startup",
             "height_mm": height_mm,
@@ -801,50 +829,70 @@ def run_worker(args: argparse.Namespace) -> int:
                     ack = adapter.apply_motion_batch(message)
                     ipc.send(make_message("operation_ack", operation="apply_motion_batch", **ack))
                     publish_status(ready=True, starting=False)
-                elif kind == "set_speed_scale":
-                    speed_status = adapter.set_speed_percent(float(message.get("speed_percent", 100.0)))
-                    adapter.apply_commands_to_robot()
-                    adapter.robot.write_data_to_sim()
-                    if speed_status.get("speed_percent", 100.0) <= 0.0 and playback_service.active and not playback_service.paused:
-                        playback_service.pause(current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time), adapter=adapter)
-                        playback_service.speed_scale_paused = True
-                    elif speed_status.get("speed_percent", 0.0) > 0.0 and bool(getattr(playback_service, "speed_scale_paused", False)):
-                        playback_service.resume(current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time))
-                        playback_service.speed_scale_paused = False
+                elif kind == "start_playback_plan":
+                    request_id = str(message.get("request_id", "") or "")
+                    requested_plan_id = str(message.get("plan_id", "") or "")
+                    requested_sha = str(message.get("plan_sha256", "") or "")
+                    plan_payload = dict(message.get("plan", {}) or {})
+                    plan = playback_plan_from_payload(plan_payload)
+                    integrity = validate_plan_integrity(
+                        plan,
+                        expected_plan_sha256=requested_sha,
+                        expected_event_count=int(message.get("event_count", -1) or -1),
+                        expected_segment_count=int(message.get("segment_count", -1) or -1),
+                    )
+                    rejection_reasons = list(integrity.get("errors", []) or [])
+                    if not request_id:
+                        rejection_reasons.append("missing playback_request_id")
+                    if not requested_plan_id:
+                        rejection_reasons.append("missing plan_id")
+                    if playback_service.active:
+                        rejection_reasons.append(
+                            f"worker playback already active plan={playback_service.plan_id} request={playback_service.request_id}"
+                        )
+                    ok = not rejection_reasons
+                    if ok:
+                        plan.plan_sha256 = str(integrity["plan_sha256"])
+                        ok = playback_service.start_plan(
+                            plan,
+                            current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
+                            current_wall_time_s=time.time(),
+                            start_delay_sim_s=float(message.get("start_delay_sim_s", 0.0) or 0.0),
+                            plan_id=requested_plan_id,
+                            request_id=request_id,
+                            worker_session_id=worker_session_id,
+                        )
+                        if not ok:
+                            rejection_reasons.append(playback_service.last_error or "scheduler rejected plan")
+                    rejection_reason = "; ".join(rejection_reasons)
                     ipc.send(
                         make_message(
                             "operation_ack",
-                            operation="set_speed_scale",
-                            request_id=str(message.get("request_id", "") or ""),
-                            **speed_status,
-                            error="",
+                            operation="start_playback_plan",
+                            request_id=request_id,
+                            accepted=bool(ok),
+                            rejection_reason=rejection_reason,
+                            error=rejection_reason,
+                            plan_id=requested_plan_id,
+                            plan_sha256=str(integrity.get("plan_sha256", "") or ""),
+                            event_count=int(integrity.get("event_count", 0) or 0),
+                            segment_count=int(integrity.get("segment_count", 0) or 0),
+                            input_step_count=int(integrity.get("input_step_count", 0) or 0),
+                            represented_step_indices=list(integrity.get("represented_step_indices", []) or []),
+                            missing_required_step_indices=list(integrity.get("missing_required_step_indices", []) or []),
+                            worker_session_id=worker_session_id,
+                            accepted_wall_time=time.time(),
                         )
                     )
-                elif kind == "start_playback_plan":
-                    plan = playback_plan_from_payload(dict(message.get("plan", {}) or {}))
-                    ok = playback_service.start_plan(
-                        plan,
-                        current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
-                        current_wall_time_s=time.time(),
-                        start_delay_sim_s=float(message.get("start_delay_sim_s", 0.0) or 0.0),
-                        plan_id=str(message.get("plan_id", "") or ""),
-                    )
                     if not ok:
-                        worker_error = playback_service.last_error
-                        logger.log(f"[worker] playback plan rejected: {worker_error}")
+                        logger.log(f"[worker] playback plan rejected: {rejection_reason}")
                     else:
-                        if float(adapter.speed_scale.speed_percent) <= 0.0:
-                            playback_service.pause(
-                                current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
-                                adapter=adapter,
-                            )
-                            playback_service.speed_scale_paused = True
                         logger.log(
                             "[worker] playback plan scheduled "
                             f"id={playback_service.plan_id} events={len(plan.events)} "
                             f"final_time={plan.final_time_s:.3f}s sha={plan.plan_sha256}"
                         )
-                    publish_status(ready=True, starting=False, error="" if ok else playback_service.last_error)
+                    publish_status(ready=True, starting=False)
                 elif kind == "pause_playback":
                     playback_service.pause(
                         current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
@@ -866,30 +914,38 @@ def run_worker(args: argparse.Namespace) -> int:
                 elif kind in {"set_height", "set_height_respawn"}:
                     operation_started = time.perf_counter()
                     if message.get("height_mm") is not None:
-                        height_mm = normalize_height_mm(message.get("height_mm"))
+                        requested_height_mm = normalize_height_mm(message.get("height_mm"))
                     else:
-                        height_mm = legacy_cm_to_mm(message.get("height_cm"))
+                        requested_height_mm = legacy_cm_to_mm(message.get("height_cm"))
                     last_set_height_source = str(message.get("source", "ui") or "ui")
                     last_set_height_request_id = str(message.get("request_id", "") or "")
-                    obstacle_revision += 1
-                    logger.log(f"[worker] {kind} {height_mm}mm source={last_set_height_source} revision={obstacle_revision}")
+                    requested_revision = int(message.get("requested_revision", obstacle_revision + 1) or (obstacle_revision + 1))
+                    if requested_revision <= obstacle_revision:
+                        requested_revision = obstacle_revision + 1
+                    logger.log(
+                        f"[worker] {kind} {requested_height_mm}mm source={last_set_height_source} "
+                        f"requested_revision={requested_revision} current_revision={obstacle_revision}"
+                    )
                     result = handle_set_height(
                         adapter=adapter,
                         scene_handle=scene_handle,
-                        height_mm=height_mm,
+                        height_mm=requested_height_mm,
                         source=last_set_height_source,
                         request_id=last_set_height_request_id,
-                        obstacle_revision=obstacle_revision,
+                        obstacle_revision=requested_revision,
                         respawn_policy="required" if kind == "set_height_respawn" else "never",
                     )
                     last_set_height_result = dict(result)
-                    if kind == "set_height":
-                        adapter.step(float(scene_handle.sim.get_physics_dt()))
-                    adapter.scene_baseline_metrics.update(
-                        height_mm=height_mm,
-                        obstacle_height_m=obstacle_height_m_mm(height_mm),
-                        obstacle_revision=obstacle_revision,
-                    )
+                    if bool(result.get("accepted", False)):
+                        height_mm = requested_height_mm
+                        obstacle_revision = requested_revision
+                        adapter.scene_baseline_metrics.update(
+                            height_mm=height_mm,
+                            obstacle_height_m=obstacle_height_m_mm(height_mm),
+                            obstacle_width_m=result.get("measured_width_m"),
+                            obstacle_revision=obstacle_revision,
+                            obstacle_bounds=result.get("measured_bounds", {}),
+                        )
                     sim_time = float(getattr(adapter, "sim_time", sim_time))
                     sim_steps = int(getattr(adapter, "sim_steps", sim_steps))
                     if bool(result.get("respawned", False)):
@@ -898,22 +954,20 @@ def run_worker(args: argparse.Namespace) -> int:
                     if not bool(result.get("ok", True)):
                         worker_error = str(result.get("error", ""))
                         logger.log(f"[worker] set_height ground failure: {worker_error}")
-                    ipc.send(
-                        make_message(
-                            "operation_ack",
-                            operation=kind,
-                            request_id=last_set_height_request_id,
-                            updated=bool(result.get("obstacle_updated", False)),
-                            height_mm=height_mm,
-                            revision=obstacle_revision,
-                            control_ready=bool(result.get("motion_ready", False)),
-                            respawned=bool(result.get("respawned", False)),
-                            obstacle_update_s=float(result.get("obstacle_update_s", 0.0) or 0.0),
-                            worker_operation_s=time.perf_counter() - operation_started,
-                            request_enqueued_wall_time=float(message.get("enqueued_wall_time", 0.0) or 0.0),
-                            error=str(result.get("error", "") or ""),
-                        )
-                    )
+                    ack_payload = {
+                        **result,
+                        "request_id": last_set_height_request_id,
+                        "accepted": bool(result.get("accepted", False)),
+                        "updated": bool(result.get("obstacle_updated", False)),
+                        "height_mm": int(round(float(result.get("measured_height_mm", height_mm) or height_mm))),
+                        "revision": obstacle_revision,
+                        "obstacle_revision": obstacle_revision,
+                        "control_ready": bool(result.get("control_ready", False)),
+                        "worker_operation_s": time.perf_counter() - operation_started,
+                        "request_enqueued_wall_time": float(message.get("enqueued_wall_time", 0.0) or 0.0),
+                        "error": str(result.get("error", "") or ""),
+                    }
+                    ipc.send(make_message("operation_ack", operation=kind, **ack_payload))
                 elif kind == "respawn":
                     logger.log("[worker] respawn")
                     result = handle_respawn(adapter=adapter)
@@ -947,6 +1001,17 @@ def run_worker(args: argparse.Namespace) -> int:
                             operation="recalibrate_ground_reference",
                             request_id=str(message.get("request_id", "") or ""),
                             control_ready=bool(ground_result.get("grounded_reference_valid", False)),
+                            grounded_reference_valid=bool(ground_result.get("grounded_reference_valid", False)),
+                            grounded_reference_stable=bool(ground_result.get("grounded_reference_stable", False)),
+                            grounded_reference_physics_valid=bool(ground_result.get("grounded_reference_physics_valid", False)),
+                            stable_frames=int(ground_result.get("stable_frames", 0) or 0),
+                            stable_frames_required=int(ground_result.get("stable_frames_required", 0) or 0),
+                            ground_reference_block_reason=str(
+                                dict(ground_result.get("grounded_reference_diagnostics", {}) or {}).get(
+                                    "ground_reference_block_reason", ""
+                                )
+                                or ""
+                            ),
                             error=str(ground_result.get("error", "") or ""),
                         )
                     )
@@ -1121,6 +1186,13 @@ def build_status(
         "last_set_height_source": str(last_set_height_source or ""),
         "last_set_height_request_id": str(last_set_height_request_id or ""),
         "obstacle_updated": bool(result.get("obstacle_updated", False)),
+        "measured_height_mm": result.get("measured_height_mm"),
+        "measured_width_m": result.get("measured_width_m"),
+        "measured_length_m": result.get("measured_length_m"),
+        "measured_bounds": dict(result.get("measured_bounds", {}) or {}),
+        "visual_updated": bool(result.get("visual_updated", False)),
+        "collision_updated": bool(result.get("collision_updated", False)),
+        "obstacle_prim_valid": bool(result.get("prim_valid", False)),
         "scene_ready": bool(result.get("scene_ready", ready)),
         "respawned": bool(result.get("respawned", False)),
         "error": str(error or ""),

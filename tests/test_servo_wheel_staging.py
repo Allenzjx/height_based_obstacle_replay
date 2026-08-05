@@ -55,7 +55,7 @@ class ServoWheelAtomicBatchTest(unittest.TestCase):
             self.assertEqual(len(calls), 1)
             self.assertEqual(calls[0]["batch_id"], batch_id)
             self.assertEqual(set(calls[0]["servo_targets_deg"]), set(SERVO_JOINT_NAMES))
-            self.assertEqual(set(calls[0]["wheel_base_velocity_rad_s"]), set(WHEEL_JOINT_NAMES))
+            self.assertEqual(set(calls[0]["wheel_targets_rad_s"]), set(WHEEL_JOINT_NAMES))
             self.assertEqual(calls[0]["requested_sim_boundary"], "next_physics_tick")
 
     def test_adapter_ack_declares_one_tick_and_zero_channel_skew(self) -> None:
@@ -64,8 +64,7 @@ class ServoWheelAtomicBatchTest(unittest.TestCase):
             {
                 "batch_id": "atomic-1",
                 "servo_targets_deg": {"front_left_knee": -60.0},
-                "wheel_base_velocity_rad_s": {name: 0.3 for name in WHEEL_JOINT_NAMES},
-                "speed_percent_snapshot": 200.0,
+                "wheel_targets_rad_s": {name: 0.3 for name in WHEEL_JOINT_NAMES},
             }
         )
         self.assertTrue(ack["servo_applied"])
@@ -77,20 +76,22 @@ class ServoWheelAtomicBatchTest(unittest.TestCase):
     def test_recording_stores_one_canonical_batch_event(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
-            controller.set_speed_percent(200.0)
             controller.handle_command("step_record start")
-            controller.apply_servo_wheel_together(
-                {name: (-20.0 if name == "front_left_hip" else 0.0) for name in SERVO_JOINT_NAMES},
-                {name: 0.25 for name in WHEEL_JOINT_NAMES},
-            )
+            self.assertTrue(controller.start_servo_wheel_mode())
+            controller.stage_servo_wheel_servo("front_left_hip", -20.0)
+            for name in WHEEL_JOINT_NAMES:
+                controller.stage_servo_wheel_wheel(name, 0.25)
+            controller.launch_servo_wheel()
             self.assertEqual(len(controller.record_events), 1)
             event = controller.record_events[0]
-            self.assertEqual(event["command"], "apply_motion_batch")
-            self.assertEqual(event["recorded_speed_percent"], 200.0)
+            self.assertEqual(event["command"], "servo_wheel launch")
+            self.assertEqual(event["kind"], "servo_wheel_launch")
+            self.assertNotIn("recorded_speed_percent", event)
             self.assertEqual(event["canonical_servo_target_deg"]["front_left_hip"], -20.0)
             self.assertEqual(event["canonical_wheel_velocity_rad_s"]["front_left_ankle"], 0.25)
-            self.assertEqual(event["effective_wheel_velocity_rad_s"]["front_left_ankle"], 0.5)
-            self.assertEqual(event["speed_semantics_version"], "worker-motion-executor-v1")
+            self.assertEqual(len(event["expanded_commands"]), 12)
+            self.assertIn("staged_state_before", event)
+            self.assertIn("staged_state_after", event)
 
     def test_stop_wheels_preempts_and_zeros_all_wheels(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -102,16 +103,29 @@ class ServoWheelAtomicBatchTest(unittest.TestCase):
             controller.stop_wheels(reason="test")
             self.assertTrue(all(value == 0.0 for value in controller.transport.capture_command_state()["wheels"].values()))
 
-    def test_runtime_source_has_no_staging_state_or_looped_ipc(self) -> None:
+    def test_runtime_source_has_visible_staging_and_no_looped_ipc(self) -> None:
         source = inspect.getsource(HeightReplayController)
-        self.assertNotIn("servo_wheel_staging_active", source)
-        self.assertNotIn("servo_wheel_staged_state", source)
+        self.assertIn("servo_wheel_staging_active", source)
+        self.assertIn("servo_wheel_staged_state", source)
         apply_source = inspect.getsource(HeightReplayController.apply_servo_wheel_together)
         self.assertEqual(apply_source.count("self.transport.apply_motion_batch"), 1)
         self.assertNotIn("self.transport.send(", apply_source)
         ui_source = inspect.getsource(RealRobotStyleHeightReplayUi._build_record_servo_wheel_tab)
-        self.assertIn("Apply Servo + Wheel Together", ui_source)
-        self.assertIn("No staging state", ui_source)
+        for label in ("Start Servo-Wheel Mode", "Launch Servo-Wheel", "Clear Staged", "Cancel Servo-Wheel Mode"):
+            self.assertIn(label, ui_source)
+
+    def test_staging_changes_no_live_state_until_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            controller = HeightReplayController(make_args(Path(tmp)))
+            before = controller.transport.capture_command_state()
+            self.assertTrue(controller.start_servo_wheel_mode())
+            controller.stage_servo_wheel_servo("front_left_hip", 15.0)
+            controller.stage_servo_wheel_wheel("front_left_ankle", 0.4)
+            self.assertEqual(controller.transport.capture_command_state(), before)
+            controller.launch_servo_wheel()
+            after = controller.transport.capture_command_state()
+            self.assertEqual(after["servos"]["front_left_hip"], 15.0)
+            self.assertEqual(after["wheels"]["front_left_ankle"], 0.4)
 
 
 if __name__ == "__main__":

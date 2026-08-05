@@ -9,6 +9,7 @@ from typing import Any
 
 class PlaybackState(str, Enum):
     IDLE = "IDLE"
+    START_REQUESTED = "START_REQUESTED"
     PREPARING = "PREPARING"
     RESTORING = "RESTORING"
     PLAYING = "PLAYING"

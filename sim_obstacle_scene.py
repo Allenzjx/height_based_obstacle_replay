@@ -244,17 +244,19 @@ def finalize_scene_after_grounding(scene_handle: SimSceneHandle, *, phase_callba
     _emit_phase(phase_callback, "first_visible_render_completed")
 
 
-def update_obstacle_height(scene_handle: SimSceneHandle, obstacle_height_m: float) -> None:
-    """Update the single existing obstacle prim in place without render/rebuild."""
+def update_obstacle_height(scene_handle: SimSceneHandle, obstacle_height_m: float) -> dict[str, Any]:
+    """Update the obstacle and return measured USD geometry, never a guessed success."""
 
     imports = _isaac_imports()
     sim_utils = imports["sim_utils"]
     stage = sim_utils.get_current_stage()
     scene_handle.config.obstacle_height_m = float(obstacle_height_m)
     prim = stage.GetPrimAtPath(OBSTACLE_PRIM_PATH)
+    old_geometry = measure_obstacle_geometry(scene_handle)
     if not prim.IsValid():
         scene_handle.obstacle_center = create_obstacle(scene_handle.config, imports)
-        return
+        measured = measure_obstacle_geometry(scene_handle)
+        return {"old_geometry": old_geometry, "measured_geometry": measured, "update_mode": "created_missing_prim"}
     center = (
         float(scene_handle.config.obstacle_x),
         0.0,
@@ -267,6 +269,106 @@ def update_obstacle_height(scene_handle: SimSceneHandle, obstacle_height_m: floa
     )
     _set_cuboid_size_and_translation(prim, size=size, translation=center)
     scene_handle.obstacle_center = imports["torch"].tensor(center, dtype=imports["torch"].float32)
+    measured = measure_obstacle_geometry(scene_handle)
+    expected_height = float(obstacle_height_m)
+    expected_width = float(scene_handle.config.obstacle_width)
+    in_place_ok = (
+        bool(measured.get("prim_valid", False))
+        and bool(measured.get("visual_valid", False))
+        and bool(measured.get("collision_valid", False))
+        and abs(float(measured.get("height_m", -1.0)) - expected_height) <= 0.001
+        and abs(float(measured.get("width_m", -1.0)) - expected_width) <= 0.001
+        and abs(float(measured.get("collision_height_m", -1.0)) - expected_height) <= 0.001
+    )
+    mode = "in_place"
+    if not in_place_ok:
+        if not stage.RemovePrim(OBSTACLE_PRIM_PATH):
+            raise RuntimeError(f"Could not remove stale obstacle prim {OBSTACLE_PRIM_PATH}")
+        if stage.GetPrimAtPath(OBSTACLE_PRIM_PATH).IsValid():
+            raise RuntimeError(f"Obstacle prim remained valid after removal: {OBSTACLE_PRIM_PATH}")
+        scene_handle.obstacle_center = create_obstacle(scene_handle.config, imports)
+        measured = measure_obstacle_geometry(scene_handle)
+        mode = "minimal_recreate_after_in_place_verification_failed"
+    return {"old_geometry": old_geometry, "measured_geometry": measured, "update_mode": mode}
+
+
+def measure_obstacle_geometry(scene_handle: SimSceneHandle) -> dict[str, Any]:
+    """Measure only the small obstacle subtree, including visual and collision bounds."""
+
+    result: dict[str, Any] = {
+        "prim_path": OBSTACLE_PRIM_PATH,
+        "prim_valid": False,
+        "visual_valid": False,
+        "collision_valid": False,
+    }
+    try:
+        from pxr import Usd, UsdGeom, UsdPhysics  # type: ignore
+
+        stage = getattr(scene_handle.sim, "stage", None)
+        if stage is None:
+            import omni.usd  # type: ignore
+
+            stage = omni.usd.get_context().get_stage()
+        prim = stage.GetPrimAtPath(OBSTACLE_PRIM_PATH)
+        result["prim_valid"] = bool(prim.IsValid())
+        if not prim.IsValid():
+            result["error"] = f"Obstacle prim is invalid: {OBSTACLE_PRIM_PATH}"
+            return result
+        cache = UsdGeom.BBoxCache(
+            Usd.TimeCode.Default(),
+            [UsdGeom.Tokens.default_, UsdGeom.Tokens.render],
+            useExtentsHint=False,
+        )
+
+        def bounds(row: Any) -> tuple[list[float], list[float]] | None:
+            info = safe_prim_world_aabb(row, cache, source=str(row.GetPath()))
+            if not bool(info.get("valid", False)):
+                return None
+            return list(info["min"]), list(info["max"])
+
+        overall = bounds(prim)
+        if overall is None:
+            result["error"] = "Obstacle visual world AABB is unavailable."
+            return result
+        lo, hi = overall
+        result.update(
+            visual_valid=True,
+            measured_bounds={"min": lo, "max": hi},
+            visual_bounds={"min": lo, "max": hi},
+            height_m=float(hi[2] - lo[2]),
+            width_m=float(hi[1] - lo[1]),
+            length_m=float(hi[0] - lo[0]),
+            front_face_x_m=float(lo[0]),
+            center_y_m=float((lo[1] + hi[1]) * 0.5),
+            bottom_z_m=float(lo[2]),
+            top_z_m=float(hi[2]),
+        )
+        collision_lo: list[float] | None = None
+        collision_hi: list[float] | None = None
+        collision_paths: list[str] = []
+        for child in Usd.PrimRange(prim):
+            if not child.HasAPI(UsdPhysics.CollisionAPI):
+                continue
+            row_bounds = bounds(child)
+            if row_bounds is None:
+                continue
+            child_lo, child_hi = row_bounds
+            collision_lo = child_lo if collision_lo is None else [min(collision_lo[i], child_lo[i]) for i in range(3)]
+            collision_hi = child_hi if collision_hi is None else [max(collision_hi[i], child_hi[i]) for i in range(3)]
+            collision_paths.append(str(child.GetPath()))
+        if collision_lo is not None and collision_hi is not None:
+            result.update(
+                collision_valid=True,
+                collision_prim_paths=collision_paths,
+                collision_bounds={"min": collision_lo, "max": collision_hi},
+                collision_height_m=float(collision_hi[2] - collision_lo[2]),
+                collision_width_m=float(collision_hi[1] - collision_lo[1]),
+            )
+        else:
+            result["error"] = "Obstacle collision geometry/API is unavailable."
+    except Exception as exc:
+        result["error"] = str(exc)
+    return result
 
 
 def _set_cuboid_size_and_translation(

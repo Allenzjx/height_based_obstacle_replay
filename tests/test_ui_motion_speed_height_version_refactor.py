@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 import statistics
 import tempfile
 import time
@@ -18,7 +19,7 @@ from height_manifest import (
 )
 from height_replay_ui import build_parser, normalize_motion_args
 from height_version_store import HeightVersionStore, file_sha256
-from motion_speed import SpeedScale, load_motion_reference
+from motion_speed import load_motion_reference
 from playback import SimTimePlaybackService, plan_from_steps
 from sequence_model import empty_command_state, make_event, make_step, save_steps_jsonl
 from sim_ipc_protocol import MESSAGE_TYPES, encode_message, make_message
@@ -98,47 +99,25 @@ class HeightAndVersionContractTest(unittest.TestCase):
 
 
 class SpeedSemanticsContractTest(unittest.TestCase):
-    def test_servo_target_never_scales_and_rate_does(self) -> None:
+    def test_motion_profile_is_fixed_and_read_only(self) -> None:
         reference = load_motion_reference()
-        model = SpeedScale(reference)
-        target = -60.0
-        values = {}
-        for percent in (50, 100, 200, 300):
-            model.set_percent(percent)
-            requested, effective = model.servo_velocity()
-            values[percent] = (target, requested, effective, abs(target) / effective)
-        self.assertEqual({row[0] for row in values.values()}, {target})
-        self.assertAlmostEqual(values[200][1], values[100][1] * 2.0)
-        self.assertAlmostEqual(values[300][1], values[100][1] * 3.0)
-        self.assertAlmostEqual(values[200][3], values[100][3] / 2.0)
+        self.assertEqual(reference.servo_reference_velocity_deg_s, 150.0)
+        self.assertEqual(reference.wheel_reference_velocity_rad_s, 0.5235987755982988)
+        self.assertEqual(reference.wheel_velocity_limit_rad_s, 2.0943951023931953)
+        self.assertFalse(hasattr(reference, "percent"))
 
-    def test_wheel_velocity_and_joint_path_scale_but_duration_does_not(self) -> None:
-        model = SpeedScale(load_motion_reference())
-        canonical = 0.3
-        duration = 2.0
-        paths = {}
-        for percent in (50, 100, 200, 300):
-            model.set_percent(percent)
-            _requested, effective = model.wheel_velocity(canonical)
-            paths[percent] = effective * duration
-        self.assertAlmostEqual(paths[200], paths[100] * 2.0)
-        self.assertAlmostEqual(paths[300], paths[100] * 3.0)
-        self.assertAlmostEqual(paths[50], paths[100] * 0.5)
-
-    def test_adapter_applies_scale_once(self) -> None:
+    def test_adapter_applies_canonical_values_directly(self) -> None:
         adapter = NullSimRobotAdapter()
-        adapter.set_speed_percent(200.0)
         ack = adapter.apply_motion_batch(
             {
-                "batch_id": "scale-once",
+                "batch_id": "fixed-profile",
                 "servo_targets_deg": {"front_left_knee": -60.0},
-                "wheel_base_velocity_rad_s": {name: 0.3 for name in WHEEL_JOINT_NAMES},
-                "speed_percent_snapshot": 200.0,
+                "wheel_targets_rad_s": {name: 0.3 for name in WHEEL_JOINT_NAMES},
             }
         )
         self.assertEqual(adapter.capture_command_state()["servos"]["front_left_knee"], -60.0)
-        self.assertAlmostEqual(ack["effective_wheel_velocity_rad_s"]["front_left_ankle"], 0.6)
-        self.assertNotAlmostEqual(ack["effective_wheel_velocity_rad_s"]["front_left_ankle"], 1.2)
+        self.assertAlmostEqual(ack["effective_wheel_velocity_rad_s"]["front_left_ankle"], 0.3)
+        self.assertEqual(ack["motion_profile"], "fixed_100_percent")
 
     def test_legacy_plan_is_canonical_and_raw_fast_signatures_match(self) -> None:
         before = empty_command_state()
@@ -188,7 +167,7 @@ class SpeedSemanticsContractTest(unittest.TestCase):
         service.update(adapter, current_sim_time_s=0.0, current_sim_step=0, current_wall_time_s=0.0)
         self.assertEqual(len(calls), 1)
         self.assertTrue(calls[0]["servo_targets_deg"])
-        self.assertTrue(calls[0]["wheel_base_velocity_rad_s"])
+        self.assertTrue(calls[0]["wheel_targets_rad_s"])
 
 
 class LightweightRuntimeContractTest(unittest.TestCase):
@@ -196,7 +175,6 @@ class LightweightRuntimeContractTest(unittest.TestCase):
         required = {
             "set_height_respawn",
             "recalibrate_ground_reference",
-            "set_speed_scale",
             "apply_motion_batch",
             "operation_ack",
             "stop_ack",
@@ -234,7 +212,7 @@ class LightweightRuntimeContractTest(unittest.TestCase):
         self.assertGreaterEqual(ipc.status()["status_replaced"], 1)
         self.assertEqual(ipc.status()["socket_send_blocking_ms"], 0.0)
 
-    def test_generate_callback_is_lock_free_and_fast_for_all_heights(self) -> None:
+    def test_generate_callback_is_fast_and_releases_no_sim_transaction(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
             samples = []
@@ -248,54 +226,46 @@ class LightweightRuntimeContractTest(unittest.TestCase):
             self.assertLess(statistics.quantiles(samples, n=20)[18], 30.0)
             self.assertLess(max(samples), 100.0)
 
-    def test_speed_callback_is_lock_free_and_parser_runs_5_to_10hz_status(self) -> None:
+    def test_speed_runtime_api_is_removed_and_parser_runs_5_to_10hz_status(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
-            samples = []
-            for value in range(0, 301, 3):
-                started = time.perf_counter()
-                controller.set_speed_percent(value)
-                samples.append((time.perf_counter() - started) * 1000.0)
-                self.assertTrue(controller.operation.idle)
-            self.assertLess(statistics.quantiles(samples, n=20)[18], 30.0)
+            self.assertFalse(hasattr(controller, "set_speed_percent"))
+            self.assertNotIn("set_speed_scale", MESSAGE_TYPES)
         args = build_parser().parse_args(["--ui", "--no-sim"])
         normalize_motion_args(args)
         self.assertGreaterEqual(args.sim_status_refresh_ms, 100)
         self.assertLessEqual(args.sim_status_refresh_ms, 200)
 
-    def test_ui_tabs_save_icon_and_debounced_speed_slider(self) -> None:
+    def test_ui_tabs_save_icon_and_visible_servo_wheel_staging(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
             ui = RealRobotStyleHeightReplayUi(controller)
             ui.root.withdraw()
             try:
                 tabs = [str(ui.right_notebook.tab(item, "text")) for item in ui.right_notebook.tabs()]
-                self.assertIn("Speed Scale", tabs)
+                self.assertNotIn("Speed Scale", tabs)
                 self.assertNotIn("Vision Auto Replay", tabs)
                 self.assertNotIn("Stability Replay", tabs)
                 self.assertIn("Save New Version", ui.save_modified_steps_button.cget("text"))
-                first_id = None
-                for value in range(100):
-                    ui._schedule_speed_scale(str(value * 3))
-                    first_id = ui.speed_scale_after_id
-                self.assertIsNotNone(first_id)
-                self.assertEqual(len([key for key in ui.root.tk.call("after", "info") if key == first_id]), 1)
+                source = inspect.getsource(RealRobotStyleHeightReplayUi._build_record_servo_wheel_tab)
+                self.assertIn("Start Servo-Wheel Mode", source)
+                self.assertIn("Launch Servo-Wheel", source)
             finally:
                 ui._window_close()
 
 
 class GeometryAndRegressionContractTest(unittest.TestCase):
     def test_fixed_wider_obstacle_geometry_for_all_heights(self) -> None:
-        self.assertEqual(OBSTACLE_WIDTH_M, 1.20)
-        self.assertGreaterEqual(OBSTACLE_WIDTH_M, float(ENVIRONMENT_REFERENCE["old_obstacle_width_m"]) + 0.20)
+        self.assertEqual(OBSTACLE_WIDTH_M, 2.00)
+        self.assertGreaterEqual(OBSTACLE_WIDTH_M, float(ENVIRONMENT_REFERENCE["old_obstacle_width_m"]) + 0.40)
         self.assertEqual(OBSTACLE_LENGTH_M, 2.057375557085507)
         self.assertEqual(OBSTACLE_FRONT_FACE_X_M, 0.5213121737735307)
-        self.assertAlmostEqual((OBSTACLE_WIDTH_M - ROBOT_COLLISION_WIDTH_M) / 2.0, 0.3794498172320399)
+        self.assertAlmostEqual((OBSTACLE_WIDTH_M - ROBOT_COLLISION_WIDTH_M) / 2.0, 0.7794498172320399)
         rows = [
             (height, OBSTACLE_WIDTH_M, OBSTACLE_FRONT_FACE_X_M, 0.0, height / 1000.0)
             for height in SUPPORTED_HEIGHTS_MM
         ]
-        self.assertEqual({row[1] for row in rows}, {1.20})
+        self.assertEqual({row[1] for row in rows}, {2.00})
         self.assertEqual({row[2] for row in rows}, {OBSTACLE_FRONT_FACE_X_M})
         self.assertEqual([row[4] for row in rows], [0.05, 0.075, 0.1])
 
