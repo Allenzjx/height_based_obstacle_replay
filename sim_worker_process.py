@@ -877,6 +877,7 @@ def run_worker(args: argparse.Namespace) -> int:
                             error=rejection_reason,
                             plan_id=requested_plan_id,
                             plan_sha256=str(integrity.get("plan_sha256", "") or ""),
+                            profile=str(plan.profile or "raw"),
                             event_count=int(integrity.get("event_count", 0) or 0),
                             segment_count=int(integrity.get("segment_count", 0) or 0),
                             input_step_count=int(integrity.get("input_step_count", 0) or 0),

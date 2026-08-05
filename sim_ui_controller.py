@@ -250,6 +250,7 @@ class HeightReplayController:
         self._motion_batch_acks_merged: set[str] = set()
         self.pending_selected_playback: dict[str, Any] | None = None
         self.last_selected_restore_result: dict[str, Any] = {}
+        self.selected_fast_click_id = ""
 
         self.playback = PlaybackManager(self)
         self.playback.set_profile(str(getattr(args, "profile", self.playback.profile) or self.playback.profile))
@@ -2754,6 +2755,7 @@ class HeightReplayController:
         self.pending_selected_playback = {
             **resolved,
             "profile": str(profile),
+            "selected_fast_click_id": self.selected_fast_click_id if str(profile) == "fast" else "",
             "label": f"{self.current_height_mm}mm step {index:03d}",
             "request_id": request_id,
             "restore_count_before": int(self.latest_sim_status.get("restore_count", 0) or 0),
@@ -2781,6 +2783,11 @@ class HeightReplayController:
             self.pending_selected_playback["trace"].append(
                 {"event": "restore_sent", "monotonic_s": time.monotonic(), "request_id": request_id}
             )
+            self.status = (
+                f"Restoring saved end state from Step {source_index}... "
+                f"Restore source: Step {source_index}.{source_field}; Selected target: Step {index}."
+            )
+            self.detail_text = self.status
         except Exception as exc:
             self._fail_pending_selected_playback(f"previous saved state restore failed: {exc}")
             return False
@@ -2946,7 +2953,12 @@ class HeightReplayController:
         pending["trace"].append({"event": "playback_start_requested", "monotonic_s": time.monotonic()})
         plan.timing["selected_restore_trace"] = copy.deepcopy(pending["trace"])
         if self._use_worker_playback_scheduler():
-            ok = self.playback.start_worker_plan(plan, start_delay_s=self.playback_pre_step_settle_s)
+            ok = self.playback.start_worker_plan(
+                plan,
+                start_delay_s=self.playback_pre_step_settle_s,
+                operation_already_owned=True,
+                operation_owner_id=str(pending["request_id"]),
+            )
         else:
             ok = self.playback.start_plan(plan, start_delay_s=self.playback_pre_step_settle_s)
         result = {
@@ -3438,6 +3450,12 @@ class RealRobotStyleHeightReplayUi:
         self.wheel_vars: dict[str, Any] = {}
         self.playback_buttons: list[Any] = []
         self.playback_buttons_by_label: dict[str, Any] = {}
+        self.last_selected_fast_click_id = ""
+        self.last_selected_fast_click_started = 0.0
+        self.last_selected_fast_feedback_ms = 0.0
+        self.selected_fast_feedback_pending = False
+        self.pending_selected_fast_feedback_text = ""
+        self.selected_fast_click_trace: list[dict[str, Any]] = []
 
         self.summary_var = tk.StringVar(value=controller.status_line())
         self.sim_label_var = tk.StringVar(value="Isaac Sim: starting")
@@ -4156,6 +4174,7 @@ class RealRobotStyleHeightReplayUi:
             self.playback_buttons.append(button)
             self.playback_buttons_by_label[label] = button
             button.grid(row=5 + index // 2, column=index % 2, sticky="ew", padx=2, pady=2)
+        self.root.bind("<ButtonPress-1>", self._play_selected_fast_mouse_press, add="+")
         self.ttk.Label(parent, textvariable=self.playback_label_var, wraplength=560, justify="left").grid(row=13, column=0, columnspan=2, sticky="ew", pady=(6, 0))
         self.ttk.Label(parent, textvariable=self.playback_unavailable_var, wraplength=560, foreground="#8a3b00").grid(row=14, column=0, columnspan=2, sticky="ew", pady=(2, 0))
         parent.columnconfigure(0, weight=1)
@@ -4296,6 +4315,74 @@ class RealRobotStyleHeightReplayUi:
         indices = self._selected_indices()
         return indices[0] if indices else self.selected_step_index
 
+    def resolve_playback_selected_index(self) -> int | None:
+        """Resolve the playback selection from the visible tree, then the shared controller."""
+
+        indices = self._selected_indices()
+        candidate = indices[0] if indices else self.controller.selected_step_index
+        try:
+            index = int(candidate) if candidate is not None else 0
+        except (TypeError, ValueError):
+            return None
+        return index if 1 <= index <= self.controller.manager.count else None
+
+    def _selected_fast_boundary(self, event: str, **details: Any) -> None:
+        now = time.perf_counter()
+        self.selected_fast_click_trace.append(
+            {
+                "event": str(event),
+                "click_id": self.last_selected_fast_click_id,
+                "relative_ms": max(0.0, (now - self.last_selected_fast_click_started) * 1000.0),
+                **copy.deepcopy(details),
+            }
+        )
+
+    def _play_selected_fast_mouse_press(self, event: Any) -> None:
+        fast_button = self.playback_buttons_by_label.get("Play Selected Fast")
+        if fast_button is None or getattr(event, "widget", None) != fast_button:
+            return
+        self.last_selected_fast_click_id = uuid.uuid4().hex
+        self.last_selected_fast_click_started = time.perf_counter()
+        self.last_selected_fast_feedback_ms = 0.0
+        self.selected_fast_feedback_pending = False
+        self.pending_selected_fast_feedback_text = ""
+        self.selected_fast_click_trace = []
+        self.controller.selected_fast_click_id = self.last_selected_fast_click_id
+        self._selected_fast_boundary(
+            "physical_mouse_press",
+            widget=str(getattr(event, "widget", "")),
+            x_root=int(getattr(event, "x_root", 0) or 0),
+            y_root=int(getattr(event, "y_root", 0) or 0),
+        )
+        index = self.resolve_playback_selected_index()
+        ok, reason = self.controller.playback_readiness(respawn_first=False)
+        if index is None:
+            feedback = "Select an accepted step first."
+        elif not ok:
+            feedback = f"Play Selected Fast blocked: {reason}"
+        elif index > 1:
+            feedback = (
+                f"Play Selected Fast received: Step {index}\n"
+                f"Restoring saved end state from Step {index - 1}..."
+            )
+        else:
+            feedback = "Play Selected Fast received: Step 1\nRestoring Step 1 saved start state..."
+        self.pending_selected_fast_feedback_text = feedback
+        if index is None or not ok:
+            self.selected_fast_feedback_pending = True
+            self.playback_label_var.set(feedback)
+            self.last_selected_fast_feedback_ms = (
+                time.perf_counter() - self.last_selected_fast_click_started
+            ) * 1000.0
+            self._selected_fast_boundary(
+                "immediate_visible_feedback",
+                selected_index=index,
+                allowed=False,
+                reason=reason,
+                text=feedback,
+                feedback_ms=self.last_selected_fast_feedback_ms,
+            )
+
     def _selected_step_command(self, template: str) -> None:
         index = self._selected_index()
         if index is None:
@@ -4305,13 +4392,61 @@ class RealRobotStyleHeightReplayUi:
         self._post(template.format(index=index))
 
     def _selected_step_playback_command(self, template: str) -> None:
-        self._apply_playback_options()
+        is_fast = template.strip().endswith(" fast") and template.strip().startswith("play_step")
+        if is_fast:
+            if not self.last_selected_fast_click_id or time.perf_counter() - self.last_selected_fast_click_started > 2.0:
+                self.last_selected_fast_click_id = uuid.uuid4().hex
+                self.last_selected_fast_click_started = time.perf_counter()
+                self.selected_fast_click_trace = []
+                self.controller.selected_fast_click_id = self.last_selected_fast_click_id
+            self._selected_fast_boundary("tk_button_command_entered", template=template)
         tree_selection = list(self.steps_tree.selection())
         tree_indices = self._selected_indices()
-        index = self._selected_index()
+        index = self.resolve_playback_selected_index()
         respawn_first = template.strip().startswith("respawn_play")
         ok, reason = self.controller.playback_readiness(respawn_first=respawn_first)
         command = template.format(index=index) if index is not None else ""
+        if is_fast:
+            feedback = self.pending_selected_fast_feedback_text
+            if not feedback:
+                if index is None:
+                    feedback = "Select an accepted step first."
+                elif not ok:
+                    feedback = f"Play Selected Fast blocked: {reason}"
+                elif index > 1:
+                    feedback = (
+                        f"Play Selected Fast received: Step {index}\n"
+                        f"Restoring saved end state from Step {index - 1}..."
+                    )
+                else:
+                    feedback = "Play Selected Fast received: Step 1\nRestoring Step 1 saved start state..."
+            self.selected_fast_feedback_pending = True
+            self.playback_label_var.set(feedback)
+            self.busy_label_var.set("Restoring..." if ok and index is not None else "")
+            self.root.update_idletasks()
+            self.last_selected_fast_feedback_ms = (
+                time.perf_counter() - self.last_selected_fast_click_started
+            ) * 1000.0
+            self._selected_fast_boundary(
+                "immediate_visible_feedback",
+                selected_index=index,
+                allowed=bool(ok and index is not None),
+                reason=reason,
+                text=feedback,
+                feedback_ms=self.last_selected_fast_feedback_ms,
+            )
+            self._selected_fast_boundary(
+                "selected_index_resolved",
+                tree_indices=tree_indices,
+                ui_selected_step_index=self.selected_step_index,
+                controller_selected_step_index=self.controller.selected_step_index,
+                selected_index=index,
+            )
+            self._selected_fast_boundary("playback_readiness_evaluated", allowed=ok, reason=reason)
+            self._selected_fast_boundary("generated_command", command=command)
+            self.selected_fast_feedback_pending = False
+            self.pending_selected_fast_feedback_text = ""
+        self._apply_playback_options()
         self.controller._info(
             "[PLAYBACK DEBUG] ui play-selected "
             f"tree_selection={tree_selection} tree_indices={tree_indices} "
@@ -4740,14 +4875,21 @@ class RealRobotStyleHeightReplayUi:
             selected_prefix = "Selected Step" if progress.get("selected_playback") else "Playing Step"
             state_text = str(progress.get("status_text", progress.get("playback_state", "Idle")) or "Idle")
             profile_text = "Motion-only" if str(progress.get("playback_profile", playback.get("profile", "raw"))) in {"fast", "motion_only"} else "Raw"
-            self.playback_label_var.set(
-                f"{state_text} | {selected_prefix} {step_index} / {total_steps}\n"
-                f"{progress.get('current_step_id', '') or '-'}\n"
-                f"Command {int(progress.get('current_command_index_in_step', 0) or 0)} / {int(progress.get('commands_in_current_step', 0) or 0)} | "
-                f"Total command {int(progress.get('global_command_index', 0) or 0)} / {int(progress.get('total_commands', playback.get('count', 0)) or 0)}\n"
-                f"Elapsed {float(progress.get('elapsed_time', 0.0) or 0.0):.3f}s | Remaining {float(progress.get('estimated_remaining_time', 0.0) or 0.0):.3f}s\n"
-                f"Profile: {profile_text} | direct recorded actuator commands"
+            hold_fast_feedback = bool(
+                self.selected_fast_feedback_pending
+                and time.perf_counter() - self.last_selected_fast_click_started < 1.0
             )
+            if self.selected_fast_feedback_pending and not hold_fast_feedback:
+                self.selected_fast_feedback_pending = False
+            if not hold_fast_feedback:
+                self.playback_label_var.set(
+                    f"{state_text} | {selected_prefix} {step_index} / {total_steps}\n"
+                    f"{progress.get('current_step_id', '') or '-'}\n"
+                    f"Command {int(progress.get('current_command_index_in_step', 0) or 0)} / {int(progress.get('commands_in_current_step', 0) or 0)} | "
+                    f"Total command {int(progress.get('global_command_index', 0) or 0)} / {int(progress.get('total_commands', playback.get('count', 0)) or 0)}\n"
+                    f"Elapsed {float(progress.get('elapsed_time', 0.0) or 0.0):.3f}s | Remaining {float(progress.get('estimated_remaining_time', 0.0) or 0.0):.3f}s\n"
+                    f"Profile: {profile_text} | direct recorded actuator commands"
+                )
             self.playback_unavailable_var.set(
                 "Playback unavailable reason: " + (playback.get("unavailable_reason") or "Available.")
             )

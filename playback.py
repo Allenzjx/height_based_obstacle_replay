@@ -1534,6 +1534,7 @@ class SimTimePlaybackService:
             "plan_sha256": str(plan.plan_sha256 if plan is not None else ""),
             "source_sha256": str(plan.source_sha256 if plan is not None else ""),
             "label": str(plan.label if plan is not None else ""),
+            "profile": str(plan.profile if plan is not None else "raw"),
             "path": str(plan.path) if plan is not None and plan.path is not None else "",
             "index": int(self.index),
             "count": int(count),
@@ -1573,6 +1574,8 @@ class SimTimePlaybackService:
                 "total_steps": self.progress.total_steps,
                 "global_command_index": self.progress.global_command_index,
                 "total_commands": self.progress.total_commands,
+                "playback_profile": self.progress.playback_profile,
+                "selected_playback": self.progress.selected_playback,
                 "command_phase": self.progress.command_phase,
                 "last_error": self.progress.last_error,
             }
@@ -1736,6 +1739,7 @@ class PlaybackManager:
         self.worker_request_id = ""
         self.worker_session_id = ""
         self.worker_acknowledged = False
+        self.operation_owner_id = ""
         self.start_requested = False
         self.worker_requested_at = 0.0
         self.worker_ack_timeout_s = 10.0
@@ -1779,7 +1783,14 @@ class PlaybackManager:
             return False
         return self.start_plan(plan, start_delay_s=start_delay_s)
 
-    def start_worker_plan(self, plan: PlaybackPlan, *, start_delay_s: float = 0.0) -> bool:
+    def start_worker_plan(
+        self,
+        plan: PlaybackPlan,
+        *,
+        start_delay_s: float = 0.0,
+        operation_already_owned: bool = False,
+        operation_owner_id: str = "",
+    ) -> bool:
         label = plan.label or "plan"
         if not plan.events:
             return self.start_plan(plan, start_delay_s=start_delay_s)
@@ -1797,7 +1808,19 @@ class PlaybackManager:
             return False
         playback_request_id = uuid.uuid4().hex
         plan_id = f"{plan.plan_sha256[:12]}-{uuid.uuid4().hex[:12]}"
-        if not self._enter_operation(label):
+        if operation_already_owned:
+            coordinator = getattr(self.controller, "operation", None)
+            expected_owner = str(plan.timing.get("selected_restore_request_id", "") or "")
+            if (
+                coordinator is None
+                or str(getattr(coordinator.state, "value", coordinator.state)) != "PLAYBACK"
+                or not operation_owner_id
+                or str(operation_owner_id) != expected_owner
+            ):
+                self.last_error = "Selected playback does not own the active PLAYBACK operation."
+                self.last_info = self.last_error
+                return False
+        elif not self._enter_operation(label):
             return False
         try:
             self.controller.transport.start_playback_plan(
@@ -1818,6 +1841,7 @@ class PlaybackManager:
         self.worker_request_id = playback_request_id
         self.worker_session_id = ""
         self.worker_acknowledged = False
+        self.operation_owner_id = str(operation_owner_id or playback_request_id)
         self.start_requested = True
         self.worker_requested_at = time.monotonic()
         self.dispatch_clock = "simulation_time"
@@ -2256,6 +2280,7 @@ class PlaybackManager:
             "worker_request_id": self.worker_request_id,
             "worker_session_id": self.worker_session_id,
             "worker_acknowledged": bool(self.worker_acknowledged),
+            "operation_owner_id": self.operation_owner_id,
             "dispatch_clock": self.dispatch_clock,
             "plan_sha256": self.plan.plan_sha256 if self.plan else "",
             "source_sha256": self.plan.source_sha256 if self.plan else "",
