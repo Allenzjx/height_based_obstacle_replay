@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 from operation_coordinator import OperationState
 from playback import plan_from_steps
 from sequence_model import empty_command_state, make_event, make_step
@@ -52,12 +53,35 @@ def command_state(hip: float) -> dict[str, Any]:
 
 
 def sim_state(hip: float, root_x: float) -> dict[str, Any]:
+    names = list(SERVO_JOINT_NAMES) + list(WHEEL_JOINT_NAMES)
+    command = command_state(hip)
+    servo_positions = {
+        name: (float(hip) if name == "front_left_hip" else 0.0)
+        for name in SERVO_JOINT_NAMES
+    }
     return {
-        "command_state": command_state(hip),
+        "capture_source": "FakeFullIsaacAdapter",
+        "pose_restore_eligible": True,
+        "command_state": command,
+        "target_joint_state": {
+            "servos": {
+                name: {"target_actual_deg": value}
+                for name, value in servo_positions.items()
+            },
+            "wheels": {name: {"target_rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
+        },
+        "actual_joint_state": {
+            "servos": {
+                name: {"deg": value, "velocity_deg_s": 0.0}
+                for name, value in servo_positions.items()
+            },
+            "wheels": {name: {"rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
+        },
         "root_pose": [[root_x, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0]],
         "root_velocity": [[0.0] * 6],
-        "joint_pos": [[hip / 57.29577951308232]],
-        "joint_vel": [[0.0]],
+        "joint_pos": [[servo_positions[name] / 57.29577951308232 for name in SERVO_JOINT_NAMES] + [0.0] * len(WHEEL_JOINT_NAMES)],
+        "joint_vel": [[0.0] * len(names)],
+        "joint_names": names,
     }
 
 
@@ -76,6 +100,9 @@ def step(index: int, before: float, target: float) -> dict[str, Any]:
 def controller_with_three_steps(root: Path) -> HeightReplayController:
     controller = HeightReplayController(make_args(root))
     controller.manager.steps = [step(1, 0.0, 10.0), step(2, 10.0, 20.0), step(3, 20.0, 30.0)]
+    for index, row in enumerate(controller.manager.steps, start=1):
+        row["sim_state_before"] = sim_state(float((index - 1) * 10), float(index - 1))
+        row["sim_state_after"] = sim_state(float(index * 10), float(index))
     controller.manager.revision += 1
     return controller
 
@@ -96,11 +123,15 @@ class FakeSimClient:
             "last_restore_request_id": "",
             "worker_playback": {"active": False},
             "wheel_command": {"generation": 0},
+            "worker_session_id": "worker-test",
+            "robot_joint_names": list(SERVO_JOINT_NAMES) + list(WHEEL_JOINT_NAMES),
         }
         self.latest_detailed_status: dict[str, Any] = {}
         self.restore_calls: list[dict[str, Any]] = []
         self.start_calls: list[dict[str, Any]] = []
         self.state_requests: list[bool] = []
+        self.last_state_request_id = ""
+        self.last_state_request_purpose = ""
         self.stop_calls = 0
 
     def poll(self) -> list[dict[str, Any]]:
@@ -114,8 +145,23 @@ class FakeSimClient:
         self.restore_calls.append({"sim_state": copy.deepcopy(state), "request_id": request_id})
         return request_id
 
-    def request_state(self, *, detailed: bool = False) -> None:
+    def request_state(
+        self,
+        *,
+        detailed: bool = False,
+        request_id: str = "",
+        purpose: str = "",
+    ) -> str:
         self.state_requests.append(bool(detailed))
+        self.last_state_request_id = request_id
+        self.last_state_request_purpose = purpose
+        if self.latest_detailed_status:
+            self.latest_detailed_status.update(
+                state_capture_request_id=request_id,
+                state_capture_purpose=purpose,
+                state_capture_worker_session_id="worker-test",
+            )
+        return request_id
 
     def stop_wheels(self, **payload: Any) -> dict[str, Any]:
         self.stop_calls += 1
@@ -256,6 +302,9 @@ class RestoreTransactionTest(unittest.TestCase):
             fake.latest_detailed_status = {
                 **fake.latest_status,
                 "detail_status": True,
+                "state_capture_request_id": fake.last_state_request_id,
+                "state_capture_purpose": fake.last_state_request_purpose,
+                "state_capture_worker_session_id": "worker-test",
                 "sim_state": copy.deepcopy(fake.restore_calls[0]["sim_state"]),
             }
             controller.update()
@@ -336,7 +385,7 @@ class ConflictAndRegressionTest(unittest.TestCase):
 
     def test_selected_fast_uses_same_restore_source_and_keeps_actuator_signature(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            controller = controller_with_three_steps(Path(tmp))
+            controller, fake = asynchronous_controller(Path(tmp))
             controller.manager.steps[1]["sim_state_after"] = sim_state(20.0, 2.0)
             expected_fast = plan_from_steps(
                 [controller.manager.steps[2]],
@@ -345,6 +394,24 @@ class ConflictAndRegressionTest(unittest.TestCase):
                 sequence_total_steps=3,
             )
             self.assertTrue(controller.start_selected_step_playback(3, profile="fast"))
+            request_id = fake.restore_calls[0]["request_id"]
+            fake.latest_status.update(
+                restore_count=1,
+                last_restore_result="ok",
+                last_restore_error="",
+                last_restore_request_id=request_id,
+                last_restore_verification={"verified": True, "request_id": request_id},
+            )
+            controller.update()
+            fake.latest_detailed_status = {
+                **fake.latest_status,
+                "detail_status": True,
+                "state_capture_request_id": fake.last_state_request_id,
+                "state_capture_purpose": fake.last_state_request_purpose,
+                "state_capture_worker_session_id": "worker-test",
+                "sim_state": copy.deepcopy(fake.restore_calls[0]["sim_state"]),
+            }
+            controller.update()
             result = controller.last_selected_restore_result
             self.assertEqual(result["restore_source_step_index"], 2)
             self.assertEqual(result["restore_source_field"], "sim_state_after")

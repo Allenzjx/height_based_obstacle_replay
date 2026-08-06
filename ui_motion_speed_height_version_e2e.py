@@ -680,8 +680,15 @@ class RefactorGuiE2E:
         percent = self.record_percents[self.record_percent_index]
         self.controller.set_speed_percent(percent)
         self.controller.start_step_recording()
-        if not self.controller.recording_active:
+        if not self.controller.recording_active and self.controller.mode != "RECORDING_PREPARING":
             raise AssertionError(self.controller.status)
+        self.record_context = {"percent": percent}
+        self._advance("RECORD_WAIT_ACTIVE")
+
+    def _stage_record_wait_active(self) -> None:
+        if not self.controller.recording_active:
+            return
+        percent = float(self.record_context["percent"])
         state = self.controller.transport.capture_command_state()
         servos = dict(state["servos"])
         servos["front_left_hip"] = 15.0 if self.record_percent_index == 0 else 30.0
@@ -691,7 +698,7 @@ class RefactorGuiE2E:
             source="real_recording",
         )
         self.record_context = {
-            "percent": percent,
+            **self.record_context,
             "batch_id": batch_id,
             "start_sim": float(self.controller.latest_sim_status.get("sim_time", 0.0) or 0.0),
         }

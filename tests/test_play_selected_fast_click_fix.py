@@ -111,6 +111,7 @@ class SingleOperationOwnershipTest(unittest.TestCase):
             last_restore_result="ok",
             last_restore_error="",
             last_restore_request_id=request_id,
+            last_restore_verification={"verified": True, "request_id": request_id},
         )
         fake.latest_detailed_status = {
             **fake.latest_status,
@@ -204,6 +205,7 @@ class FailureCleanupTest(unittest.TestCase):
             last_restore_result="ok",
             last_restore_error="",
             last_restore_request_id=request_id,
+            last_restore_verification={"verified": True, "request_id": request_id},
         )
         fake.latest_detailed_status = {
             **fake.latest_status,

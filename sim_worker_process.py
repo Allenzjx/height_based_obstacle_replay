@@ -43,6 +43,7 @@ from sim_obstacle_scene import (
     measure_scene_baseline,
 )
 from sim_robot_adapter import SimRobotAdapter
+from sim_state_validation import validate_full_sim_pose_state, verify_restored_full_sim_pose
 from sim_worker_runtime import (
     build_common_worker_status,
     create_adapter_config_from_args,
@@ -191,6 +192,23 @@ class WorkerLogger:
 
     def tail(self) -> list[str]:
         return list(self.lines)
+
+
+def _pose_state_summary(state: dict[str, Any]) -> dict[str, Any]:
+    """Bounded restore evidence; intentionally excludes unrelated diagnostics."""
+
+    return {
+        "capture_source": str(state.get("capture_source", "") or ""),
+        "root_pose": copy.deepcopy(state.get("root_pose")),
+        "root_velocity": copy.deepcopy(state.get("root_velocity")),
+        "joint_pos": copy.deepcopy(state.get("joint_pos")),
+        "joint_vel": copy.deepcopy(state.get("joint_vel")),
+        "joint_names": list(state.get("joint_names", []) or []),
+        "command_state": copy.deepcopy(state.get("command_state", {})),
+        "actual_joint_state": copy.deepcopy(state.get("actual_joint_state", {})),
+        "adapter_sim_time": state.get("adapter_sim_time"),
+        "adapter_sim_steps": state.get("adapter_sim_steps"),
+    }
 
 
 def config_from_args(args: argparse.Namespace, height_mm: int) -> SimSceneConfig:
@@ -602,6 +620,7 @@ def run_worker(args: argparse.Namespace) -> int:
     last_restore_result = ""
     last_restore_error = ""
     last_restore_request_id = ""
+    last_restore_verification: dict[str, Any] = {}
     obstacle_revision = 0
     last_set_height_source = "startup"
     last_set_height_request_id = ""
@@ -612,7 +631,16 @@ def run_worker(args: argparse.Namespace) -> int:
     playback_service = SimTimePlaybackService()
     worker_session_id = uuid.uuid4().hex
 
-    def publish_status(*, ready: bool, starting: bool, error: str = "", tb: str = "", detailed: bool = False) -> None:
+    def publish_status(
+        *,
+        ready: bool,
+        starting: bool,
+        error: str = "",
+        tb: str = "",
+        detailed: bool = False,
+        state_capture_request_id: str = "",
+        state_capture_purpose: str = "",
+    ) -> None:
         nonlocal rtf_last_wall, rtf_last_sim
         published_wall = time.monotonic()
         if phase == "running" and rtf_last_wall > 0.0:
@@ -667,6 +695,18 @@ def run_worker(args: argparse.Namespace) -> int:
             compact=not detailed,
         )
         status["worker_session_id"] = worker_session_id
+        status["last_restore_verification"] = copy.deepcopy(last_restore_verification)
+        if detailed:
+            expected_names = list(getattr(getattr(adapter, "robot", None), "joint_names", []) or [])
+            validation = validate_full_sim_pose_state(status.get("sim_state"), expected_names)
+            status.update(
+                state_capture_request_id=str(state_capture_request_id or ""),
+                state_capture_purpose=str(state_capture_purpose or ""),
+                state_capture_worker_session_id=worker_session_id,
+                state_capture_sim_step=int(getattr(adapter, "sim_steps", sim_steps) or sim_steps),
+                state_capture_sim_time=float(getattr(adapter, "sim_time", sim_time) or sim_time),
+                state_capture_validation=validation,
+            )
         envelope = make_message("status", **status)
         envelope["status_payload_bytes"] = len(encode_message(envelope))
         ipc.send(envelope)
@@ -1023,16 +1063,61 @@ def run_worker(args: argparse.Namespace) -> int:
                     restore_count += 1
                     last_restore_at = time.time()
                     last_restore_request_id = str(message.get("request_id", "") or "")
+                    last_restore_verification = {}
                     if hasattr(adapter, "restore_sim_state"):
                         try:
-                            adapter.restore_sim_state(message.get("sim_state", {}))
+                            expected_state = dict(message.get("sim_state", {}) or {})
+                            expected_names = list(getattr(adapter.robot, "joint_names", []) or [])
+                            expected_validation = validate_full_sim_pose_state(expected_state, expected_names)
+                            if not expected_validation["valid"]:
+                                raise ValueError("restore source is not FULL_VALID: " + str(expected_validation["reason"]))
+                            if playback_service.active:
+                                playback_service.stop(
+                                    adapter,
+                                    current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
+                                    current_wall_time_s=time.time(),
+                                    reason="restore_boundary",
+                                    stop_wheels=True,
+                                )
+                            restore_result = dict(adapter.restore_sim_state(expected_state) or {})
                             adapter.stop_wheels()
+                            adapter.apply_commands_to_robot()
+                            adapter.robot.write_data_to_sim()
+                            restore_trace = list(restore_result.get("trace", []) or [])
+                            restore_trace.append(
+                                {"event": "safe_wheel_boundary_applied", "sim_step": int(getattr(adapter, "sim_steps", sim_steps) or sim_steps)}
+                            )
+                            adapter.step(dt)
+                            sim_time = float(getattr(adapter, "sim_time", sim_time + dt))
+                            sim_steps = int(getattr(adapter, "sim_steps", sim_steps + 1))
+                            restore_trace.append({"event": "physics_boundary_completed", "sim_step": sim_steps, "sim_time": sim_time})
+                            measured_state = dict(adapter.capture_sim_state() or {})
+                            verification = verify_restored_full_sim_pose(expected_state, measured_state, expected_names)
+                            verification.update(
+                                request_id=last_restore_request_id,
+                                worker_session_id=worker_session_id,
+                                worker_sim_step=sim_steps,
+                                worker_sim_time=sim_time,
+                                restore_trace=restore_trace,
+                                expected_state_summary=_pose_state_summary(expected_state),
+                                measured_state_summary=_pose_state_summary(measured_state),
+                            )
+                            last_restore_verification = verification
+                            if not verification["verified"]:
+                                raise RuntimeError("post-restore pose verification failed: " + str(verification["reason"]))
                             last_restore_result = "ok"
                             last_restore_error = ""
                             publish_status(ready=True, starting=False)
                         except Exception as exc:
                             last_restore_result = "error"
                             last_restore_error = str(exc)
+                            if not last_restore_verification:
+                                last_restore_verification = {
+                                    "verified": False,
+                                    "request_id": last_restore_request_id,
+                                    "worker_session_id": worker_session_id,
+                                    "reason": str(exc),
+                                }
                             logger.log(f"[worker] restore_sim_state ERROR: {exc}")
                             publish_status(ready=True, starting=False, error=last_restore_error)
                     else:
@@ -1040,7 +1125,13 @@ def run_worker(args: argparse.Namespace) -> int:
                         last_restore_error = "Adapter does not support restore_sim_state."
                         publish_status(ready=True, starting=False, error=last_restore_error)
                 elif kind == "request_state":
-                    publish_status(ready=True, starting=False, detailed=bool(message.get("detailed", False)))
+                    publish_status(
+                        ready=True,
+                        starting=False,
+                        detailed=bool(message.get("detailed", False)),
+                        state_capture_request_id=str(message.get("request_id", "") or ""),
+                        state_capture_purpose=str(message.get("purpose", "") or ""),
+                    )
             if shutdown_requested:
                 break
             if not bool(args.no_continuous_sim_step):

@@ -855,10 +855,25 @@ class SimProcessClient:
     def stop_playback(self, *, reason: str = "stopped", stop_wheels: bool = True) -> None:
         self._send_or_queue(make_message("stop_playback", reason=str(reason or "stopped"), stop_wheels=bool(stop_wheels)))
 
-    def request_state(self, *, detailed: bool = False) -> None:
+    def request_state(
+        self,
+        *,
+        detailed: bool = False,
+        request_id: str = "",
+        purpose: str = "",
+    ) -> str:
+        resolved_request_id = str(request_id or (uuid.uuid4().hex if detailed else ""))
         if detailed:
             self.latest_detailed_status = {}
-        self._send_or_queue(make_message("request_state", detailed=bool(detailed)))
+        self._send_or_queue(
+            make_message(
+                "request_state",
+                detailed=bool(detailed),
+                request_id=resolved_request_id,
+                purpose=str(purpose or ""),
+            )
+        )
+        return resolved_request_id
 
     def restart(self) -> None:
         self.shutdown(timeout_s=3.0)

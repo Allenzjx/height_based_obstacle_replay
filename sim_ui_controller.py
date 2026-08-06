@@ -60,6 +60,11 @@ from sim_obstacle_scene import (
 from sim_process_client import SimProcessClient, run_launch_preflight_for_args
 from sim_robot_adapter import NullSimRobotAdapter
 from sim_transport import SimTransport
+from sim_state_validation import (
+    FULL_VALID,
+    validate_full_sim_pose_state,
+    verify_restored_full_sim_pose,
+)
 from robot_ground_diagnostics import (
     GROUND_STATE_FAIL,
     GROUND_STATE_PASS,
@@ -74,7 +79,9 @@ from playback_progress import PlaybackState
 
 
 MODE_TEST = "TEST"
+MODE_RECORDING_PREPARING = "RECORDING_PREPARING"
 MODE_RECORDING_STEP = "RECORDING_STEP"
+MODE_RECORDING_STOPPING = "RECORDING_STOPPING"
 MODE_PENDING_RECORDED_STEP = "PENDING_RECORDED_STEP"
 MODE_REPLACE_STEP_READY = "REPLACE_STEP_READY"
 MODE_REPLACING_STEP = "REPLACING_STEP"
@@ -221,6 +228,10 @@ class HeightReplayController:
         self.replace_target_index: int | None = None
         self.recording_kind = ""
         self.record_stop_pending: dict[str, Any] | None = None
+        self.pending_full_state_capture: dict[str, Any] | None = None
+        self.recording_state_capture_trace: list[dict[str, Any]] = []
+        self.recording_capture_metadata: dict[str, Any] = {}
+        self.record_capture_timeout_s = max(2.0, float(getattr(args, "record_capture_timeout_s", 5.0)))
 
         self.combine_mode_enabled = False
         self.combine_selected_indices: set[int] = set()
@@ -400,6 +411,8 @@ class HeightReplayController:
 
         if self.mode == MODE_E_STOP:
             return False, "E-stop is active. Return to TEST mode before commanding motion."
+        if self.mode in {MODE_RECORDING_PREPARING, MODE_RECORDING_STOPPING}:
+            return False, "Recording pose checkpoint capture is in progress."
         if not self.sim_connected:
             return False, "Simulation is disconnected."
         if not self.runtime_ready:
@@ -1461,6 +1474,7 @@ class HeightReplayController:
                 worker_status_age_s=max(0.0, time.monotonic() - float(getattr(self.sim_client, "last_status_time", time.monotonic()) or time.monotonic())),
             )
             self.sim_ready = bool(status.get("runtime_ready", status.get("ready", False)))
+            self._update_pending_full_state_capture()
             self._update_pending_selected_playback()
             if status.get("height_mm") is not None:
                 self.loaded_sim_height_mm = int(status["height_mm"])
@@ -2184,25 +2198,194 @@ class HeightReplayController:
         if not self.operation.begin(OperationState.RECORDING, detail="Recording is active."):
             self._warn(f"[WARN] Cannot start recording: {self.operation.reason}")
             return
-        if self.mode == MODE_TEST:
+        previous_mode = self.mode
+        if previous_mode == MODE_TEST:
             self.recording_kind = "recorded"
-            self.mode = MODE_RECORDING_STEP
-        elif self.mode == MODE_REPLACE_STEP_READY and self.replace_target_index is not None:
+        elif previous_mode == MODE_REPLACE_STEP_READY and self.replace_target_index is not None:
             self.recording_kind = "replacement"
-            self.mode = MODE_REPLACING_STEP
         else:
             self._warn(f"[WARN] step_record start is only valid in TEST or REPLACE_STEP_READY. Current mode={self.mode}")
+            self.operation.finish(OperationState.RECORDING)
             return
-        self.record_start_wall_time = time.monotonic()
-        self.transport.request_state()
-        self.record_start_sim_time = self._current_record_sim_time()
-        self.record_command_state_before = clone_command_state(self.transport.capture_command_state())
-        self.record_reference_state = clone_command_state(self.record_command_state_before)
-        self.record_sim_state_before = self.capture_current_sim_state()
         self.record_events = []
-        self._info(f"[INFO] Step recording started. mode={self.mode}; actuator commands use the fixed 100% profile.")
+        self.recording_state_capture_trace = []
+        if self.no_sim:
+            state = self.capture_current_sim_state()
+            validation = validate_full_sim_pose_state(state)
+            self._begin_step_recording_from_state(
+                state,
+                capture_metadata={
+                    "request_id": "no-sim",
+                    "purpose": "recording_start",
+                    "worker_session_id": "no-sim",
+                    "validation": validation,
+                    "pose_restore_eligible": False,
+                },
+            )
+            return
+        self.mode = MODE_RECORDING_PREPARING
+        self._request_full_state_capture("recording_start", {"previous_mode": previous_mode})
+        self.status = "Preparing recording: waiting for a matching FULL_VALID Isaac start checkpoint..."
+
+    def _request_full_state_capture(self, purpose: str, context: dict[str, Any]) -> None:
+        request_id = uuid.uuid4().hex
+        now = time.monotonic()
+        worker_session_id = str(self.latest_sim_status.get("worker_session_id", "") or "")
+        self.pending_full_state_capture = {
+            "request_id": request_id,
+            "purpose": str(purpose),
+            "requested_at": now,
+            "deadline": now + self.record_capture_timeout_s,
+            "worker_session_id": worker_session_id,
+            "height_mm": self.current_height_mm,
+            "version_id": self.current_version_id,
+            "manager_revision": self.manager.revision,
+            "context": copy.deepcopy(context),
+        }
+        trace = {
+            "event": "full_state_requested",
+            "purpose": str(purpose),
+            "request_id": request_id,
+            "worker_session_id": worker_session_id,
+            "monotonic_s": now,
+        }
+        self.recording_state_capture_trace.append(trace)
+        self.transport.request_state(detailed=True, request_id=request_id, purpose=purpose)
+
+    def _begin_step_recording_from_state(
+        self,
+        sim_state: dict[str, Any],
+        *,
+        capture_metadata: dict[str, Any],
+    ) -> None:
+        self.record_start_wall_time = time.monotonic()
+        self.record_start_sim_time = float(sim_state.get("adapter_sim_time", sim_state.get("sim_time", 0.0)) or 0.0)
+        self.record_command_state_before = clone_command_state(sim_state.get("command_state"))
+        self.record_reference_state = clone_command_state(self.record_command_state_before)
+        self.record_sim_state_before = copy.deepcopy(sim_state)
+        self.recording_capture_metadata = {"start": copy.deepcopy(capture_metadata)}
+        self.mode = MODE_REPLACING_STEP if self.recording_kind == "replacement" else MODE_RECORDING_STEP
+        self._info(
+            f"[INFO] Step recording started after checkpoint acknowledgment. mode={self.mode}; "
+            "actuator commands use the fixed 100% profile."
+        )
+
+    def _fail_record_state_capture(self, pending: dict[str, Any], reason: str) -> None:
+        purpose = str(pending.get("purpose", "recording checkpoint") or "recording checkpoint")
+        trace = {
+            "event": "full_state_capture_failed",
+            "purpose": purpose,
+            "request_id": pending.get("request_id", ""),
+            "reason": str(reason),
+            "monotonic_s": time.monotonic(),
+        }
+        self.recording_state_capture_trace.append(trace)
+        self.pending_full_state_capture = None
+        if str(pending.get("purpose", "")) == "recording_stop":
+            context = dict(pending.get("context", {}) or {})
+            self.record_stop_pending = {
+                **context,
+                "capture_retry": True,
+                "requested_at": time.monotonic(),
+                "command_id": "",
+            }
+            self.mode = MODE_RECORDING_STOPPING
+            message = (
+                "Recording final-state capture failed; no pending step was created. "
+                f"Press Stop Record Step to retry the matching detailed capture: {reason}"
+            )
+            self.status = message
+            self.detail_text = message + "\n\n" + json.dumps(trace, indent=2, ensure_ascii=False)
+            self._warn("[ERROR] " + message)
+            return
+        self.record_stop_pending = None
+        self.record_events = []
+        self.record_command_state_before = None
+        self.record_reference_state = None
+        self.record_sim_state_before = None
+        self.record_start_sim_time = None
+        self.recording_kind = ""
+        self.mode = MODE_TEST
+        self.operation.finish(OperationState.RECORDING)
+        message = f"Recording blocked: {purpose} did not produce a matching FULL_VALID Isaac checkpoint: {reason}"
+        self.detail_text = message + "\n\n" + json.dumps(trace, indent=2, ensure_ascii=False)
+        self._warn("[ERROR] " + message)
+
+    def _update_pending_full_state_capture(self) -> None:
+        pending = self.pending_full_state_capture
+        if pending is None or self.no_sim:
+            return
+        if time.monotonic() > float(pending["deadline"]):
+            self._fail_record_state_capture(pending, "timed out waiting for the worker acknowledgment")
+            return
+        if (
+            self.current_height_mm != int(pending["height_mm"])
+            or self.current_version_id != str(pending["version_id"])
+            or self.manager.revision != int(pending["manager_revision"])
+        ):
+            self._fail_record_state_capture(pending, "height, version, or sequence revision changed during capture")
+            return
+        detailed = dict(getattr(self.sim_client, "latest_detailed_status", {}) or {})
+        if str(detailed.get("state_capture_request_id", "") or "") != str(pending["request_id"]):
+            return
+        if str(detailed.get("state_capture_purpose", "") or "") != str(pending["purpose"]):
+            return
+        capture_session = str(detailed.get("state_capture_worker_session_id", "") or "")
+        requested_session = str(pending.get("worker_session_id", "") or "")
+        if requested_session and capture_session != requested_session:
+            self._fail_record_state_capture(pending, "worker session changed during capture")
+            return
+        state = dict(detailed.get("sim_state", {}) or {})
+        expected_names = list(detailed.get("robot_joint_names", []) or [])
+        validation = validate_full_sim_pose_state(state, expected_names)
+        metadata = {
+            "request_id": pending["request_id"],
+            "purpose": pending["purpose"],
+            "worker_session_id": capture_session,
+            "worker_sim_step": detailed.get("state_capture_sim_step"),
+            "worker_sim_time": detailed.get("state_capture_sim_time"),
+            "validation": validation,
+            "pose_restore_eligible": bool(validation.get("valid", False)),
+        }
+        self.recording_state_capture_trace.append(
+            {"event": "full_state_acknowledged", **copy.deepcopy(metadata), "monotonic_s": time.monotonic()}
+        )
+        if not validation["valid"]:
+            self._fail_record_state_capture(pending, str(validation.get("reason", "invalid checkpoint")))
+            return
+        self.pending_full_state_capture = None
+        state["height_mm"] = self.current_height_mm
+        state["height_cm"] = self.current_height_cm
+        if pending["purpose"] == "recording_start":
+            self._begin_step_recording_from_state(state, capture_metadata=metadata)
+            return
+        context = dict(pending.get("context", {}) or {})
+        self.recording_capture_metadata["stop"] = copy.deepcopy(metadata)
+        self._finalize_step_recording(
+            duration=float(context["duration"]),
+            actual_duration=float(context["actual_duration"]),
+            timing_source=str(context["timing_source"]),
+            wheel_stop_status=dict(context.get("wheel_stop_status", {}) or {}),
+            sim_state_after=state,
+            command_state_after=clone_command_state(state.get("command_state")),
+        )
 
     def stop_step_recording(self) -> None:
+        if self.mode == MODE_RECORDING_STOPPING and self.record_stop_pending is not None:
+            retry = dict(self.record_stop_pending)
+            if bool(retry.get("capture_retry", False)):
+                self.record_stop_pending = None
+                self._request_full_state_capture(
+                    "recording_stop",
+                    {
+                        "duration": float(retry["duration"]),
+                        "actual_duration": float(retry["actual_duration"]),
+                        "timing_source": str(retry["timing_source"]),
+                        "wheel_stop_status": dict(retry.get("wheel_stop_status", {}) or {}),
+                    },
+                )
+                self.status = "Retrying FULL_VALID Isaac final-state capture..."
+                return
         if not self.recording_active or self.record_command_state_before is None:
             self._warn("[WARN] step_record stop is only valid while recording.")
             return
@@ -2231,6 +2414,7 @@ class HeightReplayController:
             "command_id": str(stop_request.get("command_id", "") or ""),
             "requested_at": time.monotonic(),
         }
+        self.mode = MODE_RECORDING_STOPPING
         self._info("[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.")
         self._try_finalize_record_stop()
 
@@ -2238,19 +2422,43 @@ class HeightReplayController:
         pending = self.record_stop_pending
         if pending is None:
             return
+        if bool(pending.get("capture_retry", False)):
+            return
         status = dict(self.latest_sim_status.get("wheel_command", {}) or {})
         if not status:
             status = dict(getattr(self.transport.adapter, "wheel_command_status", {}) or {})
         command_matches = not pending["command_id"] or str(status.get("command_id", "") or "") == pending["command_id"]
         if command_matches and bool(status.get("zero_target_applied", False)):
             self.record_stop_pending = None
-            self._info("[INFO] Zero target applied; finalizing recording.")
-            self._finalize_step_recording(
-                duration=float(pending["duration"]),
-                actual_duration=float(pending["actual_duration"]),
-                timing_source=str(pending["timing_source"]),
-                wheel_stop_status=status,
-            )
+            if self.no_sim:
+                self._info("[INFO] Zero target applied; finalizing no-sim recording.")
+                state = self.capture_current_sim_state()
+                self.recording_capture_metadata["stop"] = {
+                    "request_id": "no-sim",
+                    "purpose": "recording_stop",
+                    "worker_session_id": "no-sim",
+                    "validation": validate_full_sim_pose_state(state),
+                    "pose_restore_eligible": False,
+                }
+                self._finalize_step_recording(
+                    duration=float(pending["duration"]),
+                    actual_duration=float(pending["actual_duration"]),
+                    timing_source=str(pending["timing_source"]),
+                    wheel_stop_status=status,
+                    sim_state_after=state,
+                    command_state_after=clone_command_state(state.get("command_state")),
+                )
+            else:
+                self._info("[INFO] Zero target applied; waiting for a matching FULL_VALID Isaac stop checkpoint.")
+                self._request_full_state_capture(
+                    "recording_stop",
+                    {
+                        "duration": float(pending["duration"]),
+                        "actual_duration": float(pending["actual_duration"]),
+                        "timing_source": str(pending["timing_source"]),
+                        "wheel_stop_status": dict(status),
+                    },
+                )
         elif time.monotonic() - float(pending["requested_at"]) > 3.0:
             self._warn("[WARN] Recording remains open: worker did not acknowledge zero wheel target within 3s.")
 
@@ -2261,10 +2469,10 @@ class HeightReplayController:
         actual_duration: float,
         timing_source: str,
         wheel_stop_status: dict[str, Any],
+        sim_state_after: dict[str, Any],
+        command_state_after: dict[str, Any],
     ) -> None:
-        self.transport.request_state()
-        after_state = clone_command_state(self.transport.capture_command_state())
-        sim_state_after = self.capture_current_sim_state()
+        after_state = clone_command_state(command_state_after)
         events = self.record_events
         self.last_record_coalesce_stats = {
             "original_count": len(events),
@@ -2278,7 +2486,7 @@ class HeightReplayController:
                 min_interval_s=self.record_event_min_interval_s,
                 max_events=self.record_max_events_per_step,
             )
-        is_replacement = self.mode == MODE_REPLACING_STEP and self.replace_target_index is not None
+        is_replacement = self.recording_kind == "replacement" and self.replace_target_index is not None
         index = self.replace_target_index if is_replacement else self.manager.count + 1
         step = make_step(
             index=int(index),
@@ -2303,6 +2511,14 @@ class HeightReplayController:
                 "record_coalesce": dict(self.last_record_coalesce_stats),
                 "sim_state_before": self.record_sim_state_before,
                 "sim_state_after": sim_state_after,
+                "pose_checkpoint_capture": {
+                    **copy.deepcopy(self.recording_capture_metadata),
+                    "trace": copy.deepcopy(self.recording_state_capture_trace),
+                    "pose_restore_eligible": bool(
+                        self.recording_capture_metadata.get("start", {}).get("pose_restore_eligible", False)
+                        and self.recording_capture_metadata.get("stop", {}).get("pose_restore_eligible", False)
+                    ),
+                },
                 "wheel_stop_status": dict(wheel_stop_status),
                 "recording_timing": {
                     "actuator_command_semantics": "fixed-100-percent-direct-v1",
@@ -2339,6 +2555,9 @@ class HeightReplayController:
         self.record_start_sim_time = None
         self.recording_kind = ""
         self.record_stop_pending = None
+        self.pending_full_state_capture = None
+        self.recording_capture_metadata = {}
+        self.recording_state_capture_trace = []
         self.operation.finish(OperationState.RECORDING)
 
     def accept_pending_step(self) -> None:
@@ -2623,7 +2842,12 @@ class HeightReplayController:
             return all(cls._nested_values_close(left[key], right[key]) for key in common)
         return cls._nested_values_close(left, right)
 
-    def resolve_selected_step_restore_state(self, selected_index: int) -> dict[str, Any]:
+    def resolve_selected_step_restore_state(
+        self,
+        selected_index: int,
+        *,
+        require_full_pose: bool = False,
+    ) -> dict[str, Any]:
         """Resolve, without mutation, the authoritative saved state for Selected playback."""
 
         index = int(selected_index)
@@ -2635,20 +2859,50 @@ class HeightReplayController:
         source_field = ""
         source_value: dict[str, Any] | None = None
         fallback_used = False
+        live_joint_names = list(self.latest_sim_status.get("robot_joint_names", []) or [])
+        candidate_validations = {
+            "previous.sim_state_after": validate_full_sim_pose_state(
+                previous.get("sim_state_after") if previous is not None else None,
+                live_joint_names or None,
+            ),
+            "selected.sim_state_before": validate_full_sim_pose_state(
+                selected.get("sim_state_before"),
+                live_joint_names or None,
+            ),
+        }
 
-        if previous is not None and self._saved_state_is_available(previous.get("sim_state_after")):
+        previous_command = previous.get("command_state_after") if previous is not None else None
+        selected_command = selected.get("command_state_before")
+        command_continuity = bool(
+            previous is None
+            or (
+                self._saved_state_is_available(previous_command)
+                and self._saved_state_is_available(selected_command)
+                and self._continuity_states_match(previous_command, selected_command)
+            )
+        )
+
+        if previous is not None and (
+            candidate_validations["previous.sim_state_after"]["valid"]
+            if require_full_pose
+            else self._saved_state_is_available(previous.get("sim_state_after"))
+        ):
             source_step_index = index - 1
             source_field = "sim_state_after"
             source_value = previous["sim_state_after"]
-        elif previous is not None and self._saved_state_is_available(previous.get("command_state_after")):
-            source_step_index = index - 1
-            source_field = "command_state_after"
-            source_value = previous["command_state_after"]
-        elif self._saved_state_is_available(selected.get("sim_state_before")):
+        elif require_full_pose and candidate_validations["selected.sim_state_before"]["valid"] and command_continuity:
             source_field = "sim_state_before"
             source_value = selected["sim_state_before"]
             fallback_used = index > 1
-        elif self._saved_state_is_available(selected.get("command_state_before")):
+        elif not require_full_pose and previous is not None and self._saved_state_is_available(previous.get("command_state_after")):
+            source_step_index = index - 1
+            source_field = "command_state_after"
+            source_value = previous["command_state_after"]
+        elif not require_full_pose and self._saved_state_is_available(selected.get("sim_state_before")):
+            source_field = "sim_state_before"
+            source_value = selected["sim_state_before"]
+            fallback_used = index > 1
+        elif not require_full_pose and self._saved_state_is_available(selected.get("command_state_before")):
             source_field = "command_state_before"
             source_value = selected["command_state_before"]
             fallback_used = True
@@ -2691,6 +2945,9 @@ class HeightReplayController:
             "fallback_used": fallback_used,
             "continuity": continuity,
             "continuity_warning": continuity_warning,
+            "command_continuity": "PASS" if command_continuity else "FAIL",
+            "require_full_pose": bool(require_full_pose),
+            "candidate_validations": candidate_validations,
         }
 
     def start_selected_step_playback(self, selected_index: int, *, profile: str) -> bool:
@@ -2702,16 +2959,39 @@ class HeightReplayController:
             self._warn("[WARN] Dirty Servo-Wheel staging blocks Selected playback; Launch, Clear, or Cancel first.")
             return False
         try:
-            resolved = self.resolve_selected_step_restore_state(selected_index)
+            strict_full_pose = str(profile).lower() == "fast"
+            resolved = self.resolve_selected_step_restore_state(
+                selected_index,
+                require_full_pose=strict_full_pose,
+            )
         except Exception as exc:
             self._warn(f"[WARN] Cannot play selected step {int(selected_index)}: {exc}")
             return False
         index = int(resolved["selected_step_index"])
         if not resolved["restore_source_field"] or not resolved["restore_sim_state"]:
-            message = (
-                f"Cannot play selected step {index}: no saved previous-step end state "
-                "or selected-step start state is available."
-            )
+            if bool(resolved.get("require_full_pose", False)):
+                previous_reason = str(
+                    resolved.get("candidate_validations", {})
+                    .get("previous.sim_state_after", {})
+                    .get("reason", "not available")
+                )
+                selected_reason = str(
+                    resolved.get("candidate_validations", {})
+                    .get("selected.sim_state_before", {})
+                    .get("reason", "not available")
+                )
+                message = (
+                    f"Selected Fast blocked for Step {index}: a FULL_VALID saved Isaac pose is required. "
+                    f"Step {index - 1}.sim_state_after: {previous_reason}; "
+                    f"Step {index}.sim_state_before fallback: {selected_reason}; "
+                    f"continuity={resolved.get('command_continuity', 'FAIL')}. "
+                    "The selected step was not started. Re-record the step boundaries with Isaac connected."
+                )
+            else:
+                message = (
+                    f"Cannot play selected step {index}: no saved previous-step end state "
+                    "or selected-step start state is available."
+                )
             self.playback.last_error = message
             self.playback.last_info = message
             self.playback.active = False
@@ -2762,6 +3042,7 @@ class HeightReplayController:
             "requested_at": now,
             "deadline": now + max(2.0, float(self.playback.worker_ack_timeout_s)),
             "verification_requested": False,
+            "verification_request_id": "",
             "manager_revision": self.manager.revision,
             "height_mm": self.current_height_mm,
             "version_id": self.current_version_id,
@@ -2831,6 +3112,28 @@ class HeightReplayController:
     ) -> tuple[bool, str]:
         if not isinstance(observed_sim_state, dict) or not observed_sim_state:
             return False, "worker did not return a detailed sim_state after restore acknowledgment"
+        if bool(pending.get("require_full_pose", False)):
+            expected = dict(pending.get("restore_sim_state", {}) or {})
+            expected_names = list(expected.get("joint_names", []) or [])
+            verification = verify_restored_full_sim_pose(expected, observed_sim_state, expected_names)
+            pending["restore_verification"] = copy.deepcopy(verification)
+            worker_verification = dict(self.latest_sim_status.get("last_restore_verification", {}) or {})
+            if str(worker_verification.get("request_id", "") or "") != str(pending.get("request_id", "") or ""):
+                return False, "worker restore verification request id does not match"
+            if not bool(worker_verification.get("verified", False)):
+                return False, "worker did not verify the restored full pose"
+            if not verification["verified"]:
+                return False, str(verification.get("reason", "full pose verification failed"))
+            return True, json.dumps(
+                {
+                    "classification": FULL_VALID,
+                    "root_position_error_m": verification["root_position_error_m"],
+                    "root_orientation_error_deg": verification["root_orientation_error_deg"],
+                    "servo_joint_position_max_error_deg": verification["servo_joint_position_max_error_deg"],
+                    "wheel_joint_position_max_error_rad": verification["wheel_joint_position_max_error_rad"],
+                },
+                sort_keys=True,
+            )
         comparisons: list[str] = []
         expected_command = pending.get("restore_command_state")
         observed_command = observed_sim_state.get("command_state")
@@ -2897,12 +3200,24 @@ class HeightReplayController:
                 }
             )
             pending["verification_requested"] = True
-            self.transport.request_state(detailed=True)
-            pending["trace"].append({"event": "state_requested", "monotonic_s": time.monotonic()})
+            pending["verification_request_id"] = self.transport.request_state(
+                detailed=True,
+                purpose="selected_restore_verify",
+            )
+            pending["trace"].append(
+                {
+                    "event": "state_requested",
+                    "monotonic_s": time.monotonic(),
+                    "request_id": pending["verification_request_id"],
+                }
+            )
             return
         detailed = dict(getattr(self.sim_client, "latest_detailed_status", {}) or {})
         detailed_matches = (
-            str(detailed.get("last_restore_request_id", "") or "") == str(pending["request_id"])
+            str(detailed.get("state_capture_request_id", "") or "")
+            == str(pending.get("verification_request_id", "") or "")
+            and str(detailed.get("state_capture_purpose", "") or "") == "selected_restore_verify"
+            and str(detailed.get("last_restore_request_id", "") or "") == str(pending["request_id"])
             and int(detailed.get("restore_count", 0) or 0) > int(pending["restore_count_before"])
             and str(detailed.get("last_restore_result", "") or "") == "ok"
             and bool(detailed.get("runtime_ready", detailed.get("ready", False)))
@@ -3181,6 +3496,7 @@ class HeightReplayController:
         index = int(normalized.get("index", 0))
         sim_state = normalized.get("sim_state_before")
         command_state = normalized.get("command_state_before")
+        fallback_command_state = command_state
         raw_has_command_state = isinstance(step, dict) and any(
             key in step for key in ("command_state_before", "state_before", "robot_state_before")
         )
@@ -3192,7 +3508,9 @@ class HeightReplayController:
             f"fallback_command_state={self.fallback_to_command_state_before} "
             f"sim_state_before={has_sim_state} command_state_before={has_command_state}"
         )
-        if self.restore_full_sim_pose_if_available and isinstance(sim_state, dict):
+        expected_joint_names = list(self.latest_sim_status.get("robot_joint_names", []) or [])
+        sim_state_validation = validate_full_sim_pose_state(sim_state, expected_joint_names or None)
+        if self.restore_full_sim_pose_if_available and sim_state_validation["valid"]:
             try:
                 self.transport.restore_sim_state(sim_state)
                 self.stop_wheels(reason="restore_start_state")
@@ -3202,6 +3520,16 @@ class HeightReplayController:
                 return True
             except Exception as exc:
                 self._warn(f"[WARN] restore_sim_state failed for step {index:03d}: {exc}")
+        elif self.restore_full_sim_pose_if_available and has_sim_state:
+            self._warn(
+                f"[WARN] Step {index:03d} sim_state_before is not FULL_VALID "
+                f"({sim_state_validation['classification']}: {sim_state_validation['reason']}); "
+                "using the explicit command-state fallback policy."
+            )
+            embedded_command_state = sim_state.get("command_state")
+            if isinstance(embedded_command_state, dict) and embedded_command_state:
+                fallback_command_state = embedded_command_state
+                has_command_state = True
         if not self.fallback_to_command_state_before:
             self._warn(f"[WARN] No sim_state_before saved for step {index:03d}; fallback disabled.")
             return False
@@ -3210,8 +3538,9 @@ class HeightReplayController:
             return False
         if self.restore_full_sim_pose_if_available:
             self._warn(f"[WARN] No sim_state_before saved for this step; using command_state_before only.")
-        self.apply_command_state(command_state, keep_wheels=False)
-        self.detail_text = f"Applied command_state_before for step {index:03d} before playback.\n\n" + self.compact_step_details(normalized)
+        self.apply_command_state(fallback_command_state, keep_wheels=False)
+        fallback_label = "sim_state_before embedded command-state fallback" if fallback_command_state is not command_state else "command_state_before"
+        self.detail_text = f"Applied {fallback_label} for step {index:03d} before playback.\n\n" + self.compact_step_details(normalized)
         self._info(f"[INFO] Applied command_state_before for step {index:03d} before playback.")
         return True
 

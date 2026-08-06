@@ -6,6 +6,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 import shlex
 import time
 import uuid
@@ -83,6 +84,7 @@ class PlaybackSegment:
     gap_reason: str = "none"
     servo_tolerance_deg: float = 1.0
     recorded_servo_residual_deg: dict[str, float] = field(default_factory=dict)
+    legacy_missing_endpoint: bool = False
 
 
 @dataclass
@@ -318,7 +320,8 @@ def plan_from_steps(
 def _recorded_servo_completion_policy(step: dict[str, Any], targets: dict[str, float]) -> dict[str, Any]:
     """Use the recorded loaded endpoint as contact-load evidence, never as a target rewrite."""
 
-    actual = dict(dict(step.get("sim_state_after", {}) or {}).get("actual_joint_state", {}) or {})
+    sim_state_after = dict(step.get("sim_state_after", {}) or {})
+    actual = dict(sim_state_after.get("actual_joint_state", {}) or {})
     actual_servos = dict(actual.get("servos", {}) or {})
     target_state = dict(dict(step.get("sim_state_after", {}) or {}).get("target_joint_state", {}) or {})
     recorded_targets = dict(target_state.get("servos", {}) or {})
@@ -336,6 +339,12 @@ def _recorded_servo_completion_policy(step: dict[str, Any], targets: dict[str, f
         except (TypeError, ValueError):
             continue
     recorded_max = max([abs(value) for value in residuals.values()] or [0.0])
+    if targets and set(residuals) != set(targets):
+        return {
+            "servo_tolerance_deg": 1.0,
+            "recorded_servo_residual_deg": {},
+            "legacy_missing_endpoint": True,
+        }
     # 1 degree remains the normal threshold.  Real formal-replay measurements
     # showed that a 0.5 degree margin sat on the edge of normal contact jitter,
     # so loaded endpoints use a measured 0.75 degree margin.  The independent
@@ -344,6 +353,7 @@ def _recorded_servo_completion_policy(step: dict[str, Any], targets: dict[str, f
     return {
         "servo_tolerance_deg": tolerance,
         "recorded_servo_residual_deg": residuals,
+        "legacy_missing_endpoint": False,
     }
 
 
@@ -540,6 +550,7 @@ def plan_fingerprint(plan: PlaybackPlan) -> str:
                     name: round(float(value), 9)
                     for name, value in sorted(segment.recorded_servo_residual_deg.items())
                 },
+                "legacy_missing_endpoint": bool(segment.legacy_missing_endpoint),
             }
             for segment in plan.segments
         ],
@@ -584,6 +595,7 @@ def playback_plan_to_payload(plan: PlaybackPlan) -> dict[str, Any]:
                 "gap_reason": str(segment.gap_reason),
                 "servo_tolerance_deg": float(segment.servo_tolerance_deg),
                 "recorded_servo_residual_deg": dict(segment.recorded_servo_residual_deg),
+                "legacy_missing_endpoint": bool(segment.legacy_missing_endpoint),
             }
             for segment in plan.segments
         ],
@@ -681,6 +693,7 @@ def playback_plan_from_payload(payload: dict[str, Any]) -> PlaybackPlan:
                 str(name): float(value)
                 for name, value in dict(row.get("recorded_servo_residual_deg", {}) or {}).items()
             },
+            legacy_missing_endpoint=bool(row.get("legacy_missing_endpoint", False)),
         )
         for index, row in enumerate(list(data.get("segments", []) or []))
         if isinstance(row, dict)
@@ -843,11 +856,18 @@ class SimTimePlaybackService:
         self.segment_contact_within_tolerance_since_s = None
         self.segment_contact_error_history = []
         first = self.plan.events[0] if self.plan.events else None
+        selected_step_index = int(first.source_step or 0) if first is not None else 0
+        total_steps = int(self.plan.total_steps or len({event.source_step for event in self.plan.events if event.source_step is not None}))
+        preparing_text = (
+            f"Restore verified. Waiting to play Selected Step {selected_step_index} / {total_steps}..."
+            if self.plan.selected_playback and self.active
+            else "Waiting for simulation ready..." if self.active else "Error"
+        )
         self.progress = PlaybackProgress(
             playback_state=PlaybackState.PREPARING.value if self.active else PlaybackState.ERROR.value,
-            status_text="Waiting for simulation ready..." if self.active else "Error",
-            current_step_index=int(first.source_step or 0) if first is not None else 0,
-            total_steps=int(self.plan.total_steps or len({event.source_step for event in self.plan.events if event.source_step is not None})),
+            status_text=preparing_text,
+            current_step_index=selected_step_index,
+            total_steps=total_steps,
             current_step_id=str(first.source_step_id if first is not None else ""),
             current_command_index_in_step=0,
             commands_in_current_step=int(first.commands_in_step if first is not None else 0),
@@ -883,7 +903,11 @@ class SimTimePlaybackService:
                     self.last_error = f"telemetry replay start failed: {exc}"
             self.last_info = f"worker playback running plan={self.plan_id}"
             self.progress.playback_state = PlaybackState.PLAYING.value
-            self.progress.status_text = "Playing..."
+            self.progress.status_text = (
+                f"Restore verified. Playing Selected Step {self.progress.current_step_index} / {self.progress.total_steps}"
+                if self.plan.selected_playback
+                else "Playing..."
+            )
         if self.resume_wheel_command_pending and self.paused_wheel_state:
             if hasattr(adapter, "apply_motion_batch"):
                 adapter.apply_motion_batch(
@@ -1088,7 +1112,10 @@ class SimTimePlaybackService:
                 self.active_wheel_command = ""
 
             if not segment_done:
-                if servo_planned_done and segment.servo_targets:
+                # A mixed servo+wheel segment remains active until both channels
+                # finish.  Never run servo-stall logic after the servo channel is
+                # already inside tolerance merely because the wheel timer is live.
+                if servo_planned_done and segment.servo_targets and not servo_done:
                     extension = max(0.0, segment_elapsed - float(segment.servo_duration_s))
                     max_error = max([abs(float(value)) for value in errors.values()] or [0.0])
                     within_recorded_contact_tolerance = (
@@ -1121,7 +1148,11 @@ class SimTimePlaybackService:
                         self.segment_best_servo_error_deg = max_error
                         self.segment_last_servo_improvement_elapsed_s = float(elapsed)
                     stalled_for = max(0.0, float(elapsed) - self.segment_last_servo_improvement_elapsed_s)
-                    if extension > 0.0 and stalled_for >= self.servo_stall_window_s:
+                    velocities = self._servo_target_velocities_deg_s(adapter, segment.servo_targets)
+                    velocities_near_zero = bool(velocities) and all(
+                        abs(float(value)) <= 0.5 for value in velocities.values()
+                    )
+                    if extension > 0.0 and stalled_for >= self.servo_stall_window_s and velocities_near_zero:
                         worst_joint = max(errors, key=lambda name: abs(float(errors[name]))) if errors else "unknown"
                         command_target = segment.servo_targets.get(worst_joint)
                         actual_target = (
@@ -1135,7 +1166,9 @@ class SimTimePlaybackService:
                             f"step={segment.source_step} segment={segment.segment_index} joint={worst_joint} "
                             f"requested_command_deg={command_target} expected_actual_deg={actual_target} "
                             f"measured_actual_deg={actual_deg} error_deg={errors.get(worst_joint)} "
-                            f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f}"
+                            f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f} "
+                            f"target_joint_velocity_deg_s={velocities.get(worst_joint)} "
+                            f"legacy_missing_endpoint={segment.legacy_missing_endpoint}"
                         )
                         self._finish(
                             adapter,
@@ -1345,6 +1378,27 @@ class SimTimePlaybackService:
         tolerance = self.servo_position_tolerance_deg if tolerance_deg is None else min(3.0, max(1.0, float(tolerance_deg)))
         return bool(errors) and max(abs(value) for value in errors.values()) <= tolerance, errors
 
+    @staticmethod
+    def _servo_target_velocities_deg_s(adapter: Any, targets: dict[str, float]) -> dict[str, float]:
+        try:
+            actual_servos = dict(adapter.get_actual_joint_state().get("servos", {}) or {})
+        except Exception:
+            return {}
+        velocities: dict[str, float] = {}
+        for name in targets:
+            row = actual_servos.get(name, {})
+            if not isinstance(row, dict):
+                return {}
+            value = row.get("velocity_deg_s")
+            try:
+                parsed = float(value)
+            except (TypeError, ValueError):
+                return {}
+            if not math.isfinite(parsed):
+                return {}
+            velocities[name] = parsed
+        return velocities
+
     def _finish_segment(
         self,
         adapter: Any,
@@ -1472,7 +1526,11 @@ class SimTimePlaybackService:
         self.resume_wheel_command_pending = bool(self.paused_wheel_state and self.wheel_was_stopped_for_pause)
         self.wheel_was_stopped_for_pause = False
         self.progress.playback_state = PlaybackState.PLAYING.value
-        self.progress.status_text = "Playing..."
+        self.progress.status_text = (
+            f"Restore verified. Playing Selected Step {int(event.source_step or 0)} / {self.progress.total_steps}"
+            if self.plan and self.plan.selected_playback
+            else "Playing..."
+        )
         self.progress.command_phase = "resuming"
 
     def stop(
@@ -2145,6 +2203,30 @@ class PlaybackManager:
             return
 
         if not self.active and self.stop_reason:
+            if self.stop_reason != "complete" and self.last_error:
+                stopped_step = int(self.progress.current_step_index or status.get("current_step", 0) or 0)
+                stopped_segment = int(status.get("segment_index", 0) or 0)
+                failure_fields = {}
+                for label, key in (
+                    ("Joint", "joint"),
+                    ("Requested", "requested_command_deg"),
+                    ("Actual", "measured_actual_deg"),
+                    ("Error", "error_deg"),
+                    ("Tolerance", "tolerance_deg"),
+                ):
+                    match = re.search(rf"\b{key}=([^\s]+)", self.last_error)
+                    if match:
+                        failure_fields[label] = match.group(1)
+                failure_lines = [
+                    f"Playback stopped at Step {stopped_step} / Segment {stopped_segment}",
+                    f"Reason: {self.stop_reason}",
+                ]
+                failure_lines.extend(f"{label}: {value}" for label, value in failure_fields.items())
+                failure_lines.append(self.last_error)
+                self.progress.playback_state = PlaybackState.ERROR.value
+                self.progress.status_text = "\n".join(failure_lines)
+                self.progress.last_error = self.last_error
+                self.last_info = self.progress.status_text
             self.worker_managed = False
             self.worker_acknowledged = False
             self.start_requested = False

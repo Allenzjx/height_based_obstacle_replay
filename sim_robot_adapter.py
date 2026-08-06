@@ -44,6 +44,7 @@ from robot_ground_diagnostics import (
     inspect_robot_ground_contact,
 )
 from sequence_model import clone_command_state, empty_command_state
+from sim_state_validation import validate_full_sim_pose_state
 
 
 PHYSX_SAFE_LIMIT_MIN_RAD = -2.0 * math.pi
@@ -340,6 +341,8 @@ class SimRobotAdapter:
 
     def capture_sim_state(self) -> dict[str, Any]:
         return {
+            "capture_source": type(self).__name__,
+            "pose_restore_eligible": True,
             "command_state": self.capture_command_state(),
             "target_joint_state": self.get_target_joint_state(),
             "actual_joint_state": self.get_actual_joint_state(),
@@ -362,41 +365,47 @@ class SimRobotAdapter:
             "robot_ground_diagnostics": dict(getattr(self, "robot_ground_diagnostics", {})),
         }
 
-    def restore_sim_state(self, sim_state: dict[str, Any] | None) -> None:
+    def restore_sim_state(self, sim_state: dict[str, Any] | None) -> dict[str, Any]:
         state = dict(sim_state or {})
+        current_joint_names = list(getattr(self.robot, "joint_names", []) or [])
+        validation = validate_full_sim_pose_state(state, current_joint_names)
+        if not validation["valid"]:
+            raise ValueError("Full sim pose restore rejected: " + str(validation["reason"]))
         torch = self._torch()
-        try:
-            root_pose = state.get("root_pose")
-            if root_pose is not None:
-                self.robot.write_root_pose_to_sim(torch.tensor(root_pose, dtype=torch.float32, device=self.device))
-            root_velocity = state.get("root_velocity")
-            if root_velocity is not None:
-                self.robot.write_root_velocity_to_sim(torch.tensor(root_velocity, dtype=torch.float32, device=self.device))
-            joint_pos = state.get("joint_pos")
-            joint_vel = state.get("joint_vel")
-            if joint_pos is not None and joint_vel is not None:
-                self.robot.write_joint_state_to_sim(
-                    torch.tensor(joint_pos, dtype=torch.float32, device=self.device),
-                    torch.tensor(joint_vel, dtype=torch.float32, device=self.device),
-                )
-        except Exception as exc:
-            print(f"[WARN] Could not restore full sim pose, falling back to command_state: {exc}")
-        command_state = state.get("command_state")
-        if isinstance(command_state, dict):
-            for name, value in command_state.get("servos", {}).items():
-                if name in self.joint_command_deg:
-                    self.joint_command_deg[name] = float(value)
-                    self.servo_applied_command_deg[name] = float(value)
-                    self.servo_nominal_target_reached[name] = True
-                    self.servo_tracking_compensation_deg[name] = 0.0
-                    self.servo_tracking_active[name] = False
-                    self.servo_tracking_stable_ticks[name] = 0
-            for name, value in command_state.get("wheels", {}).items():
-                if name in self.wheel_speeds:
-                    self.wheel_speeds[name] = float(value)
-            self.servo_cmd_targets = self._targets_from_command_angles()
-            self.command_state = self.capture_command_state()
+        trace: list[dict[str, Any]] = []
         self.robot.reset()
+        trace.append({"event": "articulation_reset_before_write", "sim_step": int(self.sim_steps)})
+        root_pose = torch.tensor(state["root_pose"], dtype=torch.float32, device=self.device)
+        root_velocity = torch.tensor(state["root_velocity"], dtype=torch.float32, device=self.device)
+        joint_pos = torch.tensor(state["joint_pos"], dtype=torch.float32, device=self.device)
+        joint_vel = torch.tensor(state["joint_vel"], dtype=torch.float32, device=self.device)
+        reorder = list(validation.get("joint_reorder_indices", []) or [])
+        if reorder and reorder != list(range(len(reorder))):
+            joint_pos = joint_pos[..., reorder]
+            joint_vel = joint_vel[..., reorder]
+        self.robot.write_root_pose_to_sim(root_pose)
+        trace.append({"event": "root_pose_written", "sim_step": int(self.sim_steps)})
+        self.robot.write_root_velocity_to_sim(root_velocity)
+        trace.append({"event": "root_velocity_written", "sim_step": int(self.sim_steps)})
+        self.robot.write_joint_state_to_sim(joint_pos, joint_vel)
+        trace.append({"event": "joint_state_written", "sim_step": int(self.sim_steps)})
+        command_state = state.get("command_state")
+        for name, value in command_state.get("servos", {}).items():
+            if name in self.joint_command_deg:
+                self.joint_command_deg[name] = float(value)
+                self.servo_applied_command_deg[name] = float(value)
+                self.servo_nominal_target_reached[name] = True
+                self.servo_tracking_compensation_deg[name] = 0.0
+                self.servo_tracking_active[name] = False
+                self.servo_tracking_stable_ticks[name] = 0
+        for name in self.wheel_speeds:
+            self.wheel_speeds[name] = 0.0
+        self.servo_cmd_targets = self._targets_from_command_angles()
+        self.command_state = self.capture_command_state()
+        self.apply_commands_to_robot()
+        self.robot.write_data_to_sim()
+        trace.append({"event": "command_targets_applied", "sim_step": int(self.sim_steps)})
+        return {"validation": validation, "trace": trace, "joint_names": current_joint_names}
 
     def handle_command(self, message: Any) -> None:
         text = getattr(message, "text", message)
@@ -2080,6 +2089,8 @@ class NullSimRobotAdapter:
 
     def capture_sim_state(self) -> dict[str, Any]:
         return {
+            "capture_source": type(self).__name__,
+            "pose_restore_eligible": False,
             "command_state": self.capture_command_state(),
             "target_joint_state": self.get_target_joint_state(),
             "actual_joint_state": self.get_actual_joint_state(),

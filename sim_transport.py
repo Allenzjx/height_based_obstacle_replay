@@ -142,14 +142,29 @@ class SimTransport:
         self.adapter.apply_motion_batch(batch)
         return batch_id
 
-    def request_state(self, *, detailed: bool = False) -> None:
+    def request_state(
+        self,
+        *,
+        detailed: bool = False,
+        request_id: str = "",
+        purpose: str = "",
+    ) -> str:
         if self.process_client is not None:
-            self.process_client.request_state(detailed=detailed)
+            return self.process_client.request_state(
+                detailed=detailed,
+                request_id=request_id,
+                purpose=purpose,
+            )
+        return str(request_id or "")
 
     def capture_sim_state(self) -> dict[str, Any]:
         status_state = self.last_worker_status.get("sim_state")
         if isinstance(status_state, dict):
             return dict(status_state)
+        if self.process_client is not None:
+            # A subprocess must never silently persist the controller's local
+            # NullSim adapter as though it were a real Isaac checkpoint.
+            return {}
         if hasattr(self.adapter, "capture_sim_state"):
             return self.adapter.capture_sim_state()
         return {"command_state": self.capture_command_state()}
