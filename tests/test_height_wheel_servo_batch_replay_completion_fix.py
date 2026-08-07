@@ -375,7 +375,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
         self.assertEqual(status["servo_residual_warning_count"], 1)
         self.assertEqual(
             status["last_servo_residual_warning"]["stability_basis"],
-            "bounded_recent_contact_residual_window",
+            "bounded_recorded_contact_tolerance",
         )
 
 

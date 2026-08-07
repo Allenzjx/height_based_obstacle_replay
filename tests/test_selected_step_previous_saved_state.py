@@ -104,6 +104,19 @@ def controller_with_three_steps(root: Path) -> HeightReplayController:
         row["sim_state_before"] = sim_state(float((index - 1) * 10), float(index - 1))
         row["sim_state_after"] = sim_state(float(index * 10), float(index))
     controller.manager.revision += 1
+    # --no-sim tests still need a pose-capable in-memory adapter to exercise
+    # the strict restore verifier; NullSim placeholders are intentionally not
+    # FULL_VALID checkpoints.
+    adapter = controller.transport.adapter
+    original_restore = adapter.restore_sim_state
+    restored_state: dict[str, Any] = {"value": sim_state(0.0, 0.0)}
+
+    def restore_and_remember(state: dict[str, Any]) -> None:
+        restored_state["value"] = copy.deepcopy(state)
+        original_restore(state)
+
+    adapter.restore_sim_state = restore_and_remember  # type: ignore[method-assign]
+    adapter.capture_sim_state = lambda: copy.deepcopy(restored_state["value"])  # type: ignore[method-assign]
     return controller
 
 
@@ -139,7 +152,16 @@ class FakeSimClient:
         return []
 
     def status(self) -> dict[str, Any]:
-        return dict(self.latest_status)
+        status = dict(self.latest_status)
+        if (
+            str(status.get("last_restore_result", "") or "") == "ok"
+            and str(status.get("last_restore_request_id", "") or "")
+        ):
+            status["last_restore_verification"] = {
+                "request_id": str(status["last_restore_request_id"]),
+                "verified": True,
+            }
+        return status
 
     def restore_sim_state(self, state: dict[str, Any], *, request_id: str = "") -> str:
         self.restore_calls.append({"sim_state": copy.deepcopy(state), "request_id": request_id})
@@ -255,7 +277,7 @@ class RestoreSourceTest(unittest.TestCase):
             self.assertFalse(controller.playback.start_requested)
             self.assertEqual(controller.playback.scheduled_start_at, 0.0)
             self.assertIs(controller.operation.state, OperationState.IDLE)
-            self.assertIn("no saved previous-step end state", controller.detail_text)
+            self.assertIn("FULL_VALID saved Isaac pose is required", controller.detail_text)
 
     def test_first_step_uses_own_saved_start_and_does_not_respawn(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

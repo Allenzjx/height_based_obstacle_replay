@@ -12,6 +12,7 @@ MODULE_ROOT = Path(__file__).resolve().parents[1]
 if str(MODULE_ROOT) not in sys.path:
     sys.path.insert(0, str(MODULE_ROOT))
 
+from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES  # noqa: E402
 from playback import PlaybackEvent, PlaybackManager, PlaybackPlan  # noqa: E402
 from sequence_model import empty_command_state, make_event, make_step  # noqa: E402
 from sim_ipc_protocol import decode_line, encode_message, make_message  # noqa: E402
@@ -68,6 +69,29 @@ def motion_step(index: int = 1) -> dict[str, Any]:
         command_state_after=state,
         name=f"step_{index:03d}",
     )
+
+
+def full_sim_state() -> dict[str, Any]:
+    state = empty_command_state()
+    names = list(SERVO_JOINT_NAMES) + list(WHEEL_JOINT_NAMES)
+    return {
+        "capture_source": "PlaySelectedPlaybackTest",
+        "pose_restore_eligible": True,
+        "command_state": state,
+        "target_joint_state": {
+            "servos": {name: {"target_actual_deg": 0.0} for name in SERVO_JOINT_NAMES},
+            "wheels": {name: {"target_rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
+        },
+        "actual_joint_state": {
+            "servos": {name: {"deg": 0.0, "velocity_deg_s": 0.0} for name in SERVO_JOINT_NAMES},
+            "wheels": {name: {"rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
+        },
+        "root_pose": [[0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0]],
+        "root_velocity": [[0.0] * 6],
+        "joint_pos": [[0.0] * len(names)],
+        "joint_vel": [[0.0] * len(names)],
+        "joint_names": names,
+    }
 
 
 class FakePlaybackController:
@@ -145,7 +169,18 @@ class PlaySelectedPlaybackTest(unittest.TestCase):
     def test_play_selected_step_does_not_respawn(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             controller = HeightReplayController(make_args(Path(tmp)))
-            controller.manager.add_step(motion_step(1))
+            selected = motion_step(1)
+            selected["sim_state_before"] = full_sim_state()
+            controller.manager.add_step(selected)
+            restored: dict[str, Any] = {"value": full_sim_state()}
+            original_restore = controller.transport.adapter.restore_sim_state
+
+            def restore_and_remember(state: dict[str, Any]) -> None:
+                restored["value"] = state
+                original_restore(state)
+
+            controller.transport.adapter.restore_sim_state = restore_and_remember  # type: ignore[method-assign]
+            controller.transport.adapter.capture_sim_state = lambda: restored["value"]  # type: ignore[method-assign]
             respawn_calls: list[str] = []
             controller.respawn_robot = lambda: respawn_calls.append("respawn")  # type: ignore[method-assign]
             controller._handle_play_step(["1"])

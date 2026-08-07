@@ -1,8 +1,8 @@
 {
-  "accepted_steps_sha256": "7634b2b79de081d32d890f002dc898d62e3811c14f01c9cba999970b68fb0bad",
+  "accepted_steps_sha256": "57eeb83156277cf5f9c58ea53891e39222b891a2dcd1cc3ad3e3a0d7de0fcae1",
   "actuator_baseline_id": "fsm-recording-reference-v1",
   "actuator_command_semantics": "fixed-100-percent-direct-v1",
-  "command_count": 13,
+  "command_count": 139,
   "created_at": "2026-08-05T22:54:41-04:00",
   "environment_baseline_id": "fixed-wide-obstacle-v2",
   "height_mm": 50,
@@ -17,8 +17,8 @@
   "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
   "robot_respawn_pose": null,
   "schema_version": "height-steps-versions.v2",
-  "step_count": 2,
-  "updated_at": "2026-08-05T22:54:41-04:00",
+  "step_count": 22,
+  "updated_at": "2026-08-06T18:48:02.285500-04:00",
   "version_id": "v005_20260805_225441_439112_manual",
   "version_name": "manual"
 }

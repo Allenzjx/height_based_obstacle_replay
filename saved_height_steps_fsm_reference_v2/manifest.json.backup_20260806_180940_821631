@@ -1,0 +1,129 @@
+{
+  "created_at": "2026-08-04T17:03:06-04:00",
+  "heights": {
+    "100": {
+      "active_version_id": "v001_20260804_213750_249911_manual",
+      "folder": "height_100mm",
+      "height_mm": 100,
+      "last_saved_at": "2026-08-04T21:37:50-04:00",
+      "version_count": 1,
+      "versions": [
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\versions\\v001_20260804_213750_249911_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "3f201b776fbad7430858a441659247045ad69d8e97c801b5393ee733c6a6d214",
+          "command_count": 5,
+          "created_at": "2026-08-04T21:37:50-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\versions\\v001_20260804_213750_249911_manual",
+          "read_only": false,
+          "step_count": 1,
+          "updated_at": "2026-08-04T21:37:50-04:00",
+          "version_id": "v001_20260804_213750_249911_manual",
+          "version_name": "manual"
+        }
+      ]
+    },
+    "50": {
+      "active_version_id": "v006_20260805_233948_654778_manual",
+      "folder": "height_050mm",
+      "height_mm": 50,
+      "last_saved_at": "2026-08-06T18:03:24.566113-04:00",
+      "version_count": 6,
+      "versions": [
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "e48143e0c9528640510404ebaba5ab47e9cdb1fa62c4193b1aeffa234c1058ea",
+          "command_count": 50,
+          "created_at": "2026-08-05T16:20:57-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual",
+          "read_only": false,
+          "step_count": 10,
+          "updated_at": "2026-08-05T16:20:57-04:00",
+          "version_id": "v001_20260805_162057_740045_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v002_20260805_185955_854964_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "f43061e9d398eb0cb955e48a059abc13135761166c33e088e389b779cb8f38cd",
+          "command_count": 80,
+          "created_at": "2026-08-05T18:59:55-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v002_20260805_185955_854964_manual",
+          "read_only": false,
+          "step_count": 16,
+          "updated_at": "2026-08-05T18:59:55-04:00",
+          "version_id": "v002_20260805_185955_854964_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v003_20260805_224517_157723_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394",
+          "command_count": 136,
+          "created_at": "2026-08-05T22:45:17-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v003_20260805_224517_157723_manual",
+          "read_only": false,
+          "step_count": 24,
+          "updated_at": "2026-08-05T22:45:17-04:00",
+          "version_id": "v003_20260805_224517_157723_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v004_20260805_224517_863127_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394",
+          "command_count": 136,
+          "created_at": "2026-08-05T22:45:17-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v004_20260805_224517_863127_manual",
+          "read_only": false,
+          "step_count": 24,
+          "updated_at": "2026-08-05T22:45:17-04:00",
+          "version_id": "v004_20260805_224517_863127_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v005_20260805_225441_439112_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "7634b2b79de081d32d890f002dc898d62e3811c14f01c9cba999970b68fb0bad",
+          "command_count": 13,
+          "created_at": "2026-08-05T22:54:41-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v005_20260805_225441_439112_manual",
+          "read_only": false,
+          "step_count": 2,
+          "updated_at": "2026-08-05T22:54:41-04:00",
+          "version_id": "v005_20260805_225441_439112_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v006_20260805_233948_654778_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "3d31a17a6caa944d5ac696e284646da2d9df1f2f0e81b63ed3046dc55f404f79",
+          "command_count": 139,
+          "created_at": "2026-08-05T23:39:48-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v006_20260805_233948_654778_manual",
+          "read_only": false,
+          "step_count": 21,
+          "updated_at": "2026-08-06T18:03:24.566113-04:00",
+          "version_id": "v006_20260805_233948_654778_manual",
+          "version_name": "manual"
+        }
+      ]
+    },
+    "75": {
+      "active_version_id": "",
+      "folder": "height_075mm",
+      "height_mm": 75,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    }
+  },
+  "schema_version": "height-steps-versions.v2",
+  "supported_heights_mm": [
+    50,
+    75,
+    100
+  ],
+  "updated_at": "2026-08-06T18:03:24.670709-04:00"
+}

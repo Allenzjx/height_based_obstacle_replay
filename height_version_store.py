@@ -22,7 +22,7 @@ DEFAULT_LEGACY_ROOT = PROJECT_ROOT / "saved_height_steps"
 
 
 def now_iso() -> str:
-    return datetime.now().astimezone().isoformat(timespec="seconds")
+    return datetime.now().astimezone().isoformat(timespec="microseconds")
 
 
 def file_sha256(path: str | Path) -> str:
@@ -136,7 +136,9 @@ class HeightVersionStore:
         height = self._compat_height_mm(height_mm)
         return self._legacy_steps_cache.get(height)
 
-    def load_version(self, height_mm: int | float | str, version_id: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    def inspect_version(self, height_mm: int | float | str, version_id: str) -> dict[str, Any]:
+        """Read and hash one Run without changing the active Run."""
+
         height = self._compat_height_mm(height_mm)
         version = str(version_id or "")
         if version.startswith("legacy_"):
@@ -144,7 +146,7 @@ class HeightVersionStore:
             if path is None:
                 raise FileNotFoundError(f"No legacy steps exist for {height} mm")
             steps = load_steps_jsonl(path)
-            metadata = {
+            return {
                 "version_id": version,
                 "version_name": f"Legacy {height // 10} cm (read-only)",
                 "height_mm": height,
@@ -157,14 +159,34 @@ class HeightVersionStore:
                 "legacy": True,
                 "speed_semantics_version": "legacy-100-percent-canonical",
             }
-            return steps, metadata
         metadata_path = self.version_metadata_path(height, version)
         steps_path = self.version_steps_path(height, version)
         metadata = self._load_json(metadata_path)
-        steps = load_steps_jsonl(steps_path)
-        if file_sha256(steps_path) != str(metadata.get("accepted_steps_sha256", "")):
+        actual_hash = file_sha256(steps_path)
+        if actual_hash != str(metadata.get("accepted_steps_sha256", "")):
             raise IOError(f"Version hash mismatch: {steps_path}")
-        self._set_active(height, version)
+        return {
+            **metadata,
+            "path": str(steps_path.parent.resolve()),
+            "accepted_steps_path": str(steps_path.resolve()),
+            "accepted_steps_sha256": actual_hash,
+            "read_only": False,
+            "legacy": False,
+        }
+
+    def load_version(
+        self,
+        height_mm: int | float | str,
+        version_id: str,
+        *,
+        activate: bool = True,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        height = self._compat_height_mm(height_mm)
+        version = str(version_id or "")
+        metadata = self.inspect_version(height, version)
+        steps = load_steps_jsonl(Path(str(metadata["accepted_steps_path"])))
+        if activate and not bool(metadata.get("legacy", False)):
+            self._set_active(height, version)
         return steps, metadata
 
     def save_new_version(
@@ -225,6 +247,10 @@ class HeightVersionStore:
                 "saved_at": created,
                 "step_count": record["step_count"],
                 "command_count": record["command_count"],
+                "parent_run_id": record["parent_version_id"],
+                "version_count_after": int(
+                    self._manifest["heights"][str(height)].get("version_count", 0) or 0
+                ),
             }
             return target_dir
         except Exception:
@@ -250,20 +276,54 @@ class HeightVersionStore:
         if version.startswith("legacy_"):
             raise PermissionError("Legacy versions are read-only")
         target = self.version_steps_path(height, version)
-        report = atomic_save_steps_jsonl(steps, target)
         metadata_path = self.version_metadata_path(height, version)
-        metadata = self._load_json(metadata_path)
-        metadata.update(
-            updated_at=now_iso(),
-            step_count=len(steps),
-            command_count=sum(len(step.get("events", []) or []) for step in steps),
-            accepted_steps_sha256=file_sha256(target),
-        )
-        self._write_json_atomic(metadata_path, metadata, backup_existing=True)
-        self._replace_manifest_version(height, metadata, target.parent)
-        self._set_active(height, version)
-        self.last_save_report = {**report, **metadata, "path": str(target.parent.resolve())}
-        return target.parent
+        active_path = self.active_path(height)
+        paths = (target, metadata_path, self.manifest_path, active_path)
+        originals = {path: path.read_bytes() if path.exists() else None for path in paths}
+        before = self.inspect_version(height, version)
+        entry = self._manifest["heights"][str(height)]
+        version_count_before = int(entry.get("version_count", 0) or 0)
+        created_at = str(before.get("created_at", "") or "")
+        old_hash = str(before.get("accepted_steps_sha256", "") or "")
+        try:
+            report = atomic_save_steps_jsonl(steps, target)
+            metadata = self._load_json(metadata_path)
+            metadata.update(
+                updated_at=now_iso(),
+                step_count=len(steps),
+                command_count=sum(len(step.get("events", []) or []) for step in steps),
+                accepted_steps_sha256=file_sha256(target),
+            )
+            metadata["created_at"] = created_at
+            self._write_json_atomic(metadata_path, metadata, backup_existing=True)
+            self._replace_manifest_version(height, metadata, target.parent)
+            verified_steps, verified = self.load_version(height, version, activate=False)
+            current_entry = self._manifest["heights"][str(height)]
+            if len(verified_steps) != len(steps):
+                raise IOError("Updated Run step count verification failed")
+            if str(verified.get("created_at", "") or "") != created_at:
+                raise IOError("Updated Run created_at changed")
+            if int(current_entry.get("version_count", 0) or 0) != version_count_before:
+                raise IOError("Update Current Run changed version_count")
+            if str(current_entry.get("active_version_id", "") or "") != version:
+                raise IOError("Update Current Run changed the active Run ID")
+            self.last_save_report = {
+                **report,
+                **verified,
+                "path": str(target.parent.resolve()),
+                "old_accepted_steps_sha256": old_hash,
+                "new_accepted_steps_sha256": str(verified.get("accepted_steps_sha256", "") or ""),
+                "version_count_before": version_count_before,
+                "version_count_after": int(current_entry.get("version_count", 0) or 0),
+                "run_id_unchanged": True,
+            }
+            return target.parent
+        except Exception:
+            for path, payload in originals.items():
+                self._restore_bytes_atomic(path, payload)
+            self._manifest = self._load_json(self.manifest_path)
+            self._merge_defaults(self._manifest)
+            raise
 
     def refresh_manifest(self) -> dict[str, Any]:
         if self.manifest_path.exists():
@@ -332,8 +392,18 @@ class HeightVersionStore:
         self._write_json_atomic(self.manifest_path, self._manifest, backup_existing=True)
 
     def _set_active(self, height_mm: int, version_id: str) -> None:
+        current_id = str(
+            self._manifest["heights"][str(height_mm)].get("active_version_id", "") or ""
+        )
+        active_path = self.active_path(height_mm)
+        if current_id == str(version_id) and active_path.exists():
+            try:
+                if str(self._load_json(active_path).get("version_id", "") or "") == str(version_id):
+                    return
+            except Exception:
+                pass
         active = {"height_mm": height_mm, "version_id": str(version_id), "updated_at": now_iso()}
-        self._write_json_atomic(self.active_path(height_mm), active, backup_existing=True)
+        self._write_json_atomic(active_path, active, backup_existing=True)
         self._manifest["heights"][str(height_mm)]["active_version_id"] = str(version_id)
         self._manifest["updated_at"] = now_iso()
         self._write_json_atomic(self.manifest_path, self._manifest, backup_existing=True)
@@ -413,6 +483,23 @@ class HeightVersionStore:
             os.replace(tmp, path)
             if cls._load_json(path) != payload:
                 raise IOError(f"Final JSON verification failed: {path}")
+        finally:
+            if tmp.exists():
+                tmp.unlink()
+
+    @staticmethod
+    def _restore_bytes_atomic(path: Path, payload: bytes | None) -> None:
+        if payload is None:
+            if path.exists():
+                path.unlink()
+            return
+        tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.rollback.tmp")
+        try:
+            with tmp.open("wb") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(tmp, path)
         finally:
             if tmp.exists():
                 tmp.unlink()

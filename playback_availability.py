@@ -31,12 +31,15 @@ def evaluate_playback_availability(
     playback_active: bool,
     playback_paused: bool,
     playback_scheduled: bool,
+    explicit_block_reason: str = "",
 ) -> PlaybackAvailability:
     """Return every Playback control state from one immutable snapshot."""
 
     has_sequence = bool(sequence_valid and int(sequence_count) > 0)
     reason = ""
-    if playback_active or playback_scheduled or operation_state is OperationState.PLAYBACK:
+    if explicit_block_reason:
+        reason = str(explicit_block_reason)
+    elif playback_active or playback_scheduled or operation_state is OperationState.PLAYBACK:
         reason = "Playback is already active."
     elif operation_state is OperationState.RECORDING:
         reason = "Recording is active."

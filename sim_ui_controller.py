@@ -178,6 +178,8 @@ class HeightReplayController:
         self._current_height_mm = normalize_height_mm(height_mm_arg)
         self.current_version_id = ""
         self.current_version_metadata: dict[str, Any] = {}
+        self.pending_selected_run_id = ""
+        self.pending_selected_run_metadata: dict[str, Any] = {}
         self.manager = SequenceManager(self._current_steps_path())
         self.adapter: Any = NullSimRobotAdapter()
         self.transport = SimTransport(self.adapter)
@@ -262,6 +264,8 @@ class HeightReplayController:
         self.pending_selected_playback: dict[str, Any] | None = None
         self.last_selected_restore_result: dict[str, Any] = {}
         self.selected_fast_click_id = ""
+        self.last_playback_reconciliation: dict[str, Any] = {}
+        self.playback_reconciliation_history: list[dict[str, Any]] = []
 
         self.playback = PlaybackManager(self)
         self.playback.set_profile(str(getattr(args, "profile", self.playback.profile) or self.playback.profile))
@@ -343,6 +347,17 @@ class HeightReplayController:
 
     def playback_availability(self, *, selected_index: int | None = None) -> PlaybackAvailability:
         selected = self.selected_step_index if selected_index is None else selected_index
+        explicit_block_reason = ""
+        if self.mode == MODE_E_STOP:
+            explicit_block_reason = "E-stop is active."
+        elif self.pending_step is not None:
+            explicit_block_reason = "Accept or discard the pending recorded step before Playback."
+        elif self.pending_replacement is not None:
+            explicit_block_reason = "Accept or discard the pending replacement before Playback."
+        elif self.servo_wheel_staging_active and self.servo_wheel_staged_dirty:
+            explicit_block_reason = (
+                "Servo-Wheel staged changes are pending. Launch, Clear, or Cancel before Playback."
+            )
         availability = evaluate_playback_availability(
             sim_connected=self.sim_connected,
             sim_ready=bool(self.no_sim or self.runtime_ready),
@@ -353,6 +368,7 @@ class HeightReplayController:
             playback_active=bool(self.playback.active or self.playback.start_requested),
             playback_paused=bool(self.playback.paused),
             playback_scheduled=bool(self.playback.active and self.playback.scheduled_start_at > 0.0),
+            explicit_block_reason=explicit_block_reason,
         )
         return availability
 
@@ -467,10 +483,115 @@ class HeightReplayController:
     def respawn_ready(self) -> bool:
         return self.respawn_readiness()[0]
 
-    def playback_readiness(self, *, respawn_first: bool = False) -> tuple[bool, str]:
+    def playback_readiness(
+        self,
+        *,
+        respawn_first: bool = False,
+        reconcile: bool = False,
+    ) -> tuple[bool, str]:
+        if reconcile:
+            self.reconcile_playback_state_before_start()
         availability = self.playback_availability()
         allowed = availability.can_respawn_start if respawn_first else availability.can_start
         return bool(allowed), "" if allowed else availability.reason
+
+    def reconcile_playback_state_before_start(self, *, automatic: bool = False) -> dict[str, Any]:
+        """Clear only proven-stale local Playback ownership before a new request."""
+
+        now = time.monotonic()
+        worker = dict(self.latest_sim_status.get("worker_playback", {}) or {})
+        status_age_s = (
+            max(0.0, now - float(getattr(self.sim_client, "last_status_time", now) or now))
+            if self.sim_client is not None
+            else 0.0
+        )
+        report = {
+            "checked_at": time.time(),
+            "automatic": bool(automatic),
+            "status_age_s": status_age_s,
+            "local_active": bool(self.playback.active),
+            "local_start_requested": bool(self.playback.start_requested),
+            "local_worker_managed": bool(self.playback.worker_managed),
+            "local_plan_id": str(self.playback.worker_plan_id or ""),
+            "local_request_id": str(self.playback.worker_request_id or ""),
+            "operation_before": self.operation.state.value,
+            "pending_selected_restore": bool(self.pending_selected_playback),
+            "worker_active": bool(worker.get("active", False)),
+            "worker_paused": bool(worker.get("paused", False)),
+            "worker_plan_id": str(worker.get("plan_id", "") or ""),
+            "worker_request_id": str(worker.get("request_id", "") or ""),
+            "worker_session_id": str(worker.get("worker_session_id", "") or ""),
+            "worker_stop_reason": str(worker.get("stop_reason", "") or ""),
+            "reconciled": False,
+            "reason": "",
+        }
+        if self.no_sim or self.sim_client is None or not self.sim_connected:
+            report["reason"] = "local/no-sim playback state is not worker-reconciled"
+        elif status_age_s > 3.0 or not worker:
+            report["reason"] = "worker status is not fresh enough for reconciliation"
+        elif bool(worker.get("active", False)):
+            report["reason"] = (
+                f"worker has an active plan {report['worker_plan_id']} "
+                f"in session {report['worker_session_id']}"
+            )
+        else:
+            pending = self.pending_selected_playback
+            pending_current = bool(
+                pending
+                and now <= float(pending.get("deadline", 0.0) or 0.0)
+                and self.operation.state is OperationState.PLAYBACK
+            )
+            start_age_s = max(0.0, now - float(self.playback.worker_requested_at or now))
+            matching_start_is_live = bool(
+                self.playback.start_requested
+                and self.playback.worker_request_id
+                and start_age_s < float(self.playback.worker_ack_timeout_s)
+            )
+            if pending_current:
+                report["reason"] = "a matching Selected restore transaction is still within its deadline"
+            elif matching_start_is_live:
+                report["reason"] = "a matching worker start request is still within its acknowledgment deadline"
+            else:
+                stale_reasons: list[str] = []
+                if self.playback.active:
+                    stale_reasons.append("local active while worker inactive")
+                if self.playback.start_requested:
+                    stale_reasons.append("expired local start_requested")
+                if pending is not None:
+                    stale_reasons.append("expired pending Selected restore")
+                if self.operation.state is OperationState.PLAYBACK:
+                    stale_reasons.append("stale PLAYBACK operation ownership")
+                if self.playback.worker_managed or self.playback.worker_acknowledged:
+                    stale_reasons.append("stale worker-managed identity")
+                if stale_reasons:
+                    self.pending_selected_playback = None
+                    self.playback.active = False
+                    self.playback.paused = False
+                    self.playback.start_requested = False
+                    self.playback.scheduled_start_at = 0.0
+                    self.playback.worker_managed = False
+                    self.playback.worker_acknowledged = False
+                    self.playback.worker_requested_at = 0.0
+                    self.playback.worker_plan_id = ""
+                    self.playback.worker_request_id = ""
+                    self.playback.worker_session_id = ""
+                    self.playback.plan = None
+                    self.playback.progress.playback_state = PlaybackState.IDLE.value
+                    self.playback.progress.status_text = "Cleared stale playback state"
+                    self.playback.progress.command_phase = "reconciled"
+                    self.operation.finish(OperationState.PLAYBACK)
+                    if self.mode in {MODE_PLAYBACK, MODE_PLAYBACK_PAUSED}:
+                        self.mode = MODE_TEST
+                    report["reconciled"] = True
+                    report["reason"] = "; ".join(stale_reasons)
+                    self.status = "Cleared stale playback state; starting current run is allowed."
+                else:
+                    report["reason"] = "local and worker playback are already idle"
+        report["operation_after"] = self.operation.state.value
+        self.last_playback_reconciliation = copy.deepcopy(report)
+        self.playback_reconciliation_history.append(copy.deepcopy(report))
+        self.playback_reconciliation_history = self.playback_reconciliation_history[-64:]
+        return report
 
     @property
     def recording_active(self) -> bool:
@@ -694,6 +815,26 @@ class HeightReplayController:
             else:
                 self.status_log.append(message)
                 print(message)
+
+    def _run_coordinated_operation(
+        self,
+        state: OperationState,
+        name: str,
+        func: Any,
+    ) -> Any:
+        owned = False
+        if self.operation.state is state:
+            owned = False
+        elif self.operation.begin(state, detail=f"{name} is in progress."):
+            owned = True
+        else:
+            self._warn("[WARN] " + (self.operation.reason or "Another operation is active."))
+            return None
+        try:
+            return self._run_operation(name, func)
+        finally:
+            if owned:
+                self.operation.finish(state)
 
     def command_state_summary(self, state: dict[str, Any] | None) -> str:
         normalized = clone_command_state(state)
@@ -1228,6 +1369,8 @@ class HeightReplayController:
         self.args.height_mm = height
         self.current_version_id = ""
         self.current_version_metadata = {}
+        self.pending_selected_run_id = ""
+        self.pending_selected_run_metadata = {}
         self.manager.accepted_path = self._current_steps_path()
         self.manager.adopt_steps([], dirty=False)
         self.pending_step = None
@@ -1267,14 +1410,15 @@ class HeightReplayController:
             try:
                 steps, metadata = self.store.load_version(self.current_height_mm, selected)
             except Exception as exc:
-                self.manager.accepted_path = self._current_steps_path()
-                self.manager.adopt_steps([], dirty=False)
-                self.selected_step_index = None
-                self.detail_text = ""
-                self._warn(f"[WARN] Could not load version {selected} for {self.current_height_mm} mm: {exc}")
-                return 0
+                self._warn(
+                    f"[WARN] Could not open Run {selected} for {self.current_height_mm} mm; "
+                    f"the current working Run was preserved: {exc}"
+                )
+                return self.manager.count
             self.current_version_id = selected
             self.current_version_metadata = dict(metadata)
+            self.pending_selected_run_id = selected
+            self.pending_selected_run_metadata = dict(metadata)
             path = Path(str(metadata.get("accepted_steps_path", self._current_steps_path())))
             self.manager.accepted_path = path
             self.manager.adopt_steps(steps, dirty=False)
@@ -1287,8 +1431,36 @@ class HeightReplayController:
             self.manifest_revision += 1
             return len(steps)
 
-        result = self._run_operation("Load steps for current height", work)
+        result = self._run_coordinated_operation(
+            OperationState.RUN_MANAGEMENT,
+            "Open Selected Run",
+            work,
+        )
         return int(result or 0)
+
+    def select_pending_run(self, version_id: str) -> dict[str, Any]:
+        """Preview a Run selection without opening it or changing active state."""
+
+        selected = str(version_id or "")
+        if not selected:
+            self.pending_selected_run_id = ""
+            self.pending_selected_run_metadata = {}
+            return {}
+        metadata = self.store.inspect_version(self.current_height_mm, selected)
+        self.pending_selected_run_id = selected
+        self.pending_selected_run_metadata = dict(metadata)
+        self.status = f"Pending Selected Run: {selected}. Click Open Selected Run to load it."
+        return dict(metadata)
+
+    def open_selected_run(self, *, discard_dirty: bool = False) -> int:
+        selected = str(self.pending_selected_run_id or "")
+        if not selected:
+            self._warn("[WARN] Select a Run in the combobox first.")
+            return 0
+        return self.load_steps_for_current_height(
+            discard_dirty=discard_dirty,
+            version_id=selected,
+        )
 
     def save_steps_for_current_height(
         self,
@@ -1338,7 +1510,13 @@ class HeightReplayController:
                 },
             )
             self.current_version_id = str(self.store.last_save_report.get("version_id", ""))
-            _steps, self.current_version_metadata = self.store.load_version(self.current_height_mm, self.current_version_id)
+            _steps, self.current_version_metadata = self.store.load_version(
+                self.current_height_mm,
+                self.current_version_id,
+                activate=False,
+            )
+            self.pending_selected_run_id = self.current_version_id
+            self.pending_selected_run_metadata = dict(self.current_version_metadata)
             self.manager.accepted_path = self._current_steps_path()
             self.manager.dirty = False
             self.last_save_report = dict(self.store.last_save_report)
@@ -1350,44 +1528,75 @@ class HeightReplayController:
             )
             return path
 
-        result = self._run_operation("Save New Version", work)
+        result = self._run_coordinated_operation(
+            OperationState.RUN_MANAGEMENT,
+            "Save As New Run",
+            work,
+        )
         return result if isinstance(result, Path) else None
 
     def save_current_version(self, *, confirmed: bool) -> Path | None:
         if not self.current_version_id:
-            self._warn("[WARN] No current version exists; use Save New Version.")
+            self._warn("[WARN] No current Run exists; use Save As New Run.")
             return None
-        try:
+        ok, reason = self.can_save()
+        if not ok:
+            self._warn("[WARN] " + reason)
+            return None
+        if self.visible_steps_are_read_only() or self.current_version_id.startswith("legacy_"):
+            self._warn("[WARN] Current Run is read-only; use Save As New Run.")
+            return None
+
+        def work() -> Path | None:
             path = self.store.save_current_version(
                 self.current_height_mm,
                 self.current_version_id,
                 self.manager.steps,
                 confirmed=confirmed,
             )
-            _steps, self.current_version_metadata = self.store.load_version(self.current_height_mm, self.current_version_id)
+            _steps, self.current_version_metadata = self.store.load_version(
+                self.current_height_mm,
+                self.current_version_id,
+                activate=False,
+            )
+            self.pending_selected_run_id = self.current_version_id
+            self.pending_selected_run_metadata = dict(self.current_version_metadata)
             self.manager.accepted_path = self._current_steps_path()
             self.manager.dirty = False
             self.last_save_report = dict(self.store.last_save_report)
             self.manifest_revision += 1
             return path
-        except Exception as exc:
-            self._warn(f"[WARN] Save Current Version failed: {exc}")
-            return None
+
+        result = self._run_coordinated_operation(
+            OperationState.RUN_MANAGEMENT,
+            "Update Current Run",
+            work,
+        )
+        return result if isinstance(result, Path) else None
 
     def new_empty_sequence_for_current_height(self, *, discard_dirty: bool = False) -> None:
         if self.manager.dirty and not discard_dirty:
             raise DirtyHeightSwitchError("Current sequence has unsaved changes. Confirm discard before creating a new empty sequence.")
-        self.current_version_id = ""
-        self.current_version_metadata = {}
-        self.manager.accepted_path = self._current_steps_path()
-        self.manager.adopt_steps([], dirty=False)
-        self.pending_step = None
-        self.pending_replacement = None
-        self.record_events = []
-        self.selected_step_index = None
-        self.detail_text = ""
-        self.mode = MODE_TEST
-        self._info(f"[INFO] New empty sequence for {self.current_height_mm} mm.")
+        def work() -> None:
+            self.current_version_id = ""
+            self.current_version_metadata = {}
+            self.pending_selected_run_id = ""
+            self.pending_selected_run_metadata = {}
+            self.manager.accepted_path = self._current_steps_path()
+            self.manager.adopt_steps([], dirty=True)
+            self.pending_step = None
+            self.pending_replacement = None
+            self.record_events = []
+            self.selected_step_index = None
+            self.detail_text = "Current Run: Unsaved New Run"
+            self.mode = MODE_TEST
+            self._info(f"[INFO] New empty unsaved Run for {self.current_height_mm} mm.")
+
+        self._run_coordinated_operation(
+            OperationState.RUN_MANAGEMENT,
+            "New Empty Run",
+            work,
+        )
 
     def handle_command(self, message: CommandMessage | str) -> None:
         text = message.text if isinstance(message, CommandMessage) else str(message)
@@ -1476,6 +1685,16 @@ class HeightReplayController:
             self.sim_ready = bool(status.get("runtime_ready", status.get("ready", False)))
             self._update_pending_full_state_capture()
             self._update_pending_selected_playback()
+            if (
+                not bool(dict(status.get("worker_playback", {}) or {}).get("active", False))
+                and (
+                    self.playback.active
+                    or self.playback.start_requested
+                    or self.playback.worker_managed
+                    or self.operation.state is OperationState.PLAYBACK
+                )
+            ):
+                self.reconcile_playback_state_before_start(automatic=True)
             if status.get("height_mm") is not None:
                 self.loaded_sim_height_mm = int(status["height_mm"])
             elif status.get("height_cm") is not None:
@@ -1659,6 +1878,8 @@ class HeightReplayController:
                 "steps_path": str(self._current_steps_path()),
                 "current_version_id": self.current_version_id,
                 "current_version_metadata": dict(self.current_version_metadata),
+                "pending_selected_run_id": self.pending_selected_run_id,
+                "pending_selected_run_metadata": dict(self.pending_selected_run_metadata),
                 "versions": self.store.list_versions(self.current_height_mm, include_legacy=True),
                 "manifest_rows": manifest_rows,
                 "manifest_warning": manifest_warning,
@@ -1690,6 +1911,14 @@ class HeightReplayController:
                 "idle": self.operation.idle,
                 "reason": self.operation.reason,
             },
+            "run_management": {
+                "current_run_id": self.current_version_id,
+                "current_run_metadata": dict(self.current_version_metadata),
+                "pending_selected_run_id": self.pending_selected_run_id,
+                "pending_selected_run_metadata": dict(self.pending_selected_run_metadata),
+                "read_only": self.visible_steps_are_read_only(),
+                "dirty": bool(self.manager.dirty),
+            },
             "recording": {
                 "active": self.recording_active,
                 "mode": self.mode,
@@ -1715,6 +1944,7 @@ class HeightReplayController:
                 "can_analyze": availability.can_analyze,
                 "can_export": availability.can_export,
                 "unavailable_reason": availability.reason,
+                "last_reconciliation": copy.deepcopy(self.last_playback_reconciliation),
             },
             "servos": display_state["servos"],
             "wheels": wheels_short,
@@ -2728,7 +2958,7 @@ class HeightReplayController:
         )
 
     def play_all(self, *, fast: bool) -> bool:
-        ok, reason = self.playback_readiness()
+        ok, reason = self.playback_readiness(reconcile=True)
         if not ok:
             self._warn("[WARN] " + reason)
             return False
@@ -2790,6 +3020,7 @@ class HeightReplayController:
         if not args:
             self._warn("[WARN] Usage: play_step <index> [fast|raw]")
             return
+        self.reconcile_playback_state_before_start()
         ok, reason = self.can_playback()
         self._info(
             "[PLAYBACK DEBUG] play_step click "
@@ -2951,6 +3182,7 @@ class HeightReplayController:
         }
 
     def start_selected_step_playback(self, selected_index: int, *, profile: str) -> bool:
+        self.reconcile_playback_state_before_start()
         ok, reason = self.can_playback()
         if not ok:
             self._warn("[WARN] " + reason)
@@ -2959,7 +3191,9 @@ class HeightReplayController:
             self._warn("[WARN] Dirty Servo-Wheel staging blocks Selected playback; Launch, Clear, or Cancel first.")
             return False
         try:
-            strict_full_pose = str(profile).lower() == "fast"
+            # Raw and Fast differ only in implicit-idle compaction.  Both use
+            # the same strict full-pose restore transaction.
+            strict_full_pose = True
             resolved = self.resolve_selected_step_restore_state(
                 selected_index,
                 require_full_pose=strict_full_pose,
@@ -2981,7 +3215,7 @@ class HeightReplayController:
                     .get("reason", "not available")
                 )
                 message = (
-                    f"Selected Fast blocked for Step {index}: a FULL_VALID saved Isaac pose is required. "
+                    f"Cannot Play Selected Step {index}: a FULL_VALID saved Isaac pose is required. "
                     f"Step {index - 1}.sim_state_after: {previous_reason}; "
                     f"Step {index}.sim_state_before fallback: {selected_reason}; "
                     f"continuity={resolved.get('command_continuity', 'FAIL')}. "
@@ -3036,6 +3270,7 @@ class HeightReplayController:
             **resolved,
             "profile": str(profile),
             "selected_fast_click_id": self.selected_fast_click_id if str(profile) == "fast" else "",
+            "selected_play_request_id": request_id,
             "label": f"{self.current_height_mm}mm step {index:03d}",
             "request_id": request_id,
             "restore_count_before": int(self.latest_sim_status.get("restore_count", 0) or 0),
@@ -3046,7 +3281,32 @@ class HeightReplayController:
             "manager_revision": self.manager.revision,
             "height_mm": self.current_height_mm,
             "version_id": self.current_version_id,
-            "trace": [{"event": "operation_acquired", "monotonic_s": now}],
+            "trace": [
+                {
+                    "event": "selected_index_resolved",
+                    "monotonic_s": now,
+                    "selected_step_index": index,
+                },
+                {
+                    "event": "playback_availability_evaluated",
+                    "monotonic_s": now,
+                    "allowed": True,
+                },
+                {
+                    "event": "restore_source_resolved",
+                    "monotonic_s": now,
+                    "source_step_index": source_index,
+                    "source_field": source_field,
+                    "fallback_used": bool(resolved.get("fallback_used", False)),
+                },
+                {
+                    "event": "full_pose_validated",
+                    "monotonic_s": now,
+                    "classification": FULL_VALID,
+                    "candidate_validations": copy.deepcopy(resolved.get("candidate_validations", {})),
+                },
+                {"event": "operation_acquired", "monotonic_s": now},
+            ],
         }
         self.status = (
             f"Restoring saved end state from Step {source_index}... "
@@ -3117,11 +3377,12 @@ class HeightReplayController:
             expected_names = list(expected.get("joint_names", []) or [])
             verification = verify_restored_full_sim_pose(expected, observed_sim_state, expected_names)
             pending["restore_verification"] = copy.deepcopy(verification)
-            worker_verification = dict(self.latest_sim_status.get("last_restore_verification", {}) or {})
-            if str(worker_verification.get("request_id", "") or "") != str(pending.get("request_id", "") or ""):
-                return False, "worker restore verification request id does not match"
-            if not bool(worker_verification.get("verified", False)):
-                return False, "worker did not verify the restored full pose"
+            if not self.no_sim:
+                worker_verification = dict(self.latest_sim_status.get("last_restore_verification", {}) or {})
+                if str(worker_verification.get("request_id", "") or "") != str(pending.get("request_id", "") or ""):
+                    return False, "worker restore verification request id does not match"
+                if not bool(worker_verification.get("verified", False)):
+                    return False, "worker did not verify the restored full pose"
             if not verification["verified"]:
                 return False, str(verification.get("reason", "full pose verification failed"))
             return True, json.dumps(
@@ -3191,6 +3452,25 @@ class HeightReplayController:
         if not matching_restore or not bool(status.get("runtime_ready", status.get("ready", False))):
             return
         if not pending["verification_requested"]:
+            worker_verification = dict(status.get("last_restore_verification", {}) or {})
+            pending["trace"].append(
+                {
+                    "event": "restore_applied_by_worker",
+                    "monotonic_s": time.monotonic(),
+                    "request_id": pending["request_id"],
+                    "worker_session_id": worker_verification.get("worker_session_id", ""),
+                    "worker_sim_step": worker_verification.get("worker_sim_step"),
+                }
+            )
+            for worker_event in list(worker_verification.get("restore_trace", []) or []):
+                if str(dict(worker_event or {}).get("event", "")) == "physics_boundary_completed":
+                    pending["trace"].append(
+                        {
+                            **copy.deepcopy(dict(worker_event or {})),
+                            "event": "post_restore_physics_boundary",
+                            "monotonic_s": time.monotonic(),
+                        }
+                    )
             pending["trace"].append(
                 {
                     "event": "restore_acknowledged",
@@ -3263,8 +3543,39 @@ class HeightReplayController:
         plan.timing["selected_restore_source_field"] = pending["restore_source_field"]
         plan.timing["selected_restore_request_id"] = pending["request_id"]
         plan.timing["selected_restore_trace"] = copy.deepcopy(pending["trace"])
-        self.playback.progress.status_text = f"Restore complete. Starting selected Step {index}..."
-        self.status = f"Restore complete. Starting selected Step {index}..."
+        initial_command_state = clone_command_state(pending.get("restore_command_state"))
+        evolving_command_state = clone_command_state(initial_command_state)
+        motion_changes: list[dict[str, Any]] = []
+        for event in plan.events:
+            commands = [part.strip() for part in str(event.command or "").split(";") if part.strip()]
+            for command in commands:
+                before = clone_command_state(evolving_command_state)
+                apply_command_to_state(evolving_command_state, command)
+                if before != evolving_command_state:
+                    motion_changes.append(
+                        {
+                            "source_step": int(event.source_step or 0),
+                            "command": command,
+                        }
+                    )
+        if not motion_changes:
+            self._fail_pending_selected_playback(
+                f"Selected Step {index} contains no actuator motion"
+            )
+            return False
+        plan.timing["selected_actuator_motion_changes"] = copy.deepcopy(motion_changes)
+        pending["trace"].append(
+            {
+                "event": "selected_only_plan_built",
+                "monotonic_s": time.monotonic(),
+                "source_steps": sorted({int(event.source_step or 0) for event in plan.events}),
+                "event_count": len(plan.events),
+                "segment_count": len(plan.segments),
+                "actuator_motion_change_count": len(motion_changes),
+            }
+        )
+        self.playback.progress.status_text = f"Restore verified. Starting Selected Step {index}..."
+        self.status = f"Restore verified. Starting Selected Step {index}..."
         pending["trace"].append({"event": "playback_start_requested", "monotonic_s": time.monotonic()})
         plan.timing["selected_restore_trace"] = copy.deepcopy(pending["trace"])
         if self._use_worker_playback_scheduler():
@@ -3276,6 +3587,15 @@ class HeightReplayController:
             )
         else:
             ok = self.playback.start_plan(plan, start_delay_s=self.playback_pre_step_settle_s)
+        pending["trace"].append(
+            {
+                "event": "playback_request_dispatched" if ok else "playback_request_rejected",
+                "monotonic_s": time.monotonic(),
+                "dispatched": bool(ok),
+                "plan_id": str(getattr(self.playback, "worker_plan_id", "") or ""),
+                "request_id": str(getattr(self.playback, "worker_request_id", "") or ""),
+            }
+        )
         result = {
             key: copy.deepcopy(value)
             for key, value in pending.items()
@@ -3299,7 +3619,7 @@ class HeightReplayController:
             return False
         self.mode = MODE_PLAYBACK
         self._info(
-            f"[INFO] Restore complete from Step {pending['restore_source_step_index']}."
+            f"[INFO] Restore verified from Step {pending['restore_source_step_index']}."
             f"{pending['restore_source_field']}; starting only Selected Step {index}."
         )
         return True
@@ -3374,6 +3694,7 @@ class HeightReplayController:
         if not args:
             self._warn("[WARN] Usage: play_to_step <index> [fast|raw]")
             return
+        self.reconcile_playback_state_before_start()
         ok, reason = self.can_playback()
         if not ok:
             self._warn("[WARN] " + reason)
@@ -3429,7 +3750,7 @@ class HeightReplayController:
             self.detail_text = message
             self._warn("[WARN] " + message)
             return False
-        ok, reason = self.playback_readiness(respawn_first=respawn_first)
+        ok, reason = self.playback_readiness(respawn_first=respawn_first, reconcile=True)
         if not ok:
             self._warn("[WARN] " + reason)
             return False
@@ -4043,11 +4364,7 @@ class RealRobotStyleHeightReplayUi:
         if guard == "show_step":
             return selected is not None and not self.controller.recording_active and not self.controller.playback.active
         if guard == "height_edit":
-            return self.controller.operation.state not in {
-                OperationState.RECORDING,
-                OperationState.PLAYBACK,
-                OperationState.RESPAWNING,
-            }
+            return self.controller.operation.idle
         if guard == "idle":
             return self.controller.operation.idle
         return True
@@ -4225,7 +4542,7 @@ class RealRobotStyleHeightReplayUi:
         self.ttk.Label(parent, textvariable=self.accepted_steps_path_var, wraplength=680).grid(row=1, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
         save_row = self.ttk.Frame(parent)
         save_row.grid(row=2, column=0, columnspan=2, sticky="ew", padx=3, pady=2)
-        self.save_modified_steps_button = self.ttk.Button(save_row, text="💾 Save New Version", command=self._save_new_version_async)
+        self.save_modified_steps_button = self.ttk.Button(save_row, text="💾 Save As New Run", command=self._save_as_new_run_async)
         self._register_guarded_button(self.save_modified_steps_button, "save")
         self.save_modified_steps_button.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.ttk.Label(save_row, textvariable=self.save_status_var, wraplength=500).grid(row=0, column=1, sticky="ew")
@@ -4668,8 +4985,11 @@ class RealRobotStyleHeightReplayUi:
 
     def _play_selected_fast_mouse_press(self, event: Any) -> None:
         fast_button = self.playback_buttons_by_label.get("Play Selected Fast")
-        if fast_button is None or getattr(event, "widget", None) != fast_button:
+        raw_button = self.playback_buttons_by_label.get("Play Selected Step")
+        widget = getattr(event, "widget", None)
+        if widget not in {fast_button, raw_button}:
             return
+        profile_label = "Fast" if widget == fast_button else "Raw"
         self.last_selected_fast_click_id = uuid.uuid4().hex
         self.last_selected_fast_click_started = time.perf_counter()
         self.last_selected_fast_feedback_ms = 0.0
@@ -4684,25 +5004,59 @@ class RealRobotStyleHeightReplayUi:
             y_root=int(getattr(event, "y_root", 0) or 0),
         )
         index = self.resolve_playback_selected_index()
+        if index is not None:
+            if index > 1:
+                provisional_feedback = (
+                    f"Play Selected {profile_label} request received: Step {index}\n"
+                    f"Restoring saved end state from Step {index - 1}..."
+                )
+            else:
+                provisional_feedback = (
+                    f"Play Selected {profile_label} request received: Step 1\n"
+                    "Restoring Step 1 saved start state..."
+                )
+            self.pending_selected_fast_feedback_text = provisional_feedback
+            self.playback_label_var.set(provisional_feedback)
+            if self.last_selected_fast_feedback_ms <= 0.0:
+                self.last_selected_fast_feedback_ms = (
+                    time.perf_counter() - self.last_selected_fast_click_started
+                ) * 1000.0
+            self.root.update_idletasks()
+            self._selected_fast_boundary(
+                "immediate_visible_feedback",
+                selected_index=index,
+                allowed=True,
+                provisional=True,
+                text=provisional_feedback,
+                feedback_ms=self.last_selected_fast_feedback_ms,
+            )
+        reconciliation = self.controller.reconcile_playback_state_before_start()
         ok, reason = self.controller.playback_readiness(respawn_first=False)
+        reconciled_prefix = (
+            "Cleared stale playback state; " if bool(reconciliation.get("reconciled", False)) else ""
+        )
         if index is None:
             feedback = "Select an accepted step first."
         elif not ok:
-            feedback = f"Play Selected Fast blocked: {reason}"
+            feedback = f"Playback blocked: {reason}"
         elif index > 1:
             feedback = (
-                f"Play Selected Fast received: Step {index}\n"
+                f"{reconciled_prefix}Play Selected {profile_label} request received: Step {index}\n"
                 f"Restoring saved end state from Step {index - 1}..."
             )
         else:
-            feedback = "Play Selected Fast received: Step 1\nRestoring Step 1 saved start state..."
+            feedback = (
+                f"{reconciled_prefix}Play Selected {profile_label} request received: Step 1\n"
+                "Restoring Step 1 saved start state..."
+            )
         self.pending_selected_fast_feedback_text = feedback
         if index is None or not ok:
             self.selected_fast_feedback_pending = True
             self.playback_label_var.set(feedback)
-            self.last_selected_fast_feedback_ms = (
-                time.perf_counter() - self.last_selected_fast_click_started
-            ) * 1000.0
+            if self.last_selected_fast_feedback_ms <= 0.0:
+                self.last_selected_fast_feedback_ms = (
+                    time.perf_counter() - self.last_selected_fast_click_started
+                ) * 1000.0
             self._selected_fast_boundary(
                 "immediate_visible_feedback",
                 selected_index=index,
@@ -4722,7 +5076,9 @@ class RealRobotStyleHeightReplayUi:
 
     def _selected_step_playback_command(self, template: str) -> None:
         is_fast = template.strip().endswith(" fast") and template.strip().startswith("play_step")
-        if is_fast:
+        is_selected_play = template.strip().startswith("play_step")
+        profile_label = "Fast" if is_fast else "Raw"
+        if is_selected_play:
             if not self.last_selected_fast_click_id or time.perf_counter() - self.last_selected_fast_click_started > 2.0:
                 self.last_selected_fast_click_id = uuid.uuid4().hex
                 self.last_selected_fast_click_started = time.perf_counter()
@@ -4733,29 +5089,36 @@ class RealRobotStyleHeightReplayUi:
         tree_indices = self._selected_indices()
         index = self.resolve_playback_selected_index()
         respawn_first = template.strip().startswith("respawn_play")
+        reconciliation = self.controller.reconcile_playback_state_before_start()
         ok, reason = self.controller.playback_readiness(respawn_first=respawn_first)
         command = template.format(index=index) if index is not None else ""
-        if is_fast:
+        if is_selected_play:
             feedback = self.pending_selected_fast_feedback_text
             if not feedback:
                 if index is None:
                     feedback = "Select an accepted step first."
                 elif not ok:
-                    feedback = f"Play Selected Fast blocked: {reason}"
+                    feedback = f"Playback blocked: {reason}"
                 elif index > 1:
                     feedback = (
-                        f"Play Selected Fast received: Step {index}\n"
+                        f"Play Selected {profile_label} request received: Step {index}\n"
                         f"Restoring saved end state from Step {index - 1}..."
                     )
                 else:
-                    feedback = "Play Selected Fast received: Step 1\nRestoring Step 1 saved start state..."
+                    feedback = (
+                        f"Play Selected {profile_label} request received: Step 1\n"
+                        "Restoring Step 1 saved start state..."
+                    )
+                if bool(reconciliation.get("reconciled", False)):
+                    feedback = "Cleared stale playback state; " + feedback
             self.selected_fast_feedback_pending = True
             self.playback_label_var.set(feedback)
             self.busy_label_var.set("Restoring..." if ok and index is not None else "")
             self.root.update_idletasks()
-            self.last_selected_fast_feedback_ms = (
-                time.perf_counter() - self.last_selected_fast_click_started
-            ) * 1000.0
+            if self.last_selected_fast_feedback_ms <= 0.0:
+                self.last_selected_fast_feedback_ms = (
+                    time.perf_counter() - self.last_selected_fast_click_started
+                ) * 1000.0
             self._selected_fast_boundary(
                 "immediate_visible_feedback",
                 selected_index=index,
@@ -4793,6 +5156,21 @@ class RealRobotStyleHeightReplayUi:
 
     def _post_playback_command(self, command: str) -> None:
         self._apply_playback_options()
+        reconciliation = self.controller.reconcile_playback_state_before_start()
+        ok, reason = self.controller.playback_readiness()
+        if not ok:
+            feedback = f"Playback blocked: {reason}"
+            self.playback_label_var.set(feedback)
+            self.controller._warn("[WARN] " + feedback)
+            self.root.update_idletasks()
+            return
+        feedback = (
+            "Cleared stale playback state; starting current Run..."
+            if bool(reconciliation.get("reconciled", False))
+            else "Playback request received..."
+        )
+        self.playback_label_var.set(feedback)
+        self.root.update_idletasks()
         self._post(command)
 
     def _replace_selected(self) -> None:
@@ -4932,8 +5310,14 @@ class RealRobotStyleHeightReplayUi:
 
     def _save_shortcut(self, _event: Any | None = None) -> str:
         if self.controller.manager.dirty:
-            self._save_new_version_async()
+            if self.controller.current_version_id and not self.controller.visible_steps_are_read_only():
+                self._update_current_run_async()
+            else:
+                self._save_as_new_run_async()
         return "break"
+
+    def _save_as_new_run_async(self) -> None:
+        self._save_new_version_async()
 
     def _save_new_version_async(self) -> None:
         if self.save_in_progress:
@@ -4941,13 +5325,13 @@ class RealRobotStyleHeightReplayUi:
         allow_empty = False
         if self.controller.manager.count <= 0:
             allow_empty = self.messagebox.askyesno(
-                "Save Empty Version",
-                "Current sequence has no accepted steps. Create a new immutable empty version?",
+                "Save Empty Run",
+                "Current working Run has no accepted steps. Save it as a new empty Run?",
             )
             if not allow_empty:
                 return
         self.save_in_progress = True
-        self.save_status_var.set("Saving a new immutable version…")
+        self.save_status_var.set("Saving as a new Run…")
         try:
             self.save_modified_steps_button.configure(state="disabled")
         except Exception:
@@ -4966,7 +5350,7 @@ class RealRobotStyleHeightReplayUi:
                 report = self.controller.last_save_report
                 if path is not None and not self.controller.manager.dirty:
                     self.save_status_var.set(
-                        f"Saved {report.get('version_id', '')} at {report.get('saved_at', '')} | "
+                        f"Saved new Run {report.get('version_id', '')} at {report.get('saved_at', '')} | "
                         f"{report.get('step_count', 0)} steps / {report.get('command_count', 0)} commands | "
                         f"SHA-256 {report.get('accepted_steps_sha256', '')} | {path}"
                     )
@@ -4977,6 +5361,53 @@ class RealRobotStyleHeightReplayUi:
             self.root.after(0, done)
 
         threading.Thread(target=work, name="HeightVersionSave", daemon=True).start()
+
+    def _update_current_run_async(self) -> None:
+        if self.save_in_progress:
+            return
+        run_id = str(self.controller.current_version_id or "")
+        if not run_id:
+            self.messagebox.showwarning("No Current Run", "Use Save As New Run for an unsaved working Run.")
+            return
+        if self.controller.visible_steps_are_read_only():
+            self.messagebox.showwarning("Read-only Run", "Legacy/read-only Runs cannot be updated. Use Save As New Run.")
+            return
+        if not self.controller.manager.dirty:
+            self.save_status_var.set("Current Run has no unsaved changes.")
+            return
+        if not self.messagebox.askyesno(
+            "Update Current Run",
+            f"Update current run {run_id}?\n\nA timestamped backup and atomic verification will be created.",
+        ):
+            return
+        self.save_in_progress = True
+        self.save_status_var.set(f"Updating current Run {run_id}…")
+        self.root.update_idletasks()
+
+        def work() -> None:
+            try:
+                path = self.controller.save_current_version(confirmed=True)
+                error = ""
+            except Exception as exc:
+                path = None
+                error = str(exc)
+
+            def done() -> None:
+                self.save_in_progress = False
+                report = dict(self.controller.last_save_report)
+                if path is not None and not self.controller.manager.dirty:
+                    self.save_status_var.set(
+                        f"Updated Run {run_id}; ID unchanged | "
+                        f"{report.get('step_count', 0)} steps / {report.get('command_count', 0)} commands | "
+                        f"SHA-256 {report.get('accepted_steps_sha256', '')} | {path}"
+                    )
+                else:
+                    self.save_status_var.set(f"Update failed: {error or self.controller.status}")
+                self._refresh(force=False)
+
+            self.root.after(0, done)
+
+        threading.Thread(target=work, name="HeightRunUpdate", daemon=True).start()
 
     def _save_current_height_steps(self) -> Path | None:
         allow_empty = False
@@ -5013,6 +5444,41 @@ class RealRobotStyleHeightReplayUi:
             saved = self._save_current_height_steps()
             return saved is not None and not self.controller.manager.dirty
         return True
+
+    def _resolve_run_dirty_changes(self, action: str) -> bool:
+        """Resolve Update / Save As New / Discard / Cancel without implicit persistence."""
+
+        if not self.controller.manager.dirty:
+            return True
+        save_or_discard = self.messagebox.askyesnocancel(
+            "Unsaved Run changes",
+            f"The current Run has unsaved changes before {action}.\n\n"
+            "Yes = Save changes\nNo = Discard changes\nCancel = keep editing",
+        )
+        if save_or_discard is None:
+            return False
+        if save_or_discard is False:
+            return True
+        current_mutable = bool(
+            self.controller.current_version_id
+            and not self.controller.visible_steps_are_read_only()
+        )
+        update_current = bool(
+            current_mutable
+            and self.messagebox.askyesno(
+                "Choose save action",
+                "Update Current Run?\n\nYes = Update Current Run\nNo = Save As New Run",
+            )
+        )
+        if update_current:
+            path = self.controller.save_current_version(confirmed=True)
+        else:
+            path = self.controller.save_new_version(
+                allow_empty=self.controller.manager.count <= 0,
+                version_name="manual",
+            )
+        self._refresh(force=False)
+        return path is not None and not self.controller.manager.dirty
 
     def _new_empty_current_height(self) -> None:
         if not self._resolve_unsaved_changes("creating a new empty sequence"):
@@ -5194,7 +5660,7 @@ class RealRobotStyleHeightReplayUi:
                 self.root.title(desired_title)
             if snapshot['sequence']['dirty']:
                 if not self.save_status_var.get().startswith("Save failed:"):
-                    self.save_status_var.set("Unsaved changes — press Ctrl+S or click Save New Version.")
+                    self.save_status_var.set("Unsaved Run changes — use Update Current Run or Save As New Run.")
             elif self.save_status_var.get().startswith("Unsaved changes"):
                 self.save_status_var.set("No unsaved changes.")
             playback = snapshot["playback"]

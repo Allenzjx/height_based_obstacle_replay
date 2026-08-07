@@ -20,7 +20,7 @@ from height_version_store import DEFAULT_VERSION_ROOT, HeightVersionStore
 from operation_coordinator import OperationState
 from playback import PlaybackPlan, plan_from_steps
 from sequence_model import load_steps_jsonl
-from sim_state_validation import validate_full_sim_pose_state
+from sim_state_validation import FULL_VALID, validate_full_sim_pose_state
 from ui_motion_speed_height_version_e2e import RefactorGuiE2E
 
 
@@ -31,11 +31,13 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
         *,
         profiles: list[str],
         require_complete: bool,
+        selection_probe: bool,
         timeout_s: float,
     ) -> None:
         super().__init__(output_dir, timeout_s=timeout_s)
         self.profiles = ["fast" if value == "fast" else "raw" for value in profiles]
         self.require_complete = bool(require_complete)
+        self.force_selection_probe = bool(selection_probe)
         self.profile_index = 0
         self.steps: list[dict[str, Any]] = []
         self.plans: dict[str, PlaybackPlan] = {}
@@ -43,6 +45,8 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
         self.last_segment_index = -1
         self.last_detail_request = 0.0
         self.respawn_requested_at = 0.0
+        self.selection_independence_checked = False
+        self.stale_reconciliation_checked = False
         self.result = {
             "success": False,
             "started_at": time.time(),
@@ -51,6 +55,7 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             "formal_version_read_only": True,
             "require_complete": self.require_complete,
             "profiles": list(self.profiles),
+            "selection_probe_requested": self.force_selection_probe,
             "stages": [],
             "screenshots": {},
             "runs": [],
@@ -94,6 +99,9 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
     def _tick(self) -> None:
         if self.ui._closing:
             return
+        if bool(getattr(self, "_e2e_tick_active", False)):
+            return
+        self._e2e_tick_active = True
         try:
             if time.monotonic() - self.started > self.timeout_s:
                 raise TimeoutError(f"overall timeout at {self.stage}")
@@ -104,6 +112,8 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             getattr(self, f"_stage_{self.stage.lower()}")()
         except Exception as exc:
             self._fail(exc)
+        finally:
+            self._e2e_tick_active = False
         if not self.ui._closing:
             self.ui.root.after(50, self._tick)
 
@@ -175,18 +185,27 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             saved_state_audit=saved_state_audit,
             saved_state_counts=saved_state_counts,
         )
-        selected_fast_started = self.controller.start_selected_step_playback(2, profile="fast")
-        self.result["selected_fast_formal_gate"] = {
-            "selected_step_index": 2,
-            "started": bool(selected_fast_started),
-            "last_error": self.controller.playback.last_error,
-            "detail_text": self.controller.detail_text,
-            "operation": self.controller.operation.state.value,
-        }
-        if selected_fast_started:
-            raise AssertionError("formal placeholder checkpoints unexpectedly started Selected Fast")
-        if "FULL_VALID" not in self.controller.playback.last_error:
-            raise AssertionError("formal Selected Fast rejection did not identify the FULL_VALID requirement")
+        if saved_state_counts.get(FULL_VALID, 0) == len(self.steps) * 2:
+            self.result["selected_fast_formal_gate"] = {
+                "selected_step_index": 2,
+                "started": False,
+                "skipped": True,
+                "reason": "all formal checkpoints are FULL_VALID; dedicated physical-click E2E owns the restore probe",
+                "operation": self.controller.operation.state.value,
+            }
+        else:
+            selected_fast_started = self.controller.start_selected_step_playback(2, profile="fast")
+            self.result["selected_fast_formal_gate"] = {
+                "selected_step_index": 2,
+                "started": bool(selected_fast_started),
+                "last_error": self.controller.playback.last_error,
+                "detail_text": self.controller.detail_text,
+                "operation": self.controller.operation.state.value,
+            }
+            if selected_fast_started:
+                raise AssertionError("formal placeholder checkpoints unexpectedly started Selected Fast")
+            if "FULL_VALID" not in self.controller.playback.last_error:
+                raise AssertionError("formal Selected Fast rejection did not identify the FULL_VALID requirement")
         self._capture_ui("active_version_loaded", "active_50mm_version_loaded.png")
         self._advance("START_PROFILE")
 
@@ -198,6 +217,61 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             return
         profile = self.profiles[self.profile_index]
         plan = self.plans[profile]
+        pre_start_probe: dict[str, Any] = {}
+        if (self.profile_index >= 2 or self.force_selection_probe) and not self.selection_independence_checked:
+            before_ready = self.controller.playback_readiness(reconcile=False)
+            before_version = self.controller.current_version_id
+            before_revision = self.controller.manager.revision
+            selected_index = min(7, len(self.steps))
+            self.controller.selected_step_index = selected_index
+            item = f"step_{selected_index}"
+            if item in self.ui.steps_tree.get_children():
+                self.ui.steps_tree.selection_set(item)
+                self.ui.steps_tree.see(item)
+            after_ready = self.controller.playback_readiness(reconcile=False)
+            pre_start_probe["selection_independence"] = {
+                "selected_step_index": selected_index,
+                "readiness_before": before_ready,
+                "readiness_after": after_ready,
+                "version_unchanged": self.controller.current_version_id == before_version,
+                "revision_unchanged": self.controller.manager.revision == before_revision,
+                "operation": self.controller.operation.state.value,
+            }
+            if before_ready != after_ready or not all(
+                (
+                    pre_start_probe["selection_independence"]["version_unchanged"],
+                    pre_start_probe["selection_independence"]["revision_unchanged"],
+                    self.controller.operation.state is OperationState.IDLE,
+                )
+            ):
+                raise AssertionError(f"step selection changed Play All readiness: {pre_start_probe}")
+            self.selection_independence_checked = True
+            self._capture_ui("selection_independence", "selection_independence_before_replay.png")
+        if (self.profile_index >= 2 or self.force_selection_probe) and not self.stale_reconciliation_checked:
+            self.controller.playback.active = True
+            self.controller.playback.start_requested = True
+            self.controller.playback.worker_managed = True
+            self.controller.playback.worker_acknowledged = True
+            self.controller.playback.worker_requested_at = (
+                time.monotonic() - float(self.controller.playback.worker_ack_timeout_s) - 1.0
+            )
+            self.controller.playback.worker_plan_id = "stale-local-plan"
+            self.controller.playback.worker_request_id = "stale-local-request"
+            if not self.controller.operation.begin(
+                OperationState.PLAYBACK,
+                detail="synthetic proven-stale local ownership for reconciliation acceptance",
+            ):
+                raise AssertionError("could not establish the stale local reconciliation probe")
+            reconciliation = self.controller.reconcile_playback_state_before_start()
+            pre_start_probe["stale_reconciliation"] = copy.deepcopy(reconciliation)
+            if (
+                not reconciliation.get("reconciled")
+                or self.controller.playback.active
+                or self.controller.playback.start_requested
+                or self.controller.operation.state is not OperationState.IDLE
+            ):
+                raise AssertionError(f"stale local playback was not reconciled: {reconciliation}")
+            self.stale_reconciliation_checked = True
         replay_run_id = uuid.uuid4().hex
         started = self.controller.start_playback(
             self.steps,
@@ -215,10 +289,12 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             "expected_worker_request_id": self.controller.playback.worker_request_id,
             "segments": [],
             "final_detail_request_id": "",
+            "pre_start_probe": pre_start_probe,
         }
         self.last_segment_index = -1
         self.last_detail_request = 0.0
-        self._capture_ui(f"{profile}_started", f"{profile}_started.png")
+        run_number = self.profile_index + 1
+        self._capture_ui(f"{profile}_{run_number}_started", f"{profile}_{run_number}_started.png")
         self._advance("WAIT_PROFILE")
 
     def _stage_wait_profile(self) -> None:
@@ -267,8 +343,13 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
             self.active_run["segments"].append(row)
             if int(row.get("source_step", 0) or 0) == 11:
                 self._capture_ui(
-                    f"{self.active_run['profile']}_step11",
-                    f"{self.active_run['profile']}_step11.png",
+                    f"{self.active_run['profile']}_{self.profile_index + 1}_step11",
+                    f"{self.active_run['profile']}_{self.profile_index + 1}_step11.png",
+                )
+            if int(row.get("source_step", 0) or 0) == 10 and segment_index in {36, 37}:
+                self._capture_ui(
+                    f"{self.active_run['profile']}_{self.profile_index + 1}_step10_segment37",
+                    f"{self.active_run['profile']}_{self.profile_index + 1}_step10_segment37.png",
                 )
         if worker.get("active") or not str(worker.get("stop_reason", "") or ""):
             return
@@ -301,7 +382,10 @@ class Latest50mmManualV2E2E(RefactorGuiE2E):
         )
         self.result["runs"].append(copy.deepcopy(self.active_run))
         profile = self.active_run["profile"]
-        self._capture_ui(f"{profile}_final", f"{profile}_final.png")
+        self._capture_ui(
+            f"{profile}_{self.profile_index + 1}_final",
+            f"{profile}_{self.profile_index + 1}_final.png",
+        )
         if self.require_complete and str(detailed_worker.get("stop_reason", "")) != "complete":
             raise AssertionError(f"{profile} stopped early: {detailed_worker.get('last_error')}")
         self.profile_index += 1
@@ -341,12 +425,14 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--profiles", nargs="+", choices=("raw", "fast"), default=["fast", "raw"])
     parser.add_argument("--require-complete", action="store_true")
+    parser.add_argument("--selection-probe", action="store_true")
     parser.add_argument("--timeout-s", type=float, default=900.0)
     args = parser.parse_args()
     return Latest50mmManualV2E2E(
         Path(args.output),
         profiles=list(args.profiles),
         require_complete=args.require_complete,
+        selection_probe=args.selection_probe,
         timeout_s=args.timeout_s,
     ).run()
 

@@ -40,7 +40,7 @@ class FastButtonAndIndexTest(unittest.TestCase):
                 ui._post = lambda text, **_kwargs: posted.append(text)  # type: ignore[method-assign]
                 ui._selected_step_playback_command("play_step {index} fast")
                 self.assertLess(ui.last_selected_fast_feedback_ms, 100.0)
-                self.assertIn("Play Selected Fast received: Step 2", ui.playback_label_var.get())
+                self.assertIn("Play Selected Fast request received: Step 2", ui.playback_label_var.get())
                 self.assertEqual(posted, ["play_step 2 fast"])
                 self.assertEqual(ui.selected_fast_click_trace[0]["event"], "physical_mouse_press")
                 self.assertIn("immediate_visible_feedback", [row["event"] for row in ui.selected_fast_click_trace])

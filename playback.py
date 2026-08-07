@@ -770,11 +770,8 @@ class SimTimePlaybackService:
         self.servo_residual_warnings: list[dict[str, Any]] = []
         self.contact_residual_grace_s = 0.25
         self.contact_residual_stable_s = 0.10
-        # Ordinary out-of-tolerance stalls still fail after 0.75 s.  Once a
-        # loaded joint has entered its recording-derived contact tolerance,
-        # allow a separate bounded window for the pre-entry transient to leave
-        # the 0.10 s stability history.
-        self.contact_residual_grace_cap_s = 1.50
+        self.actuator_divergence_window_s = 1.50
+        self.contact_residual_hard_cap_deg = 3.0
         self.segment_last_servo_error_deg: float | None = None
         self.segment_last_servo_change_elapsed_s = 0.0
         self.segment_last_servo_worsening_elapsed_s = 0.0
@@ -1074,15 +1071,22 @@ class SimTimePlaybackService:
                 self.segment_contact_within_tolerance_since_s = None
             if servo_planned_done and segment.recorded_servo_residual_deg:
                 self.segment_contact_error_history.append((float(elapsed), max_error_now))
-                window_start = float(elapsed) - self.contact_residual_stable_s
+                window_start = float(elapsed) - max(
+                    self.contact_residual_stable_s,
+                    self.actuator_divergence_window_s,
+                )
                 while len(self.segment_contact_error_history) > 1 and self.segment_contact_error_history[1][0] <= window_start:
                     self.segment_contact_error_history.pop(0)
             contact_extension = max(0.0, segment_elapsed - float(segment.servo_duration_s))
             contact_window_errors = [value for _at, value in self.segment_contact_error_history]
+            contact_window_duration_s = (
+                self.segment_contact_error_history[-1][0] - self.segment_contact_error_history[0][0]
+                if len(self.segment_contact_error_history) >= 2
+                else 0.0
+            )
             contact_window_ready = bool(
                 len(self.segment_contact_error_history) >= 2
-                and self.segment_contact_error_history[-1][0] - self.segment_contact_error_history[0][0]
-                >= self.contact_residual_stable_s * 0.90
+                and contact_window_duration_s >= self.contact_residual_stable_s * 0.90
             )
             # Contact-loaded articulated joints can alternate by a fraction of
             # a degree at 120 Hz even though their position residual is bounded.
@@ -1090,7 +1094,17 @@ class SimTimePlaybackService:
             # stays under the independent 3 degree cap and has no material net
             # worsening.  The current sample must still be inside the narrower
             # recording-derived effective tolerance.
-            contact_window_cap = min(3.0, float(segment.servo_tolerance_deg) + 0.5)
+            contact_window_cap = min(
+                float(self.contact_residual_hard_cap_deg),
+                float(segment.servo_tolerance_deg) + 0.5,
+            )
+            contact_window_min = min(contact_window_errors or [max_error_now])
+            contact_window_max = max(contact_window_errors or [max_error_now])
+            contact_window_slope = (
+                (contact_window_errors[-1] - contact_window_errors[0]) / contact_window_duration_s
+                if contact_window_duration_s > 1.0e-9
+                else 0.0
+            )
             contact_stable = (
                 contact_candidate
                 and contact_window_ready
@@ -1098,7 +1112,18 @@ class SimTimePlaybackService:
                 and contact_window_errors[-1] <= contact_window_errors[0] + 0.25
             )
             if contact_candidate:
-                servo_done = bool(contact_extension >= self.contact_residual_grace_s and contact_stable)
+                # A recorded, contact-loaded residual that is finite and
+                # currently inside its bounded effective tolerance completes
+                # after one finite grace interval.  Recent jitter is retained
+                # as diagnostic evidence; it is not a reason to abort while
+                # the current residual remains within the <=3 degree cap.
+                servo_done = bool(
+                    contact_extension >= self.contact_residual_grace_s
+                    and max_error_now <= min(
+                        float(segment.servo_tolerance_deg),
+                        float(self.contact_residual_hard_cap_deg),
+                    )
+                )
             wheel_done = segment_elapsed + 1.0e-9 >= float(segment.wheel_active_duration_s)
             hold_done = segment_elapsed + 1.0e-9 >= float(segment.explicit_hold_s)
             segment_done = servo_done and wheel_done and hold_done
@@ -1124,23 +1149,11 @@ class SimTimePlaybackService:
                         and bool(segment.recorded_servo_residual_deg)
                     )
                     if within_recorded_contact_tolerance:
-                        if extension >= self.contact_residual_grace_cap_s and not contact_stable:
-                            self.last_error = (
-                                f"actuator_unstable: recorded contact residual did not stabilize; "
-                                f"step={segment.source_step} segment={segment.segment_index} "
-                                f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f}"
-                            )
-                            self._finish(
-                                adapter,
-                                success=False,
-                                reason="actuator_unstable",
-                                current_sim_time_s=sim_time,
-                                current_wall_time_s=wall_time,
-                            )
-                            return
                         self.last_info = (
                             f"contact_residual_grace step={segment.source_step} segment={segment.segment_index} "
-                            f"extension={extension:.3f}s stable={contact_stable} error={max_error:.3f}deg"
+                            f"extension={extension:.3f}s bounded={True} stable={contact_stable} "
+                            f"error={max_error:.3f}deg recent_min={contact_window_min:.3f} "
+                            f"recent_max={contact_window_max:.3f} slope={contact_window_slope:.3f}deg/s"
                         )
                         self.progress.command_phase = "contact_residual_grace"
                         return
@@ -1152,6 +1165,47 @@ class SimTimePlaybackService:
                     velocities_near_zero = bool(velocities) and all(
                         abs(float(value)) <= 0.5 for value in velocities.values()
                     )
+                    worst_joint = max(errors, key=lambda name: abs(float(errors[name]))) if errors else "unknown"
+                    worst_joint_velocity = velocities.get(worst_joint)
+                    worst_joint_error = errors.get(worst_joint)
+                    divergence_low_response = bool(
+                        worst_joint_velocity is None or abs(float(worst_joint_velocity)) <= 5.0
+                    )
+                    divergence_not_recovering = bool(
+                        worst_joint_velocity is None
+                        or abs(float(worst_joint_velocity)) <= 0.5
+                        or (
+                            worst_joint_error is not None
+                            and float(worst_joint_error) * float(worst_joint_velocity) > 0.0
+                        )
+                    )
+                    worsening_outside_hard_tolerance = bool(
+                        max_error > float(self.contact_residual_hard_cap_deg)
+                        and contact_window_duration_s >= self.actuator_divergence_window_s * 0.90
+                        and contact_window_errors[-1] > contact_window_errors[0] + 0.25
+                        and contact_window_errors[-1] >= contact_window_max - 0.25
+                        and contact_window_slope > 1.0
+                        and divergence_low_response
+                        and divergence_not_recovering
+                    )
+                    if worsening_outside_hard_tolerance:
+                        self.last_error = (
+                            f"actuator_unstable: error is worsening outside the hard safety tolerance; "
+                            f"step={segment.source_step} segment={segment.segment_index} joint={worst_joint} "
+                            f"error_deg={errors.get(worst_joint)} max_error_deg={max_error:.6f} "
+                            f"tolerance_deg={segment.servo_tolerance_deg:.6f} "
+                            f"recent_min_deg={contact_window_min:.6f} recent_max_deg={contact_window_max:.6f} "
+                            f"recent_slope_deg_s={contact_window_slope:.6f} "
+                            f"joint_velocity_deg_s={worst_joint_velocity}"
+                        )
+                        self._finish(
+                            adapter,
+                            success=False,
+                            reason="actuator_unstable",
+                            current_sim_time_s=sim_time,
+                            current_wall_time_s=wall_time,
+                        )
+                        return
                     if extension > 0.0 and stalled_for >= self.servo_stall_window_s and velocities_near_zero:
                         worst_joint = max(errors, key=lambda name: abs(float(errors[name]))) if errors else "unknown"
                         command_target = segment.servo_targets.get(worst_joint)
@@ -1167,6 +1221,8 @@ class SimTimePlaybackService:
                             f"requested_command_deg={command_target} expected_actual_deg={actual_target} "
                             f"measured_actual_deg={actual_deg} error_deg={errors.get(worst_joint)} "
                             f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f} "
+                            f"recent_min_deg={contact_window_min:.6f} recent_max_deg={contact_window_max:.6f} "
+                            f"recent_slope_deg_s={contact_window_slope:.6f} "
                             f"target_joint_velocity_deg_s={velocities.get(worst_joint)} "
                             f"legacy_missing_endpoint={segment.legacy_missing_endpoint}"
                         )
@@ -1184,20 +1240,26 @@ class SimTimePlaybackService:
 
             max_completed_error = max([abs(float(value)) for value in errors.values()] or [0.0])
             if max_completed_error > self.servo_position_tolerance_deg:
+                completed_velocities = self._servo_target_velocities_deg_s(adapter, segment.servo_targets)
                 warning = {
+                    "warning": "contact_residual_accepted",
                     "step_index": int(segment.source_step),
                     "segment_index": int(segment.segment_index),
                     "max_error_deg": max_completed_error,
                     "effective_tolerance_deg": float(segment.servo_tolerance_deg),
                     "recorded_residual_deg": dict(segment.recorded_servo_residual_deg),
                     "measured_errors_deg": dict(errors),
-                    "stability_basis": "bounded_recent_contact_residual_window",
+                    "stability_basis": "bounded_recorded_contact_tolerance",
                     "stability_window_s": float(self.contact_residual_stable_s),
                     "stability_window_cap_deg": float(contact_window_cap),
+                    "recent_min_deg": float(contact_window_min),
+                    "recent_max_deg": float(contact_window_max),
+                    "recent_slope_deg_s": float(contact_window_slope),
+                    "joint_velocity_deg_s": dict(completed_velocities),
                 }
                 self.servo_residual_warnings.append(warning)
                 self.last_info = (
-                    f"contact-load residual accepted step={segment.source_step} segment={segment.segment_index} "
+                    f"contact_residual_accepted step={segment.source_step} segment={segment.segment_index} "
                     f"error={max_completed_error:.3f}deg tolerance={segment.servo_tolerance_deg:.3f}deg"
                 )
             self._finish_segment(adapter, segment, elapsed=elapsed, sim_time=sim_time, wall_time=wall_time, servo_errors=errors)
@@ -1428,6 +1490,15 @@ class SimTimePlaybackService:
             name: float(value) * float(segment.wheel_active_duration_s)
             for name, value in segment.wheel_applied_target_rad_s.items()
         }
+        completion_warning = next(
+            (
+                dict(row)
+                for row in reversed(self.servo_residual_warnings)
+                if int(row.get("step_index", -1)) == int(segment.source_step)
+                and int(row.get("segment_index", -1)) == int(segment.segment_index)
+            ),
+            {},
+        )
         trace = self.timing_trace.setdefault("segments", [])
         trace.append(
             {
@@ -1446,6 +1517,10 @@ class SimTimePlaybackService:
                     name: float(target) + float(servo_errors.get(name, 0.0)) for name, target in segment.servo_targets.items()
                 },
                 "servo_target_error": dict(servo_errors),
+                "completion_decision": (
+                    "contact_residual_accepted" if completion_warning else "exact_completion"
+                ),
+                "completion_warning": completion_warning,
                 "servo_completion_extension": extension,
                 "servo_reference_velocity_deg_s": servo_reference_velocity,
                 "servo_measured_average_velocity_deg_s": servo_measured_average_velocity,
@@ -1527,7 +1602,7 @@ class SimTimePlaybackService:
         self.wheel_was_stopped_for_pause = False
         self.progress.playback_state = PlaybackState.PLAYING.value
         self.progress.status_text = (
-            f"Restore verified. Playing Selected Step {int(event.source_step or 0)} / {self.progress.total_steps}"
+            f"Restore verified. Playing Selected Step {int(self.progress.current_step_index or 0)} / {self.progress.total_steps}"
             if self.plan and self.plan.selected_playback
             else "Playing..."
         )
@@ -2213,6 +2288,10 @@ class PlaybackManager:
                     ("Actual", "measured_actual_deg"),
                     ("Error", "error_deg"),
                     ("Tolerance", "tolerance_deg"),
+                    ("Recent Min", "recent_min_deg"),
+                    ("Recent Max", "recent_max_deg"),
+                    ("Recent Slope", "recent_slope_deg_s"),
+                    ("Joint Velocity", "target_joint_velocity_deg_s"),
                 ):
                     match = re.search(rf"\b{key}=([^\s]+)", self.last_error)
                     if match:
@@ -2296,7 +2375,16 @@ class PlaybackManager:
         self.progress.status_text = "Paused"
 
     def resume(self) -> None:
-        if not self.active or not self.paused:
+        latest = dict(getattr(self.controller, "latest_sim_status", {}) or {})
+        worker = dict(latest.get("worker_playback", latest.get("playback_service", {})) or {})
+        matching_worker_pause = bool(
+            self.worker_managed
+            and worker.get("active", False)
+            and worker.get("paused", False)
+            and str(worker.get("plan_id", "") or "") == str(self.worker_plan_id or "")
+            and str(worker.get("request_id", "") or "") == str(self.worker_request_id or "")
+        )
+        if not self.active or (not self.paused and not matching_worker_pause):
             return
         if self.worker_managed:
             try:

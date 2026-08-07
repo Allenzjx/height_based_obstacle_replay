@@ -246,7 +246,7 @@ class LightweightRuntimeContractTest(unittest.TestCase):
                 self.assertNotIn("Speed Scale", tabs)
                 self.assertNotIn("Vision Auto Replay", tabs)
                 self.assertNotIn("Stability Replay", tabs)
-                self.assertIn("Save New Version", ui.save_modified_steps_button.cget("text"))
+                self.assertIn("Save As New Run", ui.save_modified_steps_button.cget("text"))
                 source = inspect.getsource(RealRobotStyleHeightReplayUi._build_record_servo_wheel_tab)
                 self.assertIn("Start Servo-Wheel Mode", source)
                 self.assertIn("Launch Servo-Wheel", source)

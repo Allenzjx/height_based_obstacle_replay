@@ -1,10 +1,11 @@
-"""Visible real-Isaac capture/restore/Selected-Fast transaction acceptance."""
+"""Visible real-Isaac capture/restore/Selected Raw+Fast transaction acceptance."""
 
 from __future__ import annotations
 
 import argparse
 import copy
 import ctypes
+import ctypes.wintypes
 import json
 import time
 from pathlib import Path
@@ -18,6 +19,16 @@ from ui_motion_speed_height_version_e2e import RefactorGuiE2E
 
 class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
     def __init__(self, output_dir: Path, *, timeout_s: float) -> None:
+        # Tk otherwise reports DPI-virtualized coordinates while SetCursorPos
+        # consumes physical pixels, making a real mouse click miss on scaled
+        # Windows desktops. This process-local setting must precede Tk creation.
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except Exception:
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+            except Exception:
+                pass
         super().__init__(output_dir, timeout_s=timeout_s)
         self.result = {
             "success": False,
@@ -44,7 +55,17 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         self.detail_request_id = ""
         self.selected_seen_active = False
         self.selected_attempt = 1
+        self.selected_profiles = ["raw", "fast"]
+        self.selected_profile_index = 0
         self.selected_runs: list[dict[str, Any]] = []
+        self.completed_selected_worker: dict[str, Any] = {}
+        self.completed_selected_result: dict[str, Any] = {}
+        self.completed_worker_verification: dict[str, Any] = {}
+        self.completed_represented: list[int] = []
+        self.pause_requested_at = 0.0
+        self.pause_seen = False
+        self.resume_requested = False
+        self.selected_click_retry = 0
         self.conflicts_checked = False
         self.stop_restore_request_id = ""
         self.stop_restore_cancelled_at = 0.0
@@ -52,6 +73,9 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
     def _tick(self) -> None:
         if self.ui._closing:
             return
+        if bool(getattr(self, "_e2e_tick_active", False)):
+            return
+        self._e2e_tick_active = True
         try:
             if time.monotonic() - self.started > self.timeout_s:
                 raise TimeoutError(f"overall timeout at {self.stage}")
@@ -64,6 +88,8 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
             getattr(self, f"_stage_{self.stage.lower()}")()
         except Exception as exc:
             self._fail(exc)
+        finally:
+            self._e2e_tick_active = False
         if not self.ui._closing:
             self.ui.root.after(50, self._tick)
 
@@ -195,6 +221,7 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         if str(detailed.get("state_capture_request_id", "") or "") != self.detail_request_id:
             return
         self.result["perturbed_state_before_restore"] = copy.deepcopy(detailed.get("sim_state", {}))
+        self.detail_request_id = ""
         self._capture_ui("perturbed_before_selected", "perturbed_before_selected.png")
         self._advance("START_SELECTED")
 
@@ -204,23 +231,123 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         self.controller.selected_step_index = 2
         self.ui.open_right_tab("Playback")
         self.ui._refresh(force=True)
-        button = self.ui.playback_buttons_by_label["Play Selected Fast"]
+        profile = self.selected_profiles[self.selected_profile_index]
+        button_label = "Play Selected Fast" if profile == "fast" else "Play Selected Step"
+        button = self.ui.playback_buttons_by_label[button_label]
+        playback_canvas = button.master.master
+        if hasattr(playback_canvas, "yview_moveto"):
+            playback_canvas.yview_moveto(0.0)
         self.ui.root.lift()
         self.ui.root.update()
-        x = int(button.winfo_rootx() + button.winfo_width() / 2)
-        y = int(button.winfo_rooty() + button.winfo_height() / 2)
-        ctypes.windll.user32.SetCursorPos(x, y)
+        reported_x = int(button.winfo_rootx() + button.winfo_width() / 2)
+        reported_y = int(button.winfo_rooty() + button.winfo_height() / 2)
+        # Scrollable Tk canvases can report the content-frame Y rather than the
+        # visible viewport Y. Calibrate against the widget that Tk says is
+        # actually under each screen point before issuing the Win32 click.
+        matching_y = [
+            candidate_y
+            for candidate_y in range(max(0, reported_y - 220), reported_y + 221)
+            if self.ui.root.winfo_containing(reported_x, candidate_y) == button
+        ]
+        if not matching_y:
+            raise AssertionError(
+                f"could not locate visible screen pixels for {button_label}; "
+                f"reported=({reported_x}, {reported_y})"
+            )
+        x = reported_x
+        y = matching_y[len(matching_y) // 2]
+        hit_widget = self.ui.root.winfo_containing(x, y)
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        desktop_dc = user32.GetDC(0)
+        try:
+            logical_width = max(1, int(gdi32.GetDeviceCaps(desktop_dc, 8)))
+            logical_height = max(1, int(gdi32.GetDeviceCaps(desktop_dc, 10)))
+            physical_width = max(1, int(gdi32.GetDeviceCaps(desktop_dc, 118)))
+            physical_height = max(1, int(gdi32.GetDeviceCaps(desktop_dc, 117)))
+        finally:
+            user32.ReleaseDC(0, desktop_dc)
+        scale_x = physical_width / logical_width
+        scale_y = physical_height / logical_height
+        physical_x = int(round(x * scale_x))
+        physical_y = int(round(y * scale_y))
+        root_hwnd = user32.GetAncestor(self.ui.root.winfo_id(), 2)
+        self.ui.root.attributes("-topmost", True)
+        self.ui.root.deiconify()
+        self.ui.root.lift()
+        self.ui.root.focus_force()
+        user32.ShowWindow(root_hwnd, 9)
+        user32.BringWindowToTop(root_hwnd)
+        user32.SetForegroundWindow(root_hwnd)
+        self.ui.root.update()
+        foreground_before_click = int(user32.GetForegroundWindow())
+        cursor_set = bool(user32.SetCursorPos(physical_x, physical_y))
+        cursor_point = ctypes.wintypes.POINT()
+        user32.GetCursorPos(ctypes.byref(cursor_point))
         ctypes.windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
+        self.ui.root.update()
+        time.sleep(0.10)
+        self.ui.root.update()
+        release_reported_x = int(button.winfo_rootx() + button.winfo_width() / 2)
+        release_reported_y = int(button.winfo_rooty() + button.winfo_height() / 2)
+        release_matching_y = [
+            candidate_y
+            for candidate_y in range(max(0, release_reported_y - 220), release_reported_y + 221)
+            if self.ui.root.winfo_containing(release_reported_x, candidate_y) == button
+        ]
+        if release_matching_y:
+            release_x = release_reported_x
+            release_y = release_matching_y[len(release_matching_y) // 2]
+            release_physical_x = int(round(release_x * scale_x))
+            release_physical_y = int(round(release_y * scale_y))
+            user32.SetCursorPos(release_physical_x, release_physical_y)
+        else:
+            release_x = x
+            release_y = y
+            release_physical_x = physical_x
+            release_physical_y = physical_y
         ctypes.windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+        self.ui.root.update()
+        self.ui.root.after(500, lambda: self.ui.root.attributes("-topmost", False))
         self.result.setdefault("physical_clicks", []).append(
-            {"attempt": self.selected_attempt, "x": x, "y": y, "clicked_at": time.time()}
+            {
+                "attempt": self.selected_attempt,
+                "retry": self.selected_click_retry,
+                "profile": profile,
+                "button": button_label,
+                "reported_x": reported_x,
+                "reported_y": reported_y,
+                "x": x,
+                "y": y,
+                "physical_x": physical_x,
+                "physical_y": physical_y,
+                "logical_desktop": [logical_width, logical_height],
+                "physical_desktop": [physical_width, physical_height],
+                "dpi_scale": [scale_x, scale_y],
+                "root_hwnd": int(root_hwnd),
+                "foreground_before_click": foreground_before_click,
+                "cursor_set": cursor_set,
+                "cursor_after_set": [int(cursor_point.x), int(cursor_point.y)],
+                "release_x": release_x,
+                "release_y": release_y,
+                "release_physical_x": release_physical_x,
+                "release_physical_y": release_physical_y,
+                "release_hit_verified": bool(release_matching_y),
+                "hit_widget": str(hit_widget),
+                "hit_verified": hit_widget == button,
+                "clicked_at": time.time(),
+            }
         )
+        self.result["live_ui_click_trace"] = copy.deepcopy(self.ui.selected_fast_click_trace)
         self._advance("WAIT_SELECTED_START")
 
     def _stage_wait_selected_start(self) -> None:
         if self.controller.pending_selected_playback is None and not self.controller.playback.start_requested:
             if self.controller.playback.last_error:
                 raise AssertionError(self.controller.playback.last_error)
+            if time.monotonic() - self.stage_started >= 2.0 and self.selected_click_retry < 2:
+                self.selected_click_retry += 1
+                self._advance("START_SELECTED")
             return
         if not self.conflicts_checked:
             operation_before = self.controller.operation.state.value
@@ -243,13 +370,41 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         worker = dict(self.controller.latest_sim_status.get("worker_playback", {}) or {})
         if bool(worker.get("active", False)):
             self.selected_seen_active = True
-            if "selected_running" not in self.result["screenshots"]:
-                self._capture_ui("selected_running", "selected_fast_running.png")
+            profile = self.selected_profiles[self.selected_profile_index]
+            if profile == "fast" and not self.pause_requested_at:
+                self.controller.handle_command("pause_play")
+                self.pause_requested_at = time.monotonic()
+                self.result["pause_resume"] = {
+                    "profile": profile,
+                    "pause_requested": True,
+                    "pause_requested_at": time.time(),
+                }
+                return
+            if profile == "fast" and bool(worker.get("paused", False)):
+                self.pause_seen = True
+                self.result["pause_resume"]["worker_pause_seen"] = True
+                if not self.resume_requested and time.monotonic() - self.pause_requested_at >= 0.25:
+                    self.controller.handle_command("resume_play")
+                    self.resume_requested = True
+                    self.result["pause_resume"]["resume_requested"] = True
+                    self.result["pause_resume"]["resume_requested_at"] = time.time()
+                return
+            profile = self.selected_profiles[self.selected_profile_index]
+            screenshot_key = f"selected_{profile}_running"
+            if screenshot_key not in self.result["screenshots"]:
+                self._capture_ui(screenshot_key, f"selected_{profile}_running.png")
             return
         if not self.selected_seen_active or not str(worker.get("stop_reason", "") or ""):
             return
         if str(worker.get("stop_reason", "")) != "complete":
-            raise AssertionError(f"Selected Fast stopped early: {worker.get('last_error')}")
+            raise AssertionError(f"Selected playback stopped early: {worker.get('last_error')}")
+        if self.selected_profiles[self.selected_profile_index] == "fast":
+            if not self.pause_seen or not self.resume_requested:
+                raise AssertionError(f"Pause/Resume was not observed during Selected Fast: {self.result.get('pause_resume')}")
+            self.result["pause_resume"].update(
+                completed_after_resume=True,
+                final_stop_reason=str(worker.get("stop_reason", "") or ""),
+            )
         selected_result = copy.deepcopy(self.controller.last_selected_restore_result)
         verification = dict(selected_result.get("restore_verification", {}) or {})
         worker_verification = dict(self.controller.latest_sim_status.get("last_restore_verification", {}) or {})
@@ -262,27 +417,78 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         plan = self.controller.playback.plan
         represented = sorted({int(event.source_step or 0) for event in list(plan.events if plan else [])})
         if represented != [2]:
-            raise AssertionError(f"Selected Fast represented steps are not exactly [2]: {represented}")
+            raise AssertionError(f"Selected playback represented steps are not exactly [2]: {represented}")
+        if not bool(worker.get("first_command_applied", False)) or int(worker.get("events_sent", 0) or 0) <= 0:
+            raise AssertionError(f"Selected playback reported no applied actuator command: {worker}")
+        self.completed_selected_worker = copy.deepcopy(worker)
+        self.completed_selected_result = selected_result
+        self.completed_worker_verification = worker_verification
+        self.completed_represented = represented
+        if not self.detail_request_id:
+            self.detail_request_id = self.controller.transport.request_state(
+                detailed=True,
+                purpose=f"selected_{self.selected_profiles[self.selected_profile_index]}_completed",
+            )
+        self._advance("CAPTURE_SELECTED_FINAL")
+
+    def _stage_capture_selected_final(self) -> None:
+        detailed = dict(getattr(self.controller.sim_client, "latest_detailed_status", {}) or {})
+        if str(detailed.get("state_capture_request_id", "") or "") != self.detail_request_id:
+            return
+        expected = copy.deepcopy(self.controller.manager.steps[0].get("sim_state_after", {}))
+        actual = copy.deepcopy(detailed.get("sim_state", {}))
+        expected_servos = dict(dict(expected.get("actual_joint_state", {}) or {}).get("servos", {}) or {})
+        actual_servos = dict(dict(actual.get("actual_joint_state", {}) or {}).get("servos", {}) or {})
+        joint_deltas: dict[str, float] = {}
+        for name, expected_row in expected_servos.items():
+            actual_row = actual_servos.get(name, {})
+            if "deg" in expected_row and "deg" in actual_row:
+                joint_deltas[name] = abs(float(actual_row["deg"]) - float(expected_row["deg"]))
+        max_actual_change_deg = max(joint_deltas.values(), default=0.0)
+        if max_actual_change_deg <= 0.25:
+            raise AssertionError(
+                "Selected command completed but the captured Isaac actual joint state did not change "
+                f"from the restored checkpoint: max_change={max_actual_change_deg:.6f} deg"
+            )
+        profile = self.selected_profiles[self.selected_profile_index]
         selected_run = {
-                "attempt": self.selected_attempt,
-                "selected_step_index": 2,
-                "seen_active": self.selected_seen_active,
-                "final_worker": copy.deepcopy(worker),
-                "restore_result": selected_result,
-                "worker_restore_verification": worker_verification,
-                "represented_step_indices": represented,
-            }
+            "attempt": self.selected_attempt,
+            "profile": profile,
+            "selected_step_index": 2,
+            "seen_active": self.selected_seen_active,
+            "final_worker": copy.deepcopy(self.completed_selected_worker),
+            "restore_result": copy.deepcopy(self.completed_selected_result),
+            "worker_restore_verification": copy.deepcopy(self.completed_worker_verification),
+            "represented_step_indices": list(self.completed_represented),
+            "actual_motion": {
+                "captured_after_completion": True,
+                "max_servo_change_from_restored_checkpoint_deg": max_actual_change_deg,
+                "per_joint_change_deg": joint_deltas,
+                "first_command_applied": bool(self.completed_selected_worker.get("first_command_applied", False)),
+                "events_sent": int(self.completed_selected_worker.get("events_sent", 0) or 0),
+            },
+            "ui_click_trace": copy.deepcopy(self.ui.selected_fast_click_trace),
+        }
         self.selected_runs.append(selected_run)
-        self.result["selected_fast_runs"] = copy.deepcopy(self.selected_runs)
+        self.result["selected_raw_fast_runs"] = copy.deepcopy(self.selected_runs)
         self._capture_ui(
-            f"selected_complete_{self.selected_attempt}",
-            f"selected_fast_complete_{self.selected_attempt}.png",
+            f"selected_{profile}_complete",
+            f"selected_{profile}_complete.png",
         )
-        if self.selected_attempt < 3:
+        if self.selected_profile_index + 1 < len(self.selected_profiles):
+            self.selected_profile_index += 1
             self.selected_attempt += 1
             self.selected_seen_active = False
             self.perturb_batch_id = ""
             self.detail_request_id = ""
+            self.completed_selected_worker = {}
+            self.completed_selected_result = {}
+            self.completed_worker_verification = {}
+            self.completed_represented = []
+            self.pause_requested_at = 0.0
+            self.pause_seen = False
+            self.resume_requested = False
+            self.selected_click_retry = 0
             self._advance("PERTURB")
             return
         self._advance("START_STOP_RESTORE")
@@ -324,7 +530,8 @@ class PoseCheckpointSelectedFastE2E(RefactorGuiE2E):
         ):
             raise AssertionError(f"Stop during restore did not cleanly cancel: {self.result['stop_during_restore']}")
         self.result.update(
-            selected_fast=copy.deepcopy(self.selected_runs[-1]),
+            selected_raw=copy.deepcopy(next(row for row in self.selected_runs if row["profile"] == "raw")),
+            selected_fast=copy.deepcopy(next(row for row in self.selected_runs if row["profile"] == "fast")),
             repeat_count=len(self.selected_runs),
             final_operation=self.controller.operation.state.value,
         )

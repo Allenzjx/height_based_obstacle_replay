@@ -12,6 +12,7 @@ class OperationState(str, Enum):
     PLAYBACK = "PLAYBACK"
     SCENE_UPDATE = "SCENE_UPDATE"
     RESPAWNING = "RESPAWNING"
+    RUN_MANAGEMENT = "RUN_MANAGEMENT"
 
 
 _BUSY_REASONS = {
@@ -19,6 +20,7 @@ _BUSY_REASONS = {
     OperationState.PLAYBACK: "Playback is already active.",
     OperationState.SCENE_UPDATE: "Scene update is in progress.",
     OperationState.RESPAWNING: "Robot respawn is in progress.",
+    OperationState.RUN_MANAGEMENT: "Run management is in progress.",
 }
 
 
@@ -89,4 +91,3 @@ class OperationCoordinator:
             self._state = OperationState.IDLE
             self._detail = ""
             return True
-
