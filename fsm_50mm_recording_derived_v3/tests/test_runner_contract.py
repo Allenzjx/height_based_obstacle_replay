@@ -1,0 +1,655 @@
+from __future__ import annotations
+
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+
+from fsm_50mm_recording_derived_v3.recording_audit import RecordingAudit, VersionFiles
+from fsm_50mm_recording_derived_v3.run_fsm50 import (
+    ChildSupervisorHandshake,
+    ReplaySingletonLock,
+    _atomic_write_json,
+    _compare_source_freezes,
+    _deserialize_replay_args,
+    _existing_simulator_processes,
+    _fail_closed_recording_audits,
+    _first_failure,
+    _generate_fsm50_visualization,
+    _result_payload,
+    _monitor_supervised_child,
+    _record_shutdown_outcome,
+    _runtime_environment_equivalence,
+    _seed_adapter_from_locked_ground_pose,
+    _serialize_replay_args,
+    _select_versions,
+    build_parser,
+)
+from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+
+
+class RunnerContractTests(unittest.TestCase):
+    def test_short_version_selector_is_unambiguous(self) -> None:
+        versions = RecordingAudit().enumerate_versions()
+        selected = _select_versions(versions, ["v010", "v012"])
+        self.assertEqual(["v010", "v012"], [item.version_id.split("_", 1)[0] for item in selected])
+
+    def test_all_selector_keeps_every_physical_directory(self) -> None:
+        versions = RecordingAudit().enumerate_versions()
+        self.assertEqual(versions, _select_versions(versions, ["all"]))
+
+    def test_scheduler_and_physical_fields_are_independent_cli_contract(self) -> None:
+        args = build_parser().parse_args(["replay-recordings", "--versions", "v012", "--headless"])
+        self.assertEqual("replay-recordings", args.command)
+        self.assertEqual(["v012"], args.versions)
+        self.assertTrue(args.headless)
+
+    def test_first_failure_never_uses_final_top_as_lift_proof(self) -> None:
+        evidence = {
+            "traversal": {
+                "legs": {
+                    "FR": {
+                        "unload_start_s": None,
+                        "airborne_start_s": None,
+                        "front_face_crossing_s": 1.0,
+                        "top_contact_s": 1.1,
+                        "top_load_confirm_s": 1.3,
+                        "illegal_reasons": ["GROUND/FRONT_FACE to TOP transition without AIR"],
+                    }
+                }
+            },
+            "final_all_top": True,
+            "final_all_loaded": True,
+        }
+        self.assertEqual("FR_UNLOAD_NOT_OBSERVED", _first_failure(evidence))
+
+    def test_source_freeze_comparison_reports_exact_drift(self) -> None:
+        before = {
+            "created_utc": "before",
+            "files": {
+                "a.py": {"sha256": "a", "size_bytes": 1},
+                "gone.py": {"sha256": "g", "size_bytes": 2},
+            },
+        }
+        after = {
+            "created_utc": "after",
+            "files": {
+                "a.py": {"sha256": "changed", "size_bytes": 1},
+                "new.py": {"sha256": "n", "size_bytes": 3},
+            },
+        }
+        result = _compare_source_freezes(before, after)
+        self.assertFalse(result["equal"])
+        self.assertEqual(["a.py"], result["changed"])
+        self.assertEqual(["gone.py"], result["missing"])
+        self.assertEqual(["new.py"], result["added"])
+
+    def test_process_preflight_identifies_kit_and_sim_worker_only(self) -> None:
+        rows = [
+            {"pid": os.getpid(), "name": "python.exe", "command_line": "isaac-sim"},
+            {"pid": 10101, "name": "kit.exe", "command_line": "kit.exe"},
+            {
+                "pid": 10102,
+                "name": "python.exe",
+                "command_line": "python -m sim_worker_runtime --port 1 ",
+            },
+            {"pid": 10103, "name": "python.exe", "command_line": "python tests.py"},
+        ]
+        self.assertEqual(
+            [10101, 10102],
+            [row["pid"] for row in _existing_simulator_processes(rows)],
+        )
+
+    def test_singleton_lock_is_atomic_and_owner_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "runner.lock"
+            first = ReplaySingletonLock(path)
+            second = ReplaySingletonLock(path)
+            first.acquire()
+            with self.assertRaises(RuntimeError):
+                second.acquire()
+            first.release()
+            second.acquire()
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(os.getpid(), payload["pid"])
+            second.release()
+            self.assertFalse(path.exists())
+
+    def test_singleton_lock_reclaims_a_dead_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "runner.lock"
+            path.write_text(
+                json.dumps(
+                    {
+                        "pid": 2147483647,
+                        "token": "dead-owner",
+                        "created_utc": "past",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            lock = ReplaySingletonLock(path)
+            lock.acquire()
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(os.getpid(), payload["pid"])
+            self.assertNotEqual("dead-owner", payload["token"])
+            lock.release()
+
+    def test_recording_audit_fails_closed_on_hash_mismatch(self) -> None:
+        item = SimpleNamespace(version_id="v_bad", steps_path=Path("missing.jsonl"))
+
+        class BadAudit:
+            @staticmethod
+            def audit_version(_item):
+                return {
+                    "version": "v_bad",
+                    "valid": False,
+                    "metadata_sha256_matches": False,
+                    "missing_required_files": [],
+                    "actual_step_count": 1,
+                    "accepted_steps_sha256": "deadbeef",
+                }
+
+        with self.assertRaisesRegex(RuntimeError, "preflight rejected"):
+            _fail_closed_recording_audits(BadAudit(), [item])
+
+    def test_final_joint_error_excludes_wheel_joints(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            steps = root / "accepted_steps.jsonl"
+            metadata = root / "metadata.json"
+            steps.write_text("{}\n", encoding="utf-8")
+            metadata.write_text("{}\n", encoding="utf-8")
+            item = VersionFiles("v_test", root, steps, metadata)
+            service = SimpleNamespace(
+                stop_reason="complete",
+                status_dict=lambda **_kwargs: {},
+            )
+            physical = {
+                "physical_success": False,
+                "traversal": {"legs": {}},
+            }
+            collector = SimpleNamespace(
+                last_row={"time_s": 1.0},
+                fsm50_rows=[
+                    {
+                        "base_roll_rad": 0.0,
+                        "base_pitch_rad": 0.0,
+                        "measured_joint_position_rad": {
+                            "front_left_hip": 0.1,
+                            "front_left_ankle": 100.0,
+                        },
+                        "actual_joint_target_rad": {
+                            "front_left_hip": 0.0,
+                            "front_left_ankle": 0.0,
+                        },
+                    }
+                ],
+                physical_evidence=lambda: physical,
+            )
+            plan = SimpleNamespace(
+                profile="motion_only",
+                plan_sha256="plan",
+                events=[],
+                segments=[],
+                final_time_s=1.0,
+            )
+            result = _result_payload(
+                item=item,
+                service=service,
+                collector=collector,
+                respawn={},
+                plan=plan,
+                run_dir=root,
+                timed_out=False,
+            )
+            self.assertAlmostEqual(0.1, result["final_joint_target_error_rad"])
+
+    def test_dedicated_visualization_consumes_fsm_rows_timeline_and_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            visualization = _generate_fsm50_visualization(
+                root,
+                fsm50_rows=[
+                    {
+                        "time_s": 0.0,
+                        "base_roll_rad": 0.01,
+                        "base_pitch_rad": -0.02,
+                        "wheel_support_polygon_margin_m": 0.03,
+                        "two_leg_corridor_distance_m": 0.01,
+                        "source_step": 1,
+                        "wheel_contact_force_up_n": {
+                            "FL": 1.0,
+                            "FR": 2.0,
+                            "RL": 3.0,
+                            "RR": 4.0,
+                        },
+                    }
+                ],
+                state_timeline_rows=[
+                    {
+                        "start_time_s": 0.0,
+                        "end_time_s": 0.1,
+                        "source_fast_segment": 0,
+                        "source_step": 1,
+                        "support_legs": ["FL", "RR"],
+                        "primary_diagonal": "FL_RR",
+                        "wheel_contact_classes": {"FL": "GROUND"},
+                    }
+                ],
+                strict_result={
+                    "classification": "PHYSICAL_FAILURE",
+                    "strict_full_success": False,
+                },
+            )
+            self.assertTrue(visualization["ok"])
+            self.assertTrue(Path(visualization["png"]).is_file())
+            html_text = Path(visualization["html"]).read_text(encoding="utf-8")
+            self.assertIn("Strict success", html_text)
+            self.assertIn("FL_RR", html_text)
+
+    def test_runtime_environment_equivalence_is_fail_closed(self) -> None:
+        import hashlib
+
+        with tempfile.TemporaryDirectory() as directory:
+            robot = Path(directory) / "robot.usd"
+            robot.write_bytes(b"robot")
+            digest = hashlib.sha256(b"robot").hexdigest()
+            lock = {
+                "selected_environment": {
+                    "robot_usd_sha256": digest,
+                    "physics_dt_s": 1.0 / 120.0,
+                    "render_interval_physics_steps": 8,
+                    "servo_stiffness": 600.0,
+                    "servo_damping": 60.0,
+                    "wheel_damping": 20.0,
+                    "wheel_maximum_velocity_rad_s": 2.0,
+                    "wheel_reference_velocity_rad_s": 0.5,
+                    "servo_reference_velocity_deg_s": 150.0,
+                    "obstacle_height_m": 0.05,
+                    "obstacle_front_face_x_m": 0.5,
+                    "obstacle_length_m": 2.0,
+                    "obstacle_width_m": 2.0,
+                    "obstacle_bottom_z_m": 0.0,
+                    "robot_initial_root_position_m": [0.0, 0.0, 0.1],
+                    "robot_initial_root_orientation_wxyz": [1.0, 0.0, 0.0, 0.0],
+                },
+                "source_sha256": {str(robot): digest},
+            }
+            config = SimpleNamespace(
+                render_interval=8,
+                servo_stiffness=600.0,
+                servo_damping=60.0,
+                wheel_damping=20.0,
+                max_wheel_speed=2.0,
+            )
+            live_baseline = {"robot_root_pose": [0.0, 0.0, 0.1, 1.0, 0.0, 0.0, 0.0]}
+            live_obstacle = {
+                "height_m": 0.05,
+                "front_face_x_m": 0.5,
+                "length_m": 2.0,
+                "width_m": 2.0,
+                "bottom_z_m": 0.0,
+                "prim_valid": True,
+                "visual_valid": True,
+                "collision_valid": True,
+            }
+            motion = SimpleNamespace(
+                wheel_reference_velocity_rad_s=0.5,
+                servo_reference_velocity_deg_s=150.0,
+            )
+            result = _runtime_environment_equivalence(
+                lock=lock,
+                scene_config=config,
+                live_baseline=live_baseline,
+                live_obstacle=live_obstacle,
+                motion=motion,
+                robot_usd=robot,
+                physics_dt_s=1.0 / 120.0,
+            )
+            self.assertTrue(result["ok"])
+            live_obstacle["width_m"] = 1.5
+            self.assertFalse(
+                _runtime_environment_equivalence(
+                    lock=lock,
+                    scene_config=config,
+                    live_baseline=live_baseline,
+                    live_obstacle=live_obstacle,
+                    motion=motion,
+                    robot_usd=robot,
+                    physics_dt_s=1.0 / 120.0,
+                )["ok"]
+            )
+
+    def test_locked_ground_seed_uses_audited_pose_and_zero_velocities(self) -> None:
+        joint_names = list(SERVO_JOINT_NAMES) + list(WHEEL_JOINT_NAMES)
+        captured = {
+            "capture_source": "FakeIsaacAdapter",
+            "pose_restore_eligible": True,
+            "command_state": {
+                "servos": {name: 0.0 for name in SERVO_JOINT_NAMES},
+                "wheels": {name: 1.0 for name in WHEEL_JOINT_NAMES},
+            },
+            "actual_joint_state": {
+                "servos": {name: {"deg": 0.0} for name in SERVO_JOINT_NAMES},
+                "wheels": {name: {"rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
+            },
+            "root_pose": [[0.0, 0.0, 0.04, 1.0, 0.0, 0.0, 0.0]],
+            "root_velocity": [[1.0] * 6],
+            "joint_pos": [[0.0] * len(joint_names)],
+            "joint_vel": [[1.0] * len(joint_names)],
+            "joint_names": joint_names,
+        }
+
+        class FakeAdapter:
+            restored = None
+
+            def capture_sim_state(self):
+                return self.restored if self.restored is not None else captured
+
+            def restore_sim_state(self, state):
+                self.restored = state
+                return {
+                    "validation": {"valid": True, "reason": "valid"},
+                    "trace": [{"event": "root_pose_written"}],
+                }
+
+        adapter = FakeAdapter()
+        lock = {
+            "selected_environment": {
+                "robot_initial_root_position_m": [-0.004, -0.001, 0.099],
+                "robot_initial_root_orientation_wxyz": [1.0, 0.0, 0.0, 0.0],
+                "standing_home_command_state_deg": {
+                    name: 0.0 for name in SERVO_JOINT_NAMES
+                },
+            }
+        }
+        result = _seed_adapter_from_locked_ground_pose(adapter, lock)
+        self.assertEqual(
+            [[-0.004, -0.001, 0.099, 1.0, 0.0, 0.0, 0.0]],
+            adapter.restored["root_pose"],
+        )
+        self.assertEqual([[0.0] * 6], adapter.restored["root_velocity"])
+        self.assertEqual(
+            [[0.0] * len(joint_names)], adapter.restored["joint_vel"]
+        )
+        self.assertTrue(result["restore_validation"]["valid"])
+        self.assertEqual(
+            {name: 0.0 for name in WHEEL_JOINT_NAMES},
+            adapter.restored["command_state"]["wheels"],
+        )
+
+    def test_replay_args_round_trip_for_supervised_child(self) -> None:
+        original = build_parser().parse_args(
+            [
+                "replay-recordings",
+                "--versions",
+                "v012",
+                "--recording-root",
+                "C:/recordings",
+                "--output-root",
+                "C:/runs",
+                "--headless",
+            ]
+        )
+        restored = _deserialize_replay_args(_serialize_replay_args(original))
+        self.assertEqual(original.command, restored.command)
+        self.assertEqual(original.versions, restored.versions)
+        self.assertEqual(original.recording_root, restored.recording_root)
+        self.assertEqual(original.output_root, restored.output_root)
+        self.assertTrue(restored.headless)
+
+    @staticmethod
+    def _write_supervisor_files(
+        root: Path,
+        *,
+        token: str,
+        parent_pid: int,
+        child_pid: int,
+        preclose: bool,
+        state: str = "PRECLOSE_COMPLETE",
+    ) -> tuple[Path, Path]:
+        batch_root = root / "batch"
+        batch_root.mkdir()
+        handshake = root / "handshake.json"
+        _atomic_write_json(
+            handshake,
+            {
+                "schema_version": "fsm50.supervisor_handshake.v1",
+                "token": token,
+                "parent_pid": parent_pid,
+                "child_pid": child_pid,
+                "batch_root": str(batch_root.resolve()),
+                "state": state,
+                "sequence": 2,
+            },
+        )
+        if preclose:
+            _atomic_write_json(
+                batch_root / "preclose_complete.json",
+                {
+                    "schema_version": "fsm50.preclose_complete.v1",
+                    "token": token,
+                    "parent_pid": parent_pid,
+                    "child_pid": child_pid,
+                    "batch_root": str(batch_root.resolve()),
+                    "evidence": {"physics_result_count": 1},
+                },
+            )
+        return handshake, batch_root
+
+    def test_supervisor_normal_exit_after_durable_preclose(self) -> None:
+        class Child:
+            pid = 43001
+
+            @staticmethod
+            def poll():
+                return 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            handshake, batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=Child.pid,
+                preclose=True,
+            )
+            outcome, observed = _monitor_supervised_child(
+                Child(),
+                handshake_path=handshake,
+                token="token",
+                parent_pid=123,
+                output_root=root,
+                clock=lambda: 1.0,
+                sleep=lambda _seconds: None,
+            )
+            self.assertEqual("NORMAL_EXIT", outcome["status"])
+            self.assertEqual(batch_root.resolve(), observed)
+            self.assertTrue(outcome["preclose_observed"])
+
+    def test_supervisor_timeout_starts_only_after_preclose_and_owns_exact_pid(self) -> None:
+        class Child:
+            pid = 43002
+            returncode = None
+
+            def poll(self):
+                return self.returncode
+
+        class Clock:
+            value = -61.0
+
+            def __call__(self):
+                self.value += 61.0
+                return self.value
+
+        terminated: list[int] = []
+
+        def terminate(child):
+            terminated.append(child.pid)
+            child.returncode = -9
+            return {"pid": child.pid, "method": "unit-test"}
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            handshake, batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=Child.pid,
+                preclose=True,
+            )
+            child = Child()
+            outcome, observed = _monitor_supervised_child(
+                child,
+                handshake_path=handshake,
+                token="token",
+                parent_pid=123,
+                output_root=root,
+                close_grace_s=60.0,
+                poll_interval_s=0.0,
+                clock=Clock(),
+                sleep=lambda _seconds: None,
+                terminate_tree=terminate,
+            )
+            self.assertEqual("SIMULATION_CLOSE_TIMEOUT", outcome["status"])
+            self.assertEqual([Child.pid], terminated)
+            self.assertEqual(batch_root.resolve(), observed)
+
+    def test_no_global_timeout_before_preclose_marker(self) -> None:
+        class Child:
+            pid = 43003
+            polls = iter([None, None, 7])
+
+            @classmethod
+            def poll(cls):
+                return next(cls.polls)
+
+        class Clock:
+            value = -1000.0
+
+            def __call__(self):
+                self.value += 1000.0
+                return self.value
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            handshake, _batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=Child.pid,
+                preclose=False,
+                state="BATCH_ALLOCATED",
+            )
+            outcome, _observed = _monitor_supervised_child(
+                Child(),
+                handshake_path=handshake,
+                token="token",
+                parent_pid=123,
+                output_root=root,
+                close_grace_s=0.001,
+                poll_interval_s=0.0,
+                clock=Clock(),
+                sleep=lambda _seconds: None,
+                terminate_tree=lambda _child: self.fail("must not terminate before preclose"),
+            )
+            self.assertEqual("CHILD_EXIT_BEFORE_PRECLOSE", outcome["status"])
+
+    def test_close_timeout_marks_lifecycle_failed_without_reclassifying_physics(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            batch_root = Path(directory) / "batch"
+            run_dir = batch_root / "version" / "run"
+            artifact_root = batch_root / "version" / "artifact"
+            run_dir.mkdir(parents=True)
+            artifact_root.mkdir(parents=True)
+            (artifact_root / ".finalized").write_text("finalized\n", encoding="utf-8")
+            result = {
+                "source_version": "v012",
+                "classification": "FULL_SUCCESS",
+                "physical_success": True,
+                "strict_full_success": True,
+                "artifact_valid": True,
+                "run_dir": str(run_dir),
+                "artifact_root": str(artifact_root),
+                "lifecycle": {
+                    "finalized": True,
+                    "failed": False,
+                    "strict_success": True,
+                },
+            }
+            _atomic_write_json(run_dir / "result.json", result)
+            _atomic_write_json(batch_root / "batch_results.json", [result])
+            _atomic_write_json(
+                batch_root / "batch_finalization.json",
+                {"finalized": True, "failed": False, "strict_success": True},
+            )
+            (batch_root / "checksums.preclose.sha256").write_text(
+                "immutable-preclose-checksum\n", encoding="utf-8"
+            )
+            _atomic_write_json(
+                batch_root / "source_integrity.json", {"equal": True}
+            )
+            _record_shutdown_outcome(
+                batch_root,
+                {
+                    "status": "SIMULATION_CLOSE_TIMEOUT",
+                    "child_pid": 43004,
+                },
+            )
+            updated = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
+            self.assertEqual("FULL_SUCCESS", updated["classification"])
+            self.assertTrue(updated["physical_success"])
+            self.assertTrue(updated["strict_full_success"])
+            self.assertTrue(updated["lifecycle"]["failed"])
+            self.assertEqual(
+                "SIMULATION_CLOSE_TIMEOUT",
+                updated["lifecycle"]["failure_reason"],
+            )
+            self.assertTrue((artifact_root / ".failed").is_file())
+            self.assertTrue((batch_root / ".failed").is_file())
+            self.assertEqual(
+                "immutable-preclose-checksum\n",
+                (batch_root / "checksums.preclose.sha256").read_text(
+                    encoding="utf-8"
+                ),
+            )
+            self.assertEqual(
+                {"equal": True},
+                json.loads(
+                    (batch_root / "source_integrity.json").read_text(
+                        encoding="utf-8"
+                    )
+                ),
+            )
+
+    def test_normal_shutdown_outcome_does_not_rewrite_run_result(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            batch_root = Path(directory) / "batch"
+            run_dir = batch_root / "run"
+            run_dir.mkdir(parents=True)
+            result = {
+                "classification": "PHYSICAL_FAILURE",
+                "physical_success": False,
+                "strict_full_success": False,
+                "run_dir": str(run_dir),
+                "lifecycle": {"finalized": True, "failed": False},
+            }
+            _atomic_write_json(run_dir / "result.json", result)
+            _atomic_write_json(batch_root / "batch_results.json", [result])
+            _atomic_write_json(
+                batch_root / "batch_finalization.json",
+                {"finalized": True, "failed": False},
+            )
+            _record_shutdown_outcome(
+                batch_root,
+                {"status": "NORMAL_EXIT", "child_returncode": 0},
+            )
+            unchanged = json.loads((run_dir / "result.json").read_text(encoding="utf-8"))
+            self.assertEqual(result, unchanged)
+
+
+if __name__ == "__main__":
+    unittest.main()

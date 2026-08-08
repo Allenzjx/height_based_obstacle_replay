@@ -1,0 +1,1034 @@
+# Recording-derived 50 mm deterministic FSM candidate.
+#
+# IMPORTANT EVIDENCE LIMIT:
+# The recording audit found no continuous COM/contact telemetry inside the
+# version directories.  The v012 command endpoints below are therefore action
+# candidates only.  They are never treated as physical transition evidence.
+# Every transition is gated by live filtered physics observations, and every
+# state remains PENDING_REPLAY until a clean Isaac replay supplies an exact
+# event/telemetry interval.
+
+schema_version: fsm50-controller.v1
+metadata:
+  controller_name: recording-derived-50mm-event-fsm-v3
+  obstacle_height_m: 0.050
+  provenance_status: PENDING_REPLAY
+  physical_success_claim: false
+  source_recording_version: v012_20260806_231025_027004_manual
+  source_alignment: reports/RECORDING_PHASE_ALIGNMENT_50MM.csv
+  source_failure_audit: reports/OLD_FSM_FAILURES_TO_AVOID.md
+  source_recording_sha256: 6baec7d52f5a1ce87e594525f179b6a23521ca717a8a06f1361e89f73051d87a
+  provenance_note: >-
+    Command profiles are candidate v012 endpoints or explicitly identified
+    intermediate v012 commands. No state has continuous COM/contact telemetry;
+    thresholds are conservative engineering gates and require replay tuning.
+  transition_clock: ISAAC_SIMULATION_TIME_ONLY
+  transition_policy: PHYSICAL_EVENT_PLUS_DWELL_ONLY
+  forbidden_transition_sources:
+    - wall_clock
+    - recording_step_duration
+    - servo_target_arrival_alone
+  diagonal_definition:
+    FL_RR: [FL, RR]
+    FR_RL: [FR, RL]
+
+actuators:
+  servo_joints:
+    FL: [front_left_hip, front_left_knee]
+    FR: [front_right_hip, front_right_knee]
+    RL: [rear_left_hip, rear_left_knee]
+    RR: [rear_right_hip, rear_right_knee]
+  wheel_joints:
+    FL: front_left_ankle
+    FR: front_right_ankle
+    RL: rear_left_ankle
+    RR: rear_right_ankle
+  servo_max_rate_deg_s: 150.0
+  wheel_max_acceleration_rad_s2: 4.0
+
+# Threshold provenance:
+# - 2.0 N, 0.5 N, 0.08 s, 0.015 m and 0.08 diagonal hysteresis are
+#   inherited from the audited pure support-classifier defaults.
+# - remaining values are conservative provisional engineering gates, not
+#   successful-recording statistics. They must not be loosened to pass a run.
+thresholds:
+  provenance_status: PROVISIONAL_ENGINEERING_GUARD_PENDING_REPLAY
+  support_load_enter_n: 2.0
+  support_load_exit_n: 1.5
+  light_support_load_n: 0.5
+  unload_load_enter_n: 0.5
+  unload_load_exit_n: 0.8
+  top_load_enter_n: 2.0
+  top_load_exit_n: 1.5
+  impulse_preload_enter_n: 3.0
+  impulse_release_ratio: 0.55
+  support_persistence_s: 0.08
+  maximum_contact_drift_m: 0.015
+  diagonal_dominance_hysteresis: 0.08
+  diagonal_corridor_half_width_m: 0.040
+  diagonal_longitudinal_slack: 0.08
+  polygon_minimum_margin_m: 0.005
+  approach_front_face_distance_m: 0.080
+  face_crossing_enter_m: 0.004
+  face_crossing_exit_m: -0.002
+  minimum_airborne_clearance_m: 0.003
+  maximum_lift_to_swing_clearance_drop_m: 0.004
+  minimum_com_displacement_m: 0.004
+  minimum_com_velocity_m_s: 0.005
+  maximum_settle_com_speed_m_s: 0.020
+  maximum_roll_deg: 12.0
+  maximum_pitch_deg: 18.0
+  maximum_angular_speed_deg_s: 30.0
+  maximum_settle_angular_speed_deg_s: 8.0
+  minimum_joint_limit_margin_deg: 1.0
+  maximum_loaded_front_face_rotation_rad: 0.15
+  minimum_airborne_dwell_s: 0.05
+  minimum_unload_dwell_s: 0.025
+  top_load_dwell_s: 0.08
+  wheel_stopped_rad_s: 0.08
+  minimum_forward_workspace_m: 0.10
+  maximum_home_error_deg: 2.0
+  final_root_linear_speed_m_s: 0.03
+  final_root_angular_speed_deg_s: 5.0
+
+# Candidate command profiles. Targets are command-space values.  Profiles
+# s01..s19 cite v012 accepted_steps.jsonl endpoints; four atomic profiles cite
+# the exact Servo+Wheel batch in steps 4, 10, 15, and 19.  A state transition
+# never occurs because a profile's source duration elapsed.
+command_profiles:
+  home:
+    source_steps: []
+    servos: &home_servos
+      {front_left_hip: 0.0, front_left_knee: 0.0, front_right_hip: 0.0, front_right_knee: 0.0,
+       rear_left_hip: 0.0, rear_left_knee: 0.0, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: &zero_wheels
+      {front_left_ankle: 0.0, front_right_ankle: 0.0, rear_left_ankle: 0.0, rear_right_ankle: 0.0}
+    atomic_concurrent: false
+  s01_rl_preload:
+    source_steps: [1]
+    servos: &s01_servos
+      {front_left_hip: 0.0, front_left_knee: 0.0, front_right_hip: 0.0, front_right_knee: 0.0,
+       rear_left_hip: 22.8, rear_left_knee: 0.0, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s02_approach:
+    source_steps: [2]
+    servos: *s01_servos
+    wheels: &all_forward
+      {front_left_ankle: 0.3, front_right_ankle: 0.3, rear_left_ankle: 0.3, rear_right_ankle: 0.3}
+    atomic_concurrent: false
+  s03_fr_lift:
+    source_steps: [3]
+    servos: &s03_servos
+      {front_left_hip: 0.0, front_left_knee: 0.0, front_right_hip: 23.8, front_right_knee: 25.8,
+       rear_left_hip: 22.8, rear_left_knee: 0.0, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s04_fr_cross_atomic:
+    source_steps: [4]
+    servos: &s04_servos
+      {front_left_hip: 0.0, front_left_knee: -15.5, front_right_hip: 23.8, front_right_knee: 25.8,
+       rear_left_hip: 0.5, rear_left_knee: 0.0, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels:
+      {front_left_ankle: -0.79, front_right_ankle: 0.0, rear_left_ankle: 0.0, rear_right_ankle: 0.0}
+    atomic_concurrent: true
+  s05_fl_transfer:
+    source_steps: [5]
+    servos: &s05_servos
+      {front_left_hip: 0.0, front_left_knee: -15.5, front_right_hip: 23.8, front_right_knee: 25.8,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s06_fl_lift:
+    source_steps: [6]
+    servos: &s06_servos
+      {front_left_hip: 57.7, front_left_knee: -24.0, front_right_hip: 23.8, front_right_knee: 25.8,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s07_front_advance:
+    source_steps: [7]
+    servos: *s06_servos
+    wheels: *all_forward
+    atomic_concurrent: false
+  s08_fl_place:
+    source_steps: [8]
+    servos: &s08_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 23.8, front_right_knee: 25.8,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s09_front_pair_advance:
+    source_steps: [9]
+    servos: *s08_servos
+    wheels: *all_forward
+    atomic_concurrent: false
+  s10_fr_place_atomic:
+    source_steps: [10]
+    servos: &s10_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 5.8, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: 0.0, rear_right_knee: 0.0}
+    wheels:
+      {front_left_ankle: 0.0, front_right_ankle: -0.9, rear_left_ankle: 0.0, rear_right_ankle: 0.0}
+    atomic_concurrent: true
+  s11_rr_lift:
+    source_steps: [11]
+    servos: &s11_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 5.8, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: -23.8, rear_right_knee: 24.7}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s12_rr_swing:
+    source_steps: [12]
+    servos: &s12_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 5.8, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: -23.8, rear_right_knee: -19.8}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s13_rr_place:
+    source_steps: [13]
+    servos: &s13_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 5.8, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: -40.8, rear_right_knee: -19.8}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s14_rl_preparation:
+    source_steps: [14]
+    servos: &s14_servos
+      {front_left_hip: 28.1, front_left_knee: -9.2, front_right_hip: 33.4, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: -40.8, rear_right_knee: -19.8}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s15_rl_impulse_atomic:
+    source_steps: [15]
+    servos: &s15_servos
+      {front_left_hip: -25.9, front_left_knee: -34.6, front_right_hip: 33.4, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: 21.5, rear_right_hip: -40.8, rear_right_knee: -19.8}
+    wheels:
+      {front_left_ankle: -0.97, front_right_ankle: 0.0, rear_left_ankle: 0.0, rear_right_ankle: 0.0}
+    atomic_concurrent: true
+  s16_rl_swing:
+    source_steps: [16]
+    servos: &s16_servos
+      {front_left_hip: -25.9, front_left_knee: -34.6, front_right_hip: 33.4, front_right_knee: 6.7,
+       rear_left_hip: -12.2, rear_left_knee: -16.6, rear_right_hip: -40.8, rear_right_knee: -19.8}
+    wheels: *zero_wheels
+    atomic_concurrent: false
+  s17_all_top_advance:
+    source_steps: [17]
+    servos: *s16_servos
+    wheels: *all_forward
+    atomic_concurrent: false
+  s18_workspace_advance:
+    source_steps: [18]
+    servos: *s16_servos
+    wheels: *all_forward
+    atomic_concurrent: false
+  s19_recover_home_atomic:
+    source_steps: [19]
+    servos:
+      {front_left_hip: 0.5, front_left_knee: 0.4, front_right_hip: -1.6, front_right_knee: 1.4,
+       rear_left_hip: -1.6, rear_left_knee: -0.7, rear_right_hip: -4.8, rear_right_knee: -0.7}
+    wheels:
+      {front_left_ankle: 1.27, front_right_ankle: -0.72, rear_left_ankle: -0.51, rear_right_ankle: -0.52}
+    atomic_concurrent: true
+
+# All required FSM50State fields are supplied by this merge template.  The
+# loader expands command_profile into servo/wheel start/end targets before
+# constructing FSM50StateTable. Empty source_event_indices and null telemetry
+# are deliberate PENDING_REPLAY evidence, not omissions.
+state_defaults: &state_defaults
+  state_name: UNSPECIFIED
+  description: Recording-derived candidate state; live physics gate required.
+  source_recording_version: v012_20260806_231025_027004_manual
+  source_step_indices: []
+  source_event_indices: []
+  source_telemetry_time_range: null
+  active_leg: NONE
+  swing_leg: NONE
+  impulse_leg: NONE
+  support_legs: []
+  primary_diagonal: NONE
+  secondary_support: []
+  target_com_direction: null
+  com_transfer_method: NONE
+  servo_start_target: {}
+  servo_end_target: {}
+  servo_trajectory_type: LINEAR
+  wheel_start_target: {}
+  wheel_end_target: {}
+  wheel_trajectory_type: LINEAR_RAMP
+  atomic_concurrent: false
+  min_duration: 0.025
+  settle_duration: 0.050
+  max_duration: 4.0
+  entry_guard: {kind: LIVE_EVIDENCE_COMPLETE}
+  progress_guard: {kind: STATE_PHYSICAL_EVENT}
+  exit_guard: {kind: STATE_PHYSICAL_EVENT_WITH_DWELL}
+  abort_guard: {kind: FAIL_CLOSED_SAFETY_STOP}
+  hysteresis: {force_n: 0.5, geometry_m: 0.002}
+  required_consecutive_samples: 3
+  retry_policy: {maximum_retries: 0, compensation_scale: 0.0, abort_on_exhaustion: true}
+  expected_com_displacement: null
+  expected_com_velocity_direction: null
+  expected_load_transfer: {}
+  expected_contact_change: {}
+  expected_clearance: {}
+  expected_body_response: {}
+  allowed_contact_drift: 0.015
+  allowed_roll_pitch: [12.0, 18.0]
+  allowed_angular_velocity: 30.0
+  joint_limit_margin: 1.0
+  notes: No fixed-time transition; candidate command profile remains physically unverified.
+  provenance_status: PENDING_REPLAY
+  provenance_note: No continuous recording COM/contact telemetry; clean replay required.
+
+# State ordering follows the required A0-F5 mechanism graph.  A state's guard
+# names a live event predicate implemented in fsm50_controller.py.
+states:
+  - <<: *state_defaults
+    state_id: A0_RESET_AND_SETTLE
+    state_name: RESET_AND_SETTLE
+    phase: INIT
+    guard: INITIAL_STABLE
+    command_profile: home
+    max_duration: 5.0
+    settle_duration: 0.15
+    required_consecutive_samples: 5
+  - <<: *state_defaults
+    state_id: A1_PREP_COM_TO_RL
+    state_name: PREP_COM_TO_RL
+    phase: APPROACH
+    guard: ANCHORED_TRANSFER
+    command_profile: s01_rl_preload
+    source_step_indices: [1]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    secondary_support: [FL, FR, RR]
+    target_com_direction: [-1.0, 1.0]
+    com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
+    expected_com_displacement: [-0.004, 0.004]
+    max_duration: 6.0
+  - <<: *state_defaults
+    state_id: A2_FR_REACTION_PRELOAD
+    state_name: FR_REACTION_PRELOAD
+    phase: APPROACH
+    guard: IMPULSE_PRELOAD
+    command_profile: s01_rl_preload
+    source_step_indices: [1]
+    active_leg: FR
+    impulse_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    target_com_direction: [-1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+    max_duration: 3.0
+  - <<: *state_defaults
+    state_id: A3_FR_REACTION_PULSE
+    state_name: FR_REACTION_PULSE
+    phase: APPROACH
+    guard: IMPULSE_PUSH
+    command_profile: s03_fr_lift
+    source_step_indices: [3]
+    active_leg: FR
+    impulse_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    target_com_direction: [-1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+    atomic_concurrent: false
+    max_duration: 2.0
+  - <<: *state_defaults
+    state_id: A4_SETTLE_COM_RL
+    state_name: SETTLE_COM_RL
+    phase: APPROACH
+    guard: TRANSFER_SETTLED
+    command_profile: s03_fr_lift
+    source_step_indices: [3]
+    active_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    target_com_direction: [-1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+    settle_duration: 0.12
+    max_duration: 5.0
+  - <<: *state_defaults
+    state_id: A5_VERIFY_FR_UNLOAD_READY
+    state_name: VERIFY_FR_UNLOAD_READY
+    phase: APPROACH
+    guard: UNLOAD_READY
+    command_profile: s03_fr_lift
+    source_step_indices: [3]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    target_com_direction: [-1.0, 1.0]
+    com_transfer_method: HYBRID
+  - <<: *state_defaults
+    state_id: A6_UNLOAD_FR
+    state_name: UNLOAD_FR
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: UNLOADED
+    command_profile: s03_fr_lift
+    source_step_indices: [3]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    expected_contact_change: {FR: LOADED_TO_UNLOADED}
+  - <<: *state_defaults
+    state_id: A7_LIFT_FR
+    state_name: LIFT_FR
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: AIRBORNE
+    command_profile: s03_fr_lift
+    source_step_indices: [3]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    expected_contact_change: {FR: UNLOADED_TO_AIR}
+    expected_clearance: {FR: 0.003}
+  - <<: *state_defaults
+    state_id: A8_ADVANCE_FR_CONCURRENT
+    state_name: ADVANCE_FR_CONCURRENT
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: FACE_CLEARED
+    command_profile: s04_fr_cross_atomic
+    source_step_indices: [4]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    atomic_concurrent: true
+    expected_contact_change: {FR: AIR_ACROSS_FACE}
+    expected_clearance: {FR: 0.003}
+    max_duration: 6.0
+  - <<: *state_defaults
+    state_id: A9_POSITION_FR_OVER_TOP
+    state_name: POSITION_FR_OVER_TOP
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: OVER_TOP
+    command_profile: s04_fr_cross_atomic
+    source_step_indices: [4]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+  - <<: *state_defaults
+    state_id: A10_PLACE_FR
+    state_name: PLACE_FR
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: TOP_CONTACT
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    active_leg: FR
+    swing_leg: FR
+    support_legs: [FL, RL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [RL]
+    atomic_concurrent: true
+    expected_contact_change: {FR: AIR_TO_TOP}
+  - <<: *state_defaults
+    state_id: A11_CONFIRM_FR_TOP_SUPPORT
+    state_name: CONFIRM_FR_TOP_SUPPORT
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: TOP_LOAD
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    active_leg: FR
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    expected_load_transfer: {FR: 2.0}
+    settle_duration: 0.08
+
+  - <<: *state_defaults
+    state_id: B1_PREP_FL_TRANSFER
+    state_name: PREP_FL_TRANSFER
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: SUPPORT_STABLE
+    command_profile: s05_fl_transfer
+    source_step_indices: [5]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
+  - <<: *state_defaults
+    state_id: B2_SHIFT_COM_FOR_FL
+    state_name: SHIFT_COM_FOR_FL
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: ANCHORED_TRANSFER
+    command_profile: s05_fl_transfer
+    source_step_indices: [5]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
+    expected_com_displacement: [0.004, -0.004]
+  - <<: *state_defaults
+    state_id: B3_FR_PUSH_TOWARD_OBSTACLE
+    state_name: FR_PUSH_TOWARD_OBSTACLE
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: COM_DIRECTION
+    command_profile: s05_fl_transfer
+    source_step_indices: [5]
+    active_leg: FL
+    impulse_leg: FR
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: HYBRID
+  - <<: *state_defaults
+    state_id: B4_UNLOAD_FL
+    state_name: UNLOAD_FL
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: UNLOADED
+    command_profile: s05_fl_transfer
+    source_step_indices: [5]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    expected_contact_change: {FL: LOADED_TO_UNLOADED}
+  - <<: *state_defaults
+    state_id: B5_LIFT_FL
+    state_name: LIFT_FL
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: AIRBORNE
+    command_profile: s06_fl_lift
+    source_step_indices: [6]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    expected_clearance: {FL: 0.003}
+  - <<: *state_defaults
+    state_id: B6_POSITION_FL_OVER_TOP
+    state_name: POSITION_FL_OVER_TOP
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: FACE_CLEARED
+    command_profile: s07_front_advance
+    source_step_indices: [7]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+    expected_clearance: {FL: 0.003}
+    max_duration: 6.0
+  - <<: *state_defaults
+    state_id: B7_PLACE_FL
+    state_name: PLACE_FL
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: TOP_CONTACT
+    command_profile: s08_fl_place
+    source_step_indices: [8]
+    active_leg: FL
+    swing_leg: FL
+    support_legs: [FR, RL, RR]
+    primary_diagonal: FR_RL
+    secondary_support: [RR]
+  - <<: *state_defaults
+    state_id: B8_CONFIRM_FL_TOP_SUPPORT
+    state_name: CONFIRM_FL_TOP_SUPPORT
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: TOP_LOAD
+    command_profile: s08_fl_place
+    source_step_indices: [8]
+    active_leg: FL
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    expected_load_transfer: {FL: 2.0}
+    settle_duration: 0.08
+
+  - <<: *state_defaults
+    state_id: C1_CONFIRM_FRONT_PAIR
+    state_name: CONFIRM_FRONT_PAIR
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: FRONT_PAIR_TOP
+    command_profile: s08_fl_place
+    source_step_indices: [8]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+  - <<: *state_defaults
+    state_id: C2_ADVANCE_FRONT_PAIR
+    state_name: ADVANCE_FRONT_PAIR
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: ADVANCE_GEOMETRY
+    command_profile: s09_front_pair_advance
+    source_step_indices: [9]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    max_duration: 8.0
+  - <<: *state_defaults
+    state_id: C3_STOP_BEFORE_REAR_FACE
+    state_name: STOP_BEFORE_REAR_FACE
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: WHEELS_STOPPED
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    atomic_concurrent: true
+  - <<: *state_defaults
+    state_id: C4_SETTLE_BEFORE_REAR_TRANSFER
+    state_name: SETTLE_BEFORE_REAR_TRANSFER
+    phase: FRONT_DIAGONAL_TRANSFER
+    guard: TRANSFER_SETTLED
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    settle_duration: 0.12
+    max_duration: 5.0
+
+  - <<: *state_defaults
+    state_id: D1_FREE_FL_WORKSPACE
+    state_name: FREE_FL_WORKSPACE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: WORKSPACE_CLEAR
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+  - <<: *state_defaults
+    state_id: D2_SELECT_COM_TO_FL_METHOD
+    state_name: SELECT_COM_TO_FL_METHOD
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: SUPPORT_STABLE
+    command_profile: s10_fr_place_atomic
+    source_step_indices: [10]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    target_com_direction: [1.0, 1.0]
+    com_transfer_method: HYBRID
+  - <<: *state_defaults
+    state_id: D3_COM_TO_FL_PRELOAD
+    state_name: COM_TO_FL_PRELOAD
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: IMPULSE_PRELOAD
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    impulse_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    target_com_direction: [1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: D4_COM_TO_FL_TRANSFER
+    state_name: COM_TO_FL_TRANSFER
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: IMPULSE_PUSH
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    impulse_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    target_com_direction: [1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: D5_COM_TO_FL_COAST_OR_HOLD
+    state_name: COM_TO_FL_COAST_OR_HOLD
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: COM_DIRECTION
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    target_com_direction: [1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: D6_COM_TO_FL_SETTLE
+    state_name: COM_TO_FL_SETTLE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TRANSFER_SETTLED
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    target_com_direction: [1.0, 1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+    settle_duration: 0.12
+  - <<: *state_defaults
+    state_id: D7_VERIFY_RR_UNLOAD_READY
+    state_name: VERIFY_RR_UNLOAD_READY
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: UNLOAD_READY
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+  - <<: *state_defaults
+    state_id: D8_UNLOAD_RR
+    state_name: UNLOAD_RR
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: UNLOADED
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+  - <<: *state_defaults
+    state_id: D9_LIFT_RR
+    state_name: LIFT_RR
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: AIRBORNE
+    command_profile: s11_rr_lift
+    source_step_indices: [11]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    expected_clearance: {RR: 0.003}
+  - <<: *state_defaults
+    state_id: D10_SWING_RR_CLEAR_FRONT_FACE
+    state_name: SWING_RR_CLEAR_FRONT_FACE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: FACE_CLEARED
+    command_profile: s12_rr_swing
+    source_step_indices: [12]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+    expected_clearance: {RR: 0.003}
+  - <<: *state_defaults
+    state_id: D11_PLACE_RR
+    state_name: PLACE_RR
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TOP_CONTACT
+    command_profile: s13_rr_place
+    source_step_indices: [13]
+    active_leg: RR
+    swing_leg: RR
+    support_legs: [FL, FR, RL]
+    primary_diagonal: FR_RL
+    secondary_support: [FL]
+  - <<: *state_defaults
+    state_id: D12_CONFIRM_RR_TOP_SUPPORT
+    state_name: CONFIRM_RR_TOP_SUPPORT
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TOP_LOAD
+    command_profile: s13_rr_place
+    source_step_indices: [13]
+    active_leg: RR
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    settle_duration: 0.08
+
+  - <<: *state_defaults
+    state_id: E1_FREE_FR_WORKSPACE
+    state_name: FREE_FR_WORKSPACE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: WORKSPACE_CLEAR
+    command_profile: s14_rl_preparation
+    source_step_indices: [14]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+  - <<: *state_defaults
+    state_id: E2_PREP_FL_RR_DIAGONAL
+    state_name: PREP_FL_RR_DIAGONAL
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: DIAGONAL_SUPPORT
+    command_profile: s14_rl_preparation
+    source_step_indices: [14]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
+  - <<: *state_defaults
+    state_id: E3_SHIFT_COM_TO_FR_BY_SUPPORT_GEOMETRY
+    state_name: SHIFT_COM_TO_FR_BY_SUPPORT_GEOMETRY
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: ANCHORED_TRANSFER
+    command_profile: s14_rl_preparation
+    source_step_indices: [14]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
+    expected_com_displacement: [0.004, -0.004]
+  - <<: *state_defaults
+    state_id: E4_RL_LEVER_PRELOAD
+    state_name: RL_LEVER_PRELOAD
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: IMPULSE_PRELOAD
+    command_profile: s14_rl_preparation
+    source_step_indices: [14]
+    active_leg: RL
+    swing_leg: RL
+    impulse_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: E5_RL_DOWNWARD_REACTION_PULSE
+    state_name: RL_DOWNWARD_REACTION_PULSE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: IMPULSE_PUSH
+    command_profile: s15_rl_impulse_atomic
+    source_step_indices: [15]
+    active_leg: RL
+    swing_leg: RL
+    impulse_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: HYBRID
+    atomic_concurrent: true
+    max_duration: 2.0
+  - <<: *state_defaults
+    state_id: E6_RL_REACTION_RELEASE
+    state_name: RL_REACTION_RELEASE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: IMPULSE_RELEASE
+    command_profile: s14_rl_preparation
+    source_step_indices: [14, 15]
+    active_leg: RL
+    swing_leg: RL
+    impulse_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: E7_COAST_COM_TO_FR
+    state_name: COAST_COM_TO_FR
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: COM_DIRECTION
+    command_profile: s14_rl_preparation
+    source_step_indices: [14, 15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+  - <<: *state_defaults
+    state_id: E8_SETTLE_COM_FR
+    state_name: SETTLE_COM_FR
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TRANSFER_SETTLED
+    command_profile: s14_rl_preparation
+    source_step_indices: [14, 15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    target_com_direction: [1.0, -1.0]
+    com_transfer_method: IMPULSE_REACTION_TRANSFER
+    settle_duration: 0.15
+    max_duration: 6.0
+  - <<: *state_defaults
+    state_id: E9_VERIFY_RL_UNLOAD_READY
+    state_name: VERIFY_RL_UNLOAD_READY
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: UNLOAD_READY
+    command_profile: s14_rl_preparation
+    source_step_indices: [14, 15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+  - <<: *state_defaults
+    state_id: E10_UNLOAD_RL
+    state_name: UNLOAD_RL
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: UNLOADED
+    command_profile: s14_rl_preparation
+    source_step_indices: [14, 15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+  - <<: *state_defaults
+    state_id: E11_LIFT_RL
+    state_name: LIFT_RL
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: AIRBORNE
+    command_profile: s15_rl_impulse_atomic
+    source_step_indices: [15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    expected_clearance: {RL: 0.003}
+    atomic_concurrent: true
+  - <<: *state_defaults
+    state_id: E12_HOLD_RL_LIFT_POSTURE
+    state_name: HOLD_RL_LIFT_POSTURE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: AIRBORNE_HOLD
+    command_profile: s15_rl_impulse_atomic
+    source_step_indices: [15]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    expected_clearance: {RL: 0.003}
+    settle_duration: 0.08
+  - <<: *state_defaults
+    state_id: E13_SWING_RL_CLEAR_FRONT_FACE
+    state_name: SWING_RL_CLEAR_FRONT_FACE
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: FACE_CLEARED
+    command_profile: s16_rl_swing
+    source_step_indices: [16]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+    expected_clearance: {RL: 0.003}
+    max_duration: 6.0
+  - <<: *state_defaults
+    state_id: E14_PLACE_RL
+    state_name: PLACE_RL
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TOP_CONTACT
+    command_profile: s16_rl_swing
+    source_step_indices: [16]
+    active_leg: RL
+    swing_leg: RL
+    support_legs: [FL, FR, RR]
+    primary_diagonal: FL_RR
+    secondary_support: [FR]
+  - <<: *state_defaults
+    state_id: E15_CONFIRM_RL_TOP_SUPPORT
+    state_name: CONFIRM_RL_TOP_SUPPORT
+    phase: REAR_DIAGONAL_TRANSFER
+    guard: TOP_LOAD
+    command_profile: s16_rl_swing
+    source_step_indices: [16]
+    active_leg: RL
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    settle_duration: 0.08
+
+  - <<: *state_defaults
+    state_id: F1_CONFIRM_ALL_WHEELS_TOP
+    state_name: CONFIRM_ALL_WHEELS_TOP
+    phase: ALL_TOP
+    guard: ALL_TOP
+    command_profile: s16_rl_swing
+    source_step_indices: [16]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    settle_duration: 0.12
+  - <<: *state_defaults
+    state_id: F2_ADVANCE_FOR_WORKSPACE
+    state_name: ADVANCE_FOR_WORKSPACE
+    phase: EXIT
+    guard: ADVANCE_GEOMETRY
+    command_profile: s18_workspace_advance
+    source_step_indices: [17, 18]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    max_duration: 8.0
+  - <<: *state_defaults
+    state_id: F3_RECOVER_HOME_CONCURRENT
+    state_name: RECOVER_HOME_CONCURRENT
+    phase: EXIT
+    guard: HOME_AND_FORWARD
+    command_profile: s19_recover_home_atomic
+    source_step_indices: [19]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    atomic_concurrent: true
+    max_duration: 10.0
+  - <<: *state_defaults
+    state_id: F4_FINAL_SETTLE
+    state_name: FINAL_SETTLE
+    phase: EXIT
+    guard: FINAL_SETTLED
+    command_profile: home
+    source_step_indices: [19]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    settle_duration: 0.20
+    max_duration: 8.0
+    required_consecutive_samples: 5
+  - <<: *state_defaults
+    state_id: F5_SUCCESS
+    state_name: SUCCESS
+    description: Terminal candidate traversal completion; external strict success evaluator still required.
+    phase: EXIT
+    guard: TERMINAL_SUCCESS
+    command_profile: home
+    source_step_indices: [19]
+    support_legs: [FL, FR, RL, RR]
+    primary_diagonal: BALANCED
+    max_duration: 86400.0
+    notes: This terminal state is not itself a physical-success claim; run-level strict evidence decides success.
+  - <<: *state_defaults
+    state_id: SAFE_STOP
+    state_name: SAFE_STOP
+    description: Terminal fail-closed hold with immediate zero wheel command.
+    source_recording_version: SAFETY_POLICY
+    phase: SAFE_STOP
+    guard: TERMINAL_SAFE_STOP
+    command_profile: home
+    max_duration: 86400.0
+    notes: Entered on missing evidence, unsafe attitude, collision, joint margin, timeout, or illegal traversal.

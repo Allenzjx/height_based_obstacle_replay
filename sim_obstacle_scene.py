@@ -68,6 +68,7 @@ class SimSceneConfig:
     save_scene: bool = True
     ground_z_m: float = 0.0
     telemetry_contact_sensors_enabled: bool = False
+    contact_sensor_factory: Any | None = None
     defer_first_visible_render: bool = True
     default_camera_eye: tuple[float, float, float] = (1.45, -1.25, 0.80)
     default_camera_target: tuple[float, float, float] = (0.45, 0.0, 0.12)
@@ -209,7 +210,8 @@ def create_scene(
     )
     if bool(config.telemetry_contact_sensors_enabled):
         _emit_phase(phase_callback, "creating_contact_sensor")
-        contact_sensor, contact_error = create_robot_contact_sensor()
+        contact_sensor_factory = config.contact_sensor_factory or create_robot_contact_sensor
+        contact_sensor, contact_error = contact_sensor_factory()
         handle.contact_sensor = contact_sensor
         handle.contact_sensor_error = contact_error
         if contact_error:
