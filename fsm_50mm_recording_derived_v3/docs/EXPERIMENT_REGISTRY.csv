@@ -1,0 +1,26 @@
+experiment_id,kind,subject,status,started_at,completed_at,command,artifact_path,result_summary,source_commit,notes
+PYTEST_BASELINE_20260808,pure_python_tests,fsm_50mm_recording_derived_v3,COMPLETED,2026-08-08,2026-08-08,"python -m unittest discover -s fsm_50mm_recording_derived_v3\\tests -t . -v",,44/44 passed,92abb432a10d15e82bd9490495b348b5cf9e8953,Base Conda Python 3.13.11; no environment changes
+REPLAY_BATCH_20260808T005031,recording_replay_batch,all_versions,FAILED,2026-08-07T20:50:31-04:00,2026-08-07T20:57:10-04:00,,runs/recording_replays/20260808T005031_049278Z_recording_replays_bab6fb2016,Failed closed during initial grounded settle before recording commands,92abb432a10d15e82bd9490495b348b5cf9e8953,results_so_far empty; batch remains .partial; not a version replay result
+ENV_AA_BASELINE_1,environment_equivalence,baseline_A_repeat_1,PENDING,,,,reports/environment_equivalence,,92abb432a10d15e82bd9490495b348b5cf9e8953,Must run before A/B acceptance
+ENV_AA_BASELINE_2,environment_equivalence,baseline_A_repeat_2,PENDING,,,,reports/environment_equivalence,,92abb432a10d15e82bd9490495b348b5cf9e8953,Must estimate native repeatability
+ENV_AB_INSTRUMENTED,environment_equivalence,instrumented_B,PENDING,,,,reports/ENVIRONMENT_EQUIVALENCE_REPORT.json,,92abb432a10d15e82bd9490495b348b5cf9e8953,No physics parameter compensation permitted
+REPLAY_v003,recording_replay,v003_20260805_224517_157723_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v005,recording_replay,v005_20260805_225441_439112_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v006,recording_replay,v006_20260805_233948_654778_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v007,recording_replay,v007_20260806_190636_100857_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v008,recording_replay,v008_20260806_211408_578700_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v009,recording_replay,v009_20260806_215232_433234_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v010,recording_replay,v010_20260806_220745_363972_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v011,recording_replay,v011_20260806_223621_672618_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+REPLAY_v012,recording_replay,v012_20260806_231025_027004_manual,PENDING,,,,,,92abb432a10d15e82bd9490495b348b5cf9e8953,Offline audit/Fast plan exists; no reliable live replay result
+STATE_FR,state_level,FR_transfer_lift_place,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_FL,state_level,FL_transfer_lift_place,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_FRONT_ADVANCE,state_level,front_pair_advance,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_COM_FL,state_level,COM_to_FL,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_RR,state_level,RR_transfer_lift_place,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_DIAGONAL,state_level,FL_RR_diagonal_setup,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_RL_TRANSFER,state_level,RL_reaction_transfer,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_RL,state_level,RL_lift_place,PENDING,,,,,,,Requires verified restore or prefix provenance
+STATE_FINAL,state_level,final_recovery,PENDING,,,,,,,Requires verified restore or prefix provenance
+FSM_VALIDATE_5,full_fsm,clean_reset_runs_1_to_5,PENDING,,,,reports/validate_5,, ,Must report actual pass count; no PPO before 5/5
+
