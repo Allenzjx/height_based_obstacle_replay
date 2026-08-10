@@ -113,6 +113,10 @@ command_profiles:
     atomic_concurrent: false
   s02_approach:
     source_steps: [2]
+    deprecated: true
+    deprecation_reason: >-
+      Retained only for recording provenance. The event-gated graph must not
+      perform this pre-unload wheel approach as an implicit timed transition.
     servos: *s01_servos
     wheels: &all_forward
       {front_left_ankle: 0.3, front_right_ankle: 0.3, rear_left_ankle: 0.3, rear_right_ankle: 0.3}
@@ -216,6 +220,10 @@ command_profiles:
     atomic_concurrent: false
   s17_all_top_advance:
     source_steps: [17]
+    deprecated: true
+    deprecation_reason: >-
+      Superseded by s18_workspace_advance, which is the selected final
+      workspace command candidate. Physical selection remains pending replay.
     servos: *s16_servos
     wheels: *all_forward
     atomic_concurrent: false
@@ -251,6 +259,7 @@ state_defaults: &state_defaults
   primary_diagonal: NONE
   secondary_support: []
   target_com_direction: null
+  target_com_leg: NONE
   com_transfer_method: NONE
   servo_start_target: {}
   servo_end_target: {}
@@ -306,6 +315,7 @@ states:
     primary_diagonal: BALANCED
     secondary_support: [FL, FR, RR]
     target_com_direction: [-1.0, 1.0]
+    target_com_leg: RL
     com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
     expected_com_displacement: [-0.004, 0.004]
     max_duration: 6.0
@@ -322,6 +332,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [RL]
     target_com_direction: [-1.0, 1.0]
+    target_com_leg: RL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
     max_duration: 3.0
   - <<: *state_defaults
@@ -337,6 +348,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [RL]
     target_com_direction: [-1.0, 1.0]
+    target_com_leg: RL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
     atomic_concurrent: false
     max_duration: 2.0
@@ -352,6 +364,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [RL]
     target_com_direction: [-1.0, 1.0]
+    target_com_leg: RL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
     settle_duration: 0.12
     max_duration: 5.0
@@ -368,6 +381,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [RL]
     target_com_direction: [-1.0, 1.0]
+    target_com_leg: RL
     com_transfer_method: HYBRID
   - <<: *state_defaults
     state_id: A6_UNLOAD_FR
@@ -464,6 +478,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [RR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
   - <<: *state_defaults
     state_id: B2_SHIFT_COM_FOR_FL
@@ -478,6 +493,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [RR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
     expected_com_displacement: [0.004, -0.004]
   - <<: *state_defaults
@@ -493,6 +509,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [RR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: HYBRID
   - <<: *state_defaults
     state_id: B4_UNLOAD_FL
@@ -506,6 +523,7 @@ states:
     support_legs: [FR, RL, RR]
     primary_diagonal: FR_RL
     secondary_support: [RR]
+    target_com_leg: FR
     expected_contact_change: {FL: LOADED_TO_UNLOADED}
   - <<: *state_defaults
     state_id: B5_LIFT_FL
@@ -625,6 +643,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [FL]
     target_com_direction: [1.0, 1.0]
+    target_com_leg: FL
     com_transfer_method: HYBRID
   - <<: *state_defaults
     state_id: D3_COM_TO_FL_PRELOAD
@@ -640,6 +659,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [FL]
     target_com_direction: [1.0, 1.0]
+    target_com_leg: FL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: D4_COM_TO_FL_TRANSFER
@@ -655,6 +675,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [FL]
     target_com_direction: [1.0, 1.0]
+    target_com_leg: FL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: D5_COM_TO_FL_COAST_OR_HOLD
@@ -669,6 +690,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [FL]
     target_com_direction: [1.0, 1.0]
+    target_com_leg: FL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: D6_COM_TO_FL_SETTLE
@@ -683,6 +705,7 @@ states:
     primary_diagonal: FR_RL
     secondary_support: [FL]
     target_com_direction: [1.0, 1.0]
+    target_com_leg: FL
     com_transfer_method: IMPULSE_REACTION_TRANSFER
     settle_duration: 0.12
   - <<: *state_defaults
@@ -784,6 +807,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
   - <<: *state_defaults
     state_id: E3_SHIFT_COM_TO_FR_BY_SUPPORT_GEOMETRY
@@ -798,6 +822,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: ANCHORED_SUPPORT_ANGLE_TRANSFER
     expected_com_displacement: [0.004, -0.004]
   - <<: *state_defaults
@@ -814,6 +839,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: E5_RL_DOWNWARD_REACTION_PULSE
@@ -829,6 +855,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: HYBRID
     atomic_concurrent: true
     max_duration: 2.0
@@ -846,6 +873,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: E7_COAST_COM_TO_FR
@@ -860,6 +888,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: IMPULSE_REACTION_TRANSFER
   - <<: *state_defaults
     state_id: E8_SETTLE_COM_FR
@@ -874,6 +903,7 @@ states:
     primary_diagonal: FL_RR
     secondary_support: [FR]
     target_com_direction: [1.0, -1.0]
+    target_com_leg: FR
     com_transfer_method: IMPULSE_REACTION_TRANSFER
     settle_duration: 0.15
     max_duration: 6.0
@@ -889,6 +919,7 @@ states:
     support_legs: [FL, FR, RR]
     primary_diagonal: FL_RR
     secondary_support: [FR]
+    target_com_leg: FR
   - <<: *state_defaults
     state_id: E10_UNLOAD_RL
     state_name: UNLOAD_RL

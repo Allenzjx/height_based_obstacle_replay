@@ -20,6 +20,7 @@ from fsm_50mm_recording_derived_v3.filtered_wheel_contact import (
     wheel_contact_sensor_specs,
 )
 from fsm_50mm_recording_derived_v3.fsm50_telemetry import (
+    COMMON_WHEEL_FORCE_SOURCE,
     FILTERED_FORCE_SOURCE,
     FSM50TelemetryCollector,
     canonical_wheel_values,
@@ -258,6 +259,138 @@ assert not blocked, blocked
         self.assertEqual(force["upward_force_n"], 0.0)
         self.assertEqual(force["total_force_n"], 25.0)
         self.assertEqual(force["source"], FILTERED_FORCE_SOURCE)
+
+    def test_filtered_force_aggregation_preserves_inactive_finite_zero_rows(self):
+        rows = [
+            {
+                "leg": leg,
+                "surface": surface,
+                "active": False,
+                "force_valid": True,
+                "upward_force_n": 0.0,
+                "total_force_n": 0.0,
+                "source": FILTERED_FORCE_SOURCE,
+            }
+            for leg in ("FL", "FR", "RL", "RR")
+            for surface in ("ground", "obstacle")
+        ]
+        forces = FSM50TelemetryCollector._filtered_force_by_leg(rows)
+        for leg in ("FL", "FR", "RL", "RR"):
+            self.assertEqual(forces[leg]["upward_force_n"], 0.0)
+            self.assertEqual(forces[leg]["total_force_n"], 0.0)
+
+    @staticmethod
+    def _aggregate_sensor(body_names, net_forces):
+        return SimpleNamespace(
+            body_names=list(body_names),
+            data=SimpleNamespace(net_forces_w=np.asarray(net_forces, dtype=float)),
+        )
+
+    def test_common_net_force_readback_supports_formal_multi_body_sensor(self):
+        sensor = self._aggregate_sensor(
+            [
+                "base_link",
+                "front_right_wheel",
+                "rear_left_wheel",
+                "front_left_wheel",
+                "rear_right_wheel",
+                "camera_link",
+            ],
+            [[
+                [100.0, 0.0, 0.0],
+                [3.0, 4.0, 5.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 7.0],
+                [0.0, 0.0, -2.0],
+                [0.0, 0.0, 0.0],
+            ]],
+        )
+        forces, evidence = FSM50TelemetryCollector._common_wheel_net_force_by_leg(sensor)
+        self.assertTrue(evidence["wheel_net_force_layout_valid"])
+        self.assertTrue(evidence["wheel_net_force_valid"])
+        self.assertEqual(evidence["wheel_net_force_error"], "")
+        self.assertEqual(
+            evidence["wheel_contact_force_common_source"],
+            COMMON_WHEEL_FORCE_SOURCE,
+        )
+        self.assertEqual(forces["FL"]["upward_force_n"], 7.0)
+        self.assertEqual(forces["FL"]["total_force_n"], 7.0)
+        self.assertEqual(forces["FR"]["upward_force_n"], 5.0)
+        self.assertEqual(forces["FR"]["total_force_n"], np.sqrt(50.0))
+        self.assertEqual(forces["RL"]["upward_force_n"], 0.0)
+        self.assertEqual(forces["RL"]["total_force_n"], 0.0)
+        self.assertEqual(forces["RR"]["upward_force_n"], 0.0)
+        self.assertEqual(forces["RR"]["total_force_n"], 2.0)
+
+    def test_common_net_force_readback_supports_filtered_four_wheel_bank(self):
+        bank = create_filtered_wheel_contact_sensor_bank(
+            sensor_cls=_FakeSensor,
+            sensor_cfg_cls=_FakeCfg,
+            force_threshold_n=2.0,
+        )
+        forces, evidence = FSM50TelemetryCollector._common_wheel_net_force_by_leg(bank)
+        self.assertTrue(evidence["wheel_net_force_layout_valid"])
+        self.assertTrue(evidence["wheel_net_force_valid"])
+        self.assertEqual(forces["FL"]["upward_force_n"], 10.0)
+        self.assertEqual(forces["FL"]["total_force_n"], 10.0)
+        self.assertEqual(forces["FR"]["upward_force_n"], 1.0)
+        self.assertEqual(forces["FR"]["total_force_n"], np.sqrt(26.0))
+        self.assertEqual(forces["RL"]["upward_force_n"], 0.0)
+        self.assertEqual(forces["RL"]["total_force_n"], 0.0)
+
+    def test_common_net_force_airborne_zero_is_finite_sensor_evidence(self):
+        names = [
+            "front_left_wheel",
+            "front_right_wheel",
+            "rear_left_wheel",
+            "rear_right_wheel",
+        ]
+        sensor = self._aggregate_sensor(names, [np.zeros((4, 3), dtype=float)])
+        forces, evidence = FSM50TelemetryCollector._common_wheel_net_force_by_leg(sensor)
+        self.assertTrue(evidence["wheel_net_force_valid"])
+        for leg in ("FL", "FR", "RL", "RR"):
+            self.assertTrue(np.isfinite(forces[leg]["upward_force_n"]))
+            self.assertTrue(np.isfinite(forces[leg]["total_force_n"]))
+            self.assertEqual(forces[leg]["upward_force_n"], 0.0)
+            self.assertEqual(forces[leg]["total_force_n"], 0.0)
+
+    def test_common_net_force_readback_fails_closed_on_invalid_evidence(self):
+        names = [
+            "front_left_wheel",
+            "front_right_wheel",
+            "rear_left_wheel",
+            "rear_right_wheel",
+        ]
+        valid = np.zeros((1, 4, 3), dtype=float)
+        cases = {
+            "missing": self._aggregate_sensor(names[:-1], valid[:, :-1, :]),
+            "duplicate": self._aggregate_sensor(
+                [*names, "front_left_wheel"],
+                np.zeros((1, 5, 3), dtype=float),
+            ),
+            "nonfinite": self._aggregate_sensor(
+                names,
+                np.where(
+                    np.arange(valid.size).reshape(valid.shape) == 0,
+                    np.nan,
+                    valid,
+                ),
+            ),
+            "wrong_rank": self._aggregate_sensor(names, np.zeros((4, 3), dtype=float)),
+            "body_shape": self._aggregate_sensor(names, np.zeros((1, 3, 3), dtype=float)),
+            "vector_shape": self._aggregate_sensor(names, np.zeros((1, 4, 4), dtype=float)),
+            "empty_env": self._aggregate_sensor(names, np.zeros((0, 4, 3), dtype=float)),
+        }
+        for label, sensor in cases.items():
+            with self.subTest(label=label):
+                forces, evidence = (
+                    FSM50TelemetryCollector._common_wheel_net_force_by_leg(sensor)
+                )
+                self.assertFalse(evidence["wheel_net_force_valid"])
+                self.assertTrue(evidence["wheel_net_force_error"])
+                for leg in ("FL", "FR", "RL", "RR"):
+                    self.assertTrue(np.isnan(forces[leg]["upward_force_n"]))
+                    self.assertTrue(np.isnan(forces[leg]["total_force_n"]))
 
     def test_physical_filtered_validity_requires_every_layout_and_force_sample(self):
         valid = {

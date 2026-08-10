@@ -23,4 +23,4 @@ STATE_RL_TRANSFER,state_level,RL_reaction_transfer,PENDING,,,,,,,Requires verifi
 STATE_RL,state_level,RL_lift_place,PENDING,,,,,,,Requires verified restore or prefix provenance
 STATE_FINAL,state_level,final_recovery,PENDING,,,,,,,Requires verified restore or prefix provenance
 FSM_VALIDATE_5,full_fsm,clean_reset_runs_1_to_5,PENDING,,,,reports/validate_5,, ,Must report actual pass count; no PPO before 5/5
-
+CODE_MILESTONE_PURE_TESTS_20260809,code_milestone,fsm50_runtime_architecture_and_contracts,COMPLETED,2026-08-09,2026-08-09,"env_isaaclab python -B -m pytest -q -p no:cacheprovider tests fsm_50mm_recording_derived_v3/tests",,"495 passed + 54 subtests; focused FSM/telemetry 197 passed + 44 subtests",UNCOMMITTED_WORKTREE,"Controller/observation/executor/guard/restore/runtime/CLI/resume/viewport-video/environment-converter code milestone; pure Python only; no Isaac experiment status upgraded"

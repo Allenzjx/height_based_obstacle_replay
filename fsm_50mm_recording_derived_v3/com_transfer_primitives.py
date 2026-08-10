@@ -50,6 +50,15 @@ class ImpulseStage(str, Enum):
     VERIFY = "VERIFY"
 
 
+class AnchoredStage(str, Enum):
+    SUPPORT_ANCHOR = "SUPPORT_ANCHOR"
+    GEOMETRY_PRELOAD = "GEOMETRY_PRELOAD"
+    SUPPORT_ANGLE_RAMP = "SUPPORT_ANGLE_RAMP"
+    SUPPORT_HOLD = "SUPPORT_HOLD"
+    SUPPORT_SETTLE = "SUPPORT_SETTLE"
+    SUPPORT_VERIFY = "SUPPORT_VERIFY"
+
+
 @dataclass(frozen=True)
 class GuardDecision:
     satisfied: bool
@@ -92,6 +101,362 @@ def _lateral(values: Sequence[float], direction: tuple[float, float]) -> float:
 
 def _leg(value: Leg | str) -> Leg:
     return value if isinstance(value, Leg) else Leg(str(value).upper())
+
+
+def _finite_mapping(values: Mapping[str, float], *, label: str) -> dict[str, float]:
+    result = {str(name): float(value) for name, value in values.items()}
+    if any(not _finite(value) for value in result.values()):
+        raise ValueError(f"{label} contains a non-finite value")
+    return result
+
+
+def _blend_mapping(
+    start: Mapping[str, float],
+    end: Mapping[str, float],
+    progress: float,
+) -> dict[str, float]:
+    amount = max(0.0, min(1.0, float(progress)))
+    names = set(start) | set(end)
+    return {
+        name: float(start.get(name, end.get(name, 0.0)))
+        + (
+            float(end.get(name, start.get(name, 0.0)))
+            - float(start.get(name, end.get(name, 0.0)))
+        )
+        * amount
+        for name in names
+    }
+
+
+# ---------------------------------------------------------------------------
+# Command-side COM-transfer primitives
+
+
+@dataclass(frozen=True)
+class PrimitiveCommand:
+    stage: str
+    servo_targets_deg: Mapping[str, float]
+    wheel_targets_rad_s: Mapping[str, float]
+    atomic_concurrent: bool
+    support_legs: tuple[Leg, ...]
+    active_leg: Leg | None
+    correction_excluded_legs: tuple[Leg, ...]
+    hold: bool
+    retry_index: int
+    source_provenance: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
+class ImpulseCommandConfig:
+    impulse_leg: Leg
+    support_legs: tuple[Leg, ...]
+    preload_servo_targets_deg: Mapping[str, float]
+    push_servo_targets_deg: Mapping[str, float]
+    release_servo_targets_deg: Mapping[str, float]
+    preload_wheel_targets_rad_s: Mapping[str, float] = field(default_factory=dict)
+    push_wheel_targets_rad_s: Mapping[str, float] = field(default_factory=dict)
+    release_wheel_targets_rad_s: Mapping[str, float] = field(default_factory=dict)
+    optional_wheel_assist: bool = False
+    retry_pulse_scale: float = 1.0
+    maximum_retries: int = 0
+    source_provenance: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        impulse = _leg(self.impulse_leg)
+        support = tuple(_leg(leg) for leg in self.support_legs)
+        if impulse in support:
+            raise ValueError("impulse_leg cannot also be a support leg")
+        if not support:
+            raise ValueError("impulse primitive requires support legs")
+        if self.maximum_retries < 0:
+            raise ValueError("maximum_retries must be non-negative")
+        if not _finite(self.retry_pulse_scale) or self.retry_pulse_scale <= 0.0:
+            raise ValueError("retry_pulse_scale must be finite and positive")
+        for label, values in (
+            ("preload_servo_targets_deg", self.preload_servo_targets_deg),
+            ("push_servo_targets_deg", self.push_servo_targets_deg),
+            ("release_servo_targets_deg", self.release_servo_targets_deg),
+            ("preload_wheel_targets_rad_s", self.preload_wheel_targets_rad_s),
+            ("push_wheel_targets_rad_s", self.push_wheel_targets_rad_s),
+            ("release_wheel_targets_rad_s", self.release_wheel_targets_rad_s),
+        ):
+            _finite_mapping(values, label=label)
+        if not self.source_provenance:
+            raise ValueError("impulse command parameters require recording provenance")
+        if not self.optional_wheel_assist and any(
+            abs(float(value)) > 1.0e-12
+            for values in (
+                self.preload_wheel_targets_rad_s,
+                self.push_wheel_targets_rad_s,
+                self.release_wheel_targets_rad_s,
+            )
+            for value in values.values()
+        ):
+            raise ValueError("non-zero wheel assist requires optional_wheel_assist=true")
+
+
+@dataclass
+class ImpulseReactionCommandGenerator:
+    config: ImpulseCommandConfig
+    stage: ImpulseStage = ImpulseStage.PRELOAD
+    retry_index: int = 0
+    entry_servo_targets_deg: dict[str, float] = field(default_factory=dict)
+    entry_wheel_targets_rad_s: dict[str, float] = field(default_factory=dict)
+
+    _ORDER: tuple[ImpulseStage, ...] = (
+        ImpulseStage.PRELOAD,
+        ImpulseStage.PUSH,
+        ImpulseStage.RELEASE,
+        ImpulseStage.COAST,
+        ImpulseStage.SETTLE,
+        ImpulseStage.VERIFY,
+    )
+
+    def reset(
+        self,
+        *,
+        servo_targets_deg: Mapping[str, float],
+        wheel_targets_rad_s: Mapping[str, float],
+    ) -> None:
+        self.stage = ImpulseStage.PRELOAD
+        self.retry_index = 0
+        self.entry_servo_targets_deg = _finite_mapping(
+            servo_targets_deg, label="entry_servo_targets_deg"
+        )
+        self.entry_wheel_targets_rad_s = _finite_mapping(
+            wheel_targets_rad_s, label="entry_wheel_targets_rad_s"
+        )
+
+    def _endpoints(self, stage: ImpulseStage) -> tuple[Mapping[str, float], Mapping[str, float]]:
+        if stage == ImpulseStage.PRELOAD:
+            return (
+                self.config.preload_servo_targets_deg,
+                self.config.preload_wheel_targets_rad_s,
+            )
+        if stage == ImpulseStage.PUSH:
+            servo = dict(self.config.push_servo_targets_deg)
+            if self.retry_index:
+                preload = self.config.preload_servo_targets_deg
+                scale = float(self.config.retry_pulse_scale) ** self.retry_index
+                servo = {
+                    name: float(preload.get(name, value))
+                    + (float(value) - float(preload.get(name, value))) * scale
+                    for name, value in servo.items()
+                }
+            return servo, self.config.push_wheel_targets_rad_s
+        return (
+            self.config.release_servo_targets_deg,
+            self.config.release_wheel_targets_rad_s,
+        )
+
+    def _starts(self, stage: ImpulseStage) -> tuple[Mapping[str, float], Mapping[str, float]]:
+        index = self._ORDER.index(stage)
+        if index == 0:
+            return self.entry_servo_targets_deg, self.entry_wheel_targets_rad_s
+        return self._endpoints(self._ORDER[index - 1])
+
+    def command(self, *, progress: float) -> PrimitiveCommand:
+        start_servo, start_wheel = self._starts(self.stage)
+        end_servo, end_wheel = self._endpoints(self.stage)
+        ramped = self.stage in {
+            ImpulseStage.PRELOAD,
+            ImpulseStage.PUSH,
+            ImpulseStage.RELEASE,
+        }
+        amount = progress if ramped else 1.0
+        servo = _blend_mapping(start_servo, end_servo, amount)
+        wheel = _blend_mapping(start_wheel, end_wheel, amount)
+        atomic = bool(
+            self.config.optional_wheel_assist
+            and any(abs(value) > 1.0e-12 for value in wheel.values())
+            and servo
+        )
+        return PrimitiveCommand(
+            stage=self.stage.value,
+            servo_targets_deg=servo,
+            wheel_targets_rad_s=wheel,
+            atomic_concurrent=atomic,
+            support_legs=tuple(_leg(leg) for leg in self.config.support_legs),
+            active_leg=_leg(self.config.impulse_leg),
+            correction_excluded_legs=(_leg(self.config.impulse_leg),),
+            hold=not ramped,
+            retry_index=self.retry_index,
+            source_provenance=dict(self.config.source_provenance),
+        )
+
+    def advance(self, decision: GuardDecision) -> bool:
+        """Advance exactly one physical stage after a satisfied live guard."""
+
+        if decision.abort or not decision.satisfied:
+            return False
+        index = self._ORDER.index(self.stage)
+        if index + 1 >= len(self._ORDER):
+            return False
+        self.stage = self._ORDER[index + 1]
+        return True
+
+    def request_retry(self, decision: GuardDecision) -> bool:
+        """Restart at PRELOAD only when VERIFY failed without a safety abort."""
+
+        if (
+            self.stage != ImpulseStage.VERIFY
+            or decision.abort
+            or decision.satisfied
+            or self.retry_index >= self.config.maximum_retries
+        ):
+            return False
+        self.retry_index += 1
+        self.stage = ImpulseStage.PRELOAD
+        return True
+
+
+@dataclass(frozen=True)
+class AnchoredCommandConfig:
+    support_legs: tuple[Leg, ...]
+    active_leg: Leg | None
+    support_servo_start_deg: Mapping[str, float]
+    geometry_preload_servo_deg: Mapping[str, float]
+    support_angle_end_deg: Mapping[str, float]
+    wheel_targets_rad_s: Mapping[str, float] = field(default_factory=dict)
+    anti_drift_gain_rad_s_per_m: float = 0.0
+    maximum_anti_drift_wheel_rad_s: float = 0.0
+    source_provenance: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        support = tuple(_leg(leg) for leg in self.support_legs)
+        if not support:
+            raise ValueError("anchored transfer requires support legs")
+        active = None if self.active_leg is None else _leg(self.active_leg)
+        if active is not None and active in support:
+            raise ValueError("active_leg cannot also be an anchored support leg")
+        for label, values in (
+            ("support_servo_start_deg", self.support_servo_start_deg),
+            ("geometry_preload_servo_deg", self.geometry_preload_servo_deg),
+            ("support_angle_end_deg", self.support_angle_end_deg),
+            ("wheel_targets_rad_s", self.wheel_targets_rad_s),
+        ):
+            _finite_mapping(values, label=label)
+        for label, value in (
+            ("anti_drift_gain_rad_s_per_m", self.anti_drift_gain_rad_s_per_m),
+            ("maximum_anti_drift_wheel_rad_s", self.maximum_anti_drift_wheel_rad_s),
+        ):
+            if not _finite(value) or value < 0.0:
+                raise ValueError(f"{label} must be finite and non-negative")
+        if not self.source_provenance:
+            raise ValueError("anchored command parameters require recording provenance")
+
+
+@dataclass
+class AnchoredSupportAngleCommandGenerator:
+    config: AnchoredCommandConfig
+    stage: AnchoredStage = AnchoredStage.SUPPORT_ANCHOR
+    anchor_points_xy: dict[Leg, tuple[float, float]] = field(default_factory=dict)
+
+    _ORDER: tuple[AnchoredStage, ...] = (
+        AnchoredStage.SUPPORT_ANCHOR,
+        AnchoredStage.GEOMETRY_PRELOAD,
+        AnchoredStage.SUPPORT_ANGLE_RAMP,
+        AnchoredStage.SUPPORT_HOLD,
+        AnchoredStage.SUPPORT_SETTLE,
+        AnchoredStage.SUPPORT_VERIFY,
+    )
+
+    def reset(self) -> None:
+        self.stage = AnchoredStage.SUPPORT_ANCHOR
+        self.anchor_points_xy = {}
+
+    def capture_anchors(
+        self, contact_points_xy: Mapping[Leg | str, Sequence[float]]
+    ) -> None:
+        normalized = {_leg(leg): point for leg, point in contact_points_xy.items()}
+        missing = [leg for leg in self.config.support_legs if _leg(leg) not in normalized]
+        if missing:
+            raise ValueError(
+                "cannot anchor missing support contacts: "
+                + ", ".join(_leg(leg).value for leg in missing)
+            )
+        self.anchor_points_xy = {
+            _leg(leg): _vec2(normalized[_leg(leg)], label=f"{_leg(leg).value} anchor")
+            for leg in self.config.support_legs
+        }
+
+    def _servo_targets(self, progress: float) -> dict[str, float]:
+        if self.stage == AnchoredStage.SUPPORT_ANCHOR:
+            return dict(self.config.support_servo_start_deg)
+        if self.stage == AnchoredStage.GEOMETRY_PRELOAD:
+            return _blend_mapping(
+                self.config.support_servo_start_deg,
+                self.config.geometry_preload_servo_deg,
+                progress,
+            )
+        if self.stage == AnchoredStage.SUPPORT_ANGLE_RAMP:
+            return _blend_mapping(
+                self.config.geometry_preload_servo_deg,
+                self.config.support_angle_end_deg,
+                progress,
+            )
+        return dict(self.config.support_angle_end_deg)
+
+    def command(
+        self,
+        *,
+        progress: float,
+        signed_contact_drift_m: Mapping[Leg | str, float] | None = None,
+    ) -> PrimitiveCommand:
+        wheel = dict(self.config.wheel_targets_rad_s)
+        drift = {_leg(leg): float(value) for leg, value in dict(signed_contact_drift_m or {}).items()}
+        if self.config.anti_drift_gain_rad_s_per_m > 0.0:
+            limit = float(self.config.maximum_anti_drift_wheel_rad_s)
+            for leg in self.config.support_legs:
+                parsed = _leg(leg)
+                joint = next(
+                    (
+                        name
+                        for name in wheel
+                        if parsed.value.lower() in name.lower().replace("front_", "f").replace("rear_", "r")
+                    ),
+                    None,
+                )
+                # Normal runtime configs provide the explicit support-wheel
+                # joint names. Missing mappings remain fail-closed/no-feedback
+                # rather than guessing a joint name.
+                if joint is None or parsed not in drift or not _finite(drift[parsed]):
+                    continue
+                correction = -float(self.config.anti_drift_gain_rad_s_per_m) * drift[parsed]
+                wheel[joint] = float(wheel[joint]) + max(-limit, min(limit, correction))
+        servo = self._servo_targets(progress)
+        active = None if self.config.active_leg is None else _leg(self.config.active_leg)
+        return PrimitiveCommand(
+            stage=self.stage.value,
+            servo_targets_deg=servo,
+            wheel_targets_rad_s=wheel,
+            atomic_concurrent=bool(
+                servo and any(abs(value) > 1.0e-12 for value in wheel.values())
+            ),
+            support_legs=tuple(_leg(leg) for leg in self.config.support_legs),
+            active_leg=active,
+            correction_excluded_legs=() if active is None else (active,),
+            hold=self.stage
+            in {
+                AnchoredStage.SUPPORT_ANCHOR,
+                AnchoredStage.SUPPORT_HOLD,
+                AnchoredStage.SUPPORT_SETTLE,
+                AnchoredStage.SUPPORT_VERIFY,
+            },
+            retry_index=0,
+            source_provenance=dict(self.config.source_provenance),
+        )
+
+    def advance(self, decision: GuardDecision) -> bool:
+        if decision.abort or not decision.satisfied:
+            return False
+        if self.stage == AnchoredStage.SUPPORT_ANCHOR and not self.anchor_points_xy:
+            return False
+        index = self._ORDER.index(self.stage)
+        if index + 1 >= len(self._ORDER):
+            return False
+        self.stage = self._ORDER[index + 1]
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -1002,6 +1367,9 @@ def evaluate_final_success(
 
 __all__ = [
     "ActiveLegMode",
+    "AnchoredCommandConfig",
+    "AnchoredStage",
+    "AnchoredSupportAngleCommandGenerator",
     "AnchoredSupportAngleGuard",
     "AnchoredTransferConfig",
     "COMDirectionalConfig",
@@ -1016,6 +1384,8 @@ __all__ = [
     "FinalSuccessObservation",
     "GuardDecision",
     "ImpulseReactionGuard",
+    "ImpulseCommandConfig",
+    "ImpulseReactionCommandGenerator",
     "ImpulseStage",
     "ImpulseTransferConfig",
     "LEGS",
@@ -1026,6 +1396,7 @@ __all__ = [
     "PerLegIKBatchDecision",
     "PlaceLoadDwellGuard",
     "PlaceLoadDwellResult",
+    "PrimitiveCommand",
     "SingleRelatchTarget",
     "StateScopedWheelRamp",
     "TargetLatchResult",

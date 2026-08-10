@@ -156,6 +156,21 @@ REQUIRED_STATE_FIELDS: tuple[str, ...] = (
     "notes",
 )
 
+# These fields are required by the controller/provenance audit, but remain
+# optional when loading the older standalone CSV/JSON state-table fixtures.
+# The controller YAML compiler below always materializes them.
+EXTENDED_STATE_FIELDS: tuple[str, ...] = (
+    "phase",
+    "guard",
+    "command_profile",
+    "target_com_leg",
+    "source_fast_segment_indices",
+    "source_run_directory",
+    "source_sha256",
+    "selection_reason",
+    "compatibility_result",
+)
+
 
 def _as_bool(value: Any) -> bool:
     if isinstance(value, bool):
@@ -303,6 +318,15 @@ class FSM50State:
     notes: str
     provenance_status: ProvenanceStatus = ProvenanceStatus.PENDING_REPLAY
     provenance_note: str = "recording-derived candidate; physical replay pending"
+    phase: str = ""
+    guard: str = ""
+    command_profile: str = ""
+    target_com_leg: Leg | None = None
+    source_fast_segment_indices: tuple[int, ...] = ()
+    source_run_directory: str = ""
+    source_sha256: str = ""
+    selection_reason: str = ""
+    compatibility_result: str = "PENDING_REPLAY"
 
     def __post_init__(self) -> None:
         if not self.state_id.strip() or not self.state_name.strip():
@@ -363,8 +387,29 @@ class FSM50State:
         if any(float(value) < 0.0 for value in self.hysteresis.values()):
             raise ValueError("hysteresis values must be non-negative")
         if self.provenance_status == ProvenanceStatus.PHYSICALLY_VERIFIED:
-            if not self.source_event_indices or self.source_telemetry_time_range is None:
-                raise ValueError("PHYSICALLY_VERIFIED provenance requires event indices and telemetry time range")
+            missing = []
+            if not self.source_event_indices:
+                missing.append("source_event_indices")
+            if self.source_telemetry_time_range is None:
+                missing.append("source_telemetry_time_range")
+            if not self.source_fast_segment_indices:
+                missing.append("source_fast_segment_indices")
+            if not self.source_run_directory:
+                missing.append("source_run_directory")
+            if not self.source_sha256:
+                missing.append("source_sha256")
+            if not self.selection_reason:
+                missing.append("selection_reason")
+            if str(self.compatibility_result).upper() not in {
+                "COMPATIBLE",
+                "PHYSICALLY_VERIFIED",
+                "PASS",
+            }:
+                missing.append("compatibility_result")
+            if missing:
+                raise ValueError(
+                    "PHYSICALLY_VERIFIED provenance requires " + ", ".join(missing)
+                )
 
     @property
     def pending_physical_replay(self) -> bool:
@@ -377,6 +422,7 @@ class FSM50State:
         return {key: _plain(getattr(self, key)) for key in REQUIRED_STATE_FIELDS} | {
             "provenance_status": self.provenance_status.value,
             "provenance_note": self.provenance_note,
+            **{key: _plain(getattr(self, key)) for key in EXTENDED_STATE_FIELDS},
         }
 
     @classmethod
@@ -446,7 +492,108 @@ class FSM50State:
             notes=str(required("notes", "")),
             provenance_status=provenance_raw if isinstance(provenance_raw, ProvenanceStatus) else ProvenanceStatus(str(provenance_raw).upper()),
             provenance_note=str(required("provenance_note", "recording-derived candidate; physical replay pending")),
+            phase=str(required("phase", "")),
+            guard=str(required("guard", "")),
+            command_profile=str(required("command_profile", "")),
+            target_com_leg=_optional_leg(required("target_com_leg")),
+            source_fast_segment_indices=_indices(
+                required("source_fast_segment_indices", ())
+            ),
+            source_run_directory=str(required("source_run_directory", "")),
+            source_sha256=str(required("source_sha256", "")),
+            selection_reason=str(required("selection_reason", "")),
+            compatibility_result=str(
+                required("compatibility_result", "PENDING_REPLAY")
+            ),
         )
+
+
+def _expand_controller_rows(
+    document: Mapping[str, Any],
+    rows: Sequence[Any],
+    *,
+    strict: bool,
+) -> list[dict[str, Any]]:
+    """Compile controller YAML rows into executable state-table rows.
+
+    Older exported state tables already contain explicit start/end targets and
+    have no ``command_profiles`` section.  Controller YAML instead names one
+    endpoint profile per state.  Compilation is deliberately deterministic:
+    each state's start target is the preceding happy-path endpoint and its end
+    target is the named profile.  The runtime executor still re-latches the
+    actually applied command on entry, so a restore/retry never trusts this
+    static continuity hint over live state.
+    """
+
+    defaults_raw = document.get("state_defaults", {})
+    defaults = dict(defaults_raw or {}) if isinstance(defaults_raw, Mapping) else {}
+    profiles_raw = document.get("command_profiles", {})
+    if profiles_raw is None:
+        profiles_raw = {}
+    if not isinstance(profiles_raw, Mapping):
+        raise TypeError("command_profiles must be a mapping")
+    profiles = {str(name): value for name, value in profiles_raw.items()}
+    metadata = dict(document.get("metadata", {}) or {})
+    global_source_version = str(metadata.get("source_recording_version", ""))
+    global_source_sha256 = str(metadata.get("source_recording_sha256", ""))
+
+    previous_servos: dict[str, float] = {}
+    previous_wheels: dict[str, float] = {}
+    expanded: list[dict[str, Any]] = []
+    for index, raw in enumerate(rows):
+        if not isinstance(raw, Mapping):
+            raise TypeError(f"state row {index} must be a mapping")
+        row = {**defaults, **dict(raw)}
+        profile_name = str(row.get("command_profile", "") or "")
+        if profile_name:
+            if profile_name not in profiles:
+                raise ValueError(
+                    f"state {row.get('state_id', index)} references unknown "
+                    f"command profile {profile_name!r}"
+                )
+            profile_raw = profiles[profile_name]
+            if not isinstance(profile_raw, Mapping):
+                raise TypeError(f"command profile {profile_name!r} must be a mapping")
+            profile = dict(profile_raw)
+            servos = _float_mapping(profile.get("servos", {}), label=f"{profile_name}.servos")
+            wheels = _float_mapping(profile.get("wheels", {}), label=f"{profile_name}.wheels")
+            if not dict(row.get("servo_start_target", {}) or {}):
+                row["servo_start_target"] = dict(previous_servos or servos)
+            if not dict(row.get("servo_end_target", {}) or {}):
+                row["servo_end_target"] = dict(servos)
+            if not dict(row.get("wheel_start_target", {}) or {}):
+                row["wheel_start_target"] = dict(previous_wheels or wheels)
+            if not dict(row.get("wheel_end_target", {}) or {}):
+                row["wheel_end_target"] = dict(wheels)
+            if not tuple(row.get("source_step_indices", ()) or ()):
+                row["source_step_indices"] = list(profile.get("source_steps", ()) or ())
+            previous_servos = dict(row["servo_end_target"])
+            previous_wheels = dict(row["wheel_end_target"])
+        elif profiles and strict:
+            raise ValueError(
+                f"state {row.get('state_id', index)} has no command_profile"
+            )
+
+        source_version = str(row.get("source_recording_version", "") or "")
+        row.setdefault("phase", "")
+        row.setdefault("guard", "")
+        row.setdefault("command_profile", profile_name)
+        row.setdefault("target_com_leg", "NONE")
+        row.setdefault("source_fast_segment_indices", [])
+        row.setdefault("source_run_directory", "")
+        row.setdefault(
+            "source_sha256",
+            global_source_sha256
+            if source_version and source_version == global_source_version
+            else "",
+        )
+        row.setdefault(
+            "selection_reason",
+            str(row.get("provenance_note", "") or "selection pending live replay"),
+        )
+        row.setdefault("compatibility_result", "PENDING_REPLAY")
+        expanded.append(row)
+    return expanded
 
 
 @dataclass(frozen=True)
@@ -478,10 +625,20 @@ class FSM50StateTable:
         rows = values.get("states")
         if not isinstance(rows, Sequence) or isinstance(rows, (str, bytes)):
             raise ValueError("state table must contain a states sequence")
+        expanded_rows = _expand_controller_rows(values, rows, strict=strict)
         return cls(
-            states=tuple(FSM50State.from_mapping(row, strict=strict) for row in rows),
+            states=tuple(
+                FSM50State.from_mapping(row, strict=strict) for row in expanded_rows
+            ),
             schema_version=str(values.get("schema_version", "fsm50-state-table.v1")),
-            metadata=dict(values.get("metadata", {}) or {}),
+            metadata={
+                **dict(values.get("metadata", {}) or {}),
+                "actuators": _plain(dict(values.get("actuators", {}) or {})),
+                "thresholds": _plain(dict(values.get("thresholds", {}) or {})),
+                "command_profiles": _plain(
+                    dict(values.get("command_profiles", {}) or {})
+                ),
+            },
         )
 
     @classmethod
@@ -511,7 +668,10 @@ class FSM50StateTable:
         destination.parent.mkdir(parents=True, exist_ok=True)
         suffix = destination.suffix.lower()
         if suffix == ".csv":
-            columns = REQUIRED_STATE_FIELDS + ("provenance_status", "provenance_note")
+            columns = REQUIRED_STATE_FIELDS + (
+                "provenance_status",
+                "provenance_note",
+            ) + EXTENDED_STATE_FIELDS
             with destination.open("w", encoding="utf-8", newline="") as stream:
                 writer = csv.DictWriter(stream, fieldnames=columns)
                 writer.writeheader()

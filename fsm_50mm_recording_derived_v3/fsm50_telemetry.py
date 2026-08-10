@@ -50,6 +50,7 @@ LEG_TO_WHEEL_BODY = {
 FILTERED_FORCE_SOURCE = "isaaclab.ContactSensor.force_matrix_w"
 FILTERED_GEOMETRY_SOURCE = "isaaclab.ContactSensor.contact_pos_w"
 FILTERED_FRICTION_SOURCE = "isaaclab.ContactSensor.friction_forces_w"
+COMMON_WHEEL_FORCE_SOURCE = "isaaclab.ContactSensor.net_forces_w"
 
 
 def _wheel_sign(value: Any, *, label: str) -> float:
@@ -397,7 +398,11 @@ class FSM50TelemetryCollector(TelemetryCollector):
             for leg in LEGS
         }
         for row in filtered_contacts:
-            if row.get("active") is False:
+            # All eight filtered rows carry a real force vector, including an
+            # inactive pair whose finite vector is zero (or merely below the
+            # activity threshold).  Dropping those rows turns a sensor-proven
+            # zero into NaN and makes the common A/B force signal unusable.
+            if row.get("force_valid") is False:
                 continue
             leg = str(row.get("leg", "") or "").upper()
             if leg not in LEGS:
@@ -414,6 +419,124 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 source=str(row.get("source", FILTERED_FORCE_SOURCE) or FILTERED_FORCE_SOURCE),
             )
         return result
+
+    @staticmethod
+    def _common_wheel_net_force_by_leg(
+        contact_sensor: Any,
+        *,
+        env_id: int = 0,
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+        """Read the shared four-wheel force signal from ``net_forces_w``.
+
+        Formal aggregate sensors expose many robot bodies, while the filtered
+        sensor facade exposes exactly four.  Both nevertheless provide the
+        same full per-body ``net_forces_w`` tensor.  Reading that tensor is the
+        only sound way to distinguish a finite, sensor-observed zero force from
+        a missing active-contact row.  Any ambiguous layout, invalid tensor
+        shape, or non-finite wheel vector fails closed for all four legs.
+        """
+
+        def empty_forces() -> dict[str, dict[str, Any]]:
+            return {
+                leg: {
+                    "upward_force_n": float("nan"),
+                    "total_force_n": float("nan"),
+                    "source": COMMON_WHEEL_FORCE_SOURCE,
+                }
+                for leg in LEGS
+            }
+
+        def invalid(
+            error: str,
+            *,
+            layout_valid: bool = False,
+        ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+            return empty_forces(), {
+                "wheel_net_force_layout_valid": bool(layout_valid),
+                "wheel_net_force_valid": False,
+                "wheel_net_force_error": str(error),
+                "wheel_contact_force_common_source": COMMON_WHEEL_FORCE_SOURCE,
+            }
+
+        if contact_sensor is None:
+            return invalid("contact sensor is unavailable")
+
+        body_names = [str(name) for name in (getattr(contact_sensor, "body_names", []) or [])]
+        if not body_names:
+            return invalid("contact sensor body_names is empty")
+        normalized_names = [
+            name.replace("\\", "/").rstrip("/").rsplit("/", 1)[-1].lower()
+            for name in body_names
+        ]
+        body_index_by_leg: dict[str, int] = {}
+        layout_errors: list[str] = []
+        for leg, expected_body in LEG_TO_WHEEL_BODY.items():
+            matches = [
+                index
+                for index, normalized in enumerate(normalized_names)
+                if normalized == expected_body.lower()
+            ]
+            if len(matches) != 1:
+                layout_errors.append(
+                    f"{leg}/{expected_body} resolved {len(matches)} bodies; exactly one is required"
+                )
+            else:
+                body_index_by_leg[leg] = matches[0]
+        if layout_errors:
+            return invalid("; ".join(layout_errors))
+
+        try:
+            data = getattr(contact_sensor, "data", None)
+            net_forces = np.asarray(
+                to_numpy(getattr(data, "net_forces_w", None)),
+                dtype=float,
+            )
+        except Exception as exc:
+            return invalid(f"net_forces_w read failed: {type(exc).__name__}: {exc}")
+        if net_forces.ndim != 3:
+            return invalid(
+                f"net_forces_w expected [env, body, xyz], got shape={net_forces.shape}"
+            )
+        if net_forces.shape[1] != len(body_names) or net_forces.shape[2] != 3:
+            return invalid(
+                "net_forces_w/body_names layout mismatch: "
+                f"shape={net_forces.shape} body_names={len(body_names)}"
+            )
+        selected_env = int(env_id)
+        if selected_env < 0 or selected_env >= net_forces.shape[0]:
+            return invalid(
+                f"env_id={selected_env} outside [0, {net_forces.shape[0]})"
+            )
+
+        wheel_vectors = {
+            leg: np.asarray(net_forces[selected_env, body_index], dtype=float).reshape(-1)
+            for leg, body_index in body_index_by_leg.items()
+        }
+        nonfinite_legs = [
+            leg
+            for leg, vector in wheel_vectors.items()
+            if vector.size != 3 or not np.isfinite(vector).all()
+        ]
+        if nonfinite_legs:
+            return invalid(
+                "non-finite net_forces_w vector for " + ", ".join(sorted(nonfinite_legs)),
+                layout_valid=True,
+            )
+
+        forces = {
+            leg: {
+                "upward_force_n": max(0.0, float(vector[2])),
+                "total_force_n": float(np.linalg.norm(vector)),
+                "source": COMMON_WHEEL_FORCE_SOURCE,
+            }
+            for leg, vector in wheel_vectors.items()
+        }
+        return forces, {
+            "wheel_net_force_layout_valid": True,
+            "wheel_net_force_valid": True,
+            "wheel_net_force_error": "",
+            "wheel_contact_force_common_source": COMMON_WHEEL_FORCE_SOURCE,
+        }
 
     @staticmethod
     def _accumulate_force(
@@ -694,10 +817,8 @@ class FSM50TelemetryCollector(TelemetryCollector):
             dangerous_collision,
             collision_evidence_error,
         ) = self._nonwheel_collision_sample(time_s)
-        forces = (
-            self._filtered_force_by_leg(filtered_contacts)
-            if filtered_contacts
-            else self._force_by_leg(raw_contacts)
+        forces, common_force_evidence = self._common_wheel_net_force_by_leg(
+            getattr(self.scene_handle, "contact_sensor", None)
         )
         for contact in filtered_contacts:
             self.filtered_surface_rows.append(
@@ -871,6 +992,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "wheel_contact_force_total_n": {
                 leg: classified[leg].total_force_n for leg in LEGS
             },
+            **common_force_evidence,
             "wheel_contact_confidence": {
                 leg: classified[leg].confidence for leg in LEGS
             },

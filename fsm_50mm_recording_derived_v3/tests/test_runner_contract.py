@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import inspect
 import os
 import tempfile
 import unittest
@@ -16,15 +18,21 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _deserialize_replay_args,
     _existing_simulator_processes,
     _fail_closed_recording_audits,
+    _find_reliable_completed_replays,
     _first_failure,
     _generate_fsm50_visualization,
     _result_payload,
     _monitor_supervised_child,
+    _new_directory,
+    _preclose_evidence_manifest,
     _record_shutdown_outcome,
     _runtime_environment_equivalence,
+    _run_recording_replays_locked,
     _seed_adapter_from_locked_ground_pose,
     _serialize_replay_args,
     _select_versions,
+    _snapshot_preclose_files,
+    _write_checksums,
     build_parser,
 )
 from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
@@ -45,6 +53,308 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual("replay-recordings", args.command)
         self.assertEqual(["v012"], args.versions)
         self.assertTrue(args.headless)
+        self.assertFalse(args.resume)
+
+    def test_replay_resume_flag_and_version_directories_are_unique(self) -> None:
+        args = build_parser().parse_args(
+            ["replay-recordings", "--versions", "v012", "--resume"]
+        )
+        self.assertTrue(args.resume)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = _new_directory(root, "clean_fast_replay")
+            second = _new_directory(root, "clean_fast_replay")
+            self.assertNotEqual(first, second)
+            self.assertTrue(first.is_dir())
+            self.assertTrue(second.is_dir())
+
+    @staticmethod
+    def _write_resume_fixture(
+        output_root: Path,
+        item: VersionFiles,
+        accepted_steps_sha256: str,
+        *,
+        marker: str = ".finalized",
+        classification: str = "PHYSICAL_FAILURE",
+        complete_shutdown: bool = True,
+    ) -> tuple[Path, Path]:
+        artifact_root = (
+            output_root
+            / "batch"
+            / item.version_id
+            / "unique_clean_fast_replay"
+        )
+        run_dir = artifact_root / "telemetry_run"
+        run_dir.mkdir(parents=True)
+        video_path = (run_dir / "fsm50_viewport.mp4").resolve()
+        video_path.write_bytes(
+            b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
+        )
+        video_sha256 = hashlib.sha256(video_path.read_bytes()).hexdigest()
+        viewport_manifest_path = (run_dir / "viewport_video_manifest.json").resolve()
+        viewport_manifest = {
+            "schema_version": "fsm50.recording_viewport_video.v1",
+            "contact_mode": "instrumented",
+            "capture_requested": True,
+            "diagnostic_only": False,
+            "valid": True,
+            "artifact_valid": True,
+            "actual_viewport_video": True,
+            "not_camera_video": False,
+            "source": "actual_active_isaac_gui_viewport_render_product",
+            "render_product_path": "/Render/Product/ActiveViewport",
+            "frame_count": 2,
+            "video_path": str(video_path),
+            "video_sha256": video_sha256,
+            "error": "",
+        }
+        _atomic_write_json(viewport_manifest_path, viewport_manifest)
+        viewport_manifest_sha256 = hashlib.sha256(
+            viewport_manifest_path.read_bytes()
+        ).hexdigest()
+        video = {
+            **viewport_manifest,
+            "manifest_path": str(viewport_manifest_path),
+            "manifest_sha256": viewport_manifest_sha256,
+        }
+        result = {
+            "schema_version": "fsm50.recording_replay_result.v1",
+            "created_utc": "2026-08-08T00:00:00+00:00",
+            "source_version": item.version_id,
+            "accepted_steps_sha256": accepted_steps_sha256,
+            "classification": classification,
+            "strict_full_success": False,
+            "artifact_valid": True,
+            "artifact_root": str(artifact_root.resolve()),
+            "run_dir": str(run_dir.resolve()),
+            "contact_mode": "instrumented",
+            "actual_viewport_video": True,
+            "video_path": str(video_path),
+            "video_sha256": video_sha256,
+            "video": video,
+            "source_integrity": {"ok": True},
+            "visualization": {"ok": True},
+            "lifecycle": {
+                "finalized": True,
+                "failed": False,
+                "strict_success": False,
+            },
+        }
+        _atomic_write_json(run_dir / "result.json", result)
+        _atomic_write_json(
+            run_dir / "failure_diagnostics.json",
+            {
+                "classification": classification,
+                "artifact_valid": True,
+            },
+        )
+        _atomic_write_json(
+            run_dir / "runtime_environment.json",
+            {
+                "contact_mode": "instrumented",
+                "actual_viewport_video": True,
+                "video_path": str(video_path),
+                "video_sha256": video_sha256,
+                "video": video,
+            },
+        )
+        _atomic_write_json(
+            run_dir / "visual_recording_manifest.json",
+            {
+                "contact_mode": "instrumented",
+                "actual_viewport_video": True,
+                "not_camera_video": False,
+                "video_path": str(video_path),
+                "video_sha256": video_sha256,
+                "video": video,
+                "artifact_valid": True,
+            },
+        )
+        _atomic_write_json(
+            artifact_root / "artifact_pointer.json",
+            {"run_dir": str(run_dir.resolve())},
+        )
+        _write_checksums(run_dir)
+        (artifact_root / marker).write_text(marker.removeprefix(".") + "\n", encoding="utf-8")
+
+        # Mirror the producer's durable ordering: write the successful
+        # preclose documents and checksum, snapshot them immutably, create the
+        # batch marker/handshake evidence, then let the parent record that
+        # SimulationApp.close() returned normally and refresh live checksums.
+        batch_root = artifact_root.parent.parent.resolve()
+        batch_source_integrity = {"equal": True, "failures": []}
+        _atomic_write_json(
+            batch_root / "batch_request.json",
+            {
+                "schema_version": "fsm50.recording_replay_batch_request.v1",
+                "created_utc": "2026-08-08T00:00:00+00:00",
+                "versions": [item.version_id],
+            },
+        )
+        _atomic_write_json(
+            batch_root / "source_integrity.json", batch_source_integrity
+        )
+        _atomic_write_json(batch_root / "batch_results.json", [result])
+        preclose_finalization = {
+            "artifact_root": str(batch_root),
+            "finalized": True,
+            "failed": False,
+            "strict_success": False,
+            "batch_error": "",
+            "close_error": "PENDING_SIMULATION_CLOSE",
+            "phase": "PRECLOSE_FINALIZED",
+            "source_integrity": batch_source_integrity,
+            "finalization_errors": [],
+        }
+        _atomic_write_json(
+            batch_root / "batch_finalization.json", preclose_finalization
+        )
+        _write_checksums(batch_root)
+        snapshot_errors = _snapshot_preclose_files(batch_root)
+        if snapshot_errors:
+            raise AssertionError(f"resume fixture preclose snapshot failed: {snapshot_errors}")
+        preclose_evidence = _preclose_evidence_manifest(
+            batch_root,
+            results=[result],
+            batch_source_comparison=batch_source_integrity,
+            batch_finalization=preclose_finalization,
+        )
+        (batch_root / ".finalized").write_text("finalized\n", encoding="utf-8")
+        _atomic_write_json(
+            batch_root / "preclose_complete.json",
+            {
+                "schema_version": "fsm50.preclose_complete.v1",
+                "created_utc": "2026-08-08T00:00:01+00:00",
+                "token": "resume-fixture",
+                "parent_pid": 100,
+                "child_pid": 101,
+                "batch_root": str(batch_root),
+                "evidence": preclose_evidence,
+            },
+        )
+        if complete_shutdown:
+            _record_shutdown_outcome(
+                batch_root,
+                {
+                    "schema_version": "fsm50.shutdown_outcome.v1",
+                    "created_utc": "2026-08-08T00:00:02+00:00",
+                    "status": "NORMAL_EXIT",
+                    "parent_pid": 100,
+                    "child_pid": 101,
+                    "child_returncode": 0,
+                    "preclose_observed": True,
+                    "handshake_state": "CLOSE_RETURNED",
+                },
+            )
+        return artifact_root, run_dir
+
+    def test_resume_accepts_source_matched_finalized_physical_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_root = Path(directory) / "runs"
+            recording = Path(directory) / "recording"
+            recording.mkdir()
+            steps = recording / "accepted_steps.jsonl"
+            metadata = recording / "metadata.json"
+            steps.write_text("{}\n", encoding="utf-8")
+            metadata.write_text("{}\n", encoding="utf-8")
+            digest = hashlib.sha256(steps.read_bytes()).hexdigest()
+            item = VersionFiles("v_test", recording, steps, metadata)
+            _artifact_root, run_dir = self._write_resume_fixture(
+                output_root,
+                item,
+                digest,
+            )
+            completed = _find_reliable_completed_replays(
+                output_root,
+                [item],
+                {item.version_id: digest},
+            )
+            self.assertEqual([item.version_id], list(completed))
+            self.assertEqual(
+                (run_dir / "result.json").resolve(),
+                Path(completed[item.version_id]["result_path"]),
+            )
+
+    def test_resume_rejects_stale_partial_and_incomplete_evidence(self) -> None:
+        cases = ("partial", "missing_diagnostics", "wrong_source_hash")
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                output_root = Path(directory) / "runs"
+                recording = Path(directory) / "recording"
+                recording.mkdir()
+                steps = recording / "accepted_steps.jsonl"
+                metadata = recording / "metadata.json"
+                steps.write_text("{}\n", encoding="utf-8")
+                metadata.write_text("{}\n", encoding="utf-8")
+                digest = hashlib.sha256(steps.read_bytes()).hexdigest()
+                item = VersionFiles("v_test", recording, steps, metadata)
+                marker = ".partial" if case == "partial" else ".finalized"
+                _artifact_root, run_dir = self._write_resume_fixture(
+                    output_root,
+                    item,
+                    digest,
+                    marker=marker,
+                )
+                if case == "missing_diagnostics":
+                    (run_dir / "failure_diagnostics.json").unlink()
+                expected = "0" * 64 if case == "wrong_source_hash" else digest
+                self.assertEqual(
+                    {},
+                    _find_reliable_completed_replays(
+                        output_root,
+                        [item],
+                        {item.version_id: expected},
+                    ),
+                )
+
+    def test_resume_rejects_incomplete_or_tampered_batch_shutdown_closure(self) -> None:
+        cases = ("missing_shutdown", "shutdown_timeout", "tampered_preclose")
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
+                output_root = Path(directory) / "runs"
+                recording = Path(directory) / "recording"
+                recording.mkdir()
+                steps = recording / "accepted_steps.jsonl"
+                metadata = recording / "metadata.json"
+                steps.write_text("{}\n", encoding="utf-8")
+                metadata.write_text("{}\n", encoding="utf-8")
+                digest = hashlib.sha256(steps.read_bytes()).hexdigest()
+                item = VersionFiles("v_test", recording, steps, metadata)
+                artifact_root, _run_dir = self._write_resume_fixture(
+                    output_root,
+                    item,
+                    digest,
+                    complete_shutdown=case != "missing_shutdown",
+                )
+                batch_root = artifact_root.parent.parent
+                if case == "shutdown_timeout":
+                    _record_shutdown_outcome(
+                        batch_root,
+                        {
+                            "schema_version": "fsm50.shutdown_outcome.v1",
+                            "created_utc": "2026-08-08T00:00:03+00:00",
+                            "status": "SIMULATION_CLOSE_TIMEOUT",
+                            "parent_pid": 100,
+                            "child_pid": 101,
+                            "child_returncode": None,
+                            "preclose_observed": True,
+                            "handshake_state": "PRECLOSE_COMPLETE",
+                        },
+                    )
+                elif case == "tampered_preclose":
+                    with (batch_root / "batch_finalization.preclose.json").open(
+                        "a", encoding="utf-8"
+                    ) as stream:
+                        stream.write(" \n")
+
+                self.assertEqual(
+                    {},
+                    _find_reliable_completed_replays(
+                        output_root,
+                        [item],
+                        {item.version_id: digest},
+                    ),
+                )
 
     def test_first_failure_never_uses_final_top_as_lift_proof(self) -> None:
         evidence = {
@@ -251,8 +561,6 @@ class RunnerContractTests(unittest.TestCase):
             self.assertIn("FL_RR", html_text)
 
     def test_runtime_environment_equivalence_is_fail_closed(self) -> None:
-        import hashlib
-
         with tempfile.TemporaryDirectory() as directory:
             robot = Path(directory) / "robot.usd"
             robot.write_bytes(b"robot")
@@ -381,6 +689,15 @@ class RunnerContractTests(unittest.TestCase):
             adapter.restored["command_state"]["wheels"],
         )
 
+    def test_formal_replay_grounding_never_writes_historical_locked_pose(self) -> None:
+        source = inspect.getsource(_run_recording_replays_locked)
+        self.assertNotIn("_seed_adapter_from_locked_ground_pose(", source)
+        self.assertIn("formal_worker_unseeded_ground_reference", source)
+        self.assertLess(
+            source.index("adapter = SimRobotAdapter("),
+            source.index("ground = initialize_adapter_ground_reference(adapter)"),
+        )
+
     def test_replay_args_round_trip_for_supervised_child(self) -> None:
         original = build_parser().parse_args(
             [
@@ -392,6 +709,7 @@ class RunnerContractTests(unittest.TestCase):
                 "--output-root",
                 "C:/runs",
                 "--headless",
+                "--resume",
             ]
         )
         restored = _deserialize_replay_args(_serialize_replay_args(original))
@@ -400,6 +718,7 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual(original.recording_root, restored.recording_root)
         self.assertEqual(original.output_root, restored.output_root)
         self.assertTrue(restored.headless)
+        self.assertTrue(restored.resume)
 
     @staticmethod
     def _write_supervisor_files(
@@ -624,6 +943,39 @@ class RunnerContractTests(unittest.TestCase):
                     )
                 ),
             )
+
+    def test_batch_marker_is_created_only_after_immutable_preclose_snapshot(self) -> None:
+        source = inspect.getsource(_run_recording_replays_locked)
+        snapshot_index = source.index(
+            "immutable_preclose_errors = _snapshot_preclose_files(batch_root)"
+        )
+        failure_index = source.index(
+            "batch_valid = False",
+            snapshot_index,
+        )
+        marker_index = source.index(
+            "_mark_artifact_root(batch_root, valid=batch_valid)",
+            snapshot_index,
+        )
+        self.assertLess(snapshot_index, failure_index)
+        self.assertLess(failure_index, marker_index)
+
+    def test_preclose_snapshot_reports_each_copy_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            batch_root = Path(directory)
+            (batch_root / "batch_results.json").write_text("[]\n", encoding="utf-8")
+            (batch_root / "batch_finalization.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            (batch_root / "checksums.sha256").write_text("\n", encoding="utf-8")
+            # A directory at the destination makes os.replace fail without
+            # relying on permissions or platform-specific file locking.
+            (batch_root / "batch_finalization.preclose.json").mkdir()
+            errors = _snapshot_preclose_files(batch_root)
+            self.assertEqual(1, len(errors))
+            self.assertIn("batch_finalization.json", errors[0])
+            self.assertTrue((batch_root / "batch_results.preclose.json").is_file())
+            self.assertTrue((batch_root / "checksums.preclose.sha256").is_file())
 
     def test_normal_shutdown_outcome_does_not_rewrite_run_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

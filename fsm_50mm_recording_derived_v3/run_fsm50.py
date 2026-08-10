@@ -113,6 +113,28 @@ def _atomic_copy_file(source: Path, destination: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+_PRECLOSE_SNAPSHOT_FILES: tuple[tuple[str, str], ...] = (
+    ("batch_results.json", "batch_results.preclose.json"),
+    ("batch_finalization.json", "batch_finalization.preclose.json"),
+    ("checksums.sha256", "checksums.preclose.sha256"),
+)
+
+
+def _snapshot_preclose_files(batch_root: Path) -> list[str]:
+    """Copy the durable batch evidence set and report every failed copy."""
+
+    errors: list[str] = []
+    for source_name, destination_name in _PRECLOSE_SNAPSHOT_FILES:
+        try:
+            _atomic_copy_file(
+                batch_root / source_name,
+                batch_root / destination_name,
+            )
+        except Exception as exc:
+            errors.append(f"{source_name}: {type(exc).__name__}: {exc}")
+    return errors
+
+
 def _path_is_within(path: Path, parent: Path) -> bool:
     try:
         Path(path).resolve().relative_to(Path(parent).resolve())
@@ -755,7 +777,15 @@ def _serialize_replay_args(args: argparse.Namespace) -> dict[str, Any]:
 
 def _deserialize_replay_args(payload: dict[str, Any]) -> argparse.Namespace:
     values = dict(payload)
-    for key in ("recording_root", "report_root", "output_root"):
+    for key in (
+        "recording_root",
+        "report_root",
+        "output_root",
+        "config",
+        "environment_report",
+        "sim_state_before",
+        "prefix_manifest",
+    ):
         if key in values:
             values[key] = Path(str(values[key]))
     return argparse.Namespace(**values)
@@ -882,6 +912,633 @@ def _fail_closed_recording_audits(
     if failures:
         raise RuntimeError("recording preflight rejected: " + " | ".join(failures))
     return rows
+
+
+_RELIABLE_REPLAY_CLASSIFICATIONS = frozenset(
+    {
+        "FULL_SUCCESS",
+        "PARTIAL_SUCCESS",
+        "PHYSICAL_FAILURE",
+        "SCHEDULER_FAILURE",
+    }
+)
+
+_ACTUAL_VIEWPORT_VIDEO_SOURCE = "actual_active_isaac_gui_viewport_render_product"
+
+
+def _recording_video_capture_requested(args: argparse.Namespace) -> bool:
+    return bool(
+        not bool(getattr(args, "headless", False))
+        and not bool(getattr(args, "no_video", False))
+    )
+
+
+def _recording_video_disabled_reason(args: argparse.Namespace) -> str:
+    if bool(getattr(args, "no_video", False)):
+        return "--no-video diagnostic mode disables reliable/strict completion"
+    if bool(getattr(args, "headless", False)):
+        return "headless diagnostic mode has no active GUI viewport"
+    return ""
+
+
+def _mp4_has_container_signature(path: Path) -> bool:
+    try:
+        header = Path(path).read_bytes()[:32]
+    except OSError:
+        return False
+    return bool(len(header) >= 12 and header[4:8] == b"ftyp")
+
+
+def _finalize_recording_viewport_video_contract(
+    run_dir: Path,
+    raw_video: dict[str, Any],
+    *,
+    contact_mode: str,
+    capture_requested: bool,
+    disabled_reason: str = "",
+    capture_error: str = "",
+) -> dict[str, Any]:
+    """Validate and persist one per-version active-viewport video manifest."""
+
+    run_dir = Path(run_dir).resolve()
+    run_dir.mkdir(parents=True, exist_ok=True)
+    raw = dict(raw_video or {})
+    errors: list[str] = []
+    for reason in (disabled_reason, capture_error, str(raw.get("error", "") or "")):
+        if reason and reason not in errors:
+            errors.append(reason)
+    video_text = str(raw.get("video_path", "") or "")
+    video_path = (
+        Path(video_text).resolve()
+        if video_text
+        else (run_dir / "fsm50_viewport.mp4").resolve()
+    )
+    video_exists = bool(
+        video_path.is_file()
+        and video_path.stat().st_size > 0
+        and video_path.suffix.lower() == ".mp4"
+        and _path_is_within(video_path, run_dir)
+    )
+    video_sha256 = sha256_file(video_path).lower() if video_exists else ""
+    claimed_sha256 = str(raw.get("video_sha256", "") or "").lower()
+    try:
+        frame_count = int(raw.get("frame_count", 0) or 0)
+    except (TypeError, ValueError):
+        frame_count = 0
+    if not capture_requested:
+        errors.append("viewport video capture was not requested")
+    if not bool(raw.get("valid", False)):
+        errors.append("viewport recorder did not finalize a valid video")
+    if bool(raw.get("not_camera_video", False)):
+        errors.append("telemetry visualization is not camera video")
+    if str(raw.get("source", "") or "") != _ACTUAL_VIEWPORT_VIDEO_SOURCE:
+        errors.append("video source is not the active GUI viewport render product")
+    if not str(raw.get("render_product_path", "") or ""):
+        errors.append("active viewport render product path is missing")
+    if frame_count < 2:
+        errors.append("fewer than two viewport frames were captured")
+    if not video_exists:
+        errors.append("viewport MP4 is missing, empty, outside the run, or not MP4")
+    elif not _mp4_has_container_signature(video_path):
+        errors.append("viewport MP4 container signature is invalid")
+    if not claimed_sha256 or claimed_sha256 != video_sha256:
+        errors.append("viewport MP4 SHA256 is missing or mismatched")
+    errors = list(dict.fromkeys(errors))
+    actual_viewport_video = not errors
+    manifest_path = run_dir / "viewport_video_manifest.json"
+    manifest = {
+        **_jsonable(raw),
+        "schema_version": "fsm50.recording_viewport_video.v1",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "contact_mode": str(contact_mode),
+        "capture_requested": bool(capture_requested),
+        "diagnostic_only": not bool(capture_requested),
+        "valid": actual_viewport_video,
+        "artifact_valid": actual_viewport_video,
+        "actual_viewport_video": actual_viewport_video,
+        "not_camera_video": False,
+        "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
+        "frame_count": frame_count,
+        "video_path": str(video_path),
+        "video_sha256": video_sha256,
+        "error": "; ".join(errors),
+    }
+    _atomic_write_json(manifest_path, manifest)
+    return {
+        **manifest,
+        "manifest_path": str(manifest_path),
+        "manifest_sha256": sha256_file(manifest_path).lower(),
+    }
+
+
+class _RecordingReplayViewportCapture:
+    """Per-version scope around the shared Isaac viewport recorder.
+
+    Isaac's movie-capture helper leaves its temporary render product attached.
+    Restoring and deleting that graph after each version is required so the next
+    version receives a new frame directory instead of silently reusing the
+    previous version's global ``basePath``.
+    """
+
+    def __init__(
+        self,
+        run_dir: Path,
+        args: argparse.Namespace,
+        *,
+        contact_mode: str,
+        recorder: Any | None = None,
+    ) -> None:
+        self.run_dir = Path(run_dir).resolve()
+        self.args = args
+        self.contact_mode = str(contact_mode)
+        self.capture_requested = _recording_video_capture_requested(args)
+        if recorder is None:
+            from .fsm50_isaac_runtime import ViewportVideoRecorder
+
+            recorder = ViewportVideoRecorder(
+                self.run_dir,
+                enabled=self.capture_requested,
+                fps=float(getattr(args, "video_fps", 15.0)),
+            )
+        self.recorder = recorder
+        self.viewport: Any | None = None
+        self.original_render_product_path = ""
+        self.capture_render_product_path = ""
+        self.capture_error = ""
+        self._finalized: dict[str, Any] | None = None
+
+    def start(self) -> None:
+        if self.capture_requested:
+            try:
+                from omni.kit.viewport.utility import get_active_viewport  # type: ignore
+
+                self.viewport = get_active_viewport()
+                if self.viewport is None:
+                    raise RuntimeError("active GUI viewport is unavailable")
+                self.original_render_product_path = str(
+                    self.viewport.render_product_path
+                )
+            except Exception as exc:
+                self.capture_error = f"viewport preflight failed: {type(exc).__name__}: {exc}"
+        try:
+            self.recorder.start()
+        except Exception as exc:
+            self.capture_error = self.capture_error or (
+                f"viewport recorder start failed: {type(exc).__name__}: {exc}"
+            )
+        if self.capture_requested and self.viewport is not None:
+            self.capture_render_product_path = str(
+                self.viewport.render_product_path
+            )
+            if (
+                not self.capture_render_product_path
+                or self.capture_render_product_path
+                == self.original_render_product_path
+            ):
+                self.capture_error = self.capture_error or (
+                    "movie capture did not attach a distinct viewport render product"
+                )
+
+    def _release_capture_graph(self) -> str:
+        if (
+            not self.capture_requested
+            or self.viewport is None
+            or not self.original_render_product_path
+            or not self.capture_render_product_path
+            or self.capture_render_product_path == self.original_render_product_path
+        ):
+            return ""
+        try:
+            import isaacsim.kit.scripts.movie_capture as movie_capture  # type: ignore
+
+            postfix = str(movie_capture.rpPrimPathPostFix)
+            expected_capture = self.original_render_product_path + postfix
+            if self.capture_render_product_path != expected_capture:
+                raise RuntimeError(
+                    "unexpected movie-capture render product: "
+                    f"{self.capture_render_product_path}"
+                )
+            self.viewport.render_product_path = self.original_render_product_path
+            stage = movie_capture.omni.usd.get_context().get_stage()
+            movie_capture.remove_existing_graph(
+                stage,
+                self.capture_render_product_path,
+                self.capture_render_product_path + str(movie_capture.ogNodePath),
+            )
+            return ""
+        except Exception as exc:
+            return f"viewport capture cleanup failed: {type(exc).__name__}: {exc}"
+
+    def finalize(self) -> dict[str, Any]:
+        if self._finalized is not None:
+            return dict(self._finalized)
+        try:
+            raw = dict(self.recorder.finalize() or {})
+        except Exception as exc:
+            raw = {
+                "valid": False,
+                "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
+                "video_path": str(self.run_dir / "fsm50_viewport.mp4"),
+                "video_sha256": "",
+                "frame_count": 0,
+                "error": f"viewport recorder finalize failed: {type(exc).__name__}: {exc}",
+            }
+        cleanup_error = self._release_capture_graph()
+        combined_error = "; ".join(
+            reason
+            for reason in (self.capture_error, cleanup_error)
+            if reason
+        )
+        self._finalized = _finalize_recording_viewport_video_contract(
+            self.run_dir,
+            raw,
+            contact_mode=self.contact_mode,
+            capture_requested=self.capture_requested,
+            disabled_reason=_recording_video_disabled_reason(self.args),
+            capture_error=combined_error,
+        )
+        return dict(self._finalized)
+
+
+def _missing_recording_viewport_video(
+    run_dir: Path,
+    args: argparse.Namespace,
+    *,
+    contact_mode: str,
+    error: str,
+) -> dict[str, Any]:
+    return _finalize_recording_viewport_video_contract(
+        run_dir,
+        {
+            "valid": False,
+            "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
+            "render_product_path": "",
+            "frame_count": 0,
+            "video_path": str(Path(run_dir).resolve() / "fsm50_viewport.mp4"),
+            "video_sha256": "",
+            "error": str(error),
+        },
+        contact_mode=contact_mode,
+        capture_requested=_recording_video_capture_requested(args),
+        disabled_reason=_recording_video_disabled_reason(args),
+    )
+
+
+def _recording_visual_manifest(
+    *,
+    video: dict[str, Any],
+    visualization: dict[str, Any],
+    contact_mode: str,
+    artifact_valid: bool,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "fsm50.recording_visual_evidence.v2",
+        "kind": "actual_active_gui_viewport_video_with_telemetry_visualization",
+        "contact_mode": str(contact_mode),
+        "actual_viewport_video": bool(video.get("actual_viewport_video", False)),
+        "not_camera_video": False,
+        "video_path": str(video.get("video_path", "") or ""),
+        "video_sha256": str(video.get("video_sha256", "") or ""),
+        "viewport_video_manifest_path": str(video.get("manifest_path", "") or ""),
+        "viewport_video_manifest_sha256": str(
+            video.get("manifest_sha256", "") or ""
+        ),
+        "video": _jsonable(video),
+        "telemetry_visualization": _jsonable(visualization),
+        "artifact_valid": bool(artifact_valid),
+        "basis": [
+            "actual active Isaac GUI viewport frames",
+            "fsm50_telemetry.csv",
+            "state_timeline.csv",
+            "result.json strict result fields",
+        ],
+    }
+
+
+def _apply_recording_artifact_policy(
+    result: dict[str, Any],
+    *,
+    video: dict[str, Any],
+    visualization: dict[str, Any],
+) -> bool:
+    """Bind strict/finalized status to source, visualization, and real video."""
+
+    source_ok = bool(dict(result.get("source_integrity", {}) or {}).get("ok", False))
+    visualization_ok = bool(visualization.get("ok", False))
+    video_ok = bool(video.get("actual_viewport_video", False))
+    artifact_valid = bool(source_ok and visualization_ok and video_ok)
+    if not artifact_valid and source_ok:
+        result["classification_before_artifact_validation"] = result.get(
+            "classification"
+        )
+        result["classification"] = "ARTIFACT_INVALID"
+        result["first_failure_phase"] = (
+            "VIEWPORT_VIDEO_MISSING_OR_INVALID"
+            if not video_ok
+            else "VISUALIZATION_FAILED"
+        )
+        result["strict_full_success"] = False
+        result["strict_success"] = False
+    result["artifact_valid"] = artifact_valid
+    result["lifecycle"] = {
+        "finalized": artifact_valid,
+        "failed": not artifact_valid,
+        "strict_success": bool(
+            result.get("strict_full_success", False) and artifact_valid
+        ),
+    }
+    return artifact_valid
+
+
+def _reliable_recording_video_files(
+    result: dict[str, Any], run_dir: Path
+) -> tuple[Path, ...] | None:
+    """Return required video evidence files only for a coherent real capture."""
+
+    run_dir = Path(run_dir).resolve()
+    contact_mode = str(result.get("contact_mode", "") or "")
+    video = dict(result.get("video", {}) or {})
+    if (
+        contact_mode not in {"formal", "instrumented"}
+        or result.get("actual_viewport_video") is not True
+        or video.get("actual_viewport_video") is not True
+        or video.get("valid") is not True
+        or video.get("diagnostic_only") is True
+        or video.get("not_camera_video") is True
+    ):
+        return None
+    video_path = Path(str(video.get("video_path", "") or "")).resolve()
+    manifest_path = Path(str(video.get("manifest_path", "") or "")).resolve()
+    runtime_path = run_dir / "runtime_environment.json"
+    visual_path = run_dir / "visual_recording_manifest.json"
+    if (
+        manifest_path != run_dir / "viewport_video_manifest.json"
+        or not video_path.is_file()
+        or not manifest_path.is_file()
+        or not runtime_path.is_file()
+        or not visual_path.is_file()
+        or not _path_is_within(video_path, run_dir)
+        or not _mp4_has_container_signature(video_path)
+    ):
+        return None
+    actual_video_sha = sha256_file(video_path).lower()
+    actual_manifest_sha = sha256_file(manifest_path).lower()
+    if (
+        str(video.get("video_sha256", "") or "").lower() != actual_video_sha
+        or str(video.get("manifest_sha256", "") or "").lower()
+        != actual_manifest_sha
+        or str(result.get("video_path", "") or "") != str(video_path)
+        or str(result.get("video_sha256", "") or "").lower() != actual_video_sha
+    ):
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+        visual = json.loads(visual_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    for row in (manifest, runtime, visual):
+        if (
+            not isinstance(row, dict)
+            or str(row.get("contact_mode", "") or "") != contact_mode
+            or row.get("actual_viewport_video") is not True
+            or str(row.get("video_path", "") or "") != str(video_path)
+            or str(row.get("video_sha256", "") or "").lower()
+            != actual_video_sha
+        ):
+            return None
+    if (
+        manifest.get("valid") is not True
+        or manifest.get("not_camera_video") is True
+        or str(manifest.get("source", "") or "")
+        != _ACTUAL_VIEWPORT_VIDEO_SOURCE
+        or int(manifest.get("frame_count", 0) or 0) < 2
+    ):
+        return None
+    return (manifest_path, runtime_path, visual_path, video_path)
+
+
+def _checksums_match_required_files(
+    run_dir: Path,
+    required_files: Iterable[Path],
+) -> bool:
+    """Return true only when the run checksum manifest covers current files."""
+
+    manifest_path = Path(run_dir).resolve() / "checksums.sha256"
+    if not manifest_path.is_file():
+        return False
+    manifest: dict[str, str] = {}
+    try:
+        for raw_line in manifest_path.read_text(encoding="utf-8").splitlines():
+            digest, separator, relative = raw_line.partition("  ")
+            digest = digest.strip().lower()
+            relative = relative.strip().replace("\\", "/")
+            if (
+                not separator
+                or len(digest) != 64
+                or any(character not in "0123456789abcdef" for character in digest)
+                or not relative
+            ):
+                return False
+            manifest[relative] = digest
+        for path in required_files:
+            resolved = Path(path).resolve()
+            relative = resolved.relative_to(Path(run_dir).resolve()).as_posix()
+            if manifest.get(relative) != sha256_file(resolved).lower():
+                return False
+    except (OSError, UnicodeError, ValueError):
+        return False
+    return True
+
+
+def _reliable_replay_completion(
+    result_path: Path,
+    *,
+    output_root: Path,
+    expected_version: str,
+    expected_steps_sha256: str,
+) -> dict[str, Any] | None:
+    """Validate one durable, source-matched, version-level completion.
+
+    A physical or scheduler failure is still a completed experiment and may be
+    resumed past.  Runner/source/artifact failures are intentionally not: they
+    retain their CRASH diagnostics but must be retried.  In particular, a
+    directory carrying ``.partial`` can never satisfy this predicate.
+    """
+
+    output_root = Path(output_root).resolve()
+    result_path = Path(result_path).resolve()
+    if not result_path.is_file() or not _path_is_within(result_path, output_root):
+        return None
+    try:
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(result, dict):
+        return None
+    if str(result.get("schema_version", "")) != "fsm50.recording_replay_result.v1":
+        return None
+    if str(result.get("source_version", "")) != str(expected_version):
+        return None
+    if str(result.get("accepted_steps_sha256", "")).lower() != str(
+        expected_steps_sha256
+    ).lower():
+        return None
+    if str(result.get("classification", "")) not in _RELIABLE_REPLAY_CLASSIFICATIONS:
+        return None
+    if not bool(result.get("artifact_valid", False)):
+        return None
+    lifecycle = dict(result.get("lifecycle", {}) or {})
+    if not bool(lifecycle.get("finalized", False)) or bool(
+        lifecycle.get("failed", False)
+    ):
+        return None
+    if not bool(dict(result.get("source_integrity", {}) or {}).get("ok", False)):
+        return None
+    if not bool(dict(result.get("visualization", {}) or {}).get("ok", False)):
+        return None
+
+    run_dir_text = str(result.get("run_dir", "") or "")
+    artifact_root_text = str(result.get("artifact_root", "") or "")
+    if not run_dir_text or not artifact_root_text:
+        return None
+    run_dir = Path(run_dir_text).resolve()
+    artifact_root = Path(artifact_root_text).resolve()
+    if (
+        result_path.parent != run_dir
+        or not run_dir.is_dir()
+        or not artifact_root.is_dir()
+        or not _path_is_within(run_dir, artifact_root)
+        or not _path_is_within(artifact_root, output_root)
+    ):
+        return None
+    if (
+        (artifact_root / ".partial").exists()
+        or not (artifact_root / ".finalized").is_file()
+        or (artifact_root / ".failed").exists()
+    ):
+        return None
+
+    video_files = _reliable_recording_video_files(result, run_dir)
+    if video_files is None:
+        return None
+
+    diagnostics_path = run_dir / "failure_diagnostics.json"
+    pointer_path = artifact_root / "artifact_pointer.json"
+    try:
+        diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
+        pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(diagnostics, dict) or not isinstance(pointer, dict):
+        return None
+    if str(diagnostics.get("classification", "")) != str(
+        result.get("classification", "")
+    ):
+        return None
+    pointer_run_dir = str(pointer.get("run_dir", "") or "")
+    if not pointer_run_dir or Path(pointer_run_dir).resolve() != run_dir:
+        return None
+    if not _checksums_match_required_files(
+        run_dir,
+        (result_path, diagnostics_path, *video_files),
+    ):
+        return None
+    try:
+        # Keep resume admission aligned with the environment-artifact gate.  A
+        # version marker alone is not durable proof of completion: the child
+        # writes it before SimulationApp.close() and the supervising parent
+        # records NORMAL_EXIT only after close returns.  Import lazily so the
+        # replay CLI does not load artifact-conversion code on ordinary runs.
+        from .environment_ab_artifacts import (
+            _load_batch_shutdown_closure,
+            _resolve_batch_root,
+        )
+
+        batch_root = _resolve_batch_root(artifact_root, run_dir)
+        batch_shutdown_closure = _load_batch_shutdown_closure(
+            batch_root=batch_root,
+            artifact_root=artifact_root,
+            run_dir=run_dir,
+            result_path=result_path,
+            result=result,
+        )
+    except Exception:
+        # Resume is an optimization.  Any malformed, incomplete, ambiguous,
+        # or subsequently tampered closure must therefore fail closed and be
+        # replayed instead of surfacing as a CLI crash.
+        return None
+    if (
+        str(batch_shutdown_closure.get("status", "")) != "NORMAL_EXIT"
+        or str(batch_shutdown_closure.get("phase", ""))
+        != "SHUTDOWN_COMPLETE"
+    ):
+        return None
+    return {
+        "source_version": str(expected_version),
+        "accepted_steps_sha256": str(expected_steps_sha256).lower(),
+        "classification": str(result.get("classification", "")),
+        "strict_full_success": bool(result.get("strict_full_success", False)),
+        "batch_root": str(batch_root),
+        "batch_shutdown_closure_sha256": str(
+            batch_shutdown_closure.get("closure_sha256", "")
+        ),
+        "artifact_root": str(artifact_root),
+        "run_dir": str(run_dir),
+        "result_path": str(result_path),
+        "failure_diagnostics_path": str(diagnostics_path),
+        "created_utc": str(result.get("created_utc", "") or ""),
+    }
+
+
+def _find_reliable_completed_replays(
+    output_root: Path,
+    selected: Iterable[VersionFiles],
+    expected_hashes: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    """Find the newest trustworthy completion for each selected recording."""
+
+    output_root = Path(output_root).resolve()
+    if not output_root.is_dir():
+        return {}
+    expected = {
+        item.version_id: str(expected_hashes.get(item.version_id, "")).lower()
+        for item in selected
+        if str(expected_hashes.get(item.version_id, ""))
+    }
+    completed: dict[str, tuple[tuple[int, str], dict[str, Any]]] = {}
+    try:
+        result_paths = output_root.rglob("result.json")
+        for result_path in result_paths:
+            try:
+                source_version = str(
+                    json.loads(result_path.read_text(encoding="utf-8")).get(
+                        "source_version", ""
+                    )
+                )
+            except (AttributeError, OSError, UnicodeError, json.JSONDecodeError):
+                continue
+            expected_hash = expected.get(source_version)
+            if not expected_hash:
+                continue
+            record = _reliable_replay_completion(
+                result_path,
+                output_root=output_root,
+                expected_version=source_version,
+                expected_steps_sha256=expected_hash,
+            )
+            if record is None:
+                continue
+            try:
+                sort_key = (result_path.stat().st_mtime_ns, str(result_path))
+            except OSError:
+                continue
+            previous = completed.get(source_version)
+            if previous is None or sort_key > previous[0]:
+                completed[source_version] = (sort_key, record)
+    except OSError:
+        return {}
+    return {version: row for version, (_key, row) in completed.items()}
 
 
 def _compact_recording_audit(row: dict[str, Any]) -> dict[str, Any]:
@@ -1714,6 +2371,15 @@ def _run_recording_version(
     _plan_rows: list[dict[str, Any]] = []
     service = SimTimePlaybackService()
     collector: FSM50TelemetryCollector | None = None
+    run_dir = artifact_root
+    contact_mode = str(
+        getattr(args, "contact_mode", "instrumented") or "instrumented"
+    )
+    video_capture: _RecordingReplayViewportCapture | None = None
+    video: dict[str, Any] = {}
+    version_live_baseline: dict[str, Any] = {}
+    version_live_obstacle: dict[str, Any] = {}
+    version_environment_equivalence: dict[str, Any] = {}
     timed_out = False
     app_stopped = False
     respawn: dict[str, Any] = {}
@@ -1762,6 +2428,8 @@ def _run_recording_version(
             artifact_root / "runtime_environment_pre_action.json",
             {
                 "source_version": item.version_id,
+                "contact_mode": contact_mode,
+                "video_capture_requested": _recording_video_capture_requested(args),
                 "live_scene_baseline": version_live_baseline,
                 "live_obstacle_geometry": version_live_obstacle,
                 "environment_equivalence": version_environment_equivalence,
@@ -1800,6 +2468,13 @@ def _run_recording_version(
             sequence_label=f"recording_fast_{item.version_id}",
             source="fsm50_recording_audit",
         )
+        run_dir = collector.run_dir or artifact_root
+        video_capture = _RecordingReplayViewportCapture(
+            run_dir,
+            args,
+            contact_mode=contact_mode,
+        )
+        video_capture.start()
         adapter.attach_telemetry(collector)
         collector.record_event(
             float(adapter.sim_time),
@@ -1869,11 +2544,26 @@ def _run_recording_version(
             if scheduler_complete
             else str(service.stop_reason or "scheduler failed"),
         )
+        video = video_capture.finalize()
         run_dir = collector.run_dir or artifact_root
         _copy_run_inputs(item, run_dir, steps, float(motion.wheel_velocity_limit_rad_s))
         write_json(
             run_dir / "runtime_environment.json",
             {
+                "source_version": item.version_id,
+                "contact_mode": contact_mode,
+                "actual_viewport_video": bool(
+                    video.get("actual_viewport_video", False)
+                ),
+                "video_path": str(video.get("video_path", "") or ""),
+                "video_sha256": str(video.get("video_sha256", "") or ""),
+                "viewport_video_manifest_path": str(
+                    video.get("manifest_path", "") or ""
+                ),
+                "viewport_video_manifest_sha256": str(
+                    video.get("manifest_sha256", "") or ""
+                ),
+                "video": _jsonable(video),
                 "runtime": _runtime_versions(),
                 "scene_config": _jsonable(asdict(scene_handle.config)),
                 "batch_live_scene_baseline": _jsonable(live_baseline),
@@ -1901,6 +2591,19 @@ def _run_recording_version(
         result["expected_preflight_steps_sha256"] = str(expected_steps_sha256)
         result["simulation_app_stopped"] = bool(app_stopped)
         result["environment_equivalence"] = version_environment_equivalence
+        result["contact_mode"] = contact_mode
+        result["video"] = _jsonable(video)
+        result["actual_viewport_video"] = bool(
+            video.get("actual_viewport_video", False)
+        )
+        result["video_path"] = str(video.get("video_path", "") or "")
+        result["video_sha256"] = str(video.get("video_sha256", "") or "")
+        result["viewport_video_manifest_path"] = str(
+            video.get("manifest_path", "") or ""
+        )
+        result["viewport_video_manifest_sha256"] = str(
+            video.get("manifest_sha256", "") or ""
+        )
         post_source_freeze = _source_freeze(item, robot_usd=robot_usd)
         source_comparison = _compare_source_freezes(source_freeze, post_source_freeze)
         write_json(artifact_root / "source_freeze_post.json", post_source_freeze)
@@ -1927,33 +2630,20 @@ def _run_recording_version(
         except Exception as exc:
             visualization = {"ok": False, "error": str(exc)}
         result["visualization"] = visualization
-        source_ok = bool(result.get("source_integrity", {}).get("ok", False))
-        artifact_valid = bool(source_ok and visualization.get("ok", False))
-        if not artifact_valid and source_ok:
-            result["classification_before_artifact_validation"] = result.get("classification")
-            result["classification"] = "ARTIFACT_INVALID"
-            result["first_failure_phase"] = "VISUALIZATION_FAILED"
-            result["strict_full_success"] = False
-            result["strict_success"] = False
-        result["artifact_valid"] = artifact_valid
-        result["lifecycle"] = {
-            "finalized": artifact_valid,
-            "failed": not artifact_valid,
-            "strict_success": bool(result.get("strict_full_success", False) and artifact_valid),
-        }
+        video_ok = bool(video.get("actual_viewport_video", False))
+        artifact_valid = _apply_recording_artifact_policy(
+            result,
+            video=video,
+            visualization=visualization,
+        )
         write_json(
             run_dir / "visual_recording_manifest.json",
-            {
-                "kind": "fsm50_equivalent_telemetry_visualization",
-                "not_camera_video": True,
-                "visualization": _jsonable(visualization),
-                "artifact_valid": artifact_valid,
-                "basis": [
-                    "fsm50_telemetry.csv",
-                    "state_timeline.csv",
-                    "result.json strict result fields",
-                ],
-            },
+            _recording_visual_manifest(
+                video=video,
+                visualization=visualization,
+                contact_mode=contact_mode,
+                artifact_valid=artifact_valid,
+            ),
         )
         write_json(
             run_dir / "failure_diagnostics.json",
@@ -1965,6 +2655,9 @@ def _run_recording_version(
                 "servo_residual_warnings": service.servo_residual_warnings,
                 "strict_physical_evidence": result["physical_evidence"],
                 "source_integrity": result["source_integrity"],
+                "contact_mode": contact_mode,
+                "video": _jsonable(video),
+                "actual_viewport_video": video_ok,
                 "artifact_valid": artifact_valid,
             },
         )
@@ -1992,6 +2685,30 @@ def _run_recording_version(
             except Exception as finish_exc:
                 finish_error = f"{type(finish_exc).__name__}: {finish_exc}"
         run_dir = (collector.run_dir if collector is not None else None) or artifact_root
+        try:
+            video = (
+                video_capture.finalize()
+                if video_capture is not None
+                else _missing_recording_viewport_video(
+                    run_dir,
+                    args,
+                    contact_mode=contact_mode,
+                    error="recording replay failed before viewport capture started",
+                )
+            )
+        except Exception as video_exc:
+            video = {
+                "valid": False,
+                "artifact_valid": False,
+                "actual_viewport_video": False,
+                "not_camera_video": False,
+                "contact_mode": contact_mode,
+                "video_path": str(Path(run_dir) / "fsm50_viewport.mp4"),
+                "video_sha256": "",
+                "manifest_path": str(Path(run_dir) / "viewport_video_manifest.json"),
+                "manifest_sha256": "",
+                "error": f"video failure artifact write failed: {type(video_exc).__name__}: {video_exc}",
+            }
         physical: dict[str, Any] = {}
         if collector is not None:
             try:
@@ -2000,7 +2717,10 @@ def _run_recording_version(
                 physical = {}
         failure = {
             "schema_version": "fsm50.recording_replay_result.v1",
+            "created_utc": datetime.now(timezone.utc).isoformat(),
             "source_version": item.version_id,
+            "accepted_steps_sha256": immediate_steps_sha256,
+            "expected_preflight_steps_sha256": str(expected_steps_sha256),
             "classification": "RUNNER_EXCEPTION",
             "strict_full_success": False,
             "physical_success": False,
@@ -2010,6 +2730,19 @@ def _run_recording_version(
             "telemetry_finish_error": finish_error,
             "artifact_root": str(artifact_root),
             "run_dir": str(run_dir),
+            "contact_mode": contact_mode,
+            "video": _jsonable(video),
+            "actual_viewport_video": bool(
+                video.get("actual_viewport_video", False)
+            ),
+            "video_path": str(video.get("video_path", "") or ""),
+            "video_sha256": str(video.get("video_sha256", "") or ""),
+            "viewport_video_manifest_path": str(
+                video.get("manifest_path", "") or ""
+            ),
+            "viewport_video_manifest_sha256": str(
+                video.get("manifest_sha256", "") or ""
+            ),
             "physical_evidence": physical,
             "visualization": {"ok": False, "error": "not generated"},
             "artifact_valid": False,
@@ -2043,6 +2776,15 @@ def _run_recording_version(
                 "scope": "recording_version",
                 "error": f"{type(freeze_exc).__name__}: {freeze_exc}",
             }
+        if (
+            not bool(video.get("actual_viewport_video", False))
+            and bool(dict(failure.get("source_integrity", {}) or {}).get("ok", False))
+        ):
+            failure["classification_before_artifact_validation"] = failure.get(
+                "classification"
+            )
+            failure["classification"] = "ARTIFACT_INVALID"
+            failure["first_failure_phase"] = "VIEWPORT_VIDEO_MISSING_OR_INVALID"
         try:
             visualization = _generate_fsm50_visualization(
                 Path(run_dir),
@@ -2053,18 +2795,53 @@ def _run_recording_version(
         except Exception as visual_exc:
             visualization = {"ok": False, "error": str(visual_exc)}
         failure["visualization"] = visualization
+        runtime_environment = {
+            "source_version": item.version_id,
+            "contact_mode": contact_mode,
+            "actual_viewport_video": bool(
+                video.get("actual_viewport_video", False)
+            ),
+            "video_path": str(video.get("video_path", "") or ""),
+            "video_sha256": str(video.get("video_sha256", "") or ""),
+            "viewport_video_manifest_path": str(
+                video.get("manifest_path", "") or ""
+            ),
+            "viewport_video_manifest_sha256": str(
+                video.get("manifest_sha256", "") or ""
+            ),
+            "video": _jsonable(video),
+            "runtime": _runtime_versions(),
+            "scene_config": _jsonable(asdict(scene_handle.config)),
+            "batch_live_scene_baseline": _jsonable(live_baseline),
+            "live_scene_baseline": _jsonable(version_live_baseline),
+            "live_obstacle_geometry": _jsonable(version_live_obstacle),
+            "environment_equivalence": _jsonable(
+                version_environment_equivalence
+            ),
+            "motion_reference": (
+                {} if motion is None else _jsonable(motion.to_dict())
+            ),
+            "failure": f"{type(exc).__name__}: {exc}",
+        }
         finalization_errors: list[str] = []
         for label, action in (
+            (
+                "runtime_environment",
+                lambda: write_json(
+                    Path(run_dir) / "runtime_environment.json",
+                    runtime_environment,
+                ),
+            ),
             (
                 "visual_manifest",
                 lambda: write_json(
                     Path(run_dir) / "visual_recording_manifest.json",
-                    {
-                        "kind": "fsm50_equivalent_telemetry_visualization",
-                        "not_camera_video": True,
-                        "visualization": visualization,
-                        "artifact_valid": False,
-                    },
+                    _recording_visual_manifest(
+                        video=video,
+                        visualization=visualization,
+                        contact_mode=contact_mode,
+                        artifact_valid=False,
+                    ),
                 ),
             ),
             ("failure_diagnostics", lambda: write_json(Path(run_dir) / "failure_diagnostics.json", failure)),
@@ -2202,10 +2979,12 @@ def _apply_batch_source_drift(
         write_json(
             run_dir / "visual_recording_manifest.json",
             {
-                "kind": "fsm50_equivalent_telemetry_visualization",
-                "not_camera_video": True,
-                "visualization": result["visualization"],
-                "artifact_valid": False,
+                **_recording_visual_manifest(
+                    video=dict(result.get("video", {}) or {}),
+                    visualization=dict(result.get("visualization", {}) or {}),
+                    contact_mode=str(result.get("contact_mode", "") or ""),
+                    artifact_valid=False,
+                ),
                 "source_integrity": result["source_integrity"],
             },
         )
@@ -2290,6 +3069,10 @@ def _run_recording_replays_locked(
         {
             "created_utc": datetime.now(timezone.utc).isoformat(),
             "versions": [item.version_id for item in selected],
+            "resume": bool(getattr(args, "resume", False)),
+            "resume_skipped": _jsonable(
+                list(getattr(args, "resume_skipped", []) or [])
+            ),
             "args": vars(args),
             "source_freeze": batch_source_freeze,
             "recording_preflight_audits": [
@@ -2342,13 +3125,23 @@ def _run_recording_replays_locked(
         save_scene=False,
         defer_first_visible_render=True,
     )
-    configure_scene_for_wheel_and_nonwheel_contacts(
-        scene_config,
-        wheel_factory=make_filtered_wheel_contact_sensor_factory(
-            force_threshold_n=1.0
-        ),
-        force_threshold_n=1.0,
-    )
+    contact_mode = str(getattr(args, "contact_mode", "instrumented") or "instrumented")
+    if contact_mode == "formal":
+        # Environment-equivalence baseline A: retain the production scene's
+        # original aggregate ContactSensor constructor.  The telemetry flag
+        # only activates observation and is an explicitly allowed A/B field.
+        scene_config.telemetry_contact_sensors_enabled = True
+        scene_config.contact_sensor_factory = None
+    elif contact_mode == "instrumented":
+        configure_scene_for_wheel_and_nonwheel_contacts(
+            scene_config,
+            wheel_factory=make_filtered_wheel_contact_sensor_factory(
+                force_threshold_n=1.0
+            ),
+            force_threshold_n=1.0,
+        )
+    else:
+        raise ValueError(f"unsupported contact_mode: {contact_mode}")
     simulation_app = None
     scene_handle = None
     results: list[dict[str, Any]] = []
@@ -2382,10 +3175,17 @@ def _run_recording_replays_locked(
                 max_ground_correction_m=0.10,
             ),
         )
-        locked_ground_seed = _seed_adapter_from_locked_ground_pose(
-            adapter,
-            environment_lock,
-        )
+        # Keep the formal worker's initialization path byte-for-byte in spirit:
+        # scene -> adapter -> initialize_adapter_ground_reference.  The
+        # environment lock contains an earlier measured grounded pose, but it
+        # is comparison evidence, not an initial-state command.  Writing that
+        # historical root pose here changes reset/grounding behavior and makes
+        # the replay environment non-equivalent to the production worker.
+        locked_ground_seed = {
+            "applied": False,
+            "reason": "historical locked pose is read-only comparison evidence",
+            "initialization_path": "formal_worker_unseeded_ground_reference",
+        }
         ground = initialize_adapter_ground_reference(adapter)
         ground["locked_ground_seed"] = locked_ground_seed
         write_json(
@@ -2421,6 +3221,7 @@ def _run_recording_replays_locked(
             "runtime": _runtime_versions(),
             "contact_sensor_type": type(scene_handle.contact_sensor).__name__,
             "contact_sensor_error": str(scene_handle.contact_sensor_error or ""),
+            "contact_mode": contact_mode,
             "environment_equivalence": environment_equivalence,
         }
         write_json(batch_root / "runtime_environment_readback.json", readback)
@@ -2564,32 +3365,39 @@ def _run_recording_replays_locked(
                     file=sys.stderr,
                     flush=True,
                 )
-        try:
-            _mark_artifact_root(batch_root, valid=batch_valid)
-        except Exception as exc:
-            print(
-                f"[FSM50] batch marker failed: {type(exc).__name__}: {exc}",
-                file=sys.stderr,
-                flush=True,
-            )
+        # A batch marker is a reliability claim.  Do not create it until all
+        # immutable preclose evidence has been durably copied.  If a copy
+        # fails, rewrite both the live and snapshot finalization as failed.
+        immutable_preclose_errors = _snapshot_preclose_files(batch_root)
+        if immutable_preclose_errors:
             exit_code = 1
             batch_valid = False
-        immutable_preclose_errors: list[str] = []
-        for source_name, destination_name in (
-            ("batch_results.json", "batch_results.preclose.json"),
-            ("batch_finalization.json", "batch_finalization.preclose.json"),
-            ("checksums.sha256", "checksums.preclose.sha256"),
-        ):
+            finalization_errors.extend(
+                f"immutable_preclose: {error}"
+                for error in immutable_preclose_errors
+            )
+            batch_finalization.update(
+                {
+                    "finalized": False,
+                    "failed": True,
+                    "strict_success": False,
+                    "finalization_errors": list(finalization_errors),
+                }
+            )
             try:
-                _atomic_copy_file(
-                    batch_root / source_name,
-                    batch_root / destination_name,
+                write_json(
+                    batch_root / "batch_finalization.json", batch_finalization
                 )
+                _write_checksums(batch_root)
+                refresh_errors = _snapshot_preclose_files(batch_root)
+                if refresh_errors:
+                    immutable_preclose_errors.extend(
+                        f"refresh: {error}" for error in refresh_errors
+                    )
             except Exception as exc:
                 immutable_preclose_errors.append(
-                    f"{source_name}: {type(exc).__name__}: {exc}"
+                    f"failure_rewrite: {type(exc).__name__}: {exc}"
                 )
-                exit_code = 1
         try:
             evidence_manifest = _preclose_evidence_manifest(
                 batch_root,
@@ -2605,10 +3413,72 @@ def _run_recording_replays_locked(
                 "batch_finalization": _jsonable(batch_finalization),
             }
             exit_code = 1
+            batch_valid = False
+            finalization_errors.append(
+                f"preclose_evidence_manifest: {evidence_manifest['manifest_error']}"
+            )
+            batch_finalization.update(
+                {
+                    "finalized": False,
+                    "failed": True,
+                    "strict_success": False,
+                    "finalization_errors": list(finalization_errors),
+                }
+            )
+            try:
+                write_json(
+                    batch_root / "batch_finalization.json", batch_finalization
+                )
+                _write_checksums(batch_root)
+                immutable_preclose_errors.extend(
+                    f"manifest_failure_refresh: {error}"
+                    for error in _snapshot_preclose_files(batch_root)
+                )
+            except Exception as rewrite_exc:
+                immutable_preclose_errors.append(
+                    "manifest_failure_rewrite: "
+                    f"{type(rewrite_exc).__name__}: {rewrite_exc}"
+                )
         if immutable_preclose_errors:
             evidence_manifest["immutable_preclose_errors"] = list(
                 immutable_preclose_errors
             )
+        try:
+            _mark_artifact_root(batch_root, valid=batch_valid)
+        except Exception as exc:
+            marker_error = f"{type(exc).__name__}: {exc}"
+            print(
+                f"[FSM50] batch marker failed: {marker_error}",
+                file=sys.stderr,
+                flush=True,
+            )
+            exit_code = 1
+            batch_valid = False
+            finalization_errors.append(f"batch_marker: {marker_error}")
+            batch_finalization.update(
+                {
+                    "finalized": False,
+                    "failed": True,
+                    "strict_success": False,
+                    "finalization_errors": list(finalization_errors),
+                }
+            )
+            evidence_manifest["batch_marker_error"] = marker_error
+            evidence_manifest["batch_finalization"] = _jsonable(batch_finalization)
+            try:
+                write_json(
+                    batch_root / "batch_finalization.json", batch_finalization
+                )
+                _write_checksums(batch_root)
+                _snapshot_preclose_files(batch_root)
+                _mark_artifact_root(batch_root, valid=False)
+            except Exception as recovery_exc:
+                print(
+                    f"[FSM50] failed-marker recovery failed: "
+                    f"{type(recovery_exc).__name__}: {recovery_exc}",
+                    file=sys.stderr,
+                    flush=True,
+                )
         if supervisor is not None:
             supervisor.mark_preclose(evidence_manifest)
         else:
@@ -2667,6 +3537,42 @@ def run_recording_replays(args: argparse.Namespace) -> int:
     singleton = ReplaySingletonLock()
     singleton.acquire()
     try:
+        if bool(getattr(args, "resume", False)):
+            audit = RecordingAudit(
+                Path(args.recording_root),
+                Path(args.report_root),
+            )
+            selected = _select_versions(audit.enumerate_versions(), args.versions)
+            if not selected:
+                raise RuntimeError("no recording versions selected")
+            preflight_audits = _fail_closed_recording_audits(audit, selected)
+            expected_hashes = {
+                str(row["version"]): str(row["accepted_steps_sha256"])
+                for row in preflight_audits
+            }
+            completed = _find_reliable_completed_replays(
+                Path(args.output_root),
+                selected,
+                expected_hashes,
+            )
+            pending = [
+                item for item in selected if item.version_id not in completed
+            ]
+            resume_summary = {
+                "resume": True,
+                "requested_versions": [item.version_id for item in selected],
+                "skipped_reliable_versions": list(completed),
+                "pending_versions": [item.version_id for item in pending],
+                "reliable_artifacts": list(completed.values()),
+            }
+            print(json.dumps(resume_summary, ensure_ascii=False, indent=2), flush=True)
+            if not pending:
+                return 0
+            # The child receives full version ids, so it cannot accidentally
+            # widen a short selector after the parent completed the audit.
+            args = copy.copy(args)
+            args.versions = [item.version_id for item in pending]
+            args.resume_skipped = list(completed.values())
         process_snapshot = _os_process_snapshot()
         conflicts = _existing_simulator_processes(process_snapshot)
         if conflicts:
@@ -2835,6 +3741,18 @@ def _supervised_child_main(argv: list[str]) -> int:
     try:
         args = _deserialize_replay_args(dict(request.get("args", {}) or {}))
         process_snapshot = list(request.get("process_snapshot", []) or [])
+        if str(getattr(args, "command", "")) in {
+            "run-fsm",
+            "test-state",
+            "validate-5",
+        }:
+            from .fsm50_isaac_runtime import run_fsm_locked
+
+            return run_fsm_locked(
+                args,
+                process_snapshot=process_snapshot,
+                supervisor=supervisor,
+            )
         return _run_recording_replays_locked(
             args,
             process_snapshot=process_snapshot,
@@ -2868,16 +3786,120 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--output-root", type=Path, default=DEFAULT_RUN_ROOT / "recording_replays")
     replay.add_argument("--robot-usd", type=str, default="")
     replay.add_argument("--device", type=str, default="cuda:0")
-    replay.add_argument("--headless", action="store_true")
+    replay.add_argument(
+        "--headless",
+        action="store_true",
+        help="Diagnostic only; no active GUI viewport means artifacts cannot be reliable.",
+    )
     replay.add_argument("--livestream", type=int, default=0)
     replay.add_argument("--experience", type=str, default="")
     replay.add_argument("--telemetry-rate", type=float, default=120.0)
+    replay.add_argument(
+        "--contact-mode",
+        choices=("formal", "instrumented"),
+        default="instrumented",
+        help=(
+            "formal uses the production aggregate ContactSensor; instrumented "
+            "uses only the filtered wheel/non-wheel telemetry factory."
+        ),
+    )
     replay.add_argument("--post-respawn-settle-s", type=float, default=0.30)
     replay.add_argument("--post-run-settle-s", type=float, default=0.50)
+    replay.add_argument("--video-fps", type=float, default=15.0)
+    replay.add_argument(
+        "--no-video",
+        action="store_true",
+        help=(
+            "Diagnostic only; each version is ARTIFACT_INVALID and cannot be "
+            "strictly or reliably completed without actual viewport video."
+        ),
+    )
     replay.add_argument("--timeout-s", type=float, default=30.0)
     replay.add_argument("--timeout-scale", type=float, default=3.0)
+    replay.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Skip only source-matched, checksummed, finalized recording-version "
+            "artifacts; partial/crashed/invalid runs are retried."
+        ),
+    )
     replay.add_argument("--continue-on-error", action="store_true", default=True)
     replay.add_argument("--fail-fast", dest="continue_on_error", action="store_false")
+
+    def add_fsm_runtime_arguments(command_parser: argparse.ArgumentParser) -> None:
+        command_parser.add_argument(
+            "--config",
+            type=Path,
+            default=MODULE_ROOT / "fsm50_config.yaml",
+        )
+        command_parser.add_argument("--report-root", type=Path, default=DEFAULT_REPORT_ROOT)
+        command_parser.add_argument("--output-root", type=Path, default=DEFAULT_RUN_ROOT / "fsm_runs")
+        command_parser.add_argument(
+            "--environment-report",
+            type=Path,
+            default=DEFAULT_REPORT_ROOT / "ENVIRONMENT_EQUIVALENCE_REPORT.json",
+        )
+        command_parser.add_argument("--robot-usd", type=str, default="")
+        command_parser.add_argument("--device", type=str, default="cuda:0")
+        command_parser.add_argument("--headless", action="store_true")
+        command_parser.add_argument("--livestream", type=int, default=0)
+        command_parser.add_argument("--experience", type=str, default="")
+        command_parser.add_argument("--telemetry-rate", type=float, default=120.0)
+        command_parser.add_argument(
+            "--timeout-s",
+            type=float,
+            default=600.0,
+            help="Per-run simulation-time deadline; state transitions remain physical-event gated.",
+        )
+        command_parser.add_argument("--post-run-settle-s", type=float, default=0.30)
+        command_parser.add_argument("--video-fps", type=float, default=15.0)
+        command_parser.add_argument(
+            "--no-video",
+            action="store_true",
+            help="Diagnostic only; strict success is impossible without actual viewport video.",
+        )
+
+    run_fsm = subparsers.add_parser(
+        "run-fsm", help="Run the real event-gated A0-to-F5 controller."
+    )
+    add_fsm_runtime_arguments(run_fsm)
+
+    test_state = subparsers.add_parser(
+        "test-state", help="Run one state from a trusted restore or verified live prefix."
+    )
+    add_fsm_runtime_arguments(test_state)
+    test_state.add_argument("--state-id", required=True)
+    restore_group = test_state.add_mutually_exclusive_group()
+    restore_group.add_argument("--sim-state-before", type=Path)
+    restore_group.add_argument("--prefix-manifest", type=Path)
+    restore_group.add_argument(
+        "--replay-prefix",
+        action="store_true",
+        help="Execute a fresh live A0 prefix to the target state in this run.",
+    )
+    test_state.add_argument("--sim-state-before-sha256", default="")
+    test_state.add_argument("--prefix-manifest-sha256", default="")
+
+    validate_five = subparsers.add_parser(
+        "validate-5", help="Run five consecutive clean-reset full FSM validations."
+    )
+    add_fsm_runtime_arguments(validate_five)
+    validate_five.set_defaults(output_root=DEFAULT_RUN_ROOT / "validate_5")
+
+    validate_environment = subparsers.add_parser(
+        "validate-environment",
+        help="Build/compare the environment fingerprint and real A/A-B run artifacts.",
+    )
+    validate_environment.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_REPORT_ROOT / "ENVIRONMENT_EQUIVALENCE_REPORT.json",
+    )
+    validate_environment.add_argument("--baseline-a1", type=Path)
+    validate_environment.add_argument("--baseline-a2", type=Path)
+    validate_environment.add_argument("--instrumented-b", type=Path)
+    validate_environment.add_argument("--robot-usd", type=Path)
 
     report = subparsers.add_parser("report", help="Regenerate telemetry visualizations for existing run directories.")
     report.add_argument("run_dirs", nargs="+", type=Path)
@@ -2895,6 +3917,85 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "replay-recordings":
         return run_recording_replays(args)
+    if args.command in {"run-fsm", "validate-5"}:
+        return run_recording_replays(args)
+    if args.command == "test-state":
+        state_id = str(args.state_id)
+        if state_id != "A0_RESET_AND_SETTLE" and not any(
+            (
+                args.sim_state_before,
+                args.prefix_manifest,
+                args.replay_prefix,
+            )
+        ):
+            raise RuntimeError(
+                "non-A0 test-state requires --sim-state-before, "
+                "--prefix-manifest, or --replay-prefix"
+            )
+        if args.sim_state_before or args.prefix_manifest:
+            from .fsm50_state_restore import validate_state_restore
+            from .fsm50_controller import validate_happy_path_reachability
+
+            environment_path = Path(args.environment_report).resolve()
+            if not environment_path.is_file():
+                raise RuntimeError(
+                    f"environment report is missing: {environment_path}"
+                )
+            args.restore_bundle = validate_state_restore(
+                target_state_id=state_id,
+                environment_fingerprint_sha256=sha256_file(environment_path),
+                sim_state_before_path=args.sim_state_before,
+                sim_state_before_sha256=args.sim_state_before_sha256,
+                prefix_replay_manifest_path=args.prefix_manifest,
+                prefix_replay_manifest_sha256=args.prefix_manifest_sha256,
+                state_order=list(
+                    validate_happy_path_reachability(Path(args.config))
+                ),
+            )
+            if args.prefix_manifest:
+                args.replay_prefix = True
+        else:
+            args.restore_bundle = None
+        return run_recording_replays(args)
+    if args.command == "validate-environment":
+        from .environment_equivalence import (
+            build_static_environment_fingerprint,
+            write_environment_equivalence_report,
+        )
+
+        fingerprint = build_static_environment_fingerprint(
+            robot_usd_path=args.robot_usd
+        )
+        if args.baseline_a1 or args.baseline_a2 or args.instrumented_b:
+            if not all((args.baseline_a1, args.baseline_a2, args.instrumented_b)):
+                raise RuntimeError(
+                    "A/A-B comparison requires --baseline-a1, --baseline-a2, "
+                    "and --instrumented-b together"
+                )
+            from .environment_ab_artifacts import (
+                generate_environment_equivalence_report,
+            )
+
+            payload = generate_environment_equivalence_report(
+                a1_run=args.baseline_a1,
+                a2_run=args.baseline_a2,
+                b_run=args.instrumented_b,
+                output_path=args.output,
+                fingerprint=fingerprint,
+            )
+        else:
+            # A static fingerprint is useful evidence, but it cannot satisfy
+            # the runtime A/A--A/B gate on its own.
+            write_environment_equivalence_report(
+                args.output,
+                fingerprint=fingerprint,
+                instrumentation_comparison=None,
+                trajectory_comparison=None,
+                runtime_readback=None,
+            )
+            payload = json.loads(Path(args.output).read_text(encoding="utf-8"))
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0 if payload.get("status") == "PASS" else 1
     if args.command == "report":
         results = []
         for run_dir in args.run_dirs:
