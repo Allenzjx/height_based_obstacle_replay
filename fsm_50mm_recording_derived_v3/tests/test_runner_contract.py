@@ -775,6 +775,7 @@ class RunnerContractTests(unittest.TestCase):
                 parent_pid=123,
                 child_pid=Child.pid,
                 preclose=True,
+                state="CLOSE_RETURNED",
             )
             outcome, observed = _monitor_supervised_child(
                 Child(),
@@ -788,6 +789,48 @@ class RunnerContractTests(unittest.TestCase):
             self.assertEqual("NORMAL_EXIT", outcome["status"])
             self.assertEqual(batch_root.resolve(), observed)
             self.assertTrue(outcome["preclose_observed"])
+
+    def test_supervisor_post_preclose_exit_requires_successful_close_return(self) -> None:
+        cases = (
+            ("PRECLOSE_COMPLETE", 0, "CHILD_EXIT_BEFORE_CLOSE_RETURNED"),
+            ("CLOSE_RETURNED", 7, "CHILD_EXIT_UNEXPECTED_RETURNCODE"),
+            ("CLOSE_ERROR", 0, "SIMULATION_CLOSE_ERROR"),
+        )
+        for index, (state, returncode, expected_status) in enumerate(cases):
+            with self.subTest(state=state, returncode=returncode):
+                child_pid = 43100 + index
+
+                class Child:
+                    pid = child_pid
+
+                    @staticmethod
+                    def poll():
+                        return returncode
+
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    handshake, batch_root = self._write_supervisor_files(
+                        root,
+                        token="token",
+                        parent_pid=123,
+                        child_pid=Child.pid,
+                        preclose=True,
+                        state=state,
+                    )
+                    outcome, observed = _monitor_supervised_child(
+                        Child(),
+                        handshake_path=handshake,
+                        token="token",
+                        parent_pid=123,
+                        output_root=root,
+                        clock=lambda: 1.0,
+                        sleep=lambda _seconds: None,
+                    )
+                    self.assertEqual(expected_status, outcome["status"])
+                    self.assertNotEqual("NORMAL_EXIT", outcome["status"])
+                    self.assertEqual(returncode, outcome["child_returncode"])
+                    self.assertEqual(state, outcome["handshake_state"])
+                    self.assertEqual(batch_root.resolve(), observed)
 
     def test_supervisor_timeout_starts_only_after_preclose_and_owns_exact_pid(self) -> None:
         class Child:

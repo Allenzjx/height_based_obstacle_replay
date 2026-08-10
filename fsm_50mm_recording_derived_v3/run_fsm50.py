@@ -66,6 +66,7 @@ SINGLETON_LOCK_PATH = (
 )
 SUPERVISED_CHILD_SENTINEL = "__replay-recordings-child"
 SIMULATION_CLOSE_GRACE_S = 60.0
+SUPERVISED_CHILD_SUCCESS_RETURNCODE = 0
 
 
 def _atomic_write_json(path: Path, payload: Any) -> None:
@@ -612,6 +613,10 @@ def _monitor_supervised_child(
                 status = "CHILD_EXIT_BEFORE_PRECLOSE"
             elif last_state == "CLOSE_ERROR":
                 status = "SIMULATION_CLOSE_ERROR"
+            elif last_state != "CLOSE_RETURNED":
+                status = "CHILD_EXIT_BEFORE_CLOSE_RETURNED"
+            elif int(returncode) != SUPERVISED_CHILD_SUCCESS_RETURNCODE:
+                status = "CHILD_EXIT_UNEXPECTED_RETURNCODE"
             else:
                 status = "NORMAL_EXIT"
             return (
