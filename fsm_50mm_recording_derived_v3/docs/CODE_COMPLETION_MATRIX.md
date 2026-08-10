@@ -33,11 +33,11 @@ Status meanings: **EXISTING** = present at the starting checkpoint;
 | Environment fingerprint | PARTIAL | IMPLEMENTED | Hash-backed static fingerprint with runtime placeholders |
 | Scene factory regression tests | MISSING | IMPLEMENTED | Default/custom factory and non-mutation contracts tested without Isaac |
 | Environment artifact converter/report writer | MISSING | IMPLEMENTED | Strict A1/A2 formal + B instrumented converter, source closure, sample grid, eight metrics, real-video gate |
-| Runtime A/A and A/B environment equivalence | PENDING PHYSICS | PENDING PHYSICS | A1/A2/B do not exist; no real report `PASS` |
+| Runtime A/A and A/B environment equivalence | PENDING PHYSICS | PENDING PHYSICS | Formal A1 was attempted but rejected at clean grounding before replay; no admissible A1/A2/B and no real report `PASS` |
 | All-recording primitive selection and provenance | PARTIAL | PARTIAL | Offline matrix/alignment exist; all 57 states remain `PENDING_REPLAY` |
-| Actual active-viewport video | MISSING | IMPLEMENTED | Capture/manifest/SHA/container validation code and tests exist; no qualifying real artifact yet |
-| Replay grounding parity | PARTIAL | IMPLEMENTED | Formal path uses unseeded clean reset/settle chain; stale batch predates the fix and failed ground init |
-| Isaac-free regression suite | 44/44 | IMPLEMENTED | Focused FSM/telemetry: 197 passed + 44 subtests; complete repository: 495 passed + 54 subtests |
+| Actual active-viewport video | MISSING | IMPLEMENTED | Capture/manifest/SHA/container validation code and tests exist; A1 failed before per-version capture construction, so no qualifying real artifact exists |
+| Replay grounding parity | PARTIAL | PARTIAL | Formal path uses the unseeded production initialization prefix, but unlike the worker's continued zero-command loop it rejects the first invalid reference immediately; A1 exposed the 90-tick/60-window timing blocker |
+| Isaac-free regression suite | 44/44 | IMPLEMENTED | Code checkpoint: focused 197 + 44 subtests and complete 495 + 54 subtests; post-A1 affected set 231 + 47 subtests; two combined reruns each had 495 + 57 subtests plus one transient Tk GUI initialization failure that passed alone |
 | State-level Isaac validation | PENDING PHYSICS | PENDING PHYSICS | 0/57; every state remains `PENDING_REPLAY` |
 | Complete A0→F5 Isaac validation | PENDING PHYSICS | PENDING PHYSICS | 0 successful full runs |
 | Five clean full-FSM validations | PENDING PHYSICS | PENDING PHYSICS | 0/5 |

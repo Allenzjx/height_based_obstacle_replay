@@ -16,8 +16,9 @@ A/A--A/B converter. The final pre-Isaac regression at this checkpoint was
 **495 passed + 54 subtests** for the complete repository suite.
 
 That implementation work does not close the physics gap. All 57 states remain
-`PENDING_REPLAY`; there is no successful environment A1/A2/B set, reliable
-recording replay, state run, full run, or 5/5 run.
+`PENDING_REPLAY`; the first formal A1 attempt failed before replay admission,
+and there is no successful environment A1/A2/B set, reliable recording replay,
+state run, full run, or 5/5 run.
 
 ## Audit resolution table
 
@@ -33,8 +34,8 @@ recording replay, state run, full run, or 5/5 run.
 | 8 | Replay resume/durable artifacts | Partial | Resume, lifecycle, source-freeze, checksum, and failure artifacts implemented; 0/9 reliable runs |
 | 9 | Real viewport video | Telemetry plots only | Per-run active GUI viewport MP4, manifest, SHA, and container checks implemented; no real qualifying artifact |
 | 10 | Environment fingerprint | Partial offline lock | Static fingerprint and strict runtime converter/report writer implemented |
-| 11 | Environment A/A--A/B | Not run | A1/A2/B all absent; report has no real `PASS` |
-| 12 | Formal grounding parity | Historical path could pre-seed | Formal path no longer invokes `_seed_adapter_from_locked_ground_pose`; clean live settle/reference is authoritative |
+| 11 | Environment A/A--A/B | Not run | A1 attempted but rejected during clean grounding; no admissible A1/A2/B; report has no real `PASS` |
+| 12 | Formal grounding parity | Historical path could pre-seed | Pre-seed removed and shared initialization prefix matches; post-failure timing is still partial because the evidence runner rejects while the worker continues zero-command physics and allows later recalibration |
 | 13 | Impulse generator | Guard/detector only | Command generator implemented, but not selected across all recordings or wired to live corrections/IK |
 | 14 | Anchored support-angle generator | Guard/detector only | Command generator implemented with the same selection/runtime-wiring gap |
 | 15 | Per-leg IK/live correction | Helpers only | Still not integrated into the COM transfer generators; runtime completion cannot be claimed |
@@ -65,6 +66,12 @@ and physical transition are demonstrated in durable real-Isaac evidence.
   `runs/recording_replays/20260808T005031_049278Z_recording_replays_bab6fb2016`,
   is a stale `.partial` batch. It failed during initial ground initialization
   before recording commands; `results_so_far` is empty.
+- The formal A1 attempt at
+  `runs/environment_equivalence/A1/20260810T004238_372852Z_recording_replays_c91edb0e48`
+  is a checksum-complete `.failed` batch. It used the unseeded production path,
+  but the 90-tick budget ended with `stable_frames=0/10`; replay never started.
+  Native close then timed out, so the batch also lacks a normal shutdown
+  closure, per-version result, runtime readback, telemetry, and viewport MP4.
 - There are no complete A1/A2/B artifacts, no nine-version replay set, no
   state/full result, and no five-run result.
 
@@ -98,4 +105,11 @@ three real artifacts its project-level status remains
 - Current working-tree checkpoint used here: focused FSM/telemetry
   **197 passed + 44 subtests**; complete repository
   **495 passed + 54 subtests** in `env_isaaclab`.
-- No Isaac simulation was run to produce this documentation update.
+- After tightening the supervisor close outcome, its targeted suite is
+  **27 passed + 9 subtests** and the expanded affected FSM/telemetry set is
+  **231 passed + 47 subtests**. Two full combined reruns each completed with
+  **495 passed + 57 subtests + 1 transient Tk initialization failure**; the
+  failure moved between GUI tests and each failed test passed alone. No
+  FSM/shutdown contract regressed.
+- One real-Isaac formal A1 attempt was run after the code checkpoint. It failed
+  before recording execution and upgraded no physics status.

@@ -6,31 +6,35 @@
 
 The source audit and Isaac-free contract tests establish a static lock and an
 A/A--A/B acceptance procedure. They do **not** establish runtime environment
-equivalence. As of 2026-08-09, neither the two required real-Isaac baseline
-runs nor the instrumented B run exists at the registered artifact locations:
+equivalence. As of 2026-08-09, no admissible baseline or instrumented run
+exists at the registered artifact locations:
 
-- `ENV_AA_BASELINE_1`: `PENDING`
+- `ENV_AA_BASELINE_1`: `FAILED` before replay admission
 - `ENV_AA_BASELINE_2`: `PENDING`
 - `ENV_AB_INSTRUMENTED`: `PENDING`
-- `reports/ENVIRONMENT_EQUIVALENCE_REPORT.json`: absent
-- `reports/environment_equivalence/`: absent
+- `reports/ENVIRONMENT_EQUIVALENCE_REPORT.json`:
+  `PENDING_RUNTIME_A_B`, `environment_equivalent=false`
+- failed A1 batch:
+  `runs/environment_equivalence/A1/20260810T004238_372852Z_recording_replays_c91edb0e48`
 
 The existing `reports/environment_lock_50mm.json` is an offline static lock. Its
 `runtime_readbacks` array is empty and its status is
 `offline_locked_runtime_readback_pending`; it is not an empirical A/B artifact.
 
-Consequently, no environment-equivalence `PASS` may be cited. The failed
-`REPLAY_BATCH_20260808T005031` stopped during initial grounding before any
-recording command and is neither an A/A sample nor A/B evidence. It remains a
-stale `.partial` ground-initialization failure.
+Consequently, no environment-equivalence `PASS` may be cited. Both the failed
+`REPLAY_BATCH_20260808T005031` and the new formal A1 attempt stopped during
+initial grounding before any recording command and are neither A/A samples nor
+A/B evidence. The old batch remains stale `.partial`; the new one is a
+checksum-complete `.failed` batch but not a replay artifact.
 
 The current working tree now implements the artifact converter in
 [`environment_ab_artifacts.py`](../environment_ab_artifacts.py), including
 source-freeze/git closure, recording/Fast-plan/runtime/sample-grid matching,
 role-specific contact evidence, eight trajectory metrics, and a real
 active-viewport MP4 admission gate. The implementation and pure-Python tests do
-not substitute for the missing A1/A2/B artifacts, so the report remains absent
-rather than being populated with a synthetic `PASS`.
+not substitute for the missing A1/A2/B artifacts. The static report therefore
+remains explicitly PENDING rather than being populated with a synthetic
+`PASS`.
 
 Admission also requires the owning supervised batch to have a normal shutdown
 closure: `.finalized` with no partial/failed marker,
@@ -41,6 +45,70 @@ compared across A and B come from the shared complete
 `ContactSensor.net_forces_w` layout; a sensor-proven airborne wheel is finite
 zero, while a missing/duplicate/non-finite layout is rejected rather than
 converted to zero.
+
+## Real formal A1 attempt: rejected before replay
+
+The command actually run was:
+
+```powershell
+C:\Users\kskzz\miniconda3\envs\env_isaaclab\python.exe -u -m fsm_50mm_recording_derived_v3.run_fsm50 replay-recordings --versions v012 --contact-mode formal --output-root C:\robotics_sim\wlr_robot\height_based_obstacle_replay\fsm_50mm_recording_derived_v3\runs\environment_equivalence\A1 --fail-fast
+```
+
+Preflight was clean: Git HEAD was
+`4b9e1549164c3c79da78d411d03a1ef8094d3c2d`, the working tree was clean,
+every locked source/USD hash matched, and no Isaac/Kit worker was active. The
+run requested GUI mode (`headless=false`) and video (`no_video=false`).
+
+The production-style unseeded chain reached the live ground check, but its
+standard budget is the minimum of `180` steps and `ceil(0.75 / (1/120))`, hence
+only `90` ticks. The 60-frame terminal deque still contained the landing
+transient:
+
+| Grounding evidence | Observed |
+|---|---:|
+| steps / simulation time | `90` / `0.75 s` |
+| stable frames | `0/10` |
+| final-window max root vertical speed | `0.6681404709815979 m/s` |
+| final-window max servo/joint speed | `1.7506986856460571 rad/s` |
+| final-window max wheel speed | `0.8296032547950745 rad/s` |
+| physical ground safe | `true` |
+| maximum collision penetration | `0.001055 m` (`< 0.003 m`) |
+| authoritative grounded reference | invalid / not saved |
+
+The terminal sample itself was already close to settling (`root_z=0.099139 m`,
+`|v_z|=0.006121 m/s`), and an offline recomputation over only the last 30
+samples gives maximum `|v_z|=0.007417 m/s`, maximum root-Z delta
+`0.0000118 m`, and wheel speed `0.06063 rad/s`. This narrows the blocker to the
+current 90-tick budget versus the retained 60-frame validation window; it is
+not evidence that a contact collision is unsafe. The same 90-tick trajectory
+is exactly equal to the old failed batch for every retained frame, so the
+failure is reproducible rather than a one-off jitter.
+
+Changing the shared settle budget or its time/window semantics would change
+the formal reset/grounding behavior, which the task explicitly forbids.
+Therefore no such change was made. A diagnostic hypothesis is that allowing
+the same zero-command live articulation to continue toward the already
+configured 180-step bound would expel the landing transient from the 60-frame
+window; that hypothesis has not been run and is not accepted evidence.
+
+The failure occurred before `_run_recording_version`, so no artifact/run
+subdirectory or viewport capture was created. `batch_results=[]`; there is no
+`result.json`, runtime readback, telemetry, physical evidence, visual manifest,
+viewport manifest, or MP4. After the child durably wrote
+`PRECLOSE_COMPLETE`, native `SimulationApp.close` did not return inside the
+60-second supervisor grace period. The parent terminated only its owned child
+PID tree and recorded `SIMULATION_CLOSE_TIMEOUT`. Consequently the consumer
+correctly rejects this directory before metric extraction.
+
+The Kit log reached Replicator shutdown and simulation `onStop`, then stopped
+inside `UsdContext.close_stage()` before the Isaac 5.1 `Stage closed` marker.
+A local scan found 29 logs that entered `SimulationApp.close` and none that
+reached `Stage closed`; this is a systematic native-close issue on the current
+installation, not a viewport-recorder cleanup failure. The repository cannot
+statically prove a native fix, and extending the timeout would only weaken the
+bounded failure contract. A future supervised probe must test normal close and
+`sim.stop()+close` without upgrading Isaac or accepting a forced exit as
+`NORMAL_EXIT`.
 
 ## Exact `ab7ed11..92abb432` scene diff
 
@@ -79,7 +147,7 @@ Source anchors:
 
 ## Formal clean-reset grounding chain
 
-The only environment-equivalent production initialization chain is:
+The shared production initialization prefix is:
 
 1. Construct the scene with the formal `SimSceneConfig`.
 2. `create_scene` performs `sim.reset()` and `robot.update(0.0)` while the first
@@ -89,22 +157,26 @@ The only environment-equivalent production initialization chain is:
    to `initialize_grounded_respawn_reference`, settles the live robot, validates
    ground/collision stability, and only then saves the live grounded root/joint
    reference.
-5. Reject the run if `ground_reference_result_is_valid` is false.
-6. Call `finalize_scene_after_grounding`; only after this may measurement and
-   replay proceed.
+5. Evaluate `ground_reference_result_is_valid`.
+6. Call `finalize_scene_after_grounding`.
 
-This is the formal worker ordering in
+This prefix is the formal worker ordering in
 [`sim_worker_process.py`](../../sim_worker_process.py#L755), and the recording
-replay path mirrors it in [`run_fsm50.py`](../run_fsm50.py#L2386):
+replay path mirrors it in [`run_fsm50.py`](../run_fsm50.py#L3155). Their
+post-check policies currently differ: the production worker records an invalid
+reference as `control_ready=false` but continues its zero-command physics loop
+and supports a later explicit recalibration; the evidence runner fails closed
+before any replay. That stricter runner policy prevented invalid motion from
+being counted, but the automation is not a complete reproduction of the
+worker's later settle/recalibration timing and is now an explicit blocker.
 
 ```text
 create_scene
   -> SimRobotAdapter
   -> initialize_adapter_ground_reference
   -> validate grounded reference
-  -> finalize_scene_after_grounding
-  -> live environment readback
-  -> replay
+  -> production: finalize + continue loop with control_ready=false
+  -> evidence runner: reject before replay if invalid
 ```
 
 The standard grounding settings are locked as follows:
@@ -125,6 +197,13 @@ The standard grounding settings are locked as follows:
 | Penetration tolerance | `0.003 m` |
 | Automatic ground correction | `false` |
 
+The saved v012 source records an eventually valid grounded reference at
+`sim_steps=20860` / `sim_time=173.833333 s`, not at the first clean-reset
+90-tick check. Its root Z and vertical speed are close to the A1 terminal
+sample. This proves later validity exists in the recording history, but does
+not prove when or how its explicit recalibration occurred, so it cannot be used
+as an initial pose command.
+
 ### Pre-seed is forbidden in the formal path
 
 The historical locked grounded pose is read-only comparison evidence. It must
@@ -139,7 +218,7 @@ accepted as A1, A2, B, or a production replay. Merely reproducing a historical
 pose does not reproduce the worker's reset/settle trajectory.
 
 The current formal path records `locked_ground_seed.applied=false` and describes
-the lock as comparison evidence in [`run_fsm50.py`](../run_fsm50.py#L2391).
+the lock as comparison evidence in [`run_fsm50.py`](../run_fsm50.py#L3184).
 
 ## `30` versus `150 deg/s`
 
@@ -268,10 +347,14 @@ as a physical difference and fails the comparison. Sensor readback values may
 differ because B exists to observe them; they cannot be copied into or used to
 compensate physics settings.
 
-A1 and A2 must use `contact_mode=formal`: the production aggregate contact
-sensor with `contact_sensor_factory=None`. They are not required to expose B's
-filtered wheel/non-wheel fields. B must use `contact_mode=instrumented` and
-must provide complete filtered wheel and non-wheel instrumentation evidence.
+A1 and A2 must use `contact_mode=formal`: the original aggregate contact-sensor
+constructor with `contact_sensor_factory=None`. The ordinary production worker
+currently forces optional telemetry sensors off; enabling the original
+aggregate sensor here is therefore an explicit A/A observation-mode variable,
+not a claim that the worker normally instantiates it. Both A repeats must use
+that identical mode. They are not required to expose B's filtered
+wheel/non-wheel fields. B must use `contact_mode=instrumented` and must provide
+complete filtered wheel and non-wheel instrumentation evidence.
 All three must use the same source-freeze files map and git HEAD, recording SHA,
 Fast plan/source version, USD, initialization chain, physical configuration,
 command stream, device/runtime versions, timestep, seed policy, absolute
