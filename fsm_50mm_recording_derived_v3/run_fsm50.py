@@ -35,7 +35,6 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_FORWARD_SIGN, WHEEL_JOINT_NAM
 from motion_speed import load_motion_reference
 from playback import SimTimePlaybackService
 from sequence_model import load_steps_jsonl
-from sim_state_validation import verify_restored_full_sim_pose
 from telemetry.config import RuntimeTelemetryConfig
 from telemetry.exporters import write_csv, write_json
 
@@ -50,6 +49,7 @@ from .recording_audit import (
     sha256_file,
 )
 from .recording_fast_plan import fast_plan_rows, write_fast_plan
+from .shutdown_contract import SUCCESSFUL_SHUTDOWN_STATUSES
 from .support_classifier import ObstacleGeometry
 
 
@@ -67,8 +67,6 @@ SINGLETON_LOCK_PATH = (
 SUPERVISED_CHILD_SENTINEL = "__replay-recordings-child"
 SIMULATION_CLOSE_GRACE_S = 60.0
 SUPERVISED_CHILD_SUCCESS_RETURNCODE = 0
-
-
 def _atomic_write_json(path: Path, payload: Any) -> None:
     """Durably replace one small supervisor/control JSON document."""
 
@@ -193,10 +191,58 @@ class ChildSupervisorHandshake:
         self._write("PRECLOSE_COMPLETE", preclose_marker=str(marker))
         return marker
 
-    def mark_close_returned(self, *, close_error: str = "") -> None:
+    def mark_graceful_close_returned(self, *, intended_returncode: int) -> None:
         self._write(
-            "CLOSE_RETURNED" if not close_error else "CLOSE_ERROR",
-            close_error=str(close_error),
+            "GRACEFUL_CLOSE_RETURNED",
+            shutdown_mode="graceful",
+            close_kwargs={
+                "wait_for_replicator": False,
+                "skip_cleanup": False,
+            },
+            intended_returncode=int(intended_returncode),
+        )
+
+    def mark_fast_exit_requested(
+        self,
+        *,
+        intended_returncode: int,
+        runtime_version: str,
+    ) -> None:
+        self._write(
+            "FAST_EXIT_REQUESTED",
+            shutdown_mode="fast",
+            close_kwargs={
+                "wait_for_replicator": False,
+                "skip_cleanup": True,
+            },
+            intended_returncode=int(intended_returncode),
+            runtime_version=str(runtime_version),
+        )
+
+    def mark_fast_close_returned(
+        self,
+        *,
+        intended_returncode: int,
+        runtime_version: str,
+    ) -> None:
+        # This state is deliberately not named CLOSE_RETURNED: a fast close
+        # does not claim that graceful close_stage cleanup completed.
+        self._write(
+            "FAST_CLOSE_RETURNED",
+            shutdown_mode="fast",
+            close_kwargs={
+                "wait_for_replicator": False,
+                "skip_cleanup": True,
+            },
+            intended_returncode=int(intended_returncode),
+            runtime_version=str(runtime_version),
+        )
+
+    def mark_close_error(self, *, shutdown_mode: str, error: str) -> None:
+        self._write(
+            "CLOSE_ERROR",
+            shutdown_mode=str(shutdown_mode),
+            close_error=str(error),
         )
 
     def mark_failed(self, error: str) -> None:
@@ -227,15 +273,36 @@ def _preclose_evidence_manifest(
         if not run_dir_text:
             continue
         run_dir = Path(run_dir_text)
-        paths.extend(
-            [
-                run_dir / "result.json",
-                run_dir / "physical_evidence.json",
-                run_dir / "fsm50_telemetry.csv",
-                run_dir / "state_timeline.csv",
-                run_dir / "visual_recording_manifest.json",
-                run_dir / "checksums.sha256",
-            ]
+        declared = list(result.get("required_evidence_paths", []) or [])
+        if declared:
+            paths.extend(Path(str(path)).resolve() for path in declared)
+        else:
+            video_record = dict(result.get("video", {}) or {})
+            video_manifest = Path(
+                str(video_record.get("manifest_path", "") or run_dir / "viewport_video_manifest.json")
+            )
+            video_path = Path(
+                str(video_record.get("video_path", "") or run_dir / "actual_viewport_video.mp4")
+            )
+            paths.extend(
+                [
+                    run_dir / "result.json",
+                    run_dir / "failure_diagnostics.json",
+                    run_dir / "physical_evidence.json",
+                    run_dir / "fsm50_telemetry.csv",
+                    run_dir / "fsm50_telemetry.jsonl",
+                    run_dir / "state_timeline.csv",
+                    run_dir / "visual_recording_manifest.json",
+                    video_manifest,
+                    video_path,
+                    run_dir / "checksums.sha256",
+                ]
+            )
+    missing = [str(path.resolve()) for path in sorted(set(paths)) if not path.is_file()]
+    if missing:
+        raise RuntimeError(
+            "preclose evidence is incomplete; missing required files: "
+            + ", ".join(missing)
         )
     evidence_files = {
         str(path.resolve()): {
@@ -243,7 +310,6 @@ def _preclose_evidence_manifest(
             "size_bytes": path.stat().st_size,
         }
         for path in sorted(set(paths))
-        if path.is_file()
     }
     return {
         "physics_result_count": len(results),
@@ -519,6 +585,229 @@ def _read_supervisor_handshake(
     return payload, batch_root, preclose_valid
 
 
+def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
+    """Re-read every durable preclose byte before admitting any close mode."""
+
+    root = Path(batch_root).resolve()
+    marker_path = root / "preclose_complete.json"
+    if not marker_path.is_file():
+        raise RuntimeError("preclose_complete.json is missing")
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    evidence = marker.get("evidence")
+    if not isinstance(evidence, dict):
+        raise RuntimeError("preclose marker evidence is not a mapping")
+    if (
+        evidence.get("manifest_error")
+        or evidence.get("immutable_preclose_errors")
+        or evidence.get("batch_marker_error")
+    ):
+        raise RuntimeError("preclose marker records evidence/snapshot errors")
+    evidence_files = evidence.get("evidence_files")
+    if not isinstance(evidence_files, dict) or not evidence_files:
+        raise RuntimeError("preclose evidence_files is empty or invalid")
+    verified_files: dict[str, dict[str, Any]] = {}
+    for raw_path, raw_record in evidence_files.items():
+        if not isinstance(raw_record, dict):
+            raise RuntimeError(f"preclose evidence row is invalid: {raw_path!r}")
+        path = Path(str(raw_path)).resolve()
+        if not path.is_file():
+            raise RuntimeError(f"preclose evidence file is missing: {path}")
+        expected_sha = str(raw_record.get("sha256", "") or "").lower()
+        expected_size = int(raw_record.get("size_bytes", -1) or -1)
+        if (
+            len(expected_sha) != 64
+            or any(character not in "0123456789abcdef" for character in expected_sha)
+            or expected_size < 0
+        ):
+            raise RuntimeError(f"preclose evidence metadata is invalid: {path}")
+        actual_sha = sha256_file(path).lower()
+        actual_size = path.stat().st_size
+        if actual_sha != expected_sha or actual_size != expected_size:
+            raise RuntimeError(f"preclose evidence hash/size mismatch: {path}")
+        verified_files[str(path)] = {
+            "sha256": actual_sha,
+            "size_bytes": actual_size,
+        }
+
+    required = (
+        root / "batch_request.json",
+        root / "batch_results.json",
+        root / "batch_finalization.json",
+        root / "batch_results.preclose.json",
+        root / "batch_finalization.preclose.json",
+        root / "source_integrity.json",
+        root / "checksums.sha256",
+        root / "checksums.preclose.sha256",
+    )
+    missing_evidence = [
+        str(path)
+        for path in required
+        if str(path.resolve()) not in verified_files
+    ]
+    if missing_evidence:
+        raise RuntimeError(
+            "preclose evidence manifest does not cover required closure files: "
+            + ", ".join(missing_evidence)
+        )
+    if sha256_file(root / "batch_results.json") != sha256_file(
+        root / "batch_results.preclose.json"
+    ):
+        raise RuntimeError("batch_results preclose snapshot differs from live bytes")
+    if sha256_file(root / "batch_finalization.json") != sha256_file(
+        root / "batch_finalization.preclose.json"
+    ):
+        raise RuntimeError(
+            "batch_finalization preclose snapshot differs from live bytes"
+        )
+    if sha256_file(root / "checksums.sha256") != sha256_file(
+        root / "checksums.preclose.sha256"
+    ):
+        raise RuntimeError("preclose checksum snapshot differs from live bytes")
+
+    batch_results = json.loads(
+        (root / "batch_results.preclose.json").read_text(encoding="utf-8")
+    )
+    if not isinstance(batch_results, list):
+        raise RuntimeError("batch_results preclose snapshot is not a list")
+    try:
+        physics_result_count = int(evidence.get("physics_result_count", -1))
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError("preclose physics_result_count is invalid") from exc
+    if physics_result_count != len(batch_results):
+        raise RuntimeError("preclose physics_result_count differs from batch_results")
+    snapshot_finalization = json.loads(
+        (root / "batch_finalization.preclose.json").read_text(encoding="utf-8")
+    )
+    if evidence.get("batch_finalization") != snapshot_finalization:
+        raise RuntimeError(
+            "preclose embedded finalization differs from immutable snapshot"
+        )
+    source_integrity = evidence.get("source_integrity")
+    if not isinstance(source_integrity, dict) or source_integrity.get("equal") is not True:
+        raise RuntimeError("preclose source integrity is not equal=true")
+
+    checksum_rows: dict[str, str] = {}
+    checksum_path = root / "checksums.preclose.sha256"
+    for line_number, raw in enumerate(
+        checksum_path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        digest, separator, relative = raw.partition("  ")
+        digest = digest.strip().lower()
+        relative = relative.strip().replace("\\", "/")
+        if (
+            not separator
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+            or not relative
+            or relative in checksum_rows
+        ):
+            raise RuntimeError(
+                f"invalid/duplicate preclose checksum row {line_number}"
+            )
+        target = (root / relative).resolve()
+        if not _path_is_within(target, root):
+            raise RuntimeError(f"preclose checksum path escapes batch root: {relative}")
+        if not target.is_file() or sha256_file(target).lower() != digest:
+            raise RuntimeError(f"preclose checksum mismatch: {relative}")
+        checksum_rows[relative] = digest
+    if not checksum_rows:
+        raise RuntimeError("preclose checksum manifest is empty")
+    for path in required[:3] + (root / "source_integrity.json",):
+        relative = path.resolve().relative_to(root).as_posix()
+        if relative not in checksum_rows:
+            raise RuntimeError(
+                f"preclose checksum manifest does not cover {relative}"
+            )
+    checksum_exclusions = {
+        "checksums.sha256",
+        "checksums.preclose.sha256",
+        "batch_results.preclose.json",
+        "batch_finalization.preclose.json",
+    }
+    uncovered_evidence: list[str] = []
+    for absolute_text in verified_files:
+        evidence_path = Path(absolute_text).resolve()
+        if not _path_is_within(evidence_path, root):
+            continue
+        relative = evidence_path.relative_to(root).as_posix()
+        if relative in checksum_exclusions:
+            continue
+        if checksum_rows.get(relative) != sha256_file(evidence_path).lower():
+            uncovered_evidence.append(relative)
+    if uncovered_evidence:
+        raise RuntimeError(
+            "preclose checksum manifest does not cover current evidence: "
+            + ", ".join(sorted(uncovered_evidence))
+        )
+    return {
+        "ok": True,
+        "marker_path": str(marker_path),
+        "marker_sha256": sha256_file(marker_path),
+        "verified_file_count": len(verified_files),
+        "checksum_row_count": len(checksum_rows),
+        "checksums_preclose_sha256": sha256_file(checksum_path),
+    }
+
+
+def _close_simulation_with_explicit_policy(
+    *,
+    simulation_app: Any | None,
+    scene_handle: Any | None,
+    args: Any,
+    supervisor: ChildSupervisorHandshake | None,
+    intended_returncode: int,
+) -> str:
+    """Execute exactly one preselected close policy after durable preclose."""
+
+    mode = str(getattr(args, "shutdown_mode", "fast") or "fast").lower()
+    if mode not in {"graceful", "fast"}:
+        raise ValueError(f"unsupported shutdown mode: {mode}")
+    runtime_versions = _runtime_versions()
+    runtime_version = str(
+        dict(runtime_versions.get("packages", {}) or {}).get(
+            "isaacsim", "unknown"
+        )
+    )
+    if simulation_app is None:
+        if scene_handle is not None:
+            scene_handle.close()
+        if supervisor is not None:
+            supervisor.mark_graceful_close_returned(
+                intended_returncode=intended_returncode
+            )
+        return "graceful"
+    if mode == "fast":
+        if not runtime_version.startswith("5.1."):
+            raise RuntimeError(
+                "fast shutdown is restricted to the verified Isaac 5.1 path; "
+                f"runtime={runtime_version}"
+            )
+        if supervisor is not None:
+            supervisor.mark_fast_exit_requested(
+                intended_returncode=intended_returncode,
+                runtime_version=runtime_version,
+            )
+        simulation_app.close(
+            wait_for_replicator=False,
+            skip_cleanup=True,
+        )
+        if supervisor is not None:
+            supervisor.mark_fast_close_returned(
+                intended_returncode=intended_returncode,
+                runtime_version=runtime_version,
+            )
+        return "fast"
+    simulation_app.close(
+        wait_for_replicator=False,
+        skip_cleanup=False,
+    )
+    if supervisor is not None:
+        supervisor.mark_graceful_close_returned(
+            intended_returncode=intended_returncode
+        )
+    return "graceful"
+
+
 def _terminate_owned_child_tree(child: Any) -> dict[str, Any]:
     """Terminate only the exact Popen-owned child and its descendants."""
 
@@ -609,16 +898,93 @@ def _monitor_supervised_child(
             preclose_seen_at = now
         returncode = child.poll()
         if returncode is not None:
+            # The child may publish its terminal handshake immediately before
+            # exiting, between the poll-loop read and ``poll()``.  Re-read once
+            # after observing the return code so that state is never lost to
+            # this race.
+            final_handshake, final_root, final_preclose = _read_supervisor_handshake(
+                handshake_path,
+                token=token,
+                parent_pid=parent_pid,
+                child_pid=int(child.pid),
+                output_root=output_root,
+            )
+            if final_root is not None:
+                batch_root = final_root
+            if final_handshake is not None:
+                handshake = final_handshake
+                last_state = str(final_handshake.get("state", "") or "")
+            preclose_valid = bool(final_preclose)
+            preclose_verification: dict[str, Any] = {
+                "ok": False,
+                "error": "preclose marker was not verified",
+            }
+            if preclose_valid and batch_root is not None:
+                try:
+                    preclose_verification = _validate_preclose_closure(batch_root)
+                except Exception as exc:
+                    preclose_verification = {
+                        "ok": False,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+            intended_returncode = (
+                None
+                if handshake is None
+                else handshake.get("intended_returncode")
+            )
+            returncode_matches = bool(
+                intended_returncode is not None
+                and int(returncode) == int(intended_returncode)
+            )
+            shutdown_mode = str(
+                "" if handshake is None else handshake.get("shutdown_mode", "")
+            )
+            close_kwargs = dict(
+                {} if handshake is None else handshake.get("close_kwargs", {}) or {}
+            )
+            runtime_version = str(
+                "" if handshake is None else handshake.get("runtime_version", "")
+            )
+            close_error = str(
+                "" if handshake is None else handshake.get("close_error", "")
+            )
             if not preclose_valid:
                 status = "CHILD_EXIT_BEFORE_PRECLOSE"
+            elif preclose_verification.get("ok") is not True:
+                status = "PRECLOSE_CLOSURE_INVALID"
             elif last_state == "CLOSE_ERROR":
                 status = "SIMULATION_CLOSE_ERROR"
-            elif last_state != "CLOSE_RETURNED":
-                status = "CHILD_EXIT_BEFORE_CLOSE_RETURNED"
-            elif int(returncode) != SUPERVISED_CHILD_SUCCESS_RETURNCODE:
-                status = "CHILD_EXIT_UNEXPECTED_RETURNCODE"
+            elif last_state in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}:
+                fast_contract = bool(
+                    shutdown_mode == "fast"
+                    and runtime_version.startswith("5.1.")
+                    and close_kwargs
+                    == {
+                        "wait_for_replicator": False,
+                        "skip_cleanup": True,
+                    }
+                )
+                status = (
+                    "FAST_EXIT_VERIFIED"
+                    if fast_contract and returncode_matches
+                    else "FAST_EXIT_FAILED"
+                )
+            elif last_state == "GRACEFUL_CLOSE_RETURNED":
+                graceful_contract = bool(
+                    shutdown_mode == "graceful"
+                    and close_kwargs
+                    == {
+                        "wait_for_replicator": False,
+                        "skip_cleanup": False,
+                    }
+                )
+                status = (
+                    "GRACEFUL_EXIT"
+                    if graceful_contract and returncode_matches
+                    else "CHILD_EXIT_UNEXPECTED_RETURNCODE"
+                )
             else:
-                status = "NORMAL_EXIT"
+                status = "CHILD_EXIT_BEFORE_CLOSE_RETURNED"
             return (
                 {
                     "schema_version": "fsm50.shutdown_outcome.v1",
@@ -628,7 +994,14 @@ def _monitor_supervised_child(
                     "child_pid": int(child.pid),
                     "child_returncode": int(returncode),
                     "preclose_observed": bool(preclose_valid),
+                    "preclose_verification": preclose_verification,
                     "handshake_state": last_state,
+                    "shutdown_mode": shutdown_mode,
+                    "close_kwargs": close_kwargs,
+                    "intended_returncode": intended_returncode,
+                    "process_returned_normally": True,
+                    "runtime_version": runtime_version,
+                    "close_error": close_error,
                     "elapsed_s": float(now - started),
                     "close_wait_s": None
                     if preclose_seen_at is None
@@ -699,7 +1072,7 @@ def _record_shutdown_outcome(
 
     batch_root = Path(batch_root).resolve()
     status = str(outcome.get("status", "") or "")
-    shutdown_failed = status != "NORMAL_EXIT"
+    shutdown_failed = status not in SUCCESSFUL_SHUTDOWN_STATUSES
     _atomic_write_json(batch_root / "shutdown_outcome.json", outcome)
     results_path = batch_root / "batch_results.json"
     try:
@@ -735,6 +1108,9 @@ def _record_shutdown_outcome(
                 run_dir = Path(run_dir_text).resolve()
                 if run_dir.is_dir() and _path_is_within(run_dir, batch_root):
                     _atomic_write_json(run_dir / "result.json", result)
+                    _atomic_write_json(
+                        run_dir / "failure_diagnostics.json", result
+                    )
                     _write_checksums(run_dir)
             artifact_text = str(result.get("artifact_root", "") or "")
             if artifact_text:
@@ -759,7 +1135,7 @@ def _record_shutdown_outcome(
                 "failed": True,
                 "strict_success": False,
                 "failure_reason": status,
-                "close_error": status,
+                "close_error": str(outcome.get("close_error", "") or status),
                 "phase": status,
             }
         )
@@ -1453,7 +1829,8 @@ def _reliable_replay_completion(
         # Keep resume admission aligned with the environment-artifact gate.  A
         # version marker alone is not durable proof of completion: the child
         # writes it before SimulationApp.close() and the supervising parent
-        # records NORMAL_EXIT only after close returns.  Import lazily so the
+        # records a verified graceful/fast exit only after process return.
+        # Import lazily so the
         # replay CLI does not load artifact-conversion code on ordinary runs.
         from .environment_ab_artifacts import (
             _load_batch_shutdown_closure,
@@ -1474,7 +1851,8 @@ def _reliable_replay_completion(
         # replayed instead of surfacing as a CLI crash.
         return None
     if (
-        str(batch_shutdown_closure.get("status", "")) != "NORMAL_EXIT"
+        str(batch_shutdown_closure.get("status", ""))
+        not in SUCCESSFUL_SHUTDOWN_STATUSES
         or str(batch_shutdown_closure.get("phase", ""))
         != "SHUTDOWN_COMPLETE"
     ):
@@ -1562,137 +1940,6 @@ def _load_environment_lock(path: Path) -> dict[str, Any]:
     if not isinstance(payload.get("selected_environment"), dict):
         raise RuntimeError(f"environment lock has no selected_environment: {path}")
     return payload
-
-
-def _seed_adapter_from_locked_ground_pose(
-    adapter: Any,
-    lock: dict[str, Any],
-) -> dict[str, Any]:
-    """Restore the audited recording-start pose before the strict ground settle.
-
-    The raw USD spawn pose is intentionally not treated as recording evidence.
-    Joint positions stay at the articulation's captured standing defaults, while
-    the root pose comes from the audited 50 mm environment lock and every root
-    and joint velocity is explicitly zeroed.
-    """
-
-    expected = dict(lock.get("selected_environment", {}) or {})
-    position = list(expected.get("robot_initial_root_position_m", []) or [])
-    orientation = list(expected.get("robot_initial_root_orientation_wxyz", []) or [])
-    home = dict(expected.get("standing_home_command_state_deg", {}) or {})
-    try:
-        target_pose = [float(value) for value in position + orientation]
-    except (TypeError, ValueError) as exc:
-        raise RuntimeError("locked recording-start root pose is non-numeric") from exc
-    if len(position) != 3 or len(orientation) != 4 or not all(
-        math.isfinite(value) for value in target_pose
-    ):
-        raise RuntimeError("locked recording-start root pose must contain 3+4 finite values")
-    quaternion_norm = math.sqrt(sum(float(value) ** 2 for value in orientation))
-    if abs(quaternion_norm - 1.0) > 1.0e-3:
-        raise RuntimeError(
-            "locked recording-start orientation must be a unit quaternion; "
-            f"norm={quaternion_norm}"
-        )
-    if set(home) != set(SERVO_JOINT_NAMES) or not all(
-        math.isfinite(float(value)) for value in home.values()
-    ):
-        raise RuntimeError("locked standing-home command state is incomplete or non-finite")
-
-    captured = dict(adapter.capture_sim_state() or {})
-    if not bool(captured.get("pose_restore_eligible", False)):
-        raise RuntimeError("adapter capture is not eligible for locked ground-pose restore")
-    joint_names = [str(name) for name in list(captured.get("joint_names", []) or [])]
-    joint_pos = captured.get("joint_pos")
-    if not joint_names or joint_pos in (None, [], {}):
-        raise RuntimeError("adapter capture has no complete standing joint pose")
-    command_state = dict(captured.get("command_state", {}) or {})
-    captured_wheels = dict(command_state.get("wheels", {}) or {})
-    if set(captured_wheels) != set(WHEEL_JOINT_NAMES):
-        raise RuntimeError("adapter capture has an incomplete wheel command state")
-
-    seed_state = copy.deepcopy(captured)
-    seed_state["root_pose"] = [target_pose]
-    seed_state["root_velocity"] = [[0.0] * 6]
-    seed_state["joint_vel"] = [[0.0] * len(joint_names)]
-    seed_state["command_state"] = {
-        "servos": {name: float(home[name]) for name in SERVO_JOINT_NAMES},
-        "wheels": {name: 0.0 for name in WHEEL_JOINT_NAMES},
-    }
-    restore = dict(adapter.restore_sim_state(seed_state) or {})
-    validation = dict(restore.get("validation", {}) or {})
-    if not bool(validation.get("valid", False)):
-        raise RuntimeError(
-            "locked recording-start pose restore validation failed: "
-            + str(validation.get("reason", "unknown validation failure"))
-        )
-    measured_state = dict(adapter.capture_sim_state() or {})
-    post_write_verification = verify_restored_full_sim_pose(
-        seed_state,
-        measured_state,
-        joint_names,
-    )
-
-    def finite_row(value: Any) -> list[float]:
-        row = value
-        while (
-            isinstance(row, (list, tuple))
-            and len(row) == 1
-            and isinstance(row[0], (list, tuple))
-        ):
-            row = row[0]
-        if not isinstance(row, (list, tuple)):
-            return []
-        try:
-            numbers = [float(item) for item in row]
-        except (TypeError, ValueError):
-            return []
-        return numbers if all(math.isfinite(item) for item in numbers) else []
-
-    measured_root_velocity = finite_row(measured_state.get("root_velocity"))
-    measured_joint_velocity = finite_row(measured_state.get("joint_vel"))
-    root_velocity_max_abs = max([abs(value) for value in measured_root_velocity] + [float("inf")]) if not measured_root_velocity else max(abs(value) for value in measured_root_velocity)
-    joint_velocity_max_abs = max([abs(value) for value in measured_joint_velocity] + [float("inf")]) if not measured_joint_velocity else max(abs(value) for value in measured_joint_velocity)
-    velocity_tolerance = 1.0e-6
-    velocities_verified = bool(
-        len(measured_root_velocity) == 6
-        and len(measured_joint_velocity) == len(joint_names)
-        and root_velocity_max_abs <= velocity_tolerance
-        and joint_velocity_max_abs <= velocity_tolerance
-    )
-    if not bool(post_write_verification.get("verified", False)) or not velocities_verified:
-        raise RuntimeError(
-            "locked recording-start pose was not verified after write: "
-            f"pose={post_write_verification.get('reason', 'unknown')}; "
-            f"root_velocity_max_abs={root_velocity_max_abs}; "
-            f"joint_velocity_max_abs={joint_velocity_max_abs}"
-        )
-    raw_pose = captured.get("root_pose")
-    return {
-        "schema_version": "fsm50.locked_ground_seed.v1",
-        "source": "environment_lock_50mm.json:selected_environment",
-        "raw_spawn_root_pose": _jsonable(raw_pose),
-        "requested_root_pose": target_pose,
-        "requested_quaternion_norm": quaternion_norm,
-        "root_velocity_written": [0.0] * 6,
-        "joint_velocity_written_zero": True,
-        "joint_count": len(joint_names),
-        "joint_names": joint_names,
-        "standing_joint_position_source": "captured_articulation_default",
-        "standing_home_command_deg": {
-            name: float(home[name]) for name in SERVO_JOINT_NAMES
-        },
-        "wheel_target_rad_s": {name: 0.0 for name in WHEEL_JOINT_NAMES},
-        "restore_validation": _jsonable(validation),
-        "restore_trace": _jsonable(restore.get("trace", [])),
-        "post_write_pose_verification": _jsonable(post_write_verification),
-        "post_write_velocity_verification": {
-            "verified": velocities_verified,
-            "tolerance": velocity_tolerance,
-            "root_velocity_max_abs": root_velocity_max_abs,
-            "joint_velocity_max_abs": joint_velocity_max_abs,
-        },
-    }
 
 
 def _verify_locked_source_hashes(lock: dict[str, Any]) -> dict[str, Any]:
@@ -2320,7 +2567,18 @@ def _write_checksums(root: Path) -> None:
         }:
             continue
         rows.append(f"{sha256_file(path)}  {path.relative_to(root).as_posix()}")
-    (root / "checksums.sha256").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    destination = root / "checksums.sha256"
+    temporary = destination.with_name(
+        f".{destination.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
+    try:
+        with temporary.open("w", encoding="utf-8", newline="\n") as stream:
+            stream.write("\n".join(rows) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _copy_run_inputs(item: VersionFiles, run_dir: Path, steps: list[dict[str, Any]], max_wheel_speed: float) -> None:
@@ -3000,6 +3258,553 @@ def _apply_batch_source_drift(
             _mark_artifact_root(artifact_root, valid=False)
 
 
+def _run_grounding_only_locked(
+    args: argparse.Namespace,
+    *,
+    process_snapshot: list[dict[str, Any]],
+    supervisor: ChildSupervisorHandshake | None = None,
+) -> int:
+    """Run one fresh-process formal grounding probe and preserve failures."""
+
+    from sim_obstacle_scene import (
+        DEFAULT_ROBOT_USD_PATH,
+        OBSTACLE_LENGTH_M,
+        OBSTACLE_WIDTH_M,
+        SimSceneConfig,
+        create_scene,
+        ensure_simulation_app,
+        finalize_scene_after_grounding,
+        measure_obstacle_geometry,
+        measure_scene_baseline,
+    )
+    from sim_robot_adapter import SimRobotAdapter, SimRobotAdapterConfig
+    from sim_worker_runtime import (
+        ground_reference_result_is_valid,
+        initialize_adapter_ground_reference,
+    )
+    from .grounding_diagnostics import (
+        GroundingTraceWriter,
+        analyze_joint_trace,
+        write_grounding_trace_csv,
+    )
+
+    output_root = Path(args.output_root).resolve()
+    batch_root = _new_directory(
+        output_root,
+        f"grounding_only_trial_{int(getattr(args, 'trial_id', 0) or 0):02d}",
+    )
+    if supervisor is not None:
+        supervisor.announce_batch(batch_root)
+    (batch_root / ".partial").write_text("running\n", encoding="utf-8")
+    diagnostic_dir = batch_root / "diagnostic_artifact"
+    qualification_dir = batch_root / "qualification_artifact"
+    diagnostic_dir.mkdir()
+    qualification_dir.mkdir()
+
+    robot_usd = Path(args.robot_usd or DEFAULT_ROBOT_USD_PATH).resolve()
+    if not robot_usd.is_file():
+        raise FileNotFoundError(f"robot USD not found: {robot_usd}")
+    environment_lock_path = Path(args.report_root).resolve() / "environment_lock_50mm.json"
+    environment_lock = _load_environment_lock(environment_lock_path)
+    locked_source_check = _verify_locked_source_hashes(environment_lock)
+    robot_hash = sha256_file(robot_usd).lower()
+    locked_robot_hash = str(
+        dict(environment_lock.get("selected_environment", {}) or {}).get(
+            "robot_usd_sha256", ""
+        )
+        or ""
+    ).lower()
+    prelaunch_environment_ok = bool(
+        locked_source_check.get("ok", False)
+        and locked_robot_hash
+        and robot_hash == locked_robot_hash
+    )
+    batch_source_freeze = _source_freeze(robot_usd=robot_usd)
+    trial_id = int(getattr(args, "trial_id", 0) or 0)
+    _atomic_write_json(
+        batch_root / "batch_request.json",
+        {
+            "schema_version": "fsm50.grounding_only_request.v1",
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "command": "grounding-only",
+            "trial_id": trial_id,
+            "args": vars(args),
+            "source_freeze": batch_source_freeze,
+            "environment_lock_path": str(environment_lock_path),
+            "prelaunch_environment_validation": {
+                "ok": prelaunch_environment_ok,
+                "locked_source_hashes": locked_source_check,
+                "locked_robot_usd_sha256": locked_robot_hash,
+                "actual_robot_usd_sha256": robot_hash,
+            },
+            "process_preflight": _jsonable(process_snapshot),
+            "clean_reset_contract": {
+                "fresh_supervised_child": True,
+                "historical_root_pose_seed_allowed": False,
+                "trial_id": trial_id,
+            },
+        },
+    )
+
+    motion = load_motion_reference()
+    scene_config = SimSceneConfig(
+        obstacle_height_m=0.05,
+        robot_usd=robot_usd,
+        save_usd=PROJECT_ROOT / "usd" / "wlr_robot_height_replay_env.usd",
+        spawn_z=0.04,
+        obstacle_x=1.55,
+        obstacle_width=OBSTACLE_WIDTH_M,
+        obstacle_length=OBSTACLE_LENGTH_M,
+        infer_obstacle_size=False,
+        robot_width=0.80,
+        robot_length=0.55,
+        physics_dt=1.0 / 120.0,
+        render_interval=8,
+        device=str(args.device),
+        max_wheel_speed=float(motion.wheel_velocity_limit_rad_s),
+        default_wheel_speed=float(motion.wheel_reference_velocity_rad_s),
+        wheel_direction=1.0,
+        servo_stiffness=600.0,
+        servo_damping=60.0,
+        wheel_damping=20.0,
+        save_scene=False,
+        defer_first_visible_render=True,
+    )
+    # Formal mode retains the production aggregate sensor constructor.  It is
+    # observation-only and supplies full-body net_forces_w for this diagnostic.
+    scene_config.telemetry_contact_sensors_enabled = True
+    scene_config.contact_sensor_factory = None
+
+    simulation_app = None
+    scene_handle = None
+    adapter = None
+    trace_writer = None
+    capture: _RecordingReplayViewportCapture | None = None
+    ground: dict[str, Any] = {}
+    video: dict[str, Any] = {}
+    run_error = ""
+    live_baseline: dict[str, Any] = {}
+    live_obstacle: dict[str, Any] = {}
+    try:
+        if not prelaunch_environment_ok:
+            raise RuntimeError(
+                "environment lock prelaunch validation failed; see batch_request.json"
+            )
+        simulation_app = ensure_simulation_app(args)
+        scene_handle = create_scene(scene_config, simulation_app=simulation_app)
+        adapter = SimRobotAdapter(
+            scene_handle,
+            SimRobotAdapterConfig(
+                max_wheel_speed=float(motion.wheel_velocity_limit_rad_s),
+                default_wheel_speed=float(motion.wheel_reference_velocity_rad_s),
+                wheel_direction=1.0,
+                apply_safe_servo_joint_limits=True,
+                apply_joint_limits_to_sim=True,
+                ground_settle_s=0.75,
+                ground_settle_max_steps=180,
+                ground_stable_frames=10,
+                ground_vertical_speed_threshold_m_s=0.01,
+                ground_joint_speed_threshold_rad_s=0.02,
+                ground_servo_speed_threshold_rad_s=0.02,
+                ground_wheel_speed_threshold_rad_s=0.20,
+                ground_clearance_m=0.002,
+                ground_penetration_tolerance_m=0.003,
+                auto_ground_correction=False,
+                max_ground_correction_m=0.10,
+            ),
+        )
+        capture = _RecordingReplayViewportCapture(
+            diagnostic_dir,
+            args,
+            contact_mode="formal_grounding_diagnostic",
+        )
+        capture.start()
+        trace_writer = GroundingTraceWriter(
+            diagnostic_dir / "grounding_telemetry.jsonl",
+            adapter=adapter,
+            scene_handle=scene_handle,
+        )
+        ground = initialize_adapter_ground_reference(
+            adapter,
+            tick_observer=trace_writer,
+        )
+        ground["locked_ground_seed"] = {
+            "applied": False,
+            "reason": "historical locked pose is read-only comparison evidence",
+            "initialization_path": "formal_worker_unseeded_ground_reference",
+        }
+        finalize_scene_after_grounding(scene_handle)
+        live_baseline = measure_scene_baseline(scene_handle, adapter)
+        live_obstacle = measure_obstacle_geometry(scene_handle)
+    except Exception as exc:
+        run_error = f"{type(exc).__name__}: {exc}"
+    finally:
+        if trace_writer is not None:
+            try:
+                trace_writer.close()
+            except Exception as exc:
+                run_error = run_error or f"trace close failed: {type(exc).__name__}: {exc}"
+        if capture is not None:
+            try:
+                video = capture.finalize()
+            except Exception as exc:
+                video = _missing_recording_viewport_video(
+                    diagnostic_dir,
+                    args,
+                    contact_mode="formal_grounding_diagnostic",
+                    error=(
+                        "capture finalize failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                )
+        else:
+            video = _missing_recording_viewport_video(
+                diagnostic_dir,
+                args,
+                contact_mode="formal_grounding_diagnostic",
+                error="viewport capture was not constructed",
+            )
+
+    rows = [] if trace_writer is None else list(trace_writer.rows)
+    if not (diagnostic_dir / "grounding_telemetry.jsonl").is_file():
+        (diagnostic_dir / "grounding_telemetry.jsonl").write_text(
+            "", encoding="utf-8"
+        )
+    write_grounding_trace_csv(
+        diagnostic_dir / "grounding_telemetry.csv",
+        rows,
+    )
+    joint_analysis = analyze_joint_trace(
+        rows,
+        servo_threshold_rad_s=0.02,
+        wheel_threshold_rad_s=0.20,
+    )
+    _atomic_write_json(
+        diagnostic_dir / "joint_velocity_analysis.json",
+        joint_analysis,
+    )
+    _atomic_write_json(
+        diagnostic_dir / "ground_initialization.json",
+        {
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "trial_id": trial_id,
+            "ground_reference": _jsonable(ground),
+        },
+    )
+    source_post = _source_freeze(robot_usd=robot_usd)
+    source_integrity = _compare_source_freezes(batch_source_freeze, source_post)
+    _atomic_write_json(batch_root / "source_integrity.json", source_integrity)
+    physical_pass = bool(ground and ground_reference_result_is_valid(ground))
+    grounded_diagnostics = dict(
+        ground.get(
+            "grounded_reference_diagnostics",
+            ground.get("ground_diagnostics", {}),
+        )
+        or {}
+    )
+    ground_failure_reason = str(
+        grounded_diagnostics.get("ground_reference_block_reason", "")
+        or ground.get("ground_reference_block_reason", "")
+        or "; ".join(grounded_diagnostics.get("reasons", []) or [])
+        or ""
+    )
+    trace_complete = bool(
+        rows
+        and int(ground.get("steps_run", -1) or -1) == len(rows)
+        and len(rows) <= 180
+        and all(row.get("diagnostic_evidence_valid") is True for row in rows)
+        and not list(ground.get("diagnostic_observer_errors", []) or [])
+    )
+    video_valid = bool(video.get("valid", False))
+    diagnostic_valid = bool(
+        trace_complete
+        and video_valid
+        and source_integrity.get("equal", False)
+        and not run_error
+    )
+    runtime_readback = {
+        "schema_version": "fsm50.grounding_runtime_readback.v1",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "trial_id": trial_id,
+        "runtime": _runtime_versions(),
+        "scene_config": _jsonable(asdict(scene_config)),
+        "physics_dt_s": (
+            None
+            if scene_handle is None
+            else float(scene_handle.sim.get_physics_dt())
+        ),
+        "live_scene_baseline": _jsonable(live_baseline),
+        "live_obstacle_geometry": _jsonable(live_obstacle),
+        "contact_sensor_type": (
+            ""
+            if scene_handle is None or scene_handle.contact_sensor is None
+            else type(scene_handle.contact_sensor).__name__
+        ),
+        "contact_sensor_error": (
+            "" if scene_handle is None else str(scene_handle.contact_sensor_error or "")
+        ),
+        "locked_ground_seed_applied": False,
+    }
+    _atomic_write_json(
+        diagnostic_dir / "runtime_environment_readback.json",
+        runtime_readback,
+    )
+    diagnostic_result = {
+        "schema_version": "fsm50.grounding_diagnostic_result.v1",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "artifact_kind": "GROUNDING_DIAGNOSTIC",
+        "can_satisfy_grounding_qualification": False,
+        "trial_id": trial_id,
+        "run_dir": str(diagnostic_dir),
+        "artifact_valid": diagnostic_valid,
+        "physical_grounding_pass": physical_pass,
+        "classification": (
+            "GROUNDING_DIAGNOSTIC_COMPLETE"
+            if diagnostic_valid
+            else "GROUNDING_DIAGNOSTIC_INVALID"
+        ),
+        "grounding_result": "PASS" if physical_pass else "FAIL",
+        "run_error": run_error,
+        "trace_complete": trace_complete,
+        "trace_count": len(rows),
+        "video": video,
+        "source_integrity": source_integrity,
+        "joint_velocity_analysis": joint_analysis,
+        "ground_reference": _jsonable(ground),
+        "lifecycle": {
+            "finalized": diagnostic_valid,
+            "failed": not diagnostic_valid,
+            "strict_success": False,
+        },
+    }
+    _atomic_write_json(diagnostic_dir / "result.json", diagnostic_result)
+    _atomic_write_json(
+        diagnostic_dir / "failure_diagnostics.json",
+        {
+            **diagnostic_result,
+            "failure_reason": (
+                ""
+                if physical_pass and diagnostic_valid
+                else run_error
+                or ground_failure_reason
+                or "grounding did not satisfy strict qualification"
+            ),
+        },
+    )
+    _write_checksums(diagnostic_dir)
+    _mark_artifact_root(diagnostic_dir, valid=diagnostic_valid)
+
+    evidence_paths: list[Path] = [
+        diagnostic_dir / "result.json",
+        diagnostic_dir / "failure_diagnostics.json",
+        diagnostic_dir / "ground_initialization.json",
+        diagnostic_dir / "grounding_telemetry.jsonl",
+        diagnostic_dir / "grounding_telemetry.csv",
+        diagnostic_dir / "joint_velocity_analysis.json",
+        diagnostic_dir / "runtime_environment_readback.json",
+        diagnostic_dir / "viewport_video_manifest.json",
+        diagnostic_dir / "checksums.sha256",
+    ]
+    video_path = Path(
+        str(video.get("video_path", diagnostic_dir / "fsm50_viewport.mp4"))
+    ).resolve()
+    if video_valid and video_path.is_file():
+        evidence_paths.append(video_path)
+    qualification_pass = bool(physical_pass and diagnostic_valid)
+    evidence_manifest = {
+        str(path.resolve()): {
+            "sha256": sha256_file(path),
+            "size_bytes": path.stat().st_size,
+        }
+        for path in evidence_paths
+        if path.is_file()
+    }
+    _atomic_write_json(
+        qualification_dir / "evidence_manifest.json",
+        {
+            "schema_version": "fsm50.grounding_qualification_evidence.v1",
+            "trial_id": trial_id,
+            "diagnostic_artifact_root": str(diagnostic_dir),
+            "evidence_files": evidence_manifest,
+        },
+    )
+    qualification_result = {
+        "schema_version": "fsm50.grounding_qualification_result.v1",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "artifact_kind": "GROUNDING_QUALIFICATION",
+        "trial_id": trial_id,
+        "run_dir": str(qualification_dir),
+        "artifact_root": str(qualification_dir),
+        "qualified": qualification_pass,
+        "strict_success": qualification_pass,
+        "classification": "GROUNDING_PASS" if qualification_pass else "GROUNDING_FAIL",
+        "diagnostic_artifact_root": str(diagnostic_dir),
+        "diagnostic_artifact_valid": diagnostic_valid,
+        "physical_grounding_pass": physical_pass,
+        "trace_count": len(rows),
+        "steps_run": ground.get("steps_run"),
+        "consecutive_stable_ticks": ground.get("consecutive_stable_ticks"),
+        "stop_reason": ground.get("stop_reason"),
+        "video_valid": video_valid,
+        "failure_reason": (
+            ""
+            if qualification_pass
+            else run_error
+            or ground_failure_reason
+            or "grounding qualification failed"
+        ),
+        "lifecycle": {
+            "finalized": qualification_pass,
+            "failed": not qualification_pass,
+            "strict_success": qualification_pass,
+        },
+    }
+    _atomic_write_json(qualification_dir / "result.json", qualification_result)
+    _atomic_write_json(
+        qualification_dir / "failure_diagnostics.json",
+        qualification_result,
+    )
+    _write_checksums(qualification_dir)
+    _mark_artifact_root(qualification_dir, valid=qualification_pass)
+    qualification_required = [
+        qualification_dir / "result.json",
+        qualification_dir / "failure_diagnostics.json",
+        qualification_dir / "evidence_manifest.json",
+        qualification_dir / "checksums.sha256",
+        *evidence_paths,
+    ]
+    qualification_result["required_evidence_paths"] = [
+        str(path.resolve()) for path in qualification_required
+    ]
+    # Bind the required-path contract into the final result bytes, then refresh
+    # its checksum before batch preclose is built.
+    _atomic_write_json(qualification_dir / "result.json", qualification_result)
+    _atomic_write_json(
+        qualification_dir / "failure_diagnostics.json",
+        qualification_result,
+    )
+    _write_checksums(qualification_dir)
+
+    batch_results = [qualification_result]
+    _atomic_write_json(batch_root / "batch_results.json", batch_results)
+    batch_finalization = {
+        "schema_version": "fsm50.batch_finalization.v1",
+        "created_utc": datetime.now(timezone.utc).isoformat(),
+        "artifact_root": str(batch_root),
+        "command": "grounding-only",
+        "trial_id": trial_id,
+        "finalized": diagnostic_valid,
+        "failed": not diagnostic_valid,
+        "strict_success": qualification_pass,
+        "physical_result": "PASS" if physical_pass else "FAIL",
+        "diagnostic_artifact_valid": diagnostic_valid,
+        "batch_error": run_error,
+        "finalization_errors": [],
+        "phase": "PRECLOSE_FINALIZED",
+        "close_error": "",
+    }
+    _atomic_write_json(batch_root / "batch_finalization.json", batch_finalization)
+    _write_checksums(batch_root)
+    batch_artifact_valid = bool(diagnostic_valid)
+    snapshot_errors = _snapshot_preclose_files(batch_root)
+    if snapshot_errors:
+        batch_artifact_valid = False
+        qualification_pass = False
+        qualification_result.update(
+            {
+                "qualified": False,
+                "strict_success": False,
+                "classification": "GROUNDING_FAIL",
+                "failure_reason": "preclose snapshot failed: "
+                + "; ".join(snapshot_errors),
+                "lifecycle": {
+                    "finalized": False,
+                    "failed": True,
+                    "strict_success": False,
+                },
+            }
+        )
+        _atomic_write_json(
+            qualification_dir / "result.json", qualification_result
+        )
+        _atomic_write_json(
+            qualification_dir / "failure_diagnostics.json",
+            qualification_result,
+        )
+        _write_checksums(qualification_dir)
+        _mark_artifact_root(qualification_dir, valid=False)
+        batch_results = [qualification_result]
+        _atomic_write_json(batch_root / "batch_results.json", batch_results)
+        batch_finalization.update(
+            {
+                "finalized": False,
+                "failed": True,
+                "strict_success": False,
+                "finalization_errors": snapshot_errors,
+            }
+        )
+        _atomic_write_json(batch_root / "batch_finalization.json", batch_finalization)
+        _write_checksums(batch_root)
+        _snapshot_preclose_files(batch_root)
+    _mark_artifact_root(batch_root, valid=batch_artifact_valid)
+    preclose_evidence = _preclose_evidence_manifest(
+        batch_root,
+        results=batch_results,
+        batch_source_comparison=source_integrity,
+        batch_finalization=batch_finalization,
+    )
+    if supervisor is not None:
+        supervisor.mark_preclose(preclose_evidence)
+    else:
+        _atomic_write_json(
+            batch_root / "preclose_complete.json",
+            {
+                "schema_version": "fsm50.preclose_complete.v1",
+                "created_utc": datetime.now(timezone.utc).isoformat(),
+                "token": "",
+                "parent_pid": os.getppid(),
+                "child_pid": os.getpid(),
+                "batch_root": str(batch_root),
+                "evidence": preclose_evidence,
+            },
+        )
+
+    exit_code = 0 if qualification_pass else 1
+    close_error = ""
+    shutdown_mode = str(getattr(args, "shutdown_mode", "fast") or "fast")
+    try:
+        shutdown_mode = _close_simulation_with_explicit_policy(
+            simulation_app=simulation_app,
+            scene_handle=scene_handle,
+            args=args,
+            supervisor=supervisor,
+            intended_returncode=exit_code,
+        )
+    except Exception as exc:
+        close_error = f"{type(exc).__name__}: {exc}"
+        exit_code = 1
+        if supervisor is not None:
+            supervisor.mark_close_error(
+                shutdown_mode=shutdown_mode,
+                error=close_error,
+            )
+    print(
+        json.dumps(
+            {
+                "batch_root": str(batch_root),
+                "trial_id": trial_id,
+                "grounding_result": "PASS" if qualification_pass else "FAIL",
+                "diagnostic_artifact_valid": diagnostic_valid,
+                "close_error": close_error,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        flush=True,
+    )
+    return exit_code
+
+
 def _run_recording_replays_locked(
     args: argparse.Namespace,
     *,
@@ -3501,39 +4306,26 @@ def _run_recording_replays_locked(
             )
 
         close_error = ""
+        shutdown_mode = str(getattr(args, "shutdown_mode", "fast") or "fast")
         try:
-            if simulation_app is not None:
-                simulation_app.close(wait_for_replicator=False)
-            elif scene_handle is not None:
-                scene_handle.close()
+            shutdown_mode = _close_simulation_with_explicit_policy(
+                simulation_app=simulation_app,
+                scene_handle=scene_handle,
+                args=args,
+                supervisor=supervisor,
+                intended_returncode=exit_code,
+            )
         except Exception as exc:
             close_error = f"{type(exc).__name__}: {exc}"
             exit_code = 1
-            batch_finalization.update(
-                {
-                    "finalized": False,
-                    "failed": True,
-                    "strict_success": False,
-                    "close_error": close_error,
-                    "phase": "SIMULATION_CLOSE_ERROR",
-                    "failure_reason": "SIMULATION_CLOSE_ERROR",
-                }
+            # Preclose bytes are immutable once PRECLOSE_COMPLETE is written.
+            # The parent records the close failure and performs all lifecycle
+            # mutation after it has verified that frozen closure.
+        if supervisor is not None and close_error:
+            supervisor.mark_close_error(
+                shutdown_mode=shutdown_mode,
+                error=close_error,
             )
-            try:
-                _atomic_write_json(
-                    batch_root / "batch_finalization.json", batch_finalization
-                )
-                _write_checksums(batch_root)
-                _mark_artifact_root(batch_root, valid=False)
-            except Exception as finalize_exc:
-                print(
-                    f"[FSM50] close-error evidence failed: "
-                    f"{type(finalize_exc).__name__}: {finalize_exc}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-        if supervisor is not None:
-            supervisor.mark_close_returned(close_error=close_error)
     print(json.dumps({"batch_root": str(batch_root), "results": results}, ensure_ascii=False, indent=2))
     return exit_code
 
@@ -3702,7 +4494,7 @@ def run_recording_replays(args: argparse.Namespace) -> int:
             ),
             flush=True,
         )
-        if str(outcome.get("status")) != "NORMAL_EXIT":
+        if str(outcome.get("status")) not in SUCCESSFUL_SHUTDOWN_STATUSES:
             return 1
         return int(outcome.get("child_returncode", 1) or 0)
     finally:
@@ -3746,6 +4538,12 @@ def _supervised_child_main(argv: list[str]) -> int:
     try:
         args = _deserialize_replay_args(dict(request.get("args", {}) or {}))
         process_snapshot = list(request.get("process_snapshot", []) or [])
+        if str(getattr(args, "command", "")) == "grounding-only":
+            return _run_grounding_only_locked(
+                args,
+                process_snapshot=process_snapshot,
+                supervisor=supervisor,
+            )
         if str(getattr(args, "command", "")) in {
             "run-fsm",
             "test-state",
@@ -3784,6 +4582,33 @@ def build_parser() -> argparse.ArgumentParser:
     audit_parser.add_argument("--recording-root", type=Path, default=DEFAULT_RECORDING_ROOT)
     audit_parser.add_argument("--report-root", type=Path, default=DEFAULT_REPORT_ROOT)
 
+    grounding = subparsers.add_parser(
+        "grounding-only",
+        help=(
+            "Run one fresh-process formal clean-reset grounding diagnostic; "
+            "invoke it three times for the 3/3 gate"
+        ),
+    )
+    grounding.add_argument("--trial-id", type=int, required=True)
+    grounding.add_argument("--report-root", type=Path, default=DEFAULT_REPORT_ROOT)
+    grounding.add_argument(
+        "--output-root",
+        type=Path,
+        default=DEFAULT_RUN_ROOT / "grounding_only",
+    )
+    grounding.add_argument("--robot-usd", type=str, default="")
+    grounding.add_argument("--device", type=str, default="cuda:0")
+    grounding.add_argument("--headless", action="store_true")
+    grounding.add_argument("--livestream", type=int, default=0)
+    grounding.add_argument("--experience", type=str, default="")
+    grounding.add_argument("--video-fps", type=float, default=15.0)
+    grounding.add_argument("--no-video", action="store_true")
+    grounding.add_argument(
+        "--shutdown-mode",
+        choices=("fast", "graceful"),
+        default="fast",
+    )
+
     replay = subparsers.add_parser("replay-recordings", help="Replay recording versions in one Isaac instance.")
     replay.add_argument("--versions", nargs="+", default=["all"])
     replay.add_argument("--recording-root", type=Path, default=DEFAULT_RECORDING_ROOT)
@@ -3811,6 +4636,15 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument("--post-respawn-settle-s", type=float, default=0.30)
     replay.add_argument("--post-run-settle-s", type=float, default=0.50)
     replay.add_argument("--video-fps", type=float, default=15.0)
+    replay.add_argument(
+        "--shutdown-mode",
+        choices=("fast", "graceful"),
+        default="fast",
+        help=(
+            "fast uses the explicit Isaac 5.1 skip_cleanup path after durable "
+            "preclose; graceful is retained for close_stage diagnostics"
+        ),
+    )
     replay.add_argument(
         "--no-video",
         action="store_true",
@@ -3859,6 +4693,11 @@ def build_parser() -> argparse.ArgumentParser:
         )
         command_parser.add_argument("--post-run-settle-s", type=float, default=0.30)
         command_parser.add_argument("--video-fps", type=float, default=15.0)
+        command_parser.add_argument(
+            "--shutdown-mode",
+            choices=("fast", "graceful"),
+            default="fast",
+        )
         command_parser.add_argument(
             "--no-video",
             action="store_true",
@@ -3920,6 +4759,8 @@ def main(argv: list[str] | None = None) -> int:
         result = RecordingAudit(args.recording_root, args.report_root).run()
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
+    if args.command == "grounding-only":
+        return run_recording_replays(args)
     if args.command == "replay-recordings":
         return run_recording_replays(args)
     if args.command in {"run-fsm", "validate-5"}:

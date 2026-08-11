@@ -8,7 +8,7 @@ import time
 import uuid
 from collections import deque
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable, Mapping
 
 from command_model import (
     CommandMessage,
@@ -455,7 +455,11 @@ class SimRobotAdapter:
         self.robot.reset()
         self.home()
 
-    def initialize_grounded_respawn_reference(self) -> dict[str, Any]:
+    def initialize_grounded_respawn_reference(
+        self,
+        *,
+        tick_observer: Callable[[dict[str, Any]], Mapping[str, Any] | None] | None = None,
+    ) -> dict[str, Any]:
         """Settle once after scene reset, then save the verified respawn pose."""
 
         self.stop_wheels()
@@ -469,7 +473,15 @@ class SimRobotAdapter:
         self.command_state = self.capture_command_state()
         self.apply_commands_to_robot()
         self.robot.write_data_to_sim()
-        settle = self.settle_robot_on_ground(label="initial_grounded_reference")
+        if tick_observer is None:
+            settle = self.settle_robot_on_ground(
+                label="initial_grounded_reference"
+            )
+        else:
+            settle = self.settle_robot_on_ground(
+                label="initial_grounded_reference",
+                tick_observer=tick_observer,
+            )
         diagnostics = dict(settle.get("ground_diagnostics", default_robot_ground_diagnostics("settle did not run")))
         classification = str(diagnostics.get("classification", ""))
         if classification == COLLISION_PENETRATION:
@@ -507,24 +519,64 @@ class SimRobotAdapter:
         stable = bool(settle.get("stable", False))
         stable_required = int(settle.get("stable_frames_required", self.config.ground_stable_frames) or self.config.ground_stable_frames)
         stable_frames = int(settle.get("stable_frames", 0) or 0)
-        vertical_ok = float(settle.get("final_window_max_vertical_speed_m_s", settle.get("max_abs_vertical_speed_m_s", 0.0)) or 0.0) <= float(self.config.ground_vertical_speed_threshold_m_s)
+        vertical_ok = float(
+            settle.get(
+                "acceptance_max_vertical_speed_m_s",
+                settle.get(
+                    "final_window_max_vertical_speed_m_s",
+                    settle.get("max_abs_vertical_speed_m_s", 0.0),
+                ),
+            )
+            or 0.0
+        ) <= float(self.config.ground_vertical_speed_threshold_m_s)
         servo_threshold = float(
             self.config.ground_servo_speed_threshold_rad_s
             if self.config.ground_servo_speed_threshold_rad_s is not None
             else self.config.ground_joint_speed_threshold_rad_s
         )
         wheel_threshold = float(self.config.ground_wheel_speed_threshold_rad_s)
-        servo_ok = bool(settle.get("servo_final_window_stable", settle.get("servo_pose_stable", False))) or float(
-            settle.get("final_window_max_servo_joint_velocity_rad_s", settle.get("max_servo_joint_velocity_rad_s", 0.0)) or 0.0
-        ) <= servo_threshold
+        if "acceptance_max_servo_joint_velocity_rad_s" in settle:
+            servo_ok = bool(settle.get("servo_pose_stable", False)) and float(
+                settle.get("acceptance_max_servo_joint_velocity_rad_s", 0.0)
+                or 0.0
+            ) <= servo_threshold
+        else:
+            servo_ok = bool(
+                settle.get(
+                    "servo_final_window_stable",
+                    settle.get("servo_pose_stable", False),
+                )
+            ) or float(
+                settle.get(
+                    "final_window_max_servo_joint_velocity_rad_s",
+                    settle.get("final_window_max_joint_velocity_rad_s", 0.0),
+                )
+                or 0.0
+            ) <= servo_threshold
         wheel_targets = dict(settle.get("wheel_target_velocity_by_name", {}) or {})
         wheel_targets_zero = not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
         wheel_ok = bool(settle.get("wheel_state_stable", False)) or (
             wheel_targets_zero
-            and float(settle.get("final_window_max_wheel_joint_velocity_rad_s", settle.get("max_wheel_joint_velocity_rad_s", 0.0)) or 0.0) <= wheel_threshold
+            and float(
+                settle.get(
+                    "acceptance_max_wheel_joint_velocity_rad_s",
+                    settle.get(
+                        "final_window_max_wheel_joint_velocity_rad_s",
+                        settle.get("max_wheel_joint_velocity_rad_s", 0.0),
+                    ),
+                )
+                or 0.0
+            )
+            <= wheel_threshold
         )
         joint_ok = bool(servo_ok and wheel_ok)
-        root_z_delta_ok = float(settle.get("final_window_max_root_z_delta_m", 0.0) or 0.0) <= float(
+        root_z_delta_ok = float(
+            settle.get(
+                "acceptance_max_root_z_delta_m",
+                settle.get("final_window_max_root_z_delta_m", 0.0),
+            )
+            or 0.0
+        ) <= float(
             settle.get("final_window_root_z_delta_threshold_m", max(1.0e-5, self.config.ground_vertical_speed_threshold_m_s * self.sim.get_physics_dt()))
         )
         kinematic_stable = bool(settle.get("kinematic_stable", vertical_ok and root_z_delta_ok))
@@ -630,8 +682,14 @@ class SimRobotAdapter:
             "grounded_reference_diagnostics": diagnostics,
         }
 
-    def calibrate_grounded_reference(self) -> dict[str, Any]:
-        return self.initialize_grounded_respawn_reference()
+    def calibrate_grounded_reference(
+        self,
+        *,
+        tick_observer: Callable[[dict[str, Any]], Mapping[str, Any] | None] | None = None,
+    ) -> dict[str, Any]:
+        return self.initialize_grounded_respawn_reference(
+            tick_observer=tick_observer
+        )
 
     def settle_robot_on_ground(
         self,
@@ -640,14 +698,27 @@ class SimRobotAdapter:
         max_steps: int | None = None,
         duration_s: float | None = None,
         validate_ground: bool = True,
+        tick_observer: Callable[[dict[str, Any]], Mapping[str, Any] | None] | None = None,
     ) -> dict[str, Any]:
         dt = float(self.sim.get_physics_dt())
         _elapsed_per_render, substeps_per_render = self._render_step_timing()
-        configured_steps = int(max_steps if max_steps is not None else self.config.ground_settle_max_steps)
+        configured_steps = min(
+            180,
+            int(
+                max_steps
+                if max_steps is not None
+                else self.config.ground_settle_max_steps
+            ),
+        )
         if duration_s is not None:
             configured_steps = min(configured_steps, max(1, int(math.ceil(float(duration_s) / max(dt, 1.0e-9)))))
-        else:
-            configured_steps = min(configured_steps, max(1, int(math.ceil(float(self.config.ground_settle_s) / max(dt, 1.0e-9)))))
+        # ``ground_settle_s`` used to truncate the configured 180-tick safety
+        # budget to 90 ticks at 120 Hz.  Formal initialization is adaptive:
+        # it may stop as soon as the real consecutive-stability requirement is
+        # met, but otherwise receives the full bounded max-step budget.  An
+        # explicit duration remains authoritative for deliberately short
+        # post-correction/respawn settles.
+        configured_steps = max(1, configured_steps)
         stable_required = max(1, int(self.config.ground_stable_frames))
         vertical_threshold = float(self.config.ground_vertical_speed_threshold_m_s)
         servo_threshold = float(
@@ -664,6 +735,10 @@ class SimRobotAdapter:
         max_wheel_joint_vel = 0.0
         max_abs_vertical_speed = 0.0
         final_window: deque[dict[str, Any]] = deque(maxlen=max(stable_required, 60))
+        canonical_tick_trace: list[dict[str, Any]] = []
+        settle_tick_trace: list[dict[str, Any]] = []
+        observer_errors: list[str] = []
+        stopped_early = False
         for step_index in range(max(1, configured_steps)):
             self.apply_commands_to_robot()
             self.robot.write_data_to_sim()
@@ -678,9 +753,23 @@ class SimRobotAdapter:
             if substeps_per_render > 1 and ((step_index + 1) % substeps_per_render == 0 or step_index + 1 == configured_steps):
                 self.sim.render()
             root_z = self._current_root_z()
-            root_velocity = self._current_root_velocity()
-            vertical_speed = abs(root_velocity[2]) if len(root_velocity) >= 3 else 0.0
-            joint_velocity_by_name = self._joint_velocity_by_name()
+            root_velocity_state = self._ground_root_velocity_snapshot()
+            root_velocity = list(root_velocity_state["values"])
+            joint_state = self._ground_joint_state_snapshot()
+            joint_velocity_by_name = dict(joint_state["joint_velocity_by_name"])
+            required_joint_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+            telemetry_valid = bool(
+                root_z is not None
+                and math.isfinite(float(root_z))
+                and root_velocity_state["valid"]
+                and joint_state["valid"]
+                and all(name in joint_velocity_by_name for name in required_joint_names)
+            )
+            vertical_speed = (
+                abs(float(root_velocity[2]))
+                if telemetry_valid
+                else float("inf")
+            )
             servo_speed = self._max_abs_named_joint_velocity(SERVO_JOINT_NAMES, joint_velocity_by_name)
             wheel_speed = self._max_abs_named_joint_velocity(WHEEL_JOINT_NAMES, joint_velocity_by_name)
             joint_speed = max(servo_speed, wheel_speed)
@@ -689,42 +778,110 @@ class SimRobotAdapter:
             max_abs_joint_vel = max(max_abs_joint_vel, joint_speed)
             max_servo_joint_vel = max(max_servo_joint_vel, servo_speed)
             max_wheel_joint_vel = max(max_wheel_joint_vel, wheel_speed)
-            root_z_delta = abs(root_z - previous_root_z) if previous_root_z is not None and root_z is not None else 0.0
+            root_z_delta = (
+                abs(float(root_z) - float(previous_root_z))
+                if telemetry_valid
+                and previous_root_z is not None
+                and math.isfinite(float(previous_root_z))
+                else float("inf")
+            )
             root_z_delta_threshold = max(1.0e-5, vertical_threshold * dt)
             wheel_targets_zero = not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
-            kinematic_stable = vertical_speed <= vertical_threshold and root_z_delta <= root_z_delta_threshold
-            servo_pose_stable = servo_speed <= servo_threshold
-            wheel_state_stable = wheel_targets_zero and wheel_speed <= wheel_threshold
+            kinematic_stable = bool(
+                telemetry_valid
+                and vertical_speed <= vertical_threshold
+                and root_z_delta <= root_z_delta_threshold
+            )
+            servo_pose_stable = bool(telemetry_valid and servo_speed <= servo_threshold)
+            wheel_state_stable = bool(
+                telemetry_valid and wheel_targets_zero and wheel_speed <= wheel_threshold
+            )
             offending = self._offending_joint_names(
                 joint_velocity_by_name,
                 servo_threshold=servo_threshold,
                 wheel_threshold=wheel_threshold,
                 include_wheels=not wheel_state_stable,
             )
-            final_window.append(
-                {
-                    "root_z": root_z,
-                    "root_velocity": list(root_velocity),
-                    "vertical_speed": float(vertical_speed),
-                    "joint_speed": float(joint_speed),
-                    "servo_joint_speed": float(servo_speed),
-                    "wheel_joint_speed": float(wheel_speed),
-                    "root_z_delta": float(root_z_delta),
-                    "joint_velocity": self._joint_velocity_vector(),
-                    "joint_velocity_by_name": joint_velocity_by_name,
-                    "wheel_target_velocity_by_name": wheel_targets,
-                    "kinematic_stable": bool(kinematic_stable),
-                    "servo_pose_stable": bool(servo_pose_stable),
-                    "wheel_state_stable": bool(wheel_state_stable),
-                    "offending_joint_names": offending,
-                }
-            )
+            frame: dict[str, Any] = {
+                "local_tick": int(step_index + 1),
+                "sim_step": int(self.sim_steps),
+                "sim_time_s": float(self.sim_time),
+                "physics_dt_s": float(dt),
+                "root_z": root_z,
+                "root_velocity": list(root_velocity),
+                "root_velocity_evidence_valid": bool(
+                    root_velocity_state["valid"]
+                ),
+                "root_velocity_evidence_error": str(
+                    root_velocity_state["error"]
+                ),
+                "vertical_speed": float(vertical_speed),
+                "joint_speed": float(joint_speed),
+                "servo_joint_speed": float(servo_speed),
+                "wheel_joint_speed": float(wheel_speed),
+                "root_z_delta": float(root_z_delta),
+                "joint_position_by_name": dict(joint_state["joint_position_by_name"]),
+                "joint_velocity": list(joint_state["joint_velocity_vector"]),
+                "joint_velocity_by_name": joint_velocity_by_name,
+                "joint_position_target_by_name": dict(
+                    joint_state["joint_position_target_by_name"]
+                ),
+                "joint_target_minus_position_by_name": dict(
+                    joint_state["joint_target_minus_position_by_name"]
+                ),
+                "servo_command_target_by_name": dict(
+                    joint_state["servo_command_target_by_name"]
+                ),
+                "servo_command_to_readback_error_by_name": dict(
+                    joint_state["servo_command_to_readback_error_by_name"]
+                ),
+                "joint_state_evidence_valid": bool(joint_state["valid"]),
+                "joint_state_evidence_error": str(joint_state["error"]),
+                "wheel_target_velocity_by_name": wheel_targets,
+                "kinematic_stable": bool(kinematic_stable),
+                "servo_pose_stable": bool(servo_pose_stable),
+                "wheel_state_stable": bool(wheel_state_stable),
+                "strict_tick_stable": bool(
+                    kinematic_stable and servo_pose_stable and wheel_state_stable
+                ),
+                "offending_joint_names": offending,
+                "render_performed": bool(
+                    substeps_per_render <= 1
+                    or (step_index + 1) % substeps_per_render == 0
+                    or step_index + 1 == configured_steps
+                ),
+            }
             if kinematic_stable and servo_pose_stable and wheel_state_stable:
                 stable_frames += 1
             else:
                 stable_frames = 0
+            frame["stable_count"] = int(stable_frames)
+            # Qualification consumes only this canonical adapter-owned frame.
+            # A diagnostic observer may enrich its own emitted copy but cannot
+            # alter stability counters, rolling evidence, or acceptance.
+            final_window.append(dict(frame))
+            rolling_frames = list(final_window)
+            frame["rolling_window_metrics"] = self._ground_rolling_window_metrics(
+                rolling_frames,
+                capacity=int(final_window.maxlen or 60),
+            )
+            canonical_frame = dict(frame)
+            final_window[-1] = canonical_frame
+            canonical_tick_trace.append(canonical_frame)
+            diagnostic_frame = dict(canonical_frame)
+            if tick_observer is not None:
+                try:
+                    enriched = tick_observer(dict(diagnostic_frame))
+                    if enriched is not None:
+                        diagnostic_frame = dict(enriched)
+                except Exception as exc:
+                    error = f"tick {step_index + 1}: {type(exc).__name__}: {exc}"
+                    observer_errors.append(error)
+                    diagnostic_frame["diagnostic_observer_error"] = error
+            settle_tick_trace.append(diagnostic_frame)
             previous_root_z = root_z
             if stable_frames >= stable_required:
+                stopped_early = bool(step_index + 1 < configured_steps)
                 break
         if validate_ground:
             diagnostics = self.validate_robot_ground_contact(apply_correction=False)
@@ -737,6 +894,13 @@ class SimRobotAdapter:
                 live_mesh_validation_ran=False,
             )
         final_frames = list(final_window)
+        acceptance_frames = (
+            canonical_tick_trace[-stable_required:]
+            if stable_frames >= stable_required
+            else canonical_tick_trace[
+                -min(stable_required, len(canonical_tick_trace)) :
+            ]
+        )
         final_vertical_speed = max([float(frame.get("vertical_speed", 0.0) or 0.0) for frame in final_frames] + [0.0])
         final_joint_speed = max([float(frame.get("joint_speed", 0.0) or 0.0) for frame in final_frames] + [0.0])
         final_servo_speed = max([float(frame.get("servo_joint_speed", 0.0) or 0.0) for frame in final_frames] + [0.0])
@@ -760,10 +924,41 @@ class SimRobotAdapter:
         final_joint_velocity_by_name = dict(final_frame.get("joint_velocity_by_name", {}) or {})
         wheel_targets = dict(final_frame.get("wheel_target_velocity_by_name", self._wheel_velocity_target_by_name()) or {})
         root_z_delta_threshold = max(1.0e-5, vertical_threshold * dt)
-        kinematic_stable = bool(final_vertical_speed <= vertical_threshold and final_root_z_delta <= root_z_delta_threshold)
-        servo_pose_stable = bool(final_servo_speed <= servo_threshold)
+        acceptance_vertical_speed = max(
+            [float(frame.get("vertical_speed", float("inf"))) for frame in acceptance_frames]
+            + [0.0]
+        )
+        acceptance_servo_speed = max(
+            [float(frame.get("servo_joint_speed", float("inf"))) for frame in acceptance_frames]
+            + [0.0]
+        )
+        acceptance_wheel_speed = max(
+            [float(frame.get("wheel_joint_speed", float("inf"))) for frame in acceptance_frames]
+            + [0.0]
+        )
+        acceptance_root_z_delta = max(
+            [float(frame.get("root_z_delta", float("inf"))) for frame in acceptance_frames]
+            + [0.0]
+        )
+        acceptance_evidence_valid = bool(
+            len(acceptance_frames) == stable_required
+            and all(
+                bool(frame.get("joint_state_evidence_valid", False))
+                and bool(frame.get("root_velocity_evidence_valid", False))
+                for frame in acceptance_frames
+            )
+        )
+        kinematic_stable = bool(
+            acceptance_evidence_valid
+            and acceptance_vertical_speed <= vertical_threshold
+            and acceptance_root_z_delta <= root_z_delta_threshold
+        )
+        servo_pose_stable = bool(
+            acceptance_evidence_valid and acceptance_servo_speed <= servo_threshold
+        )
         wheel_state_stable = bool(
-            final_wheel_speed <= wheel_threshold
+            acceptance_evidence_valid
+            and acceptance_wheel_speed <= wheel_threshold
             and not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
         )
         ground_contact_resolved = bool(
@@ -776,11 +971,18 @@ class SimRobotAdapter:
                 RENDER_OR_FABRIC_DESYNC_SUSPECTED,
             }
         )
-        stable = stable_frames >= stable_required and str(diagnostics.get("classification", "")) in {
-            GROUND_OK,
-            VISUAL_ONLY_INTERSECTION,
-            RENDER_OR_FABRIC_DESYNC_SUSPECTED,
-        } and kinematic_stable and servo_pose_stable and wheel_state_stable
+        stable = bool(
+            stable_frames >= stable_required
+            and str(diagnostics.get("classification", ""))
+            in {
+                GROUND_OK,
+                VISUAL_ONLY_INTERSECTION,
+                RENDER_OR_FABRIC_DESYNC_SUSPECTED,
+            }
+            and kinematic_stable
+            and servo_pose_stable
+            and wheel_state_stable
+        )
         offending_joint_names = self._offending_joint_names(
             final_joint_velocity_by_name,
             servo_threshold=servo_threshold,
@@ -800,24 +1002,30 @@ class SimRobotAdapter:
                 and float(root_z_range) <= max(root_z_delta_threshold * float(max(1, len(final_frames))), 0.001)
             )
         )
-        final_window_stable = bool(kinematic_stable and servo_final_window_stable and wheel_state_stable)
-        effective_stable_frames = int(stable_frames)
-        if final_window_stable and effective_stable_frames < stable_required:
-            effective_stable_frames = stable_required
-        stable = bool(
-            (stable_frames >= stable_required or final_window_stable)
-            and str(diagnostics.get("classification", "")) in {
-                GROUND_OK,
-                VISUAL_ONLY_INTERSECTION,
-                RENDER_OR_FABRIC_DESYNC_SUSPECTED,
-            }
-            and kinematic_stable
+        # The rolling 60-frame heuristic remains valuable diagnostic evidence,
+        # but it is not allowed to synthesize ten stable ticks or to reject a
+        # real ten-tick terminal sequence because older landing transients are
+        # still present in the diagnostic window.
+        final_window_stable = bool(
+            final_vertical_speed <= vertical_threshold
+            and final_root_z_delta <= root_z_delta_threshold
             and servo_final_window_stable
-            and wheel_state_stable
+            and final_wheel_speed <= wheel_threshold
+            and not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
         )
         result = {
             "label": str(label),
             "steps_run": int(steps_run),
+            "step_budget": int(configured_steps),
+            "duration_cap_explicit": bool(duration_s is not None),
+            "stopped_early": bool(stopped_early),
+            "stop_reason": (
+                "consecutive_stable"
+                if stable_frames >= stable_required
+                else "explicit_duration_exhausted"
+                if duration_s is not None
+                else "max_steps_exhausted"
+            ),
             "stable": bool(stable),
             "final_window_stable": bool(final_window_stable),
             "kinematic_stable": bool(kinematic_stable),
@@ -835,8 +1043,9 @@ class SimRobotAdapter:
             "wheel_motion_stable": bool(final_wheel_speed <= wheel_threshold),
             "ground_contact_resolved": bool(ground_contact_resolved),
             "physical_ground_safe": bool(diagnostics.get("physical_ground_safe", False)),
-            "stable_frames": int(effective_stable_frames),
+            "stable_frames": int(stable_frames),
             "strict_stable_frames": int(stable_frames),
+            "consecutive_stable_ticks": int(stable_frames),
             "stable_frames_required": int(stable_required),
             "max_abs_vertical_speed_m_s": float(max_abs_vertical_speed),
             "max_abs_joint_velocity_rad_s": float(max_abs_joint_vel),
@@ -859,7 +1068,25 @@ class SimRobotAdapter:
             "servo_speed_threshold_rad_s": float(servo_threshold),
             "wheel_speed_threshold_rad_s": float(wheel_threshold),
             "final_window_size": int(len(final_frames)),
+            "rolling_window_capacity": int(final_window.maxlen or 60),
             "final_window_frames": final_frames,
+            "rolling_window_metrics": self._ground_rolling_window_metrics(
+                final_frames,
+                capacity=int(final_window.maxlen or 60),
+            ),
+            "acceptance_window_frames": acceptance_frames,
+            "acceptance_window_evidence_valid": bool(acceptance_evidence_valid),
+            "acceptance_max_vertical_speed_m_s": float(acceptance_vertical_speed),
+            "acceptance_max_servo_joint_velocity_rad_s": float(
+                acceptance_servo_speed
+            ),
+            "acceptance_max_wheel_joint_velocity_rad_s": float(
+                acceptance_wheel_speed
+            ),
+            "acceptance_max_root_z_delta_m": float(acceptance_root_z_delta),
+            "settle_tick_trace": settle_tick_trace,
+            "canonical_tick_trace_count": len(canonical_tick_trace),
+            "diagnostic_observer_errors": observer_errors,
             "final_root_z_m": final_frame.get("root_z"),
             "final_root_velocity": final_root_velocity,
             "final_joint_velocity": final_joint_velocity,
@@ -1718,6 +1945,309 @@ class SimRobotAdapter:
                 return [float(value) for value in self.robot.data.joint_vel[0]]
             except Exception:
                 return []
+
+    def _ground_joint_state_snapshot(self) -> dict[str, Any]:
+        """Read q/qd/drive-target evidence without substituting missing zeros."""
+
+        names = [str(name) for name in (getattr(self.robot, "joint_names", []) or [])]
+        required = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+        errors: list[str] = []
+
+        def row(field: str) -> list[float]:
+            value = getattr(getattr(self.robot, "data", None), field, None)
+            if value is None:
+                errors.append(f"robot.data.{field} is unavailable")
+                return []
+            try:
+                raw = value[0].detach().cpu().reshape(-1).tolist()
+            except Exception:
+                try:
+                    raw = list(value[0])
+                except Exception as exc:
+                    errors.append(
+                        f"robot.data.{field} read failed: {type(exc).__name__}: {exc}"
+                    )
+                    return []
+            result: list[float] = []
+            for index, item in enumerate(raw):
+                try:
+                    number = float(item.item() if hasattr(item, "item") else item)
+                except Exception as exc:
+                    errors.append(
+                        f"robot.data.{field}[{index}] conversion failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    return []
+                result.append(number)
+            return result
+
+        positions = row("joint_pos")
+        velocities = row("joint_vel")
+        readback_targets = row("joint_pos_target")
+        if len(set(names)) != len(names):
+            errors.append("robot.joint_names contains duplicates")
+        if not names:
+            errors.append("robot.joint_names is empty")
+        for field, values in (
+            ("joint_pos", positions),
+            ("joint_vel", velocities),
+            ("joint_pos_target", readback_targets),
+        ):
+            if len(values) != len(names):
+                errors.append(
+                    f"robot.data.{field} length {len(values)} != joint_names {len(names)}"
+                )
+            nonfinite = [index for index, value in enumerate(values) if not math.isfinite(value)]
+            if nonfinite:
+                errors.append(
+                    f"robot.data.{field} has non-finite indices {nonfinite}"
+                )
+
+        missing = [name for name in required if names.count(name) != 1]
+        if missing:
+            errors.append(
+                "required joints did not resolve exactly once: " + ", ".join(missing)
+            )
+
+        position_by_name = {
+            name: float(positions[index])
+            for index, name in enumerate(names)
+            if index < len(positions)
+        }
+        velocity_by_name = {
+            name: float(velocities[index])
+            for index, name in enumerate(names)
+            if index < len(velocities)
+        }
+        readback_by_name = {
+            name: float(readback_targets[index])
+            for index, name in enumerate(names)
+            if index < len(readback_targets)
+        }
+        target_minus_position = {
+            name: float(readback_by_name[name] - position_by_name[name])
+            for name in names
+            if name in readback_by_name and name in position_by_name
+        }
+
+        command_targets: dict[str, float] = {}
+        try:
+            raw_commands = self.servo_cmd_targets[0].detach().cpu().reshape(-1).tolist()
+        except Exception:
+            try:
+                raw_commands = list(self.servo_cmd_targets[0])
+            except Exception as exc:
+                raw_commands = []
+                errors.append(
+                    f"servo command target read failed: {type(exc).__name__}: {exc}"
+                )
+        if len(raw_commands) != len(SERVO_JOINT_NAMES):
+            errors.append(
+                "servo command target length "
+                f"{len(raw_commands)} != {len(SERVO_JOINT_NAMES)}"
+            )
+        for index, name in enumerate(SERVO_JOINT_NAMES):
+            if index >= len(raw_commands):
+                continue
+            try:
+                value = raw_commands[index]
+                number = float(value.item() if hasattr(value, "item") else value)
+            except Exception as exc:
+                errors.append(
+                    f"servo command target {name} conversion failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                continue
+            if not math.isfinite(number):
+                errors.append(f"servo command target {name} is non-finite")
+            command_targets[name] = number
+        command_to_readback_error = {
+            name: float(readback_by_name[name] - command_targets[name])
+            for name in SERVO_JOINT_NAMES
+            if name in readback_by_name and name in command_targets
+        }
+        return {
+            "valid": not errors,
+            "error": "; ".join(dict.fromkeys(errors)),
+            "joint_position_by_name": position_by_name,
+            "joint_velocity_vector": velocities,
+            "joint_velocity_by_name": velocity_by_name,
+            "joint_position_target_by_name": readback_by_name,
+            "joint_target_minus_position_by_name": target_minus_position,
+            "servo_command_target_by_name": command_targets,
+            "servo_command_to_readback_error_by_name": command_to_readback_error,
+        }
+
+    def _ground_root_velocity_snapshot(self) -> dict[str, Any]:
+        """Read the six live root velocities without a zero-value fallback."""
+
+        value = getattr(getattr(self.robot, "data", None), "root_vel_w", None)
+        if value is None:
+            return {
+                "valid": False,
+                "error": "robot.data.root_vel_w is unavailable",
+                "values": [],
+            }
+        try:
+            raw = value[0].detach().cpu().reshape(-1).tolist()
+        except Exception:
+            try:
+                raw = list(value[0])
+            except Exception as exc:
+                return {
+                    "valid": False,
+                    "error": (
+                        "robot.data.root_vel_w read failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                    "values": [],
+                }
+        values: list[float] = []
+        try:
+            values = [
+                float(item.item() if hasattr(item, "item") else item)
+                for item in raw
+            ]
+        except Exception as exc:
+            return {
+                "valid": False,
+                "error": (
+                    "robot.data.root_vel_w conversion failed: "
+                    f"{type(exc).__name__}: {exc}"
+                ),
+                "values": [],
+            }
+        if len(values) != 6:
+            return {
+                "valid": False,
+                "error": f"robot.data.root_vel_w expected 6 values, got {len(values)}",
+                "values": values,
+            }
+        if not all(math.isfinite(item) for item in values):
+            return {
+                "valid": False,
+                "error": "robot.data.root_vel_w contains non-finite values",
+                "values": values,
+            }
+        return {"valid": True, "error": "", "values": values}
+
+    @staticmethod
+    def _ground_rolling_window_metrics(
+        frames: list[dict[str, Any]],
+        *,
+        capacity: int,
+    ) -> dict[str, Any]:
+        """Summarize the retained rolling window without making it an accept gate."""
+
+        def finite_values(key: str) -> list[float]:
+            values: list[float] = []
+            for frame in frames:
+                try:
+                    value = float(frame.get(key, float("nan")))
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(value):
+                    values.append(value)
+            return values
+
+        root_z_values = finite_values("root_z")
+        vertical_values = finite_values("vertical_speed")
+        root_delta_values = finite_values("root_z_delta")
+        servo_values = finite_values("servo_joint_speed")
+        wheel_values = finite_values("wheel_joint_speed")
+        joint_values = finite_values("joint_speed")
+        servo_by_name: dict[str, float] = {
+            name: float("nan") for name in SERVO_JOINT_NAMES
+        }
+        target_error_by_name: dict[str, float] = {
+            name: float("nan") for name in SERVO_JOINT_NAMES
+        }
+        for frame in frames:
+            for name, raw in dict(frame.get("joint_velocity_by_name", {}) or {}).items():
+                if name not in servo_by_name:
+                    continue
+                try:
+                    value = abs(float(raw))
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(value):
+                    previous = servo_by_name[name]
+                    servo_by_name[name] = (
+                        value
+                        if not math.isfinite(previous)
+                        else max(previous, value)
+                    )
+            for name, raw in dict(
+                frame.get("joint_target_minus_position_by_name", {}) or {}
+            ).items():
+                if name not in target_error_by_name:
+                    continue
+                try:
+                    value = abs(float(raw))
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(value):
+                    previous = target_error_by_name[name]
+                    target_error_by_name[name] = (
+                        value
+                        if not math.isfinite(previous)
+                        else max(previous, value)
+                    )
+        required_joint_names = set(SERVO_JOINT_NAMES) | set(WHEEL_JOINT_NAMES)
+
+        def frame_evidence_valid(frame: dict[str, Any]) -> bool:
+            if (
+                frame.get("joint_state_evidence_valid") is not True
+                or frame.get("root_velocity_evidence_valid") is not True
+            ):
+                return False
+            root_velocity = list(frame.get("root_velocity", []) or [])
+            joint_velocity = dict(frame.get("joint_velocity_by_name", {}) or {})
+            joint_position = dict(frame.get("joint_position_by_name", {}) or {})
+            joint_target = dict(
+                frame.get("joint_position_target_by_name", {}) or {}
+            )
+            if (
+                len(root_velocity) != 6
+                or not required_joint_names.issubset(joint_velocity)
+                or not required_joint_names.issubset(joint_position)
+                or not required_joint_names.issubset(joint_target)
+            ):
+                return False
+            try:
+                values = [float(item) for item in root_velocity]
+                values.extend(float(joint_velocity[name]) for name in required_joint_names)
+                values.extend(float(joint_position[name]) for name in required_joint_names)
+                values.extend(float(joint_target[name]) for name in required_joint_names)
+            except (KeyError, TypeError, ValueError):
+                return False
+            return all(math.isfinite(item) for item in values)
+
+        evidence_valid = bool(frames and all(frame_evidence_valid(frame) for frame in frames))
+        return {
+            "capacity": int(capacity),
+            "size": int(len(frames)),
+            "full": bool(len(frames) >= int(capacity)),
+            "evidence_valid": evidence_valid,
+            "strict_stable_tick_count": sum(
+                bool(frame.get("strict_tick_stable", False)) for frame in frames
+            ),
+            "terminal_stable_count": int(
+                frames[-1].get("stable_count", 0) if frames else 0
+            ),
+            "max_vertical_speed_m_s": max(vertical_values, default=float("nan")),
+            "max_root_z_delta_m": max(root_delta_values, default=float("nan")),
+            "root_z_range_m": (
+                max(root_z_values) - min(root_z_values)
+                if root_z_values
+                else float("nan")
+            ),
+            "max_joint_speed_rad_s": max(joint_values, default=float("nan")),
+            "max_servo_speed_rad_s": max(servo_values, default=float("nan")),
+            "max_wheel_speed_rad_s": max(wheel_values, default=float("nan")),
+            "max_servo_speed_by_name_rad_s": servo_by_name,
+            "max_abs_target_minus_position_by_name_rad": target_error_by_name,
+        }
 
     def _joint_velocity_by_name(self) -> dict[str, float]:
         values = self._joint_velocity_vector()

@@ -53,10 +53,21 @@ def create_adapter_config_from_args(args: Any) -> SimRobotAdapterConfig:
     )
 
 
-def initialize_adapter_ground_reference(adapter: Any) -> dict[str, Any]:
+def initialize_adapter_ground_reference(
+    adapter: Any,
+    *,
+    tick_observer: Any | None = None,
+) -> dict[str, Any]:
     if adapter is None or not hasattr(adapter, "initialize_grounded_respawn_reference"):
         return {"grounded_reference_valid": False, "error": "adapter does not support grounded reference initialization"}
-    return dict(adapter.initialize_grounded_respawn_reference() or {})
+    if tick_observer is None:
+        return dict(adapter.initialize_grounded_respawn_reference() or {})
+    return dict(
+        adapter.initialize_grounded_respawn_reference(
+            tick_observer=tick_observer
+        )
+        or {}
+    )
 
 
 def handle_set_height(

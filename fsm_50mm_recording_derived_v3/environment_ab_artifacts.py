@@ -25,6 +25,9 @@ from fsm_50mm_recording_derived_v3.environment_equivalence import (
     sha256_file,
     write_environment_equivalence_report,
 )
+from fsm_50mm_recording_derived_v3.shutdown_contract import (
+    validate_shutdown_outcome,
+)
 
 
 MODULE_ROOT = Path(__file__).resolve().parent
@@ -393,12 +396,10 @@ def _load_batch_shutdown_closure(
     shutdown = _mapping(
         _strict_json(named_paths["shutdown_outcome"]), "shutdown_outcome.json"
     )
-    if str(shutdown.get("schema_version", "")) != "fsm50.shutdown_outcome.v1":
-        raise ArtifactValidationError("shutdown_outcome schema is invalid")
-    if str(shutdown.get("status", "")) != "NORMAL_EXIT":
-        raise ArtifactValidationError(
-            f"shutdown_outcome status is not NORMAL_EXIT: {shutdown.get('status')!r}"
-        )
+    try:
+        validated_shutdown = validate_shutdown_outcome(shutdown)
+    except (TypeError, ValueError) as exc:
+        raise ArtifactValidationError(str(exc)) from exc
 
     finalization = _mapping(
         _strict_json(named_paths["batch_finalization"]), "batch_finalization.json"
@@ -562,7 +563,11 @@ def _load_batch_shutdown_closure(
     ).hexdigest()
     return {
         "batch_root": str(batch_root),
-        "status": "NORMAL_EXIT",
+        "status": str(validated_shutdown["status"]),
+        "shutdown_mode": str(validated_shutdown.get("shutdown_mode", "") or ""),
+        "shutdown_contract_kind": str(
+            validated_shutdown.get("contract_kind", "") or ""
+        ),
         "phase": "SHUTDOWN_COMPLETE",
         "files": closure_files,
         "closure_sha256": closure_digest,

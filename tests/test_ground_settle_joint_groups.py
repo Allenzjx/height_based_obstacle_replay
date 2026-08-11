@@ -29,9 +29,24 @@ def make_adapter(joint_velocities: dict[str, float], wheel_targets: dict[str, fl
     adapter.sim_steps = 0
     adapter.apply_commands_to_robot = lambda: None  # type: ignore[method-assign]
     adapter._current_root_z = lambda: 0.10  # type: ignore[method-assign]
-    adapter._current_root_velocity = lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # type: ignore[method-assign]
+    adapter._ground_root_velocity_snapshot = lambda: {  # type: ignore[method-assign]
+        "valid": True,
+        "error": "",
+        "values": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    }
     adapter._joint_velocity_by_name = lambda: dict(joint_velocities)  # type: ignore[method-assign]
     adapter._joint_velocity_vector = lambda: list(joint_velocities.values())  # type: ignore[method-assign]
+    adapter._ground_joint_state_snapshot = lambda: {  # type: ignore[method-assign]
+        "valid": True,
+        "error": "",
+        "joint_position_by_name": {name: 0.0 for name in joint_velocities},
+        "joint_velocity_vector": list(joint_velocities.values()),
+        "joint_velocity_by_name": dict(joint_velocities),
+        "joint_position_target_by_name": {name: 0.0 for name in joint_velocities},
+        "joint_target_minus_position_by_name": {name: 0.0 for name in joint_velocities},
+        "servo_command_target_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
+        "servo_command_to_readback_error_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
+    }
     adapter._wheel_velocity_target_by_name = lambda: dict(wheel_targets or {name: 0.0 for name in WHEEL_JOINT_NAMES})  # type: ignore[method-assign]
     adapter.validate_robot_ground_contact = lambda apply_correction=False: {  # type: ignore[method-assign]
         "checked": True,

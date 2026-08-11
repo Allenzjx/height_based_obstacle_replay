@@ -29,6 +29,7 @@ from .fsm50_state_model import FSM50StateTable
 from .fsm50_telemetry import FSM50TelemetryCollector
 from .filtered_wheel_contact import make_filtered_wheel_contact_sensor_factory
 from .nonwheel_obstacle_contact import configure_scene_for_wheel_and_nonwheel_contacts
+from .shutdown_contract import validate_shutdown_outcome
 
 
 def _jsonable(value: Any) -> Any:
@@ -309,14 +310,13 @@ def _validate_batch_shutdown_closure(artifact_root: Path) -> Path:
     finalization = _strict_json_object(finalization_path)
     preclose = _strict_json_object(preclose_path)
 
-    if (
-        shutdown.get("schema_version") != "fsm50.shutdown_outcome.v1"
-        or shutdown.get("status") != "NORMAL_EXIT"
-        or shutdown.get("preclose_observed") is not True
-    ):
+    try:
+        validate_shutdown_outcome(shutdown)
+    except (TypeError, ValueError) as exc:
         raise RuntimeError(
-            f"batch shutdown outcome is not a preclose-observed NORMAL_EXIT: {shutdown_path}"
-        )
+            "batch shutdown outcome is not a verified graceful/fast exit: "
+            f"{shutdown_path}: {exc}"
+        ) from exc
     if (
         finalization.get("finalized") is not True
         or finalization.get("failed") is not False
@@ -1773,8 +1773,9 @@ def run_fsm_locked(
         runner._write_checksums(batch_root)
         checksums = batch_root / "checksums.sha256"
         if checksums.is_file():
-            (batch_root / "checksums.preclose.sha256").write_bytes(
-                checksums.read_bytes()
+            runner._atomic_copy_file(
+                checksums,
+                batch_root / "checksums.preclose.sha256",
             )
         runner._mark_artifact_root(batch_root, valid=batch_artifact_valid)
         evidence_manifest = runner._preclose_evidence_manifest(
@@ -1786,32 +1787,25 @@ def run_fsm_locked(
         if supervisor is not None:
             supervisor.mark_preclose(evidence_manifest)
         close_error = ""
+        shutdown_mode = str(getattr(args, "shutdown_mode", "fast") or "fast")
         try:
-            if simulation_app is not None:
-                simulation_app.close(wait_for_replicator=False)
-            elif scene_handle is not None:
-                scene_handle.close()
+            shutdown_mode = runner._close_simulation_with_explicit_policy(
+                simulation_app=simulation_app,
+                scene_handle=scene_handle,
+                args=args,
+                supervisor=supervisor,
+                intended_returncode=exit_code,
+            )
         except Exception as exc:
             close_error = f"{type(exc).__name__}: {exc}"
             exit_code = 1
-            finalization.update(
-                {
-                    "finalized": False,
-                    "failed": True,
-                    "artifact_valid": False,
-                    "strict_success": False,
-                    "close_error": close_error,
-                    "phase": "SIMULATION_CLOSE_ERROR",
-                }
+            # Preserve immutable preclose bytes.  The supervising parent owns
+            # the post-return shutdown outcome and lifecycle rewrite.
+        if supervisor is not None and close_error:
+            supervisor.mark_close_error(
+                shutdown_mode=shutdown_mode,
+                error=close_error,
             )
-            try:
-                _write_json(batch_root / "batch_finalization.json", finalization)
-                runner._write_checksums(batch_root)
-                runner._mark_artifact_root(batch_root, valid=False)
-            except Exception:
-                pass
-        if supervisor is not None:
-            supervisor.mark_close_returned(close_error=close_error)
     print(
         json.dumps(
             {"batch_root": str(batch_root), "results": results},

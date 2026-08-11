@@ -769,7 +769,27 @@ def run_worker(args: argparse.Namespace) -> int:
         ground_init = initialize_adapter_ground_reference(adapter)
         sim_time = float(getattr(adapter, "sim_time", sim_time))
         sim_steps = int(getattr(adapter, "sim_steps", sim_steps))
-        logger.log(f"[worker] grounded reference init: {ground_init}")
+        logger.log(
+            "[worker] grounded reference init: "
+            + str(
+                {
+                    "grounded_reference_valid": ground_init.get(
+                        "grounded_reference_valid"
+                    ),
+                    "stable": ground_init.get("stable"),
+                    "steps_run": ground_init.get("steps_run"),
+                    "step_budget": ground_init.get("step_budget"),
+                    "consecutive_stable_ticks": ground_init.get(
+                        "consecutive_stable_ticks"
+                    ),
+                    "stop_reason": ground_init.get("stop_reason"),
+                    "classification": dict(
+                        ground_init.get("grounded_reference_diagnostics", {})
+                        or {}
+                    ).get("classification"),
+                }
+            )
+        )
         set_phase("hidden_ground_settle_completed")
         set_phase("grounded_reference_saved", {"valid": bool(ground_init.get("grounded_reference_valid", False))})
         finalize_scene_after_grounding(scene_handle, phase_callback=lambda name, details=None: set_phase(name, details))

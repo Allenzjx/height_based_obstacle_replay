@@ -741,7 +741,10 @@ def test_shutdown_closure_missing_timeout_failed_and_tamper_fail_closed(tmp_path
     shutdown = json.loads(shutdown_path.read_text(encoding="utf-8"))
     shutdown["status"] = "SIMULATION_CLOSE_TIMEOUT"
     _write_json(shutdown_path, shutdown)
-    with pytest.raises(ArtifactValidationError, match="not NORMAL_EXIT"):
+    with pytest.raises(
+        ArtifactValidationError,
+        match="not a verified graceful/fast exit",
+    ):
         load_completed_replay_artifact(timeout_root, role="timeout")
 
     failed_root, _ = _make_run(tmp_path / "failed", "failed")

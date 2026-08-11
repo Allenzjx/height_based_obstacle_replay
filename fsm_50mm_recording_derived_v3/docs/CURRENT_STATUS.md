@@ -80,8 +80,8 @@ recorded rather than reported as an all-green full-suite rerun.
   viewport MP4 and did not reach `NORMAL_EXIT`/`SHUTDOWN_COMPLETE`.
 - The formal replay path no longer pre-seeds the historical locked grounded
   pose. Its production chain is clean reset → live settle/validation → save
-  the live grounded reference. `_seed_adapter_from_locked_ground_pose` is not
-  invoked by that path.
+  the live grounded reference. The former historical root-pose seed helper has
+  been removed from the codebase.
 - Real active-viewport video production and validation code now exists, but no
   qualifying completed viewport video artifact exists yet.
 

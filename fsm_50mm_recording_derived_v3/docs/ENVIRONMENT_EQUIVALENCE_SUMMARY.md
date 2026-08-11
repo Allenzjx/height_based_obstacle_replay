@@ -211,11 +211,9 @@ not be written into root pose, root velocity, joint state, or adapter state
 before clean grounding. In particular, the formal replay path must not call
 `_seed_adapter_from_locked_ground_pose`.
 
-The helper remains in source only for explicit, non-default diagnostics; the
-formal replay path no longer invokes it. Any run that invokes it must record
-`environment_equivalent=false`, use a distinct experiment ID, and cannot be
-accepted as A1, A2, B, or a production replay. Merely reproducing a historical
-pose does not reproduce the worker's reset/settle trajectory.
+The former helper has been removed from source. No formal, diagnostic, A/B, or
+production path can invoke it. Merely reproducing a historical pose would not
+reproduce the worker's reset/settle trajectory.
 
 The current formal path records `locked_ground_seed.applied=false` and describes
 the lock as comparison evidence in [`run_fsm50.py`](../run_fsm50.py#L3184).

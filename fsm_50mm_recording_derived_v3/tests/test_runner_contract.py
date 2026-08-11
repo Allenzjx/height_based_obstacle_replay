@@ -6,15 +6,18 @@ import inspect
 import os
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 from types import SimpleNamespace
 
+from fsm_50mm_recording_derived_v3 import run_fsm50 as run_fsm50_module
 from fsm_50mm_recording_derived_v3.recording_audit import RecordingAudit, VersionFiles
 from fsm_50mm_recording_derived_v3.run_fsm50 import (
     ChildSupervisorHandshake,
     ReplaySingletonLock,
     _atomic_write_json,
     _compare_source_freezes,
+    _close_simulation_with_explicit_policy,
     _deserialize_replay_args,
     _existing_simulator_processes,
     _fail_closed_recording_audits,
@@ -28,10 +31,10 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _record_shutdown_outcome,
     _runtime_environment_equivalence,
     _run_recording_replays_locked,
-    _seed_adapter_from_locked_ground_pose,
     _serialize_replay_args,
     _select_versions,
     _snapshot_preclose_files,
+    _validate_preclose_closure,
     _write_checksums,
     build_parser,
 )
@@ -54,6 +57,17 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual(["v012"], args.versions)
         self.assertTrue(args.headless)
         self.assertFalse(args.resume)
+
+    def test_grounding_only_cli_is_one_fresh_trial_with_fast_exit_default(self) -> None:
+        args = build_parser().parse_args(
+            ["grounding-only", "--trial-id", "3"]
+        )
+
+        self.assertEqual(args.command, "grounding-only")
+        self.assertEqual(args.trial_id, 3)
+        self.assertEqual(args.shutdown_mode, "fast")
+        self.assertFalse(args.headless)
+        self.assertFalse(args.no_video)
 
     def test_replay_resume_flag_and_version_directories_are_unique(self) -> None:
         args = build_parser().parse_args(
@@ -169,6 +183,19 @@ class RunnerContractTests(unittest.TestCase):
                 "video": video,
                 "artifact_valid": True,
             },
+        )
+        _atomic_write_json(
+            run_dir / "physical_evidence.json",
+            {"strict_success": False, "classification": classification},
+        )
+        (run_dir / "fsm50_telemetry.csv").write_text(
+            "time_s,classification\n0.0,GROUND\n", encoding="utf-8"
+        )
+        (run_dir / "fsm50_telemetry.jsonl").write_text(
+            '{"time_s":0.0,"classification":"GROUND"}\n', encoding="utf-8"
+        )
+        (run_dir / "state_timeline.csv").write_text(
+            "start_time_s,end_time_s\n0.0,0.0\n", encoding="utf-8"
         )
         _atomic_write_json(
             artifact_root / "artifact_pointer.json",
@@ -631,67 +658,11 @@ class RunnerContractTests(unittest.TestCase):
                 )["ok"]
             )
 
-    def test_locked_ground_seed_uses_audited_pose_and_zero_velocities(self) -> None:
-        joint_names = list(SERVO_JOINT_NAMES) + list(WHEEL_JOINT_NAMES)
-        captured = {
-            "capture_source": "FakeIsaacAdapter",
-            "pose_restore_eligible": True,
-            "command_state": {
-                "servos": {name: 0.0 for name in SERVO_JOINT_NAMES},
-                "wheels": {name: 1.0 for name in WHEEL_JOINT_NAMES},
-            },
-            "actual_joint_state": {
-                "servos": {name: {"deg": 0.0} for name in SERVO_JOINT_NAMES},
-                "wheels": {name: {"rad_s": 0.0} for name in WHEEL_JOINT_NAMES},
-            },
-            "root_pose": [[0.0, 0.0, 0.04, 1.0, 0.0, 0.0, 0.0]],
-            "root_velocity": [[1.0] * 6],
-            "joint_pos": [[0.0] * len(joint_names)],
-            "joint_vel": [[1.0] * len(joint_names)],
-            "joint_names": joint_names,
-        }
-
-        class FakeAdapter:
-            restored = None
-
-            def capture_sim_state(self):
-                return self.restored if self.restored is not None else captured
-
-            def restore_sim_state(self, state):
-                self.restored = state
-                return {
-                    "validation": {"valid": True, "reason": "valid"},
-                    "trace": [{"event": "root_pose_written"}],
-                }
-
-        adapter = FakeAdapter()
-        lock = {
-            "selected_environment": {
-                "robot_initial_root_position_m": [-0.004, -0.001, 0.099],
-                "robot_initial_root_orientation_wxyz": [1.0, 0.0, 0.0, 0.0],
-                "standing_home_command_state_deg": {
-                    name: 0.0 for name in SERVO_JOINT_NAMES
-                },
-            }
-        }
-        result = _seed_adapter_from_locked_ground_pose(adapter, lock)
-        self.assertEqual(
-            [[-0.004, -0.001, 0.099, 1.0, 0.0, 0.0, 0.0]],
-            adapter.restored["root_pose"],
-        )
-        self.assertEqual([[0.0] * 6], adapter.restored["root_velocity"])
-        self.assertEqual(
-            [[0.0] * len(joint_names)], adapter.restored["joint_vel"]
-        )
-        self.assertTrue(result["restore_validation"]["valid"])
-        self.assertEqual(
-            {name: 0.0 for name in WHEEL_JOINT_NAMES},
-            adapter.restored["command_state"]["wheels"],
-        )
-
     def test_formal_replay_grounding_never_writes_historical_locked_pose(self) -> None:
         source = inspect.getsource(_run_recording_replays_locked)
-        self.assertNotIn("_seed_adapter_from_locked_ground_pose(", source)
+        self.assertFalse(
+            hasattr(run_fsm50_module, "_seed_adapter_from_locked_ground_pose")
+        )
         self.assertIn("formal_worker_unseeded_ground_reference", source)
         self.assertLess(
             source.index("adapter = SimRobotAdapter("),
@@ -729,10 +700,57 @@ class RunnerContractTests(unittest.TestCase):
         child_pid: int,
         preclose: bool,
         state: str = "PRECLOSE_COMPLETE",
+        intended_returncode: int = 0,
     ) -> tuple[Path, Path]:
         batch_root = root / "batch"
         batch_root.mkdir()
+        source_integrity = {"equal": True, "failures": []}
+        finalization = {
+            "artifact_root": str(batch_root.resolve()),
+            "finalized": True,
+            "failed": False,
+            "strict_success": True,
+            "batch_error": "",
+            "close_error": "",
+            "phase": "PRECLOSE_FINALIZED",
+            "source_integrity": source_integrity,
+            "finalization_errors": [],
+        }
+        _atomic_write_json(batch_root / "batch_request.json", {"command": "test"})
+        _atomic_write_json(batch_root / "batch_results.json", [])
+        _atomic_write_json(batch_root / "batch_finalization.json", finalization)
+        _atomic_write_json(batch_root / "source_integrity.json", source_integrity)
+        _write_checksums(batch_root)
+        errors = _snapshot_preclose_files(batch_root)
+        if errors:
+            raise AssertionError(errors)
+        evidence = _preclose_evidence_manifest(
+            batch_root,
+            results=[],
+            batch_source_comparison=source_integrity,
+            batch_finalization=finalization,
+        )
         handshake = root / "handshake.json"
+        extras = {"intended_returncode": intended_returncode}
+        if state in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}:
+            extras.update(
+                shutdown_mode="fast",
+                runtime_version="5.1.0.0",
+                close_kwargs={
+                    "wait_for_replicator": False,
+                    "skip_cleanup": True,
+                },
+            )
+        elif state == "GRACEFUL_CLOSE_RETURNED":
+            extras.update(
+                shutdown_mode="graceful",
+                close_kwargs={
+                    "wait_for_replicator": False,
+                    "skip_cleanup": False,
+                },
+            )
+        elif state == "CLOSE_ERROR":
+            extras.update(shutdown_mode="fast", close_error="unit-test")
         _atomic_write_json(
             handshake,
             {
@@ -743,6 +761,7 @@ class RunnerContractTests(unittest.TestCase):
                 "batch_root": str(batch_root.resolve()),
                 "state": state,
                 "sequence": 2,
+                **extras,
             },
         )
         if preclose:
@@ -754,7 +773,7 @@ class RunnerContractTests(unittest.TestCase):
                     "parent_pid": parent_pid,
                     "child_pid": child_pid,
                     "batch_root": str(batch_root.resolve()),
-                    "evidence": {"physics_result_count": 1},
+                    "evidence": evidence,
                 },
             )
         return handshake, batch_root
@@ -775,7 +794,7 @@ class RunnerContractTests(unittest.TestCase):
                 parent_pid=123,
                 child_pid=Child.pid,
                 preclose=True,
-                state="CLOSE_RETURNED",
+                state="FAST_EXIT_REQUESTED",
             )
             outcome, observed = _monitor_supervised_child(
                 Child(),
@@ -786,14 +805,133 @@ class RunnerContractTests(unittest.TestCase):
                 clock=lambda: 1.0,
                 sleep=lambda _seconds: None,
             )
-            self.assertEqual("NORMAL_EXIT", outcome["status"])
+            self.assertEqual("FAST_EXIT_VERIFIED", outcome["status"])
             self.assertEqual(batch_root.resolve(), observed)
             self.assertTrue(outcome["preclose_observed"])
+            self.assertTrue(outcome["preclose_verification"]["ok"])
+            self.assertEqual(outcome["runtime_version"], "5.1.0.0")
+            self.assertTrue(outcome["process_returned_normally"])
+
+    def test_graceful_exit_has_a_distinct_verified_state(self) -> None:
+        class Child:
+            pid = 43011
+
+            @staticmethod
+            def poll():
+                return 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            handshake, _batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=Child.pid,
+                preclose=True,
+                state="GRACEFUL_CLOSE_RETURNED",
+            )
+            outcome, _observed = _monitor_supervised_child(
+                Child(),
+                handshake_path=handshake,
+                token="token",
+                parent_pid=123,
+                output_root=root,
+                clock=lambda: 1.0,
+                sleep=lambda _seconds: None,
+            )
+
+            self.assertEqual(outcome["status"], "GRACEFUL_EXIT")
+            self.assertEqual(outcome["handshake_state"], "GRACEFUL_CLOSE_RETURNED")
+
+    def test_fast_exit_rejects_tampered_preclose_checksum(self) -> None:
+        class Child:
+            pid = 43012
+
+            @staticmethod
+            def poll():
+                return 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            handshake, batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=Child.pid,
+                preclose=True,
+                state="FAST_EXIT_REQUESTED",
+            )
+            with (batch_root / "batch_results.preclose.json").open(
+                "a", encoding="utf-8"
+            ) as stream:
+                stream.write(" \n")
+
+            outcome, _observed = _monitor_supervised_child(
+                Child(),
+                handshake_path=handshake,
+                token="token",
+                parent_pid=123,
+                output_root=root,
+                clock=lambda: 1.0,
+                sleep=lambda _seconds: None,
+            )
+
+            self.assertEqual(outcome["status"], "PRECLOSE_CLOSURE_INVALID")
+            self.assertFalse(outcome["preclose_verification"]["ok"])
+
+    def test_close_policy_uses_exact_fast_kwargs_without_graceful_alias(self) -> None:
+        calls = []
+        states = []
+
+        class App:
+            def close(self, **kwargs):
+                calls.append(kwargs)
+
+        class Supervisor:
+            def mark_fast_exit_requested(self, **kwargs):
+                states.append(("FAST_EXIT_REQUESTED", kwargs))
+
+            def mark_fast_close_returned(self, **kwargs):
+                states.append(("FAST_CLOSE_RETURNED", kwargs))
+
+        mode = _close_simulation_with_explicit_policy(
+            simulation_app=App(),
+            scene_handle=None,
+            args=SimpleNamespace(shutdown_mode="fast"),
+            supervisor=Supervisor(),
+            intended_returncode=0,
+        )
+
+        self.assertEqual(mode, "fast")
+        self.assertEqual(
+            calls,
+            [{"wait_for_replicator": False, "skip_cleanup": True}],
+        )
+        self.assertEqual(
+            [state for state, _payload in states],
+            ["FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"],
+        )
+        self.assertNotIn("CLOSE_RETURNED", [state for state, _payload in states])
+
+    def test_fast_close_policy_rejects_non_isaac_5_1_runtime(self) -> None:
+        with mock.patch.object(
+            run_fsm50_module,
+            "_runtime_versions",
+            return_value={"packages": {"isaacsim": "4.5.0"}},
+        ):
+            with self.assertRaisesRegex(RuntimeError, "restricted to.*Isaac 5.1"):
+                _close_simulation_with_explicit_policy(
+                    simulation_app=SimpleNamespace(close=lambda **_kwargs: None),
+                    scene_handle=None,
+                    args=SimpleNamespace(shutdown_mode="fast"),
+                    supervisor=None,
+                    intended_returncode=0,
+                )
 
     def test_supervisor_post_preclose_exit_requires_successful_close_return(self) -> None:
         cases = (
             ("PRECLOSE_COMPLETE", 0, "CHILD_EXIT_BEFORE_CLOSE_RETURNED"),
-            ("CLOSE_RETURNED", 7, "CHILD_EXIT_UNEXPECTED_RETURNCODE"),
+            ("FAST_EXIT_REQUESTED", 7, "FAST_EXIT_FAILED"),
             ("CLOSE_ERROR", 0, "SIMULATION_CLOSE_ERROR"),
         )
         for index, (state, returncode, expected_status) in enumerate(cases):
@@ -827,10 +965,16 @@ class RunnerContractTests(unittest.TestCase):
                         sleep=lambda _seconds: None,
                     )
                     self.assertEqual(expected_status, outcome["status"])
-                    self.assertNotEqual("NORMAL_EXIT", outcome["status"])
+                    self.assertNotIn(
+                        outcome["status"],
+                        {"GRACEFUL_EXIT", "FAST_EXIT_VERIFIED"},
+                    )
                     self.assertEqual(returncode, outcome["child_returncode"])
                     self.assertEqual(state, outcome["handshake_state"])
                     self.assertEqual(batch_root.resolve(), observed)
+                    if state == "CLOSE_ERROR":
+                        self.assertEqual(outcome["close_error"], "unit-test")
+                        self.assertTrue(outcome["preclose_verification"]["ok"])
 
     def test_supervisor_timeout_starts_only_after_preclose_and_owns_exact_pid(self) -> None:
         class Child:

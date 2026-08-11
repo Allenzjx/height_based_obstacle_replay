@@ -62,6 +62,25 @@ class SubprocessGroundReferenceTest(unittest.TestCase):
         self.assertTrue(adapter.called)
         self.assertTrue(result["grounded_reference_valid"])
 
+    def test_initialize_adapter_ground_reference_forwards_diagnostic_observer(self) -> None:
+        observer = object()
+
+        class Adapter:
+            received = None
+
+            def initialize_grounded_respawn_reference(self, *, tick_observer=None):
+                self.received = tick_observer
+                return {"grounded_reference_valid": True}
+
+        adapter = Adapter()
+        result = initialize_adapter_ground_reference(
+            adapter,
+            tick_observer=observer,
+        )
+
+        self.assertIs(adapter.received, observer)
+        self.assertTrue(result["grounded_reference_valid"])
+
 
 if __name__ == "__main__":
     unittest.main()
