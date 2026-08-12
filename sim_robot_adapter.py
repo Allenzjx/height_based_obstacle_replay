@@ -879,6 +879,12 @@ class SimRobotAdapter:
                 "joint_position_target_by_name": dict(
                     joint_state["joint_position_target_by_name"]
                 ),
+                "joint_position_target_buffer_by_name": dict(
+                    joint_state["joint_position_target_buffer_by_name"]
+                ),
+                "joint_velocity_target_buffer_by_name": dict(
+                    joint_state["joint_velocity_target_buffer_by_name"]
+                ),
                 "joint_target_minus_position_by_name": dict(
                     joint_state["joint_target_minus_position_by_name"]
                 ),
@@ -2077,8 +2083,61 @@ class SimRobotAdapter:
 
         positions = row("joint_pos")
         velocities = row("joint_vel")
-        readback_targets = row("joint_pos_target")
-        velocity_readback_targets = row("joint_vel_target")
+        buffered_position_targets = row("joint_pos_target")
+        buffered_velocity_targets = row("joint_vel_target")
+
+        def physics_target_row(getter_name: str) -> list[float]:
+            view = getattr(self.robot, "root_physx_view", None)
+            getter = None if view is None else getattr(view, getter_name, None)
+            if not callable(getter):
+                errors.append(
+                    f"robot.root_physx_view.{getter_name} is unavailable"
+                )
+                return []
+            try:
+                value = getter()
+                shape = tuple(int(item) for item in value.shape)
+            except Exception as exc:
+                errors.append(
+                    f"robot.root_physx_view.{getter_name} read failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                return []
+            expected_shape = (1, len(names))
+            if shape != expected_shape:
+                errors.append(
+                    f"robot.root_physx_view.{getter_name} shape {shape} "
+                    f"!= {expected_shape}"
+                )
+                return []
+            try:
+                raw = value[0].detach().cpu().reshape(-1).tolist()
+            except Exception:
+                try:
+                    raw = list(value[0])
+                except Exception as exc:
+                    errors.append(
+                        f"robot.root_physx_view.{getter_name} row read failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    return []
+            result: list[float] = []
+            for index, item in enumerate(raw):
+                try:
+                    number = float(item.item() if hasattr(item, "item") else item)
+                except Exception as exc:
+                    errors.append(
+                        f"robot.root_physx_view.{getter_name}[0,{index}] "
+                        f"conversion failed: {type(exc).__name__}: {exc}"
+                    )
+                    return []
+                result.append(number)
+            return result
+
+        readback_targets = physics_target_row("get_dof_position_targets")
+        velocity_readback_targets = physics_target_row(
+            "get_dof_velocity_targets"
+        )
         if len(set(names)) != len(names):
             errors.append("robot.joint_names contains duplicates")
         if not names:
@@ -2086,8 +2145,10 @@ class SimRobotAdapter:
         for field, values in (
             ("joint_pos", positions),
             ("joint_vel", velocities),
-            ("joint_pos_target", readback_targets),
-            ("joint_vel_target", velocity_readback_targets),
+            ("joint_pos_target", buffered_position_targets),
+            ("joint_vel_target", buffered_velocity_targets),
+            ("physx_position_target", readback_targets),
+            ("physx_velocity_target", velocity_readback_targets),
         ):
             if len(values) != len(names):
                 errors.append(
@@ -2120,10 +2181,20 @@ class SimRobotAdapter:
             for index, name in enumerate(names)
             if index < len(readback_targets)
         }
+        buffered_position_by_name = {
+            name: float(buffered_position_targets[index])
+            for index, name in enumerate(names)
+            if index < len(buffered_position_targets)
+        }
         velocity_readback_by_name = {
             name: float(velocity_readback_targets[index])
             for index, name in enumerate(names)
             if index < len(velocity_readback_targets)
+        }
+        buffered_velocity_by_name = {
+            name: float(buffered_velocity_targets[index])
+            for index, name in enumerate(names)
+            if index < len(buffered_velocity_targets)
         }
         target_minus_position = {
             name: float(readback_by_name[name] - position_by_name[name])
@@ -2174,7 +2245,9 @@ class SimRobotAdapter:
             "joint_velocity_vector": velocities,
             "joint_velocity_by_name": velocity_by_name,
             "joint_position_target_by_name": readback_by_name,
+            "joint_position_target_buffer_by_name": buffered_position_by_name,
             "joint_velocity_target_by_name": velocity_readback_by_name,
+            "joint_velocity_target_buffer_by_name": buffered_velocity_by_name,
             "joint_target_minus_position_by_name": target_minus_position,
             "servo_command_target_by_name": command_targets,
             "servo_command_to_readback_error_by_name": command_to_readback_error,

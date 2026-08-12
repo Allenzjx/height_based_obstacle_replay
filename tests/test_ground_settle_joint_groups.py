@@ -46,7 +46,14 @@ def make_adapter(joint_velocities: dict[str, float], wheel_targets: dict[str, fl
         "joint_velocity_vector": list(joint_velocities.values()),
         "joint_velocity_by_name": dict(joint_velocities),
         "joint_position_target_by_name": {name: 0.0 for name in joint_velocities},
+        "joint_position_target_buffer_by_name": {
+            name: 0.0 for name in joint_velocities
+        },
         "joint_velocity_target_by_name": {
+            name: resolved_wheel_targets.get(name, 0.0)
+            for name in joint_velocities
+        },
+        "joint_velocity_target_buffer_by_name": {
             name: resolved_wheel_targets.get(name, 0.0)
             for name in joint_velocities
         },

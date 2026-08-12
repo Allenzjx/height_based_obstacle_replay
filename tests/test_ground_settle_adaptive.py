@@ -13,6 +13,15 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES  # noqa: E402
 from sim_robot_adapter import SimRobotAdapter, SimRobotAdapterConfig  # noqa: E402
 
 
+class Matrix:
+    def __init__(self, rows):
+        self.rows = rows
+        self.shape = (len(rows), len(rows[0]) if rows else 0)
+
+    def __getitem__(self, index):
+        return self.rows[index]
+
+
 def make_adapter(
     *,
     unstable_ticks: int,
@@ -90,7 +99,11 @@ def make_adapter(
             "joint_velocity_vector": [velocities[name] for name in all_names],
             "joint_velocity_by_name": velocities,
             "joint_position_target_by_name": {name: 0.0 for name in all_names},
+            "joint_position_target_buffer_by_name": {
+                name: 0.0 for name in all_names
+            },
             "joint_velocity_target_by_name": drive_targets,
+            "joint_velocity_target_buffer_by_name": dict(drive_targets),
             "joint_target_minus_position_by_name": {name: 0.0 for name in all_names},
             "servo_command_target_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
             "servo_command_to_readback_error_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
@@ -278,6 +291,8 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
         adapter = SimRobotAdapter.__new__(SimRobotAdapter)
         all_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
         wheel_target_row = [0.0 for _ in all_names]
+        physics_position_row = [0.0 for _ in all_names]
+        physics_velocity_row = [0.0 for _ in all_names]
         adapter.robot = SimpleNamespace(
             joint_names=list(all_names),
             data=SimpleNamespace(
@@ -285,6 +300,14 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
                 joint_vel=[[0.0 for _ in all_names]],
                 joint_pos_target=[[0.0 for _ in all_names]],
                 joint_vel_target=[wheel_target_row],
+            ),
+            root_physx_view=SimpleNamespace(
+                get_dof_position_targets=lambda: Matrix(
+                    [physics_position_row]
+                ),
+                get_dof_velocity_targets=lambda: Matrix(
+                    [physics_velocity_row]
+                ),
             ),
         )
         adapter.servo_cmd_targets = [[0.0 for _ in SERVO_JOINT_NAMES]]
@@ -300,10 +323,106 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
             {name: 0.0 for name in WHEEL_JOINT_NAMES},
         )
 
-        wheel_target_row[len(SERVO_JOINT_NAMES)] = float("nan")
+        physics_velocity_row[len(SERVO_JOINT_NAMES)] = float("nan")
         snapshot = adapter._ground_joint_state_snapshot()
         self.assertFalse(snapshot["valid"])
-        self.assertIn("joint_vel_target has non-finite", snapshot["error"])
+        self.assertIn("physx_velocity_target has non-finite", snapshot["error"])
+
+    def test_live_joint_snapshot_uses_physx_targets_not_local_buffer(self) -> None:
+        adapter = SimRobotAdapter.__new__(SimRobotAdapter)
+        all_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+        zeros = [0.0 for _ in all_names]
+        physics_positions = list(zeros)
+        physics_velocities = list(zeros)
+        physics_positions[0] = 0.25
+        physics_velocities[len(SERVO_JOINT_NAMES)] = 0.5
+        adapter.robot = SimpleNamespace(
+            joint_names=list(all_names),
+            data=SimpleNamespace(
+                joint_pos=[list(zeros)],
+                joint_vel=[list(zeros)],
+                joint_pos_target=[list(zeros)],
+                joint_vel_target=[list(zeros)],
+            ),
+            root_physx_view=SimpleNamespace(
+                get_dof_position_targets=lambda: Matrix(
+                    [physics_positions]
+                ),
+                get_dof_velocity_targets=lambda: Matrix(
+                    [physics_velocities]
+                ),
+            ),
+        )
+        adapter.servo_cmd_targets = [[0.0 for _ in SERVO_JOINT_NAMES]]
+
+        snapshot = adapter._ground_joint_state_snapshot()
+
+        self.assertTrue(snapshot["valid"])
+        self.assertEqual(
+            snapshot["joint_position_target_by_name"][SERVO_JOINT_NAMES[0]],
+            0.25,
+        )
+        self.assertEqual(
+            snapshot["joint_position_target_buffer_by_name"][
+                SERVO_JOINT_NAMES[0]
+            ],
+            0.0,
+        )
+        self.assertEqual(
+            snapshot["joint_velocity_target_by_name"][
+                WHEEL_JOINT_NAMES[0]
+            ],
+            0.5,
+        )
+
+    def test_live_joint_snapshot_rejects_physx_target_shape_and_getter_failure(self) -> None:
+        adapter = SimRobotAdapter.__new__(SimRobotAdapter)
+        all_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+        zeros = [0.0 for _ in all_names]
+        adapter.robot = SimpleNamespace(
+            joint_names=list(all_names),
+            data=SimpleNamespace(
+                joint_pos=[list(zeros)],
+                joint_vel=[list(zeros)],
+                joint_pos_target=[list(zeros)],
+                joint_vel_target=[list(zeros)],
+            ),
+            root_physx_view=SimpleNamespace(
+                get_dof_position_targets=lambda: Matrix(
+                    [list(zeros), list(zeros)]
+                ),
+                get_dof_velocity_targets=lambda: (_ for _ in ()).throw(
+                    RuntimeError("backend unavailable")
+                ),
+            ),
+        )
+        adapter.servo_cmd_targets = [[0.0 for _ in SERVO_JOINT_NAMES]]
+
+        snapshot = adapter._ground_joint_state_snapshot()
+
+        self.assertFalse(snapshot["valid"])
+        self.assertIn("shape (2, 12) != (1, 12)", snapshot["error"])
+        self.assertIn("backend unavailable", snapshot["error"])
+
+    def test_settle_rejects_physx_wheel_target_mismatch_with_zero_local_buffer(self) -> None:
+        adapter = make_adapter(unstable_ticks=0)
+        original_snapshot = adapter._ground_joint_state_snapshot
+
+        def mismatched_snapshot():
+            snapshot = dict(original_snapshot())
+            readback = dict(snapshot["joint_velocity_target_by_name"])
+            readback[WHEEL_JOINT_NAMES[0]] = 0.5
+            snapshot["joint_velocity_target_by_name"] = readback
+            return snapshot
+
+        adapter._ground_joint_state_snapshot = mismatched_snapshot  # type: ignore[method-assign]
+
+        result = adapter.settle_robot_on_ground(label="physx-mismatch")
+
+        self.assertEqual(result["steps_run"], 180)
+        self.assertFalse(result["stable"])
+        self.assertFalse(result["wheel_target_evidence_valid"])
+        self.assertIn("drive readback mismatch", result["wheel_target_evidence_error"])
 
     def test_diagnostic_observer_cannot_change_canonical_acceptance(self) -> None:
         def corrupt_diagnostic_copy(frame):
