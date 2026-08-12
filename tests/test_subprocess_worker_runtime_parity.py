@@ -4,6 +4,7 @@ import inspect
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
 if str(MODULE_ROOT) not in sys.path:
@@ -14,6 +15,43 @@ import sim_worker_runtime  # noqa: E402
 
 
 class SubprocessWorkerRuntimeParityTest(unittest.TestCase):
+    def test_respawn_short_settle_fails_closed(self) -> None:
+        stopped = []
+        adapter = SimpleNamespace(
+            grounded_reference_valid=True,
+            grounded_reference_stable=True,
+            grounded_reference_diagnostics={
+                "checked": True,
+                "classification": "OK",
+                "physical_ground_safe": True,
+                "respawn_ready": True,
+            },
+            robot_ground_diagnostics={
+                "checked": True,
+                "classification": "OK",
+                "physical_ground_safe": True,
+                "respawn_ready": True,
+            },
+            respawn_robot=lambda settle=True: {
+                "ok": True,
+                "respawned": True,
+                "settle": {
+                    "stable": False,
+                    "ground_contact_resolved": True,
+                    "acceptance_window_evidence_valid": True,
+                },
+            },
+            stop_wheels=lambda: stopped.append(True),
+            apply_commands_to_robot=lambda: None,
+            robot=SimpleNamespace(write_data_to_sim=lambda: None),
+        )
+
+        result = sim_worker_runtime._respawn_with_ground_policy(adapter)
+
+        self.assertFalse(result["ok"])
+        self.assertFalse(result["respawned"])
+        self.assertTrue(stopped)
+
     def test_single_subprocess_uses_shared_runtime_entry_points(self) -> None:
         process_source = inspect.getsource(sim_worker_process)
         required = [

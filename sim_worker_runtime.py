@@ -412,8 +412,22 @@ def _respawn_with_ground_policy(adapter: Any) -> dict[str, Any]:
         _stop_wheels_preserving_pose(adapter)
         return {"ok": False, "respawned": False, "error": respawn_reason or RESPAWN_GROUND_FAILURE_TEXT, "ground_diagnostics": dict(getattr(adapter, "grounded_reference_diagnostics", default_robot_ground_diagnostics("invalid grounded reference"))), "settle": dict(getattr(adapter, "last_ground_settle_result", {}) or {})}
     result = dict(adapter.respawn_robot(settle=True) or {})
-    result.setdefault("ok", True)
-    result.setdefault("respawned", True)
+    settle = dict(result.get("settle", {}) or {})
+    settle_ok = bool(
+        settle.get("stable") is True
+        and settle.get("ground_contact_resolved") is True
+        and settle.get("acceptance_window_evidence_valid") is True
+    )
+    explicit_ok = result.get("ok") is True and result.get("respawned") is True
+    ok = bool(explicit_ok and settle_ok)
+    result["ok"] = ok
+    result["respawned"] = ok
+    if not ok:
+        _stop_wheels_preserving_pose(adapter)
+        result["error"] = str(
+            result.get("error", "")
+            or "respawn settle failed strict grounding checks"
+        )
     return result
 
 

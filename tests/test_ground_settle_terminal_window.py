@@ -41,6 +41,43 @@ def make_adapter(settle: dict) -> SimRobotAdapter:
 
 
 class GroundSettleTerminalWindowTest(unittest.TestCase):
+    def test_initial_penetration_never_writes_root_pose_correction(self) -> None:
+        adapter = make_adapter(
+            {
+                "stable": False,
+                "stable_frames": 0,
+                "stable_frames_required": 10,
+                "ground_diagnostics": {
+                    "checked": True,
+                    "classification": "COLLISION_PENETRATION",
+                    "ground_state": "FAIL",
+                    "physical_ground_safe": False,
+                    "visual_ground_safe": False,
+                    "missing_collision_wheels": [],
+                    "unresolved_collision_wheels": [],
+                    "maximum_collision_penetration_m": 0.004,
+                },
+            }
+        )
+        corrections = []
+        adapter._apply_root_z_correction = lambda dz: corrections.append(dz)  # type: ignore[method-assign]
+
+        result = adapter.initialize_grounded_respawn_reference()
+
+        self.assertEqual(corrections, [])
+        self.assertFalse(result["grounded_reference_valid"])
+        self.assertFalse(
+            result["grounded_reference_diagnostics"][
+                "initial_safe_placement_applied"
+            ]
+        )
+        self.assertEqual(
+            result["grounded_reference_diagnostics"][
+                "initial_safe_placement_policy"
+            ],
+            "no_root_pose_correction_fail_closed",
+        )
+
     def test_peak_velocity_does_not_reject_final_stable_reference(self) -> None:
         adapter = make_adapter(
             {

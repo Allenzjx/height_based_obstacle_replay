@@ -483,34 +483,14 @@ class SimRobotAdapter:
                 tick_observer=tick_observer,
             )
         diagnostics = dict(settle.get("ground_diagnostics", default_robot_ground_diagnostics("settle did not run")))
-        classification = str(diagnostics.get("classification", ""))
-        if classification == COLLISION_PENETRATION:
-            settle_before_safe_placement = dict(settle)
-            allowed, dz, reason = compute_bounded_ground_correction(
-                diagnostics,
-                target_clearance_m=float(self.config.ground_clearance_m),
-                max_correction_m=float(self.config.max_ground_correction_m),
-            )
-            if allowed and dz > 0.0:
-                self._apply_root_z_correction(dz)
-                self.last_ground_correction_z_m = float(dz)
-                diagnostics = self._diagnostics_after_initial_safe_placement(dz, reason=reason)
-                settle = dict(settle_before_safe_placement)
-                settle["label"] = "initial_safe_placement_after_ground_correction"
-                settle["ground_diagnostics"] = diagnostics
-                if self._corrected_ground_diagnostics_safe(diagnostics):
-                    settle["ground_contact_resolved"] = True
-                    settle["physical_ground_safe"] = True
-                    settle["stable"] = bool(
-                        settle.get("final_window_stable", False)
-                        and settle.get("kinematic_stable", False)
-                        and settle.get("servo_final_window_stable", settle.get("servo_pose_stable", False))
-                        and settle.get("wheel_state_stable", False)
-                    )
-                diagnostics["initial_safe_placement_applied"] = True
-                diagnostics["initial_safe_placement_correction_z_m"] = float(dz)
-            else:
-                diagnostics.setdefault("warnings", []).append(str(reason or "initial safe placement correction was not allowed"))
+        # Formal initialization is observation-only with respect to root pose.
+        # A penetration classification is rejected below; it is never repaired
+        # by writing a corrected spawn/root pose or by replaying historical
+        # grounded state.
+        diagnostics["initial_safe_placement_applied"] = False
+        diagnostics["initial_safe_placement_policy"] = (
+            "no_root_pose_correction_fail_closed"
+        )
         classification = str(diagnostics.get("classification", ""))
         ground_state = str(diagnostics.get("ground_state", ""))
         missing = list(diagnostics.get("missing_collision_wheels", []) or [])
@@ -1289,6 +1269,14 @@ class SimRobotAdapter:
             if settle_result
             else self.grounded_reference_diagnostics
         )
+        settle_ok = bool(
+            not settle
+            or (
+                settle_result.get("stable") is True
+                and settle_result.get("ground_contact_resolved") is True
+                and settle_result.get("acceptance_window_evidence_valid") is True
+            )
+        )
         diagnostics.update(
             checked=True,
             cached_ground_reference_used=True,
@@ -1302,6 +1290,9 @@ class SimRobotAdapter:
             f"root_z={diagnostics.get('root_z_m')}"
         )
         return {
+            "ok": bool(settle_ok),
+            "respawned": bool(settle_ok),
+            "error": "" if settle_ok else "respawn settle failed strict grounding checks",
             "ground_diagnostics": diagnostics,
             "settle": settle_result,
             "cached_ground_reference_used": True,
