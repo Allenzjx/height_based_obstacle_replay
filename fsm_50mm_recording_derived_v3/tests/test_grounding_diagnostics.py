@@ -23,6 +23,8 @@ def base_frame() -> dict:
         "sim_time_s": 1.0 / 120.0,
         "physics_dt_s": 1.0 / 120.0,
         "root_velocity": [0.0] * 6,
+        "root_velocity_evidence_valid": True,
+        "root_velocity_evidence_error": "",
         "servo_joint_speed": 0.01,
         "wheel_joint_speed": 0.02,
         "stable_count": 1,
@@ -30,12 +32,23 @@ def base_frame() -> dict:
         "rolling_window_metrics": {"capacity": 60, "size": 1},
         "joint_state_evidence_valid": True,
         "joint_state_evidence_error": "",
+        "wheel_target_evidence_valid": True,
+        "wheel_target_evidence_error": "",
         "joint_position_by_name": {name: 0.1 for name in all_names},
         "joint_velocity_by_name": {name: 0.01 for name in all_names},
         "joint_position_target_by_name": {name: 0.11 for name in all_names},
         "joint_target_minus_position_by_name": {name: 0.01 for name in all_names},
         "servo_command_target_by_name": {name: 0.11 for name in SERVO_JOINT_NAMES},
         "servo_command_to_readback_error_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
+        "wheel_target_velocity_by_name": {
+            name: 0.0 for name in WHEEL_JOINT_NAMES
+        },
+        "wheel_target_readback_velocity_by_name": {
+            name: 0.0 for name in WHEEL_JOINT_NAMES
+        },
+        "wheel_target_command_to_readback_error_by_name": {
+            name: 0.0 for name in WHEEL_JOINT_NAMES
+        },
     }
 
 
@@ -73,7 +86,13 @@ def fake_runtime(*, missing_wheel: bool = False):
             "wheels": [
                 {
                     "wheel_name": name,
+                    "joint_name": name,
                     "collision_penetration_m": 0.001,
+                    "collision_ground_clearance_m": -0.001,
+                    "bounds_valid": True,
+                    "bounds_finite": True,
+                    "bounds_source": "live_body_mesh_points:test",
+                    "collision_resolution_state": "OK",
                 }
                 for name in WHEEL_JOINT_NAMES
             ],
@@ -107,6 +126,32 @@ class GroundingDiagnosticsTest(unittest.TestCase):
         self.assertFalse(row["wheel_force_evidence_valid"])
         self.assertIn("RR/rear_right_wheel", row["wheel_force_evidence_error"])
 
+    def test_root_velocity_source_flag_fails_closed_even_for_finite_values(self) -> None:
+        adapter, scene = fake_runtime()
+        frame = base_frame()
+        frame["root_velocity_evidence_valid"] = False
+        frame["root_velocity_evidence_error"] = "root velocity source missing"
+
+        row = enrich_grounding_tick(adapter, scene, frame)
+
+        self.assertFalse(row["diagnostic_evidence_valid"])
+        self.assertIn(
+            "root velocity source missing", row["diagnostic_evidence_error"]
+        )
+
+    def test_wheel_target_source_flag_fails_closed_even_for_finite_values(self) -> None:
+        adapter, scene = fake_runtime()
+        frame = base_frame()
+        frame["wheel_target_evidence_valid"] = False
+        frame["wheel_target_evidence_error"] = "wheel drive readback mismatch"
+
+        row = enrich_grounding_tick(adapter, scene, frame)
+
+        self.assertFalse(row["diagnostic_evidence_valid"])
+        self.assertIn(
+            "wheel drive readback mismatch", row["diagnostic_evidence_error"]
+        )
+
     def test_penetration_requires_exact_wheel_joint_identity(self) -> None:
         adapter, scene = fake_runtime()
         adapter.validate_robot_ground_contact = lambda apply_correction=False: {
@@ -117,7 +162,15 @@ class GroundingDiagnosticsTest(unittest.TestCase):
             "missing_collision_wheels": [],
             "unresolved_collision_wheels": [],
             "wheels": [
-                {"wheel_name": name, "collision_penetration_m": 0.0}
+                {
+                    "wheel_name": name,
+                    "collision_penetration_m": 0.0,
+                    "collision_ground_clearance_m": 0.0,
+                    "bounds_valid": True,
+                    "bounds_finite": True,
+                    "bounds_source": "test",
+                    "collision_resolution_state": "OK",
+                }
                 for name in ("a", "b", "c", "d")
             ],
         }
@@ -129,6 +182,23 @@ class GroundingDiagnosticsTest(unittest.TestCase):
         self.assertIn(
             "unexpected/empty wheel_name",
             row["penetration"]["error"],
+        )
+
+    def test_penetration_rejects_invalid_bounds_and_inconsistent_maximum(self) -> None:
+        adapter, scene = fake_runtime()
+        diagnostics = adapter.validate_robot_ground_contact()
+        diagnostics["wheels"][0]["bounds_valid"] = False
+        diagnostics["maximum_collision_penetration_m"] = 0.0
+        adapter.validate_robot_ground_contact = (
+            lambda apply_correction=False: diagnostics
+        )
+
+        row = enrich_grounding_tick(adapter, scene, base_frame())
+
+        self.assertFalse(row["penetration"]["valid"])
+        self.assertIn("bounds_valid is not true", row["penetration"]["error"])
+        self.assertIn(
+            "does not match wheel rows", row["penetration"]["error"]
         )
 
     def test_contact_force_rejects_more_than_one_environment(self) -> None:

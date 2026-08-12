@@ -212,6 +212,7 @@ def _penetration_snapshot(adapter: Any) -> dict[str, Any]:
         }
     wheel_rows = list(diagnostics.get("wheels", []) or [])
     wheel_penetration: dict[str, float] = {}
+    wheel_clearance: dict[str, float] = {}
     errors: list[str] = []
     expected_wheels = set(WHEEL_JOINT_NAMES)
     if len(wheel_rows) != len(expected_wheels):
@@ -235,6 +236,14 @@ def _penetration_snapshot(adapter: Any) -> dict[str, Any]:
                 f"{name}: joint_name mismatch {joint_name!r}"
             )
             continue
+        if row.get("bounds_valid") is not True:
+            errors.append(f"{name}: bounds_valid is not true")
+        if row.get("bounds_finite") is not True:
+            errors.append(f"{name}: bounds_finite is not true")
+        if not str(row.get("bounds_source", "") or ""):
+            errors.append(f"{name}: bounds_source is unavailable")
+        if str(row.get("collision_resolution_state", "") or "") != "OK":
+            errors.append(f"{name}: collision_resolution_state is not OK")
         try:
             value = float(row.get("collision_penetration_m"))
         except (TypeError, ValueError):
@@ -243,13 +252,39 @@ def _penetration_snapshot(adapter: Any) -> dict[str, Any]:
         if not math.isfinite(value):
             errors.append(f"{name or '<unnamed>'}: penetration is non-finite")
             continue
+        try:
+            clearance = float(
+                row.get(
+                    "collision_ground_clearance_m",
+                    row.get("clearance_m"),
+                )
+            )
+        except (TypeError, ValueError):
+            errors.append(f"{name}: collision clearance is unavailable")
+            continue
+        if not math.isfinite(clearance):
+            errors.append(f"{name}: collision clearance is non-finite")
+            continue
         wheel_penetration[name] = value
+        wheel_clearance[name] = clearance
     try:
         maximum = float(diagnostics.get("maximum_collision_penetration_m"))
     except (TypeError, ValueError):
         maximum = float("nan")
     if not math.isfinite(maximum):
         errors.append("maximum collision penetration is unavailable/non-finite")
+    elif set(wheel_penetration) == expected_wheels:
+        computed_maximum = max(wheel_penetration.values(), default=0.0)
+        if not math.isclose(
+            maximum,
+            computed_maximum,
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-12,
+        ):
+            errors.append(
+                "maximum collision penetration does not match wheel rows: "
+                f"{maximum:.9g} != {computed_maximum:.9g}"
+            )
     valid = bool(
         diagnostics.get("checked", False)
         and set(wheel_penetration) == expected_wheels
@@ -264,6 +299,7 @@ def _penetration_snapshot(adapter: Any) -> dict[str, Any]:
         "physical_ground_safe": diagnostics.get("physical_ground_safe"),
         "maximum_collision_penetration_m": maximum,
         "wheel_penetration_m": wheel_penetration,
+        "wheel_clearance_m": wheel_clearance,
         "missing_collision_wheels": list(
             diagnostics.get("missing_collision_wheels", []) or []
         ),
@@ -297,7 +333,9 @@ def enrich_grounding_tick(
         for error in (
             root_error,
             velocity_error,
+            str(enriched.get("root_velocity_evidence_error", "") or ""),
             str(enriched.get("joint_state_evidence_error", "") or ""),
+            str(enriched.get("wheel_target_evidence_error", "") or ""),
             str(contact.get("error", "") or ""),
             str(penetration.get("error", "") or ""),
         )
@@ -322,7 +360,9 @@ def enrich_grounding_tick(
             "penetration": penetration,
             "diagnostic_evidence_valid": bool(
                 not errors
+                and enriched.get("root_velocity_evidence_valid") is True
                 and enriched.get("joint_state_evidence_valid") is True
+                and enriched.get("wheel_target_evidence_valid") is True
                 and contact.get("valid") is True
                 and penetration.get("valid") is True
             ),
@@ -407,6 +447,20 @@ def write_grounding_trace_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> 
                     ).get(name),
                     "q_target_minus_q_rad": dict(
                         row.get("joint_target_minus_position_by_name", {}) or {}
+                    ).get(name),
+                    "wheel_velocity_target_rad_s": dict(
+                        row.get("wheel_target_velocity_by_name", {}) or {}
+                    ).get(name),
+                    "wheel_velocity_target_readback_rad_s": dict(
+                        row.get("wheel_target_readback_velocity_by_name", {})
+                        or {}
+                    ).get(name),
+                    "wheel_target_command_to_readback_error_rad_s": dict(
+                        row.get(
+                            "wheel_target_command_to_readback_error_by_name",
+                            {},
+                        )
+                        or {}
                     ).get(name),
                 }
                 for name in joint_names

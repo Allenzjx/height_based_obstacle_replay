@@ -67,6 +67,10 @@ def validate_shutdown_outcome(
     state = str(outcome.get("handshake_state", "") or "")
     kwargs = dict(outcome.get("close_kwargs", {}) or {})
     if status == "FAST_EXIT_VERIFIED":
+        if intended != 0 or actual != 0:
+            raise ValueError(
+                "FAST_EXIT_VERIFIED requires intended/actual return code zero"
+            )
         if mode != "fast":
             raise ValueError("FAST_EXIT_VERIFIED shutdown_mode is not fast")
         if state not in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}:

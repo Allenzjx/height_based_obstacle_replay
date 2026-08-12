@@ -16,6 +16,7 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     ChildSupervisorHandshake,
     ReplaySingletonLock,
     _atomic_write_json,
+    _batch_command_exit_code,
     _compare_source_freezes,
     _close_simulation_with_explicit_policy,
     _deserialize_replay_args,
@@ -28,6 +29,7 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _monitor_supervised_child,
     _new_directory,
     _preclose_evidence_manifest,
+    _process_returncode_after_close,
     _record_shutdown_outcome,
     _runtime_environment_equivalence,
     _run_recording_replays_locked,
@@ -42,6 +44,121 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 
 
 class RunnerContractTests(unittest.TestCase):
+    def test_fast_child_process_return_is_separate_from_command_result(self) -> None:
+        self.assertEqual(
+            _process_returncode_after_close(
+                command_exit_code=1,
+                shutdown_mode="fast",
+                close_error="",
+                supervised=True,
+            ),
+            0,
+        )
+        self.assertEqual(
+            _process_returncode_after_close(
+                command_exit_code=1,
+                shutdown_mode="fast",
+                close_error="",
+                supervised=False,
+            ),
+            1,
+        )
+        self.assertEqual(
+            _process_returncode_after_close(
+                command_exit_code=0,
+                shutdown_mode="fast",
+                close_error="close failed",
+                supervised=True,
+            ),
+            1,
+        )
+
+    def test_grounding_preclose_is_self_contained_without_global_reports(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in (
+                "batch_request.json",
+                "batch_results.json",
+                "batch_finalization.json",
+                "batch_results.preclose.json",
+                "batch_finalization.preclose.json",
+                "source_integrity.json",
+                "checksums.sha256",
+                "checksums.preclose.sha256",
+            ):
+                (root / name).write_text("{}\n", encoding="utf-8")
+            with (
+                mock.patch.object(
+                    run_fsm50_module,
+                    "VERSION_MATRIX_PATH",
+                    root / "missing_version_matrix.csv",
+                ),
+                mock.patch.object(
+                    run_fsm50_module,
+                    "DIAGONAL_TIMELINE_PATH",
+                    root / "missing_diagonal_timeline.csv",
+                ),
+            ):
+                evidence = _preclose_evidence_manifest(
+                    root,
+                    results=[],
+                    batch_source_comparison={"equal": True},
+                    batch_finalization={"strict_success": False},
+                    include_global_analysis_reports=False,
+                )
+
+            self.assertEqual(evidence["physics_result_count"], 0)
+            self.assertNotIn(
+                str((root / "missing_version_matrix.csv").resolve()),
+                evidence["evidence_files"],
+            )
+
+    def test_batch_checksum_covers_nested_manifests_without_preclose_self_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            child = root / "child"
+            child.mkdir()
+            (child / "checksums.sha256").write_text(
+                "nested\n", encoding="utf-8"
+            )
+            for _source, snapshot_name in (
+                ("batch_results.json", "batch_results.preclose.json"),
+                (
+                    "batch_finalization.json",
+                    "batch_finalization.preclose.json",
+                ),
+                ("checksums.sha256", "checksums.preclose.sha256"),
+            ):
+                (root / snapshot_name).write_text("snapshot\n", encoding="utf-8")
+
+            _write_checksums(root, exclude_preclose_snapshots=True)
+            rows = (root / "checksums.sha256").read_text(encoding="utf-8")
+
+            self.assertIn("child/checksums.sha256", rows)
+            self.assertNotIn("batch_results.preclose.json", rows)
+            self.assertNotIn("batch_finalization.preclose.json", rows)
+            self.assertNotIn("checksums.preclose.sha256", rows)
+
+    def test_fast_process_success_is_separate_from_command_qualification(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _atomic_write_json(
+                root / "batch_finalization.json",
+                {"phase": "SHUTDOWN_COMPLETE", "strict_success": False},
+            )
+            self.assertEqual(
+                _batch_command_exit_code(root, fallback=0),
+                1,
+            )
+            _atomic_write_json(
+                root / "batch_finalization.json",
+                {"phase": "SHUTDOWN_COMPLETE", "strict_success": True},
+            )
+            self.assertEqual(
+                _batch_command_exit_code(root, fallback=1),
+                0,
+            )
+
     def test_short_version_selector_is_unambiguous(self) -> None:
         versions = RecordingAudit().enumerate_versions()
         selected = _select_versions(versions, ["v010", "v012"])

@@ -24,8 +24,8 @@ def modern_outcome(status: str) -> dict:
             "skip_cleanup": fast,
         },
         "runtime_version": "5.1.0.0",
-        "intended_returncode": 1,
-        "child_returncode": 1,
+        "intended_returncode": 0 if fast else 1,
+        "child_returncode": 0 if fast else 1,
         "close_error": "",
     }
 
@@ -53,7 +53,7 @@ def test_fast_contract_requires_explicit_isaac_5_1_and_matching_return() -> None
         validate_shutdown_outcome(outcome)
 
     outcome = modern_outcome("FAST_EXIT_VERIFIED")
-    outcome["child_returncode"] = 0
+    outcome["child_returncode"] = 1
     with pytest.raises(ValueError, match="mismatch"):
         validate_shutdown_outcome(outcome)
 

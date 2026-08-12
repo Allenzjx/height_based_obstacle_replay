@@ -680,7 +680,10 @@ class ViewportVideoRecorder:
                 raise RuntimeError("active GUI viewport is unavailable")
             self.render_product_path = str(viewport.render_product_path)
             movie_capture.basePath = str(self.frames.resolve()).replace("\\", "/")
-            movie_capture.baseFilename = "fsm50_viewport_frame.png"
+            # An explicit fileName makes Isaac 5.1 overwrite the same PNG on
+            # every render.  Empty delegates naming to AOV_FrameNumber so the
+            # capture contains distinct viewport frames.
+            movie_capture.baseFilename = ""
             movie_capture.inflightFileIO = 4
             movie_capture.attach_post_process_save_to_disk()
             self.started = True
@@ -1794,7 +1797,9 @@ def run_fsm_locked(
                 scene_handle=scene_handle,
                 args=args,
                 supervisor=supervisor,
-                intended_returncode=exit_code,
+                intended_returncode=(
+                    0 if shutdown_mode == "fast" else exit_code
+                ),
             )
         except Exception as exc:
             close_error = f"{type(exc).__name__}: {exc}"
@@ -1814,7 +1819,12 @@ def run_fsm_locked(
         ),
         flush=True,
     )
-    return exit_code
+    return runner._process_returncode_after_close(
+        command_exit_code=exit_code,
+        shutdown_mode=shutdown_mode,
+        close_error=close_error,
+        supervised=supervisor is not None,
+    )
 
 
 __all__ = ["ViewportVideoRecorder", "run_fsm_locked"]

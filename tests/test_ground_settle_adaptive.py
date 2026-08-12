@@ -19,6 +19,9 @@ def make_adapter(
     max_steps: int = 180,
     snapshot_valid: bool = True,
     root_velocity_valid: bool = True,
+    wheel_targets: dict[str, float] | None = None,
+    wheel_readback_targets: dict[str, float] | None = None,
+    ground_clearance_m: float = 0.0,
 ) -> SimRobotAdapter:
     adapter = SimRobotAdapter.__new__(SimRobotAdapter)
     adapter.config = SimRobotAdapterConfig(
@@ -72,6 +75,14 @@ def make_adapter(
         }
         velocities.update({name: 0.05 for name in WHEEL_JOINT_NAMES})
         all_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+        drive_targets = {name: 0.0 for name in all_names}
+        drive_targets.update(
+            wheel_readback_targets
+            if wheel_readback_targets is not None
+            else wheel_targets
+            if wheel_targets is not None
+            else {name: 0.0 for name in WHEEL_JOINT_NAMES}
+        )
         return {
             "valid": snapshot_valid,
             "error": "" if snapshot_valid else "joint_pos_target missing",
@@ -79,6 +90,7 @@ def make_adapter(
             "joint_velocity_vector": [velocities[name] for name in all_names],
             "joint_velocity_by_name": velocities,
             "joint_position_target_by_name": {name: 0.0 for name in all_names},
+            "joint_velocity_target_by_name": drive_targets,
             "joint_target_minus_position_by_name": {name: 0.0 for name in all_names},
             "servo_command_target_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
             "servo_command_to_readback_error_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
@@ -86,7 +98,11 @@ def make_adapter(
 
     adapter._ground_joint_state_snapshot = snapshot  # type: ignore[method-assign]
     adapter._wheel_velocity_target_by_name = lambda: {  # type: ignore[method-assign]
-        name: 0.0 for name in WHEEL_JOINT_NAMES
+        **(
+            wheel_targets
+            if wheel_targets is not None
+            else {name: 0.0 for name in WHEEL_JOINT_NAMES}
+        )
     }
     adapter._servo_position_error_by_name = lambda: {  # type: ignore[method-assign]
         name: 0.0 for name in SERVO_JOINT_NAMES
@@ -99,6 +115,17 @@ def make_adapter(
         "missing_collision_wheels": [],
         "unresolved_collision_wheels": [],
         "maximum_collision_penetration_m": 0.0,
+        "wheels": [
+            {
+                "wheel_name": name,
+                "joint_name": name,
+                "bounds_valid": True,
+                "bounds_finite": True,
+                "collision_ground_clearance_m": ground_clearance_m,
+                "collision_penetration_m": 0.0,
+            }
+            for name in WHEEL_JOINT_NAMES
+        ],
     }
     return adapter
 
@@ -144,6 +171,18 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
         self.assertEqual(result["stop_reason"], "max_steps_exhausted")
         self.assertFalse(result["stable"])
 
+    def test_stationary_robot_above_existing_clearance_limit_fails_grounding(self) -> None:
+        result = make_adapter(
+            unstable_ticks=0,
+            ground_clearance_m=0.10,
+        ).settle_robot_on_ground(label="hovering")
+
+        self.assertEqual(result["steps_run"], 10)
+        self.assertEqual(result["consecutive_stable_ticks"], 10)
+        self.assertFalse(result["stable"])
+        self.assertFalse(result["ground_contact_resolved"])
+        self.assertFalse(result["ground_support_clearance_evidence"]["valid"])
+
     def test_grounding_budget_is_hard_capped_at_180_ticks(self) -> None:
         result = make_adapter(
             unstable_ticks=250,
@@ -187,6 +226,42 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
             result["settle_tick_trace"][-1]["root_velocity_evidence_valid"]
         )
 
+    def test_wheel_target_evidence_rejects_nan_missing_and_readback_mismatch(self) -> None:
+        cases = {
+            "nan": {
+                "wheel_targets": {
+                    **{name: 0.0 for name in WHEEL_JOINT_NAMES},
+                    WHEEL_JOINT_NAMES[0]: float("nan"),
+                }
+            },
+            "missing": {
+                "wheel_targets": {
+                    name: 0.0 for name in WHEEL_JOINT_NAMES[1:]
+                }
+            },
+            "readback-mismatch": {
+                "wheel_targets": {name: 0.0 for name in WHEEL_JOINT_NAMES},
+                "wheel_readback_targets": {
+                    **{name: 0.0 for name in WHEEL_JOINT_NAMES},
+                    WHEEL_JOINT_NAMES[0]: 0.01,
+                },
+            },
+        }
+        for label, overrides in cases.items():
+            with self.subTest(label=label):
+                result = make_adapter(unstable_ticks=0, **overrides).settle_robot_on_ground(
+                    label=label
+                )
+                self.assertEqual(result["steps_run"], 180)
+                self.assertFalse(result["stable"])
+                self.assertFalse(result["wheel_command_zero"])
+                self.assertFalse(result["wheel_target_evidence_valid"])
+                self.assertFalse(
+                    result["settle_tick_trace"][-1][
+                        "wheel_target_evidence_valid"
+                    ]
+                )
+
     def test_live_root_velocity_reader_rejects_missing_and_nonfinite_data(self) -> None:
         adapter = SimRobotAdapter.__new__(SimRobotAdapter)
         adapter.robot = SimpleNamespace(data=SimpleNamespace(root_vel_w=None))
@@ -198,6 +273,37 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
         snapshot = adapter._ground_root_velocity_snapshot()
         self.assertFalse(snapshot["valid"])
         self.assertIn("non-finite", snapshot["error"])
+
+    def test_live_joint_snapshot_reads_wheel_drive_targets_fail_closed(self) -> None:
+        adapter = SimRobotAdapter.__new__(SimRobotAdapter)
+        all_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+        wheel_target_row = [0.0 for _ in all_names]
+        adapter.robot = SimpleNamespace(
+            joint_names=list(all_names),
+            data=SimpleNamespace(
+                joint_pos=[[0.0 for _ in all_names]],
+                joint_vel=[[0.0 for _ in all_names]],
+                joint_pos_target=[[0.0 for _ in all_names]],
+                joint_vel_target=[wheel_target_row],
+            ),
+        )
+        adapter.servo_cmd_targets = [[0.0 for _ in SERVO_JOINT_NAMES]]
+
+        snapshot = adapter._ground_joint_state_snapshot()
+
+        self.assertTrue(snapshot["valid"])
+        self.assertEqual(
+            {
+                name: snapshot["joint_velocity_target_by_name"][name]
+                for name in WHEEL_JOINT_NAMES
+            },
+            {name: 0.0 for name in WHEEL_JOINT_NAMES},
+        )
+
+        wheel_target_row[len(SERVO_JOINT_NAMES)] = float("nan")
+        snapshot = adapter._ground_joint_state_snapshot()
+        self.assertFalse(snapshot["valid"])
+        self.assertIn("joint_vel_target has non-finite", snapshot["error"])
 
     def test_diagnostic_observer_cannot_change_canonical_acceptance(self) -> None:
         def corrupt_diagnostic_copy(frame):

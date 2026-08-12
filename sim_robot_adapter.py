@@ -758,11 +758,59 @@ class SimRobotAdapter:
             joint_state = self._ground_joint_state_snapshot()
             joint_velocity_by_name = dict(joint_state["joint_velocity_by_name"])
             required_joint_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+            wheel_targets = self._wheel_velocity_target_by_name()
+            wheel_readback_targets = {
+                name: value
+                for name, value in dict(
+                    joint_state["joint_velocity_target_by_name"]
+                ).items()
+                if name in set(WHEEL_JOINT_NAMES)
+            }
+            wheel_target_errors: list[str] = []
+            expected_wheels = set(WHEEL_JOINT_NAMES)
+            if set(wheel_targets) != expected_wheels:
+                wheel_target_errors.append(
+                    "logical wheel target keys do not exactly match required wheels"
+                )
+            if set(wheel_readback_targets) != expected_wheels:
+                wheel_target_errors.append(
+                    "drive wheel target keys do not exactly match required wheels"
+                )
+            wheel_target_readback_error: dict[str, float] = {}
+            for name in WHEEL_JOINT_NAMES:
+                if name not in wheel_targets or name not in wheel_readback_targets:
+                    continue
+                try:
+                    logical = float(wheel_targets[name])
+                    readback = float(wheel_readback_targets[name])
+                except (TypeError, ValueError) as exc:
+                    wheel_target_errors.append(
+                        f"wheel target {name} conversion failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    continue
+                if not math.isfinite(logical):
+                    wheel_target_errors.append(
+                        f"logical wheel target {name} is non-finite"
+                    )
+                if not math.isfinite(readback):
+                    wheel_target_errors.append(
+                        f"drive wheel target {name} is non-finite"
+                    )
+                error = float(readback - logical)
+                wheel_target_readback_error[name] = error
+                if math.isfinite(error) and abs(error) > 1.0e-6:
+                    wheel_target_errors.append(
+                        f"wheel target {name} drive readback mismatch "
+                        f"{error:.9g} rad/s"
+                    )
+            wheel_target_evidence_valid = not wheel_target_errors
             telemetry_valid = bool(
                 root_z is not None
                 and math.isfinite(float(root_z))
                 and root_velocity_state["valid"]
                 and joint_state["valid"]
+                and wheel_target_evidence_valid
                 and all(name in joint_velocity_by_name for name in required_joint_names)
             )
             vertical_speed = (
@@ -773,7 +821,6 @@ class SimRobotAdapter:
             servo_speed = self._max_abs_named_joint_velocity(SERVO_JOINT_NAMES, joint_velocity_by_name)
             wheel_speed = self._max_abs_named_joint_velocity(WHEEL_JOINT_NAMES, joint_velocity_by_name)
             joint_speed = max(servo_speed, wheel_speed)
-            wheel_targets = self._wheel_velocity_target_by_name()
             max_abs_vertical_speed = max(max_abs_vertical_speed, vertical_speed)
             max_abs_joint_vel = max(max_abs_joint_vel, joint_speed)
             max_servo_joint_vel = max(max_servo_joint_vel, servo_speed)
@@ -786,7 +833,13 @@ class SimRobotAdapter:
                 else float("inf")
             )
             root_z_delta_threshold = max(1.0e-5, vertical_threshold * dt)
-            wheel_targets_zero = not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
+            wheel_targets_zero = bool(
+                wheel_target_evidence_valid
+                and all(
+                    abs(float(wheel_targets[name])) <= 1.0e-6
+                    for name in WHEEL_JOINT_NAMES
+                )
+            )
             kinematic_stable = bool(
                 telemetry_valid
                 and vertical_speed <= vertical_threshold
@@ -838,6 +891,16 @@ class SimRobotAdapter:
                 "joint_state_evidence_valid": bool(joint_state["valid"]),
                 "joint_state_evidence_error": str(joint_state["error"]),
                 "wheel_target_velocity_by_name": wheel_targets,
+                "wheel_target_readback_velocity_by_name": wheel_readback_targets,
+                "wheel_target_command_to_readback_error_by_name": (
+                    wheel_target_readback_error
+                ),
+                "wheel_target_evidence_valid": bool(
+                    wheel_target_evidence_valid
+                ),
+                "wheel_target_evidence_error": "; ".join(
+                    dict.fromkeys(wheel_target_errors)
+                ),
                 "kinematic_stable": bool(kinematic_stable),
                 "servo_pose_stable": bool(servo_pose_stable),
                 "wheel_state_stable": bool(wheel_state_stable),
@@ -893,6 +956,9 @@ class SimRobotAdapter:
                 cached_ground_reference_used=True,
                 live_mesh_validation_ran=False,
             )
+        support_clearance_evidence = self._ground_support_clearance_evidence(
+            diagnostics
+        )
         final_frames = list(final_window)
         acceptance_frames = (
             canonical_tick_trace[-stable_required:]
@@ -945,6 +1011,7 @@ class SimRobotAdapter:
             and all(
                 bool(frame.get("joint_state_evidence_valid", False))
                 and bool(frame.get("root_velocity_evidence_valid", False))
+                and bool(frame.get("wheel_target_evidence_valid", False))
                 for frame in acceptance_frames
             )
         )
@@ -956,15 +1023,25 @@ class SimRobotAdapter:
         servo_pose_stable = bool(
             acceptance_evidence_valid and acceptance_servo_speed <= servo_threshold
         )
+        wheel_command_zero = bool(
+            final_frame.get("wheel_target_evidence_valid") is True
+            and set(wheel_targets) == set(WHEEL_JOINT_NAMES)
+            and all(
+                math.isfinite(float(wheel_targets[name]))
+                and abs(float(wheel_targets[name])) <= 1.0e-6
+                for name in WHEEL_JOINT_NAMES
+            )
+        )
         wheel_state_stable = bool(
             acceptance_evidence_valid
             and acceptance_wheel_speed <= wheel_threshold
-            and not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
+            and wheel_command_zero
         )
         ground_contact_resolved = bool(
             diagnostics.get("checked", False)
             and not diagnostics.get("missing_collision_wheels")
             and not diagnostics.get("unresolved_collision_wheels")
+            and support_clearance_evidence["valid"]
             and str(diagnostics.get("classification", "")) in {
                 GROUND_OK,
                 VISUAL_ONLY_INTERSECTION,
@@ -982,6 +1059,7 @@ class SimRobotAdapter:
             and kinematic_stable
             and servo_pose_stable
             and wheel_state_stable
+            and ground_contact_resolved
         )
         offending_joint_names = self._offending_joint_names(
             final_joint_velocity_by_name,
@@ -1011,7 +1089,7 @@ class SimRobotAdapter:
             and final_root_z_delta <= root_z_delta_threshold
             and servo_final_window_stable
             and final_wheel_speed <= wheel_threshold
-            and not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())
+            and wheel_command_zero
         )
         result = {
             "label": str(label),
@@ -1039,9 +1117,10 @@ class SimRobotAdapter:
             "servo_micro_jitter_threshold_rad_s": float(servo_micro_jitter_threshold),
             "servo_position_tolerance_rad": float(servo_position_tolerance_rad),
             "wheel_state_stable": bool(wheel_state_stable),
-            "wheel_command_zero": bool(not any(abs(float(value)) > 1.0e-6 for value in wheel_targets.values())),
+            "wheel_command_zero": bool(wheel_command_zero),
             "wheel_motion_stable": bool(final_wheel_speed <= wheel_threshold),
             "ground_contact_resolved": bool(ground_contact_resolved),
+            "ground_support_clearance_evidence": support_clearance_evidence,
             "physical_ground_safe": bool(diagnostics.get("physical_ground_safe", False)),
             "stable_frames": int(stable_frames),
             "strict_stable_frames": int(stable_frames),
@@ -1104,6 +1183,21 @@ class SimRobotAdapter:
             "offending_servo_names": [name for name in offending_joint_names if name in set(SERVO_JOINT_NAMES)],
             "offending_joints": offending_joint_names,
             "wheel_target_velocity_by_name": wheel_targets,
+            "wheel_target_readback_velocity_by_name": dict(
+                final_frame.get("wheel_target_readback_velocity_by_name", {}) or {}
+            ),
+            "wheel_target_command_to_readback_error_by_name": dict(
+                final_frame.get(
+                    "wheel_target_command_to_readback_error_by_name", {}
+                )
+                or {}
+            ),
+            "wheel_target_evidence_valid": bool(
+                final_frame.get("wheel_target_evidence_valid", False)
+            ),
+            "wheel_target_evidence_error": str(
+                final_frame.get("wheel_target_evidence_error", "") or ""
+            ),
             "root_vertical_speed": float(final_vertical_speed),
             "root_z_delta": float(final_root_z_delta),
             "ground_diagnostics": diagnostics,
@@ -1984,6 +2078,7 @@ class SimRobotAdapter:
         positions = row("joint_pos")
         velocities = row("joint_vel")
         readback_targets = row("joint_pos_target")
+        velocity_readback_targets = row("joint_vel_target")
         if len(set(names)) != len(names):
             errors.append("robot.joint_names contains duplicates")
         if not names:
@@ -1992,6 +2087,7 @@ class SimRobotAdapter:
             ("joint_pos", positions),
             ("joint_vel", velocities),
             ("joint_pos_target", readback_targets),
+            ("joint_vel_target", velocity_readback_targets),
         ):
             if len(values) != len(names):
                 errors.append(
@@ -2023,6 +2119,11 @@ class SimRobotAdapter:
             name: float(readback_targets[index])
             for index, name in enumerate(names)
             if index < len(readback_targets)
+        }
+        velocity_readback_by_name = {
+            name: float(velocity_readback_targets[index])
+            for index, name in enumerate(names)
+            if index < len(velocity_readback_targets)
         }
         target_minus_position = {
             name: float(readback_by_name[name] - position_by_name[name])
@@ -2073,6 +2174,7 @@ class SimRobotAdapter:
             "joint_velocity_vector": velocities,
             "joint_velocity_by_name": velocity_by_name,
             "joint_position_target_by_name": readback_by_name,
+            "joint_velocity_target_by_name": velocity_readback_by_name,
             "joint_target_minus_position_by_name": target_minus_position,
             "servo_command_target_by_name": command_targets,
             "servo_command_to_readback_error_by_name": command_to_readback_error,
@@ -2130,6 +2232,76 @@ class SimRobotAdapter:
                 "values": values,
             }
         return {"valid": True, "error": "", "values": values}
+
+    def _ground_support_clearance_evidence(
+        self, diagnostics: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Require all four live wheel colliders to be within the locked ground band."""
+
+        rows = list(diagnostics.get("wheels", []) or [])
+        expected = set(WHEEL_JOINT_NAMES)
+        by_name: dict[str, dict[str, float]] = {}
+        errors: list[str] = []
+        if len(rows) != len(expected):
+            errors.append(
+                f"expected {len(expected)} wheel clearance rows, got {len(rows)}"
+            )
+        for row in rows:
+            if not isinstance(row, Mapping):
+                errors.append("wheel clearance row is not a mapping")
+                continue
+            name = str(row.get("wheel_name", "") or "")
+            joint_name = str(row.get("joint_name", "") or "")
+            if name not in expected:
+                errors.append(f"unexpected/empty wheel_name: {name!r}")
+                continue
+            if name in by_name:
+                errors.append(f"duplicate wheel_name: {name}")
+                continue
+            if joint_name and joint_name != name:
+                errors.append(f"{name}: joint_name mismatch {joint_name!r}")
+                continue
+            if row.get("bounds_valid") is not True:
+                errors.append(f"{name}: collision bounds are not valid")
+            if row.get("bounds_finite") is not True:
+                errors.append(f"{name}: collision bounds are not finite")
+            try:
+                clearance = float(
+                    row.get(
+                        "collision_ground_clearance_m",
+                        row.get("clearance_m"),
+                    )
+                )
+                penetration = float(row.get("collision_penetration_m"))
+            except (TypeError, ValueError):
+                errors.append(f"{name}: clearance/penetration is unavailable")
+                continue
+            if not math.isfinite(clearance) or not math.isfinite(penetration):
+                errors.append(f"{name}: clearance/penetration is non-finite")
+                continue
+            if clearance > float(self.config.ground_clearance_m):
+                errors.append(
+                    f"{name}: collision clearance {clearance:.9g}m exceeds "
+                    f"{float(self.config.ground_clearance_m):.9g}m"
+                )
+            if penetration > float(self.config.ground_penetration_tolerance_m):
+                errors.append(
+                    f"{name}: collision penetration {penetration:.9g}m exceeds "
+                    f"{float(self.config.ground_penetration_tolerance_m):.9g}m"
+                )
+            by_name[name] = {
+                "clearance_m": clearance,
+                "penetration_m": penetration,
+            }
+        return {
+            "valid": bool(set(by_name) == expected and not errors),
+            "error": "; ".join(dict.fromkeys(errors)),
+            "clearance_limit_m": float(self.config.ground_clearance_m),
+            "penetration_tolerance_m": float(
+                self.config.ground_penetration_tolerance_m
+            ),
+            "wheel_clearance_by_name": by_name,
+        }
 
     @staticmethod
     def _ground_rolling_window_metrics(
@@ -2199,6 +2371,7 @@ class SimRobotAdapter:
             if (
                 frame.get("joint_state_evidence_valid") is not True
                 or frame.get("root_velocity_evidence_valid") is not True
+                or frame.get("wheel_target_evidence_valid") is not True
             ):
                 return False
             root_velocity = list(frame.get("root_velocity", []) or [])
@@ -2207,11 +2380,19 @@ class SimRobotAdapter:
             joint_target = dict(
                 frame.get("joint_position_target_by_name", {}) or {}
             )
+            wheel_target = dict(
+                frame.get("wheel_target_velocity_by_name", {}) or {}
+            )
+            wheel_target_readback = dict(
+                frame.get("wheel_target_readback_velocity_by_name", {}) or {}
+            )
             if (
                 len(root_velocity) != 6
                 or not required_joint_names.issubset(joint_velocity)
                 or not required_joint_names.issubset(joint_position)
                 or not required_joint_names.issubset(joint_target)
+                or set(wheel_target) != set(WHEEL_JOINT_NAMES)
+                or set(wheel_target_readback) != set(WHEEL_JOINT_NAMES)
             ):
                 return False
             try:
@@ -2219,6 +2400,11 @@ class SimRobotAdapter:
                 values.extend(float(joint_velocity[name]) for name in required_joint_names)
                 values.extend(float(joint_position[name]) for name in required_joint_names)
                 values.extend(float(joint_target[name]) for name in required_joint_names)
+                values.extend(float(wheel_target[name]) for name in WHEEL_JOINT_NAMES)
+                values.extend(
+                    float(wheel_target_readback[name])
+                    for name in WHEEL_JOINT_NAMES
+                )
             except (KeyError, TypeError, ValueError):
                 return False
             return all(math.isfinite(item) for item in values)

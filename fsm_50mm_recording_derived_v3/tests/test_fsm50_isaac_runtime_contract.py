@@ -13,6 +13,7 @@ from fsm_50mm_recording_derived_v3.environment_ab_artifacts import (
     generate_environment_equivalence_report,
 )
 from fsm_50mm_recording_derived_v3.fsm50_isaac_runtime import (
+    ViewportVideoRecorder,
     _finalize_episode_result,
     _load_environment_gate,
     run_fsm_locked,
@@ -24,6 +25,13 @@ from fsm_50mm_recording_derived_v3.tests.test_environment_ab_artifacts import (
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_viewport_capture_delegates_unique_frame_numbering_to_isaac() -> None:
+    source = inspect.getsource(ViewportVideoRecorder.start)
+
+    assert 'movie_capture.baseFilename = ""' in source
+    assert 'movie_capture.baseFilename = "fsm50_viewport_frame.png"' not in source
 
 
 def _required_run_files(run_dir: Path) -> None:

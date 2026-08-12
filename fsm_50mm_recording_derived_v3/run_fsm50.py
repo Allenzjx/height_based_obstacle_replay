@@ -255,6 +255,7 @@ def _preclose_evidence_manifest(
     results: list[dict[str, Any]],
     batch_source_comparison: dict[str, Any],
     batch_finalization: dict[str, Any],
+    include_global_analysis_reports: bool = True,
 ) -> dict[str, Any]:
     paths: list[Path] = [
         batch_root / "batch_request.json",
@@ -265,9 +266,9 @@ def _preclose_evidence_manifest(
         batch_root / "source_integrity.json",
         batch_root / "checksums.sha256",
         batch_root / "checksums.preclose.sha256",
-        VERSION_MATRIX_PATH,
-        DIAGONAL_TIMELINE_PATH,
     ]
+    if include_global_analysis_reports:
+        paths.extend([VERSION_MATRIX_PATH, DIAGONAL_TIMELINE_PATH])
     for result in results:
         run_dir_text = str(result.get("run_dir", "") or "")
         if not run_dir_text:
@@ -1150,6 +1151,47 @@ def _record_shutdown_outcome(
     _write_checksums(batch_root)
     if shutdown_failed:
         _mark_artifact_root(batch_root, valid=False)
+
+
+def _batch_command_exit_code(batch_root: Path, *, fallback: int) -> int:
+    """Separate command qualification from the fast-close process return."""
+
+    try:
+        finalization = json.loads(
+            (Path(batch_root).resolve() / "batch_finalization.json").read_text(
+                encoding="utf-8"
+            )
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return int(fallback)
+    if not isinstance(finalization, dict):
+        return int(fallback)
+    if str(finalization.get("phase", "") or "") != "SHUTDOWN_COMPLETE":
+        return 1
+    return 0 if finalization.get("strict_success") is True else 1
+
+
+def _process_returncode_after_close(
+    *,
+    command_exit_code: int,
+    shutdown_mode: str,
+    close_error: str,
+    supervised: bool,
+) -> int:
+    """Separate a verified fast child exit from the command result.
+
+    Isaac 5.1 may terminate inside ``SimulationApp.close(skip_cleanup=True)``
+    or may return to Python.  In both cases a supervised fast-close child must
+    return zero so the parent can verify a normal process return.  The parent
+    then restores the user-facing PASS/FAIL status from the finalized batch;
+    an unsupervised invocation retains the command's original exit code.
+    """
+
+    if close_error:
+        return 1
+    if supervised and str(shutdown_mode) == "fast":
+        return 0
+    return int(command_exit_code)
 
 
 def _serialize_replay_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -2555,19 +2597,32 @@ def _result_payload(
     }
 
 
-def _write_checksums(root: Path) -> None:
+def _write_checksums(
+    root: Path,
+    *,
+    exclude_preclose_snapshots: bool = False,
+) -> None:
+    root = Path(root).resolve()
+    destination = root / "checksums.sha256"
+    preclose_destinations = {
+        destination_name
+        for _source_name, destination_name in _PRECLOSE_SNAPSHOT_FILES
+    }
     rows: list[str] = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.name in {
-            "checksums.sha256",
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if path.resolve() == destination or path.name in {
             ".partial",
             ".complete",
             ".finalized",
             ".failed",
         }:
             continue
-        rows.append(f"{sha256_file(path)}  {path.relative_to(root).as_posix()}")
-    destination = root / "checksums.sha256"
+        if exclude_preclose_snapshots and relative in preclose_destinations:
+            continue
+        rows.append(f"{sha256_file(path)}  {relative}")
     temporary = destination.with_name(
         f".{destination.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
     )
@@ -3665,7 +3720,6 @@ def _run_grounding_only_locked(
         qualification_result,
     )
     _write_checksums(qualification_dir)
-    _mark_artifact_root(qualification_dir, valid=qualification_pass)
     qualification_required = [
         qualification_dir / "result.json",
         qualification_dir / "failure_diagnostics.json",
@@ -3684,6 +3738,7 @@ def _run_grounding_only_locked(
         qualification_result,
     )
     _write_checksums(qualification_dir)
+    _mark_artifact_root(qualification_dir, valid=qualification_pass)
 
     batch_results = [qualification_result]
     _atomic_write_json(batch_root / "batch_results.json", batch_results)
@@ -3706,6 +3761,7 @@ def _run_grounding_only_locked(
     _atomic_write_json(batch_root / "batch_finalization.json", batch_finalization)
     _write_checksums(batch_root)
     batch_artifact_valid = bool(diagnostic_valid)
+    retry_snapshot_errors: list[str] = []
     snapshot_errors = _snapshot_preclose_files(batch_root)
     if snapshot_errors:
         batch_artifact_valid = False
@@ -3744,15 +3800,28 @@ def _run_grounding_only_locked(
             }
         )
         _atomic_write_json(batch_root / "batch_finalization.json", batch_finalization)
-        _write_checksums(batch_root)
-        _snapshot_preclose_files(batch_root)
+        _write_checksums(batch_root, exclude_preclose_snapshots=True)
+        retry_snapshot_errors = _snapshot_preclose_files(batch_root)
+        if retry_snapshot_errors:
+            batch_finalization["finalization_errors"] = [
+                *snapshot_errors,
+                *[
+                    f"snapshot_retry: {error}"
+                    for error in retry_snapshot_errors
+                ],
+            ]
     _mark_artifact_root(batch_root, valid=batch_artifact_valid)
     preclose_evidence = _preclose_evidence_manifest(
         batch_root,
         results=batch_results,
         batch_source_comparison=source_integrity,
         batch_finalization=batch_finalization,
+        include_global_analysis_reports=False,
     )
+    if retry_snapshot_errors:
+        preclose_evidence["immutable_preclose_errors"] = [
+            f"snapshot_retry: {error}" for error in retry_snapshot_errors
+        ]
     if supervisor is not None:
         supervisor.mark_preclose(preclose_evidence)
     else:
@@ -3778,7 +3847,7 @@ def _run_grounding_only_locked(
             scene_handle=scene_handle,
             args=args,
             supervisor=supervisor,
-            intended_returncode=exit_code,
+            intended_returncode=(0 if shutdown_mode == "fast" else exit_code),
         )
     except Exception as exc:
         close_error = f"{type(exc).__name__}: {exc}"
@@ -3802,7 +3871,12 @@ def _run_grounding_only_locked(
         ),
         flush=True,
     )
-    return exit_code
+    return _process_returncode_after_close(
+        command_exit_code=exit_code,
+        shutdown_mode=shutdown_mode,
+        close_error=close_error,
+        supervised=supervisor is not None,
+    )
 
 
 def _run_recording_replays_locked(
@@ -4198,7 +4272,10 @@ def _run_recording_replays_locked(
                 write_json(
                     batch_root / "batch_finalization.json", batch_finalization
                 )
-                _write_checksums(batch_root)
+                _write_checksums(
+                    batch_root,
+                    exclude_preclose_snapshots=True,
+                )
                 refresh_errors = _snapshot_preclose_files(batch_root)
                 if refresh_errors:
                     immutable_preclose_errors.extend(
@@ -4239,7 +4316,10 @@ def _run_recording_replays_locked(
                 write_json(
                     batch_root / "batch_finalization.json", batch_finalization
                 )
-                _write_checksums(batch_root)
+                _write_checksums(
+                    batch_root,
+                    exclude_preclose_snapshots=True,
+                )
                 immutable_preclose_errors.extend(
                     f"manifest_failure_refresh: {error}"
                     for error in _snapshot_preclose_files(batch_root)
@@ -4279,7 +4359,10 @@ def _run_recording_replays_locked(
                 write_json(
                     batch_root / "batch_finalization.json", batch_finalization
                 )
-                _write_checksums(batch_root)
+                _write_checksums(
+                    batch_root,
+                    exclude_preclose_snapshots=True,
+                )
                 _snapshot_preclose_files(batch_root)
                 _mark_artifact_root(batch_root, valid=False)
             except Exception as recovery_exc:
@@ -4313,7 +4396,9 @@ def _run_recording_replays_locked(
                 scene_handle=scene_handle,
                 args=args,
                 supervisor=supervisor,
-                intended_returncode=exit_code,
+                intended_returncode=(
+                    0 if shutdown_mode == "fast" else exit_code
+                ),
             )
         except Exception as exc:
             close_error = f"{type(exc).__name__}: {exc}"
@@ -4327,7 +4412,12 @@ def _run_recording_replays_locked(
                 error=close_error,
             )
     print(json.dumps({"batch_root": str(batch_root), "results": results}, ensure_ascii=False, indent=2))
-    return exit_code
+    return _process_returncode_after_close(
+        command_exit_code=exit_code,
+        shutdown_mode=shutdown_mode,
+        close_error=close_error,
+        supervised=supervisor is not None,
+    )
 
 
 def run_recording_replays(args: argparse.Namespace) -> int:
@@ -4496,7 +4586,12 @@ def run_recording_replays(args: argparse.Namespace) -> int:
         )
         if str(outcome.get("status")) not in SUCCESSFUL_SHUTDOWN_STATUSES:
             return 1
-        return int(outcome.get("child_returncode", 1) or 0)
+        if batch_root is None:
+            return int(outcome.get("child_returncode", 1) or 0)
+        return _batch_command_exit_code(
+            batch_root,
+            fallback=int(outcome.get("child_returncode", 1) or 0),
+        )
     finally:
         singleton.release()
 

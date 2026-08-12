@@ -36,6 +36,9 @@ def make_adapter(joint_velocities: dict[str, float], wheel_targets: dict[str, fl
     }
     adapter._joint_velocity_by_name = lambda: dict(joint_velocities)  # type: ignore[method-assign]
     adapter._joint_velocity_vector = lambda: list(joint_velocities.values())  # type: ignore[method-assign]
+    resolved_wheel_targets = dict(
+        wheel_targets or {name: 0.0 for name in WHEEL_JOINT_NAMES}
+    )
     adapter._ground_joint_state_snapshot = lambda: {  # type: ignore[method-assign]
         "valid": True,
         "error": "",
@@ -43,11 +46,15 @@ def make_adapter(joint_velocities: dict[str, float], wheel_targets: dict[str, fl
         "joint_velocity_vector": list(joint_velocities.values()),
         "joint_velocity_by_name": dict(joint_velocities),
         "joint_position_target_by_name": {name: 0.0 for name in joint_velocities},
+        "joint_velocity_target_by_name": {
+            name: resolved_wheel_targets.get(name, 0.0)
+            for name in joint_velocities
+        },
         "joint_target_minus_position_by_name": {name: 0.0 for name in joint_velocities},
         "servo_command_target_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
         "servo_command_to_readback_error_by_name": {name: 0.0 for name in SERVO_JOINT_NAMES},
     }
-    adapter._wheel_velocity_target_by_name = lambda: dict(wheel_targets or {name: 0.0 for name in WHEEL_JOINT_NAMES})  # type: ignore[method-assign]
+    adapter._wheel_velocity_target_by_name = lambda: dict(resolved_wheel_targets)  # type: ignore[method-assign]
     adapter.validate_robot_ground_contact = lambda apply_correction=False: {  # type: ignore[method-assign]
         "checked": True,
         "classification": "OK",
@@ -57,6 +64,17 @@ def make_adapter(joint_velocities: dict[str, float], wheel_targets: dict[str, fl
         "missing_collision_wheels": [],
         "unresolved_collision_wheels": [],
         "maximum_collision_penetration_m": 0.0,
+        "wheels": [
+            {
+                "wheel_name": name,
+                "joint_name": name,
+                "bounds_valid": True,
+                "bounds_finite": True,
+                "collision_ground_clearance_m": 0.0,
+                "collision_penetration_m": 0.0,
+            }
+            for name in WHEEL_JOINT_NAMES
+        ],
     }
     return adapter
 
