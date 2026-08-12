@@ -30,6 +30,7 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _new_directory,
     _preclose_evidence_manifest,
     _process_returncode_after_close,
+    _replace_with_windows_retry,
     _record_shutdown_outcome,
     _runtime_environment_equivalence,
     _run_recording_replays_locked,
@@ -44,6 +45,46 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 
 
 class RunnerContractTests(unittest.TestCase):
+    def test_atomic_replace_retries_transient_windows_access_denied(self) -> None:
+        attempts = []
+
+        def replace(_source, _destination):
+            attempts.append(1)
+            if len(attempts) < 3:
+                error = PermissionError("sharing violation")
+                error.winerror = 5
+                raise error
+
+        with (
+            mock.patch.object(run_fsm50_module.os, "name", "nt"),
+            mock.patch.object(run_fsm50_module.os, "replace", replace),
+            mock.patch.object(run_fsm50_module.time, "sleep"),
+            mock.patch.object(
+                run_fsm50_module.time,
+                "monotonic",
+                side_effect=[0.0, 0.1, 0.2],
+            ),
+        ):
+            _replace_with_windows_retry(Path("source"), Path("destination"))
+
+        self.assertEqual(len(attempts), 3)
+
+    def test_atomic_replace_does_not_retry_nonsharing_error(self) -> None:
+        with (
+            mock.patch.object(run_fsm50_module.os, "name", "nt"),
+            mock.patch.object(
+                run_fsm50_module.os,
+                "replace",
+                side_effect=FileNotFoundError("missing source"),
+            ) as replace,
+            mock.patch.object(run_fsm50_module.time, "sleep") as sleep,
+        ):
+            with self.assertRaises(FileNotFoundError):
+                _replace_with_windows_retry(Path("source"), Path("destination"))
+
+        replace.assert_called_once()
+        sleep.assert_not_called()
+
     def test_fast_child_process_return_is_separate_from_command_result(self) -> None:
         self.assertEqual(
             _process_returncode_after_close(

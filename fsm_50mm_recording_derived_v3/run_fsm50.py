@@ -67,6 +67,32 @@ SINGLETON_LOCK_PATH = (
 SUPERVISED_CHILD_SENTINEL = "__replay-recordings-child"
 SIMULATION_CLOSE_GRACE_S = 60.0
 SUPERVISED_CHILD_SUCCESS_RETURNCODE = 0
+ATOMIC_REPLACE_RETRY_S = 5.0
+
+
+def _replace_with_windows_retry(source: Path, destination: Path) -> None:
+    """Retry transient Windows sharing violations during atomic replacement."""
+
+    deadline = time.monotonic() + float(ATOMIC_REPLACE_RETRY_S)
+    delay_s = 0.01
+    while True:
+        try:
+            os.replace(source, destination)
+            return
+        except OSError as exc:
+            transient_windows_error = bool(
+                os.name == "nt"
+                and (
+                    isinstance(exc, PermissionError)
+                    or getattr(exc, "winerror", None) in {5, 32}
+                )
+            )
+            if not transient_windows_error or time.monotonic() >= deadline:
+                raise
+            time.sleep(delay_s)
+            delay_s = min(delay_s * 2.0, 0.10)
+
+
 def _atomic_write_json(path: Path, payload: Any) -> None:
     """Durably replace one small supervisor/control JSON document."""
 
@@ -88,7 +114,7 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, destination)
+        _replace_with_windows_retry(temporary, destination)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -107,7 +133,7 @@ def _atomic_copy_file(source: Path, destination: Path) -> None:
             shutil.copyfileobj(input_stream, output_stream)
             output_stream.flush()
             os.fsync(output_stream.fileno())
-        os.replace(temporary, destination)
+        _replace_with_windows_retry(temporary, destination)
     finally:
         temporary.unlink(missing_ok=True)
 
