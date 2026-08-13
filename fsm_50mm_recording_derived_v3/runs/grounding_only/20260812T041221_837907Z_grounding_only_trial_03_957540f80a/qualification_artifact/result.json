@@ -1,0 +1,41 @@
+{
+  "artifact_kind": "GROUNDING_QUALIFICATION",
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact",
+  "classification": "GROUNDING_FAIL",
+  "consecutive_stable_ticks": 0,
+  "created_utc": "2026-08-12T04:15:40.636357+00:00",
+  "diagnostic_artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact",
+  "diagnostic_artifact_valid": true,
+  "failure_reason": "visual AABB intersects ground while collision AABB is within tolerance; grounded reference rejected: settle did not reach stable frame threshold; grounded reference rejected: stable frames 0/10; grounded reference rejected: final joint velocity exceeds threshold: front_left_hip, front_left_knee, front_right_knee, rear_left_hip, rear_left_knee, rear_right_hip, rear_right_knee; grounded reference rejected: servo joint velocity exceeds threshold",
+  "lifecycle": {
+    "failed": true,
+    "finalized": false,
+    "strict_success": false
+  },
+  "physical_grounding_pass": false,
+  "qualified": false,
+  "required_evidence_paths": [
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact\\result.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact\\failure_diagnostics.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact\\evidence_manifest.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact\\checksums.sha256",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\result.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\failure_diagnostics.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\ground_initialization.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\grounding_telemetry.jsonl",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\grounding_telemetry.csv",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\joint_velocity_analysis.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\runtime_environment_readback.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\viewport_video_manifest.json",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\checksums.sha256",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\fsm50_viewport.mp4"
+  ],
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\qualification_artifact",
+  "schema_version": "fsm50.grounding_qualification_result.v1",
+  "steps_run": 180,
+  "stop_reason": "max_steps_exhausted",
+  "strict_success": false,
+  "trace_count": 180,
+  "trial_id": 3,
+  "video_valid": true
+}

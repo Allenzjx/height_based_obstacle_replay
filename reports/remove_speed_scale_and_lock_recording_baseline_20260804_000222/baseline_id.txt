@@ -1,0 +1,6 @@
+baseline_version=fsm-recording-reference-v1
+baseline_id=fsm-recording-reference-v1:8e1f6009c1984a18
+baseline_sha256=8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d
+authoritative_config_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\config\fsm_recording_baseline.yaml
+validated_by_visible_isaac_pid=92564
+temporary_recording_variant_note=Changing recording_output_root to a protected temporary test directory intentionally creates a derived per-test hash; actuator/environment values remain identical and the formal authoritative hash above is unchanged.

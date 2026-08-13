@@ -1,0 +1,21 @@
+Automated and real-Isaac validation summary
+
+1. python -m unittest discover -s tests -v
+   PASS: 214 tests, expected final line `OK`; complete output: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\height_wheel_servo_batch_replay_completion_fix_20260804_220554\unittest_output_final_214.txt
+2. tests/test_height_wheel_servo_batch_replay_completion_fix.py
+   PASS: 10 targeted tests (included in the 214-test discovery run).
+3. python height_wheel_servo_batch_replay_completion_e2e.py --visible
+   PASS: real result success=true; evidence: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\height_wheel_servo_batch_replay_completion_fix_20260804_220554\final_real_isaac_retry6\real_isaac_result.json
+4. git diff --check
+   PASS (Git emitted only working-tree CRLF normalization warnings, no whitespace errors).
+5. protected SHA-256 before/after audit
+   PASS: zero mismatches.
+
+Visible Isaac/worker PID: 94056
+Isaac window: Isaac Sim 5.1.0
+Existing process reused: false (preflight confirmed no Isaac/Kit/sim worker, exactly one was launched).
+UI closed: True
+Worker reference cleared: True
+Final process audit: PID 94056 absent after orderly UI shutdown.
+
+Failure/retry evidence is intentionally retained in final_real_isaac through final_real_isaac_retry5. Authoritative passing run: final_real_isaac_retry6.

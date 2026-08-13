@@ -1,0 +1,11 @@
+﻿case,selected_index,restore_source_step,restore_source_field,fallback,current_state_incorrectly_used,result
+unit previous full,3,2,sim_state_after,False,False,PASS
+unit previous command fallback,3,2,command_state_after,False,False,PASS
+unit selected-start compatibility,3,3,sim_state_before,True,False,PASS
+unit no saved state,3,,,N/A,False,PASS (refused)
+unit Step 1 full,1,1,sim_state_before,False,False,PASS
+unit Step 1 command fallback,1,1,command_state_before,True,False,PASS
+unit continuity mismatch,3,2,sim_state_after,False,False,PASS (warning)
+real Isaac Raw,5,4,sim_state_after,False,False,PASS
+real Isaac Fast,5,4,sim_state_after,False,False,PASS
+real Isaac Step 1,1,1,sim_state_before,False,False,PASS

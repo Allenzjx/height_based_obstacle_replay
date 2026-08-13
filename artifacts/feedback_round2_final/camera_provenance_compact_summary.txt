@@ -1,0 +1,12 @@
+summary_file=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\feedback_round2_final\camera_provenance_smoke.json
+ok=True real_ok=True row_count=1 audit_ok=True
+detected_height_cm=5 raw_height_cm=5.142979907419177 absolute_error_mm=1.4297990741917666 provenance_pass=True
+height_source=isaac_rgbd_depth_geometry
+intrinsics_used=True
+camera_world_pose_used=True
+expected_height_used_by_detector=False
+generated_height_used_by_detector=False
+scene_obstacle_height_used_by_detector=False
+detector_input_audit_passed=True
+audit_checks={'depth_none_invalid': True, 'external_auto_roi_accepts_moved_obstacle': True, 'generated_x_prior_rejects_moved_obstacle': True, 'metadata_5cm_pointcloud_10cm_outputs_10cm': True}
+note=outer shell command timed out during worker process exit after JSON/log PASS; leftover worker was stopped manually

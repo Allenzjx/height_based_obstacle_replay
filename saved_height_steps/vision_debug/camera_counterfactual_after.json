@@ -1,0 +1,186 @@
+{
+  "depth_frozen": {
+    "depth_fingerprint_after": "a0f4fda3bd54b110",
+    "depth_fingerprint_before": "a0f4fda3bd54b110",
+    "detection_revision_after": 2,
+    "detection_revision_before": 2,
+    "label": "depth_frozen_without_new_camera_update",
+    "published_new_detection": false
+  },
+  "depth_unavailable": {
+    "detected_height_cm": null,
+    "label": "depth_unavailable",
+    "raw_height_cm": null,
+    "reason": "depth image must be HxW",
+    "valid": false
+  },
+  "expected_change_only": {
+    "candidate_height_cm": 10,
+    "depth_frame_revision": 10,
+    "detected_height_cm": 10,
+    "label": "expected_20cm_same_depth_frame",
+    "raw_height_cm": 10.14125318433261,
+    "validation_passed_against_expected_20cm": false,
+    "validation_reasons": [
+      "candidate height 10cm != expected 20cm",
+      "detected height 10cm != expected 20cm",
+      "raw height error 9.859cm exceeds 1.000cm"
+    ]
+  },
+  "metadata_mismatch": {
+    "candidate_height_cm": 10,
+    "confidence": 0.9806414973265212,
+    "detected_height_cm": 10,
+    "geometry_cm": 10,
+    "height_measurement_evidence": {
+      "camera_position_w": [
+        0.3423286974430084,
+        0.00014572319923900068,
+        0.2820628583431244
+      ],
+      "camera_quaternion_w": [
+        -0.43867385387420654,
+        0.5559113025665283,
+        -0.5541574358940125,
+        0.4375356137752533
+      ],
+      "camera_world_pose_used": true,
+      "candidate_height_cm": 10,
+      "depth_fingerprint": "a0f4fda3bd54b110",
+      "depth_finite_ratio": 0.7869103773584906,
+      "depth_frame_revision": 10,
+      "depth_shape": [
+        240,
+        424
+      ],
+      "depth_timestamp": 1784185710.334316,
+      "detected_height_cm": 10,
+      "detector_input_audit_passed": true,
+      "expected_height_used_by_detector": false,
+      "forbidden_input_reason": "",
+      "generated_height_used_by_detector": false,
+      "ground_point_count": 0,
+      "ground_reference_source": "configured_world_ground_z",
+      "ground_z_m": 0.0,
+      "height_source": "isaac_rgbd_depth_geometry",
+      "intrinsics_fingerprint": "96af2e0c89db6cd6",
+      "intrinsics_used": true,
+      "obstacle_point_count": 14908,
+      "obstacle_x_prior_m": 1.55,
+      "obstacle_x_prior_used": true,
+      "raw_height_cm": 10.141273658453798,
+      "roi_source": "generated_scene_x_prior",
+      "scene_obstacle_height_used_by_detector": false,
+      "top_point_count": 3727,
+      "top_z_m": 0.10141273658453798,
+      "usd_geometry_height_used_by_detector": false
+    },
+    "height_provenance": {
+      "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+      "camera_world_pose_used": true,
+      "depth_data_type": "distance_to_image_plane",
+      "depth_frame_revision": 10,
+      "detector_input_audit_passed": true,
+      "expected_height_used_by_detector": false,
+      "forbidden_input_reason": "",
+      "generated_height_used_by_detector": false,
+      "ground_reference_source": "configured_world_ground_z",
+      "ground_z_m": 0.0,
+      "height_source": "isaac_rgbd_depth_geometry",
+      "intrinsics_used": true,
+      "obstacle_x_prior_m": 1.55,
+      "obstacle_x_prior_used": true,
+      "roi_source": "generated_scene_x_prior",
+      "scene_obstacle_height_used_by_detector": false,
+      "usd_geometry_height_used_by_detector": false
+    },
+    "label": "metadata_5cm_geometry_10cm",
+    "metadata_expected_cm": 5,
+    "raw_height_cm": 10.14125318433261,
+    "stable": true,
+    "stable_count": 5,
+    "validation_passed_against_metadata": false,
+    "validation_reasons": [
+      "candidate height 10cm != expected 5cm",
+      "detected height 10cm != expected 5cm",
+      "raw height error 5.141cm exceeds 1.000cm"
+    ]
+  },
+  "mode": "camera_counterfactual",
+  "normal_5cm": {
+    "candidate_height_cm": 5,
+    "confidence": 0.9804911872431473,
+    "detected_height_cm": 5,
+    "geometry_cm": 5,
+    "height_measurement_evidence": {
+      "camera_position_w": [
+        0.3427061438560486,
+        0.00010204366844845936,
+        0.28218740224838257
+      ],
+      "camera_quaternion_w": [
+        -0.43874669075012207,
+        0.5558546185493469,
+        -0.5541698932647705,
+        0.437518835067749
+      ],
+      "camera_world_pose_used": true,
+      "candidate_height_cm": 5,
+      "depth_fingerprint": "c02610243112dc8c",
+      "depth_finite_ratio": 0.7621658805031446,
+      "depth_frame_revision": 5,
+      "depth_shape": [
+        240,
+        424
+      ],
+      "depth_timestamp": 1784185706.0364058,
+      "detected_height_cm": 5,
+      "detector_input_audit_passed": true,
+      "expected_height_used_by_detector": false,
+      "forbidden_input_reason": "",
+      "generated_height_used_by_detector": false,
+      "ground_point_count": 0,
+      "ground_reference_source": "configured_world_ground_z",
+      "ground_z_m": 0.0,
+      "height_source": "isaac_rgbd_depth_geometry",
+      "intrinsics_fingerprint": "96af2e0c89db6cd6",
+      "intrinsics_used": true,
+      "obstacle_point_count": 18483,
+      "obstacle_x_prior_m": 1.55,
+      "obstacle_x_prior_used": true,
+      "raw_height_cm": 5.142657659478256,
+      "roi_source": "generated_scene_x_prior",
+      "scene_obstacle_height_used_by_detector": false,
+      "top_point_count": 4621,
+      "top_z_m": 0.05142657659478256,
+      "usd_geometry_height_used_by_detector": false
+    },
+    "height_provenance": {
+      "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+      "camera_world_pose_used": true,
+      "depth_data_type": "distance_to_image_plane",
+      "depth_frame_revision": 5,
+      "detector_input_audit_passed": true,
+      "expected_height_used_by_detector": false,
+      "forbidden_input_reason": "",
+      "generated_height_used_by_detector": false,
+      "ground_reference_source": "configured_world_ground_z",
+      "ground_z_m": 0.0,
+      "height_source": "isaac_rgbd_depth_geometry",
+      "intrinsics_used": true,
+      "obstacle_x_prior_m": 1.55,
+      "obstacle_x_prior_used": true,
+      "roi_source": "generated_scene_x_prior",
+      "scene_obstacle_height_used_by_detector": false,
+      "usd_geometry_height_used_by_detector": false
+    },
+    "label": "normal_5cm",
+    "metadata_expected_cm": 5,
+    "raw_height_cm": 5.142650095180845,
+    "stable": true,
+    "stable_count": 5,
+    "validation_passed_against_metadata": true,
+    "validation_reasons": []
+  },
+  "ok": true
+}

@@ -1,0 +1,150 @@
+{
+  "schema": "height_replay_physical_success.v1",
+  "ok": false,
+  "verdict": "FAIL",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session",
+  "expected": {
+    "height_cm": 10,
+    "event_count": 101,
+    "final_time_s": 121.95599999977276
+  },
+  "scene": {
+    "obstacle_x_m": 1.55,
+    "obstacle_length_m": 2.0573755975573045,
+    "robot_length_m": 0.55,
+    "required_clearance_m": 0.1375,
+    "obstacle_front_x_m": 0.5213122012213478,
+    "mount_x_m": 0.24631220122134778,
+    "clear_x_m": 2.7161877987786527
+  },
+  "metrics": {
+    "sample_count": 4958,
+    "duration_s": 125.25000000004594,
+    "initial_base_x_m": -0.007054109126329422,
+    "final_base_x_m": 0.7529492378234863,
+    "max_base_x_m": 0.7755463123321533,
+    "forward_progress_m": 0.7826004214584827,
+    "first_clearance_time_s": null,
+    "min_base_z_m": -0.02316328138113022,
+    "final_base_z_m": 0.14211252331733704,
+    "max_base_z_m": 0.14778625965118408,
+    "max_base_z_delta_m": 0.031176306307315826,
+    "max_abs_roll_rad": 0.10458632776796756,
+    "max_abs_pitch_rad": 0.21596606168646265,
+    "max_abs_roll_pitch_rad": 0.21596606168646265,
+    "min_static_margin_m": -0.3457788251728565,
+    "finite_static_margin_count": 4957,
+    "min_active_contacts": 0.0,
+    "final_active_contacts": 2.0,
+    "last_replay_state": "idle",
+    "last_sequence_success": true
+  },
+  "diagnostics": {
+    "cleared_obstacle_tail": false,
+    "ended_past_obstacle_tail": false
+  },
+  "replay": {
+    "started": true,
+    "finished": false,
+    "finished_success": false,
+    "finish_message": "",
+    "command_event_count": 88,
+    "max_event_index": 100
+  },
+  "data_quality": {
+    "overall_verdict": "WARN",
+    "warnings": [
+      "equilibrium stability margin unavailable",
+      "contact normal forces unavailable"
+    ],
+    "path": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session\\data_quality.json"
+  },
+  "checks": [
+    {
+      "name": "telemetry_samples_present",
+      "passed": true,
+      "actual": 4958,
+      "expected": ">= 20"
+    },
+    {
+      "name": "data_quality_not_insufficient",
+      "passed": true,
+      "actual": "WARN",
+      "expected": "PASS or WARN"
+    },
+    {
+      "name": "replay_started",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "replay_finished_success",
+      "passed": false,
+      "actual": "",
+      "expected": "Replay complete"
+    },
+    {
+      "name": "all_events_dispatched",
+      "passed": true,
+      "actual": 100,
+      "expected": ">= 100"
+    },
+    {
+      "name": "sim_duration_covers_plan",
+      "passed": true,
+      "actual": 125.25000000004594,
+      "expected": ">= 121.456s"
+    },
+    {
+      "name": "front_of_robot_reached_obstacle",
+      "passed": true,
+      "actual": 0.7755463123321533,
+      "expected": ">= 0.246m"
+    },
+    {
+      "name": "base_height_indicates_climb",
+      "passed": false,
+      "actual": 0.031176306307315826,
+      "expected": ">= 0.035m"
+    },
+    {
+      "name": "not_flipped_roll_pitch",
+      "passed": true,
+      "actual": 0.21596606168646265,
+      "expected": "<= 0.85rad"
+    },
+    {
+      "name": "base_height_reasonable",
+      "passed": false,
+      "actual": {
+        "min": -0.02316328138113022,
+        "final": 0.14211252331733704
+      },
+      "expected": "no floor penetration/collapse"
+    },
+    {
+      "name": "final_contacts_present",
+      "passed": true,
+      "actual": 2.0,
+      "expected": ">= 2"
+    },
+    {
+      "name": "static_margin_finite",
+      "passed": true,
+      "actual": 4957,
+      "expected": "> 0"
+    }
+  ],
+  "failure_reasons": [
+    "replay_finished_success: actual= expected=Replay complete",
+    "base_height_indicates_climb: actual=0.031176306307315826 expected=>= 0.035m",
+    "base_height_reasonable: actual={'min': -0.02316328138113022, 'final': 0.14211252331733704} expected=no floor penetration/collapse"
+  ],
+  "sources": {
+    "telemetry_samples": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session\\telemetry_samples.csv",
+    "events": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session\\events.jsonl",
+    "metadata": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session\\metadata.json",
+    "stability_summary": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_020732_obstacle-10cm_10cm-worker-session\\stability_summary.json"
+  }
+}

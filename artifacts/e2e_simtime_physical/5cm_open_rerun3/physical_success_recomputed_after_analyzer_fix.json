@@ -1,0 +1,164 @@
+{
+  "schema": "height_replay_physical_success.v1",
+  "ok": true,
+  "verdict": "PASS",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session",
+  "expected": {
+    "height_cm": 5,
+    "event_count": 269,
+    "final_time_s": 278.8720000004396
+  },
+  "scene": {
+    "obstacle_x_m": 1.55,
+    "obstacle_length_m": 2.0573755975573045,
+    "robot_length_m": 0.55,
+    "required_clearance_m": 0.1375,
+    "obstacle_front_x_m": 0.5213122012213478,
+    "mount_x_m": 0.24631220122134778,
+    "clear_x_m": 2.7161877987786527
+  },
+  "metrics": {
+    "sample_count": 11133,
+    "duration_s": 278.2999999999085,
+    "initial_base_x_m": -0.00769738107919693,
+    "final_base_x_m": 1.5974867343902588,
+    "max_base_x_m": 1.6022790670394897,
+    "forward_progress_m": 1.6099764481186867,
+    "first_clearance_time_s": null,
+    "min_base_z_m": 0.021166183054447174,
+    "final_base_z_m": 0.14657247066497803,
+    "max_base_z_m": 0.19631892442703247,
+    "max_base_z_delta_m": 0.09749873727560043,
+    "max_abs_roll_rad": 0.26960648587723596,
+    "max_abs_pitch_rad": 0.19466895931112013,
+    "max_abs_roll_pitch_rad": 0.26960648587723596,
+    "min_static_margin_m": -0.3604341631904129,
+    "finite_static_margin_count": 4252,
+    "min_active_contacts": 0.0,
+    "max_active_contacts": 4.0,
+    "final_active_contacts": 0.0,
+    "recent_active_contacts_max": 0.0,
+    "contact_supported_sample_count": 4180,
+    "contact_supported_fraction": 0.37546034312404564,
+    "recent_contact_supported_fraction": 0.0,
+    "last_replay_state": "active",
+    "last_sequence_success": null
+  },
+  "diagnostics": {
+    "cleared_obstacle_tail": false,
+    "ended_past_obstacle_tail": false
+  },
+  "replay": {
+    "started": true,
+    "finished": true,
+    "finished_success": true,
+    "finish_message": "Replay complete",
+    "command_event_count": 269,
+    "max_event_index": 268,
+    "started_sim_time_s": 2.974999999999993,
+    "finished_sim_time_s": 281.849999999908,
+    "event_duration_s": 278.874999999908
+  },
+  "data_quality": {
+    "overall_verdict": "WARN",
+    "warnings": [
+      "equilibrium stability margin unavailable",
+      "contact normal forces unavailable"
+    ],
+    "contact_data_unavailable": true,
+    "path": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session\\data_quality.json"
+  },
+  "checks": [
+    {
+      "name": "telemetry_samples_present",
+      "passed": true,
+      "actual": 11133,
+      "expected": ">= 20"
+    },
+    {
+      "name": "data_quality_not_insufficient",
+      "passed": true,
+      "actual": "WARN",
+      "expected": "PASS or WARN"
+    },
+    {
+      "name": "replay_started",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "replay_finished_success",
+      "passed": true,
+      "actual": "Replay complete",
+      "expected": "Replay complete"
+    },
+    {
+      "name": "all_events_dispatched",
+      "passed": true,
+      "actual": 268,
+      "expected": ">= 268"
+    },
+    {
+      "name": "sim_duration_covers_plan",
+      "passed": true,
+      "actual": {
+        "samples": 278.2999999999085,
+        "events": 278.874999999908
+      },
+      "expected": ">= 278.372s"
+    },
+    {
+      "name": "front_of_robot_reached_obstacle",
+      "passed": true,
+      "actual": 1.6022790670394897,
+      "expected": ">= 0.246m"
+    },
+    {
+      "name": "base_height_indicates_climb",
+      "passed": true,
+      "actual": 0.09749873727560043,
+      "expected": ">= 0.017m"
+    },
+    {
+      "name": "not_flipped_roll_pitch",
+      "passed": true,
+      "actual": 0.26960648587723596,
+      "expected": "<= 0.85rad"
+    },
+    {
+      "name": "base_height_reasonable",
+      "passed": true,
+      "actual": {
+        "min": 0.021166183054447174,
+        "final": 0.14657247066497803
+      },
+      "expected": "no sustained collapse"
+    },
+    {
+      "name": "contact_support_observed_or_unavailable",
+      "passed": true,
+      "actual": {
+        "max": 4.0,
+        "final": 0.0,
+        "recent_max": 0.0,
+        "contact_data_unavailable": true
+      },
+      "expected": ">= 2 contacts observed, or contact telemetry unavailable"
+    },
+    {
+      "name": "static_margin_finite",
+      "passed": true,
+      "actual": 4252,
+      "expected": "> 0"
+    }
+  ],
+  "failure_reasons": [],
+  "sources": {
+    "telemetry_samples": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session\\telemetry_samples.csv",
+    "replay_window_sample_count": 11133,
+    "events": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session\\events.jsonl",
+    "metadata": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session\\metadata.json",
+    "stability_summary": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_040018_obstacle-05cm_5cm-worker-session\\stability_summary.json"
+  }
+}

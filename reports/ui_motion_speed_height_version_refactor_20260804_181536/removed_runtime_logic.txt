@@ -1,0 +1,18 @@
+Removed or isolated runtime logic
+- MODE_SERVO_WHEEL conflict state and servo_wheel_staging_active/dirty/preview/delta pages.
+- Eight-servo plus four-wheel looped IPC launch; replaced by one MotionBatch frame and one apply/write.
+- Formal thread worker choice/branch and sim_worker.py; subprocess is the only normal runtime.
+- Duplicate SimProcessClient/SimTransport/controller Copy modules.
+- Duplicate Speed Scale locations, Preserve Wheel Distance, duration compensation, planner/UI scaling.
+- Periodic full sim_state, joint diagnostics, ground final-window history, scene baseline, prim tree and log-tail payloads.
+- Routine UI log-file rereads, manifest scans, steps-tree rebuilds and full JSON formatting.
+- Normal Generate respawn, ground settle/validation, live mesh traversal and measure_scene_baseline.
+- Repeated obstacle remove/create; one prim is updated in place.
+- Vision Auto Replay, Stability Replay and their camera/stability runtime tabs remain absent.
+- No FSM, RL/PPO or CoM control path was added.
+
+Retained only as explicit/legacy paths
+- Detailed state is generated only by explicit Refresh/Validate/Export requests.
+- --height-cm accepts only legacy 5->50 mm and 10->100 mm.
+- saved_height_steps and saved_height_steps_fsm_reference_v1 are read-only compatibility sources.
+- Save Current Version requires confirmation and creates a backup; Save New Version is the default.

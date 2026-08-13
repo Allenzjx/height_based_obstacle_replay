@@ -1,0 +1,47 @@
+{
+  "diagnostic_artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact",
+  "evidence_files": {
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\checksums.sha256": {
+      "sha256": "973fd442e8701c6a7f2386bb48fb54134d07e0b3d84eac66eb181c6e4f39cb3b",
+      "size_bytes": 3359
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\failure_diagnostics.json": {
+      "sha256": "336a9298e3d6012170103e98d0d9f51c8ae54684a88b93ea7b41fa54496708a3",
+      "size_bytes": 2878227
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\fsm50_viewport.mp4": {
+      "sha256": "6890ebbdf50257715274a8763b195a22a4a3ef5c9eb7a99dd05031a2a3e745e5",
+      "size_bytes": 315151
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\ground_initialization.json": {
+      "sha256": "14b3735053addff469d03341399d18fc13766a08371fe6a930ccf3d40b11ebfe",
+      "size_bytes": 2867479
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\grounding_telemetry.csv": {
+      "sha256": "e7a1436104e4b976d2b810d1064beb0c4d616a81347653de36886077bed75735",
+      "size_bytes": 1121224
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\grounding_telemetry.jsonl": {
+      "sha256": "7187477b44d29b5964e4565751df13803d6889c1fdaad4defaea1906958e73d0",
+      "size_bytes": 1503574
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\joint_velocity_analysis.json": {
+      "sha256": "39ce41ff02496a2824ad6d0f8aee420b8da59b0722ef167d74005e53cca28071",
+      "size_bytes": 7509
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\result.json": {
+      "sha256": "e1e9c2831d6e5636110490c7b9e24061a5b30dc8a2c9ed1a4d60495415f1c46c",
+      "size_bytes": 2877757
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\runtime_environment_readback.json": {
+      "sha256": "7a6568cc130495f63e509fb0a9fb647dcb6b96ac834dbb138e8fac7bdc9e6639",
+      "size_bytes": 6988
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T040419_064662Z_grounding_only_trial_01_221758a6ca\\diagnostic_artifact\\viewport_video_manifest.json": {
+      "sha256": "d9ad5b8333cb6d7bfb7909ede91c7f11c251d56f69c02b20bc0f3a0e5cfde3c8",
+      "size_bytes": 1094
+    }
+  },
+  "schema_version": "fsm50.grounding_qualification_evidence.v1",
+  "trial_id": 1
+}

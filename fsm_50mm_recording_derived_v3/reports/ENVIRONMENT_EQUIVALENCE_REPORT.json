@@ -1,0 +1,344 @@
+{
+  "created_utc": "2026-08-10T01:17:10.980573+00:00",
+  "environment_equivalent": false,
+  "extra": null,
+  "instrumentation_comparison": null,
+  "runtime_readback": null,
+  "schema_version": "fsm50.environment_equivalence_report.v1",
+  "static_fingerprint": {
+    "actuators": {
+      "servo": {
+        "armature": 0.005,
+        "command_limits_deg": {
+          "front_left_hip": [
+            -135.0,
+            135.0
+          ],
+          "front_left_knee": [
+            -60.0,
+            210.0
+          ],
+          "front_right_hip": [
+            -135.0,
+            135.0
+          ],
+          "front_right_knee": [
+            -60.0,
+            210.0
+          ],
+          "rear_left_hip": [
+            -135.0,
+            135.0
+          ],
+          "rear_left_knee": [
+            -60.0,
+            210.0
+          ],
+          "rear_right_hip": [
+            -135.0,
+            135.0
+          ],
+          "rear_right_knee": [
+            -60.0,
+            210.0
+          ]
+        },
+        "command_sign": {
+          "front_left_hip": 1.0,
+          "front_left_knee": 1.0,
+          "front_right_hip": 1.0,
+          "front_right_knee": 1.0,
+          "rear_left_hip": -1.0,
+          "rear_left_knee": -1.0,
+          "rear_right_hip": -1.0,
+          "rear_right_knee": -1.0
+        },
+        "damping": 60.0,
+        "effort_limit_nm": 2.7,
+        "mode": "implicit_position",
+        "reference_velocity_deg_s": 150.0,
+        "stiffness": 600.0,
+        "velocity_limit_deg_s": null
+      },
+      "wheel": {
+        "armature": 0.002,
+        "damping": 20.0,
+        "effort_limit_nm": null,
+        "forward_direction": {
+          "front_left_ankle": -1.0,
+          "front_right_ankle": 1.0,
+          "rear_left_ankle": -1.0,
+          "rear_right_ankle": 1.0
+        },
+        "mode": "implicit_velocity",
+        "radius_m": 0.04998999834060672,
+        "radius_source": "legacy live_collision_local_mesh metadata; revalidate by runtime readback",
+        "reference_velocity_rad_s": 0.5235987755982988,
+        "stiffness": 0.0,
+        "velocity_limit_rad_s": 2.0943951023931953
+      }
+    },
+    "environment_equivalent": false,
+    "environment_reference": {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\environment_reference.yaml",
+      "profile_id": "height-obstacle-environment-v2"
+    },
+    "fast_replay": {
+      "implicit_timestamp_gaps": "removed in Fast/motion_only profile",
+      "profile_normalized": "motion_only",
+      "profile_requested": "fast",
+      "runtime_recompute": "servo duration is recomputed at segment start from the adapter's current logical command",
+      "segment_duration_rule": "max(servo_duration_s, wheel_duration_s, explicit_hold_s)",
+      "servo_delta_rule": "maximum absolute command-space joint delta in the semantic motion group",
+      "servo_duration_rule": "servo_delta_deg / effective_servo_velocity_deg_s",
+      "servo_effective_velocity_deg_s": 150.0,
+      "servo_reference_velocity_deg_s": 150.0,
+      "wheel_duration_rule": "recorded semantic base interval only while any wheel target is active"
+    },
+    "ground": {
+      "material": {
+        "dynamic_friction": 1.05,
+        "friction_combine_mode": "max",
+        "restitution": 0.0,
+        "restitution_combine_mode": "min",
+        "static_friction": 1.25
+      },
+      "orientation_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_xy_m": [
+        6.0,
+        6.0
+      ],
+      "z_m": 0.0
+    },
+    "initial_state": {
+      "formal_policy": "clean reset, zero velocities, settle, then lock live grounded readback",
+      "grounded_root_pose_runtime_readback": null,
+      "legacy_grounded_pose_metadata_wxyz": [
+        -0.003959653899073601,
+        -0.0009929761290550232,
+        0.09901974350214005,
+        0.9999808073043823,
+        -1.026025438477518e-05,
+        -0.006009926088154316,
+        0.0015246823895722628
+      ],
+      "raw_spawn_root_pose_wxyz": [
+        0.0,
+        0.0,
+        0.04,
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "servo_command_deg": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "instrumentation_policy": {
+      "all_physical_config_differences": "forbidden_fail_closed",
+      "allowed_config_differences": [
+        "contact_sensor_factory",
+        "telemetry_contact_sensors_enabled"
+      ],
+      "sensor_readback_differences_allowed": true
+    },
+    "legacy_metadata_differences": {
+      "render_interval_physics_steps": {
+        "classification": "metadata_only_not_runtime_selection",
+        "legacy_baseline_metadata": 2,
+        "selected_runtime": 8
+      },
+      "servo_reference_velocity_deg_s": {
+        "classification": "metadata_only_not_runtime_selection",
+        "legacy_baseline_metadata": 30.0,
+        "selected_runtime": 150.0
+      }
+    },
+    "motion_reference": {
+      "profile_id": "real-robot-ui-controller-20260626-v1",
+      "servo_acceleration_limit_deg_s2": null,
+      "servo_reference_velocity_deg_s": 150.0,
+      "servo_velocity_limit_deg_s": null,
+      "verification_method": "Servo nominal speed and wheel command/limit verified from real controller files; servo acceleration/upper velocity limit, real wheel radius, and transmission ratio are UNVERIFIED.",
+      "verified": false,
+      "wheel_radius_m": null,
+      "wheel_reference_velocity_rad_s": 0.5235987755982988,
+      "wheel_transmission_ratio": null,
+      "wheel_velocity_limit_rad_s": 2.0943951023931953
+    },
+    "obstacle": {
+      "bottom_z_m": 0.0,
+      "bounds_max_xyz_m": [
+        2.5786877308590377,
+        1.0,
+        0.05
+      ],
+      "bounds_min_xyz_m": [
+        0.5213121737735307,
+        -1.0,
+        0.0
+      ],
+      "center_xyz_m": [
+        1.5499999523162842,
+        0.0,
+        0.025
+      ],
+      "contact_offset_m": 0.005,
+      "disable_gravity": true,
+      "front_face_x_m": 0.5213121737735307,
+      "height_m": 0.05,
+      "kinematic": true,
+      "length_m": 2.057375557085507,
+      "material": {
+        "dynamic_friction": 1.0,
+        "friction_combine_mode": "max",
+        "restitution": 0.0,
+        "restitution_combine_mode": "min",
+        "static_friction": 1.2
+      },
+      "rear_face_x_m": 2.5786877308590377,
+      "rest_offset_m": 0.0,
+      "top_z_m": 0.05,
+      "width_m": 2.0
+    },
+    "physics": {
+      "gravity_m_s2": [
+        0.0,
+        0.0,
+        -9.81
+      ],
+      "obstacle_contact_offset_m": 0.005,
+      "obstacle_rest_offset_m": 0.0,
+      "physics_dt_s": 0.008333333333333333,
+      "render_dt_s": 0.06666666666666667,
+      "render_interval_physics_steps": 8,
+      "robot_max_depenetration_velocity_m_s": 1.0,
+      "solver_position_iterations": 8,
+      "solver_type": "PhysX-default",
+      "solver_velocity_iterations": 2,
+      "substeps": 1
+    },
+    "prims": {
+      "ground": "/World/defaultGroundPlane",
+      "obstacle": "/World/Obstacle",
+      "robot": "/World/WLRRobot"
+    },
+    "robot_usd": {
+      "path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+      "sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+      "size_bytes": 45607185
+    },
+    "runtime_readback_required": [
+      "runtime_versions",
+      "loaded_stage_and_usd_identifiers",
+      "articulation_root_and_joint_order",
+      "live_grounded_root_pose",
+      "live_obstacle_and_ground_bounds",
+      "live_material_and_solver_properties",
+      "live_actuator_properties",
+      "live_wheel_collision_radius_and_axis"
+    ],
+    "runtime_selection": {
+      "expected_current_values_match": {
+        "render_interval_8": true,
+        "servo_150_deg_s": true
+      },
+      "render_interval_physics_steps": 8,
+      "servo_reference_velocity_deg_s": 150.0
+    },
+    "runtime_versions": {
+      "isaac_lab": "unknown_pending_runtime_readback",
+      "isaac_sim": "unknown_pending_runtime_readback",
+      "physx": "unknown_pending_runtime_readback",
+      "python": "3.11.15",
+      "torch": "unknown_pending_runtime_readback"
+    },
+    "schema_version": "fsm50.environment_static_fingerprint.v1",
+    "source_commit": "2623d75ef229f1890b13dab6d3716d146a4436ff",
+    "source_commit_scope": "git HEAD; per-file hashes bind dirty working-tree content",
+    "source_files": {
+      "command_model.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\command_model.py",
+        "sha256": "70f1e4183fc711f1dcded5d44a45c661960a383634b252c944ca21705c86e905",
+        "size_bytes": 10040
+      },
+      "config/environment_reference.yaml": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\environment_reference.yaml",
+        "sha256": "822c8e47d75de92e2165a99875a2de484425b25cf15e7404481b60cf05f81604",
+        "size_bytes": 414
+      },
+      "config/fsm_recording_baseline.yaml": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\fsm_recording_baseline.yaml",
+        "sha256": "399e08d6395e7bb82fefaa03542d9829e937113967900c63802ef4ec09cc1ae1",
+        "size_bytes": 6105
+      },
+      "config/real_robot_motion_reference.yaml": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\real_robot_motion_reference.yaml",
+        "sha256": "143bbb71fe50fcde22360901552f36b397b9d102bde21172213bf3a316333747",
+        "size_bytes": 842
+      },
+      "fsm_50mm_recording_derived_v3/fsm50_config.yaml": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_config.yaml",
+        "sha256": "cbc64f3fa265e60c34f9aaa2fc773a4734920bf1e9a94d8d24226e47d08cb05d",
+        "size_bytes": 34950
+      },
+      "fsm_50mm_recording_derived_v3/recording_fast_plan.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_fast_plan.py",
+        "sha256": "bb113f22d50b5a6ab4e79c7c47501a1bbde1d68f30c8d54379a73a43a3ebc8e9",
+        "size_bytes": 8890
+      },
+      "fsm_50mm_recording_derived_v3/run_fsm50.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\run_fsm50.py",
+        "sha256": "fecc26c078541c89020f9fe9e0b95b5e1724813039cc470b80fc5f38981e656f",
+        "size_bytes": 161526
+      },
+      "motion_speed.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\motion_speed.py",
+        "sha256": "5e41f5501b841ff7764ee6c2a9975afb256d6c121d22519ffc38842737b49421",
+        "size_bytes": 3973
+      },
+      "playback.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback.py",
+        "sha256": "b6f3e89ea66d6bd922050bc113e70769dec9b7d446545c127ca6bc6a4d8ba136",
+        "size_bytes": 123897
+      },
+      "sequence_model.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sequence_model.py",
+        "sha256": "f2d6ffbb6901dd985149154cc3308341a1b8fd0014224dd9f1520c0b769630a0",
+        "size_bytes": 33181
+      },
+      "sim_obstacle_scene.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_obstacle_scene.py",
+        "sha256": "32747b6ee542614529b8f308bf8de09325cea1c70871b967704cb8fede93a745",
+        "size_bytes": 37255
+      },
+      "sim_robot_adapter.py": {
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_robot_adapter.py",
+        "sha256": "19c63f2a0049d76d6ab7a88066feca9168f15c901560341d45cd0b31dbf89ed3",
+        "size_bytes": 111127
+      }
+    },
+    "status": "STATIC_LOCK_RUNTIME_READBACK_PENDING"
+  },
+  "status": "PENDING_RUNTIME_A_B",
+  "trajectory_comparison": null
+}

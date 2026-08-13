@@ -1,0 +1,522 @@
+COMMAND: python -m unittest discover -s tests -p test_*.py -v
+python : test_accept_recording_performance_uses_compact_detail 
+(test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_accept_recording_performance_uses_compact_detail) ... ok
+At line:10 char:1
++ python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | Tee-Obj ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_accept_rec..._detail) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_combine_lazy_preview (test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_combine_lazy_preview) ... ok
+test_no_sim_smoke_accept_dummy_recording 
+(test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_no_sim_smoke_accept_dummy_recording) ... ok
+test_playback_batch_limit (test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_playback_batch_limit) ... ok
+test_record_event_coalescing_preserves_final_state 
+(test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_record_event_coalescing_preserves_final_state) ... ok
+test_replace_no_freeze_uses_compact_detail 
+(test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_replace_no_freeze_uses_compact_detail) ... ok
+test_state_machine_guards (test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_state_machine_guards) ... ok
+test_step_details_truncation_and_export 
+(test_anti_freeze_workflows.AntiFreezeWorkflowTest.test_step_details_truncation_and_export) ... ok
+test_body_com_positions_from_link_pose_uses_wxyz_quaternions 
+(test_com_metrics.ComMetricsTest.test_body_com_positions_from_link_pose_uses_wxyz_quaternions) ... ok
+test_mass_count_mismatch_is_reported_without_crashing 
+(test_com_metrics.ComMetricsTest.test_mass_count_mismatch_is_reported_without_crashing) ... ok
+test_mass_weighted_whole_body_com (test_com_metrics.ComMetricsTest.test_mass_weighted_whole_body_com) ... ok
+test_no_contacts_reports_failure_status 
+(test_equilibrium_region.EquilibriumRegionTest.test_no_contacts_reports_failure_status) ... ok
+test_square_contacts_make_center_com_feasible 
+(test_equilibrium_region.EquilibriumRegionTest.test_square_contacts_make_center_com_feasible) ... ok
+test_export_files_and_summary_are_created (test_exporters.ExportersTest.test_export_files_and_summary_are_created) ... 
+ok
+test_empty_range_is_rejected (test_ground_bound_sanitization.GroundBoundSanitizationTest.test_empty_range_is_rejected) 
+... ok
+test_float_max_sentinel_is_rejected 
+(test_ground_bound_sanitization.GroundBoundSanitizationTest.test_float_max_sentinel_is_rejected) ... ok
+test_inf_nan_min_greater_than_max_and_huge_extent_are_rejected (test_ground_bound_sanitization.GroundBoundSanitizationT
+est.test_inf_nan_min_greater_than_max_and_huge_extent_are_rejected) ... ok
+test_invalid_collision_bound_does_not_pass_visual_warning 
+(test_ground_bound_sanitization.GroundBoundSanitizationTest.test_invalid_collision_bound_does_not_pass_visual_warning) 
+... ok
+test_negative_float_max_sentinel_is_rejected 
+(test_ground_bound_sanitization.GroundBoundSanitizationTest.test_negative_float_max_sentinel_is_rejected) ... ok
+test_normal_aabb_is_valid (test_ground_bound_sanitization.GroundBoundSanitizationTest.test_normal_aabb_is_valid) ... ok
+test_confirmed_missing_and_penetration_are_fail 
+(test_ground_diagnostic_states.GroundDiagnosticStatesTest.test_confirmed_missing_and_penetration_are_fail) ... ok
+test_resolver_failure_is_unverified_not_missing 
+(test_ground_diagnostic_states.GroundDiagnosticStatesTest.test_resolver_failure_is_unverified_not_missing) ... ok
+test_ground_reference_requires_stability_and_ok_classification (test_ground_reference_stability.GroundReferenceStabilit
+yTest.test_ground_reference_requires_stability_and_ok_classification) ... ok
+test_ok_reference_result_is_valid 
+(test_ground_reference_stability.GroundReferenceStabilityTest.test_ok_reference_result_is_valid) ... ok
+test_visual_only_reference_is_valid_when_physical_ground_is_safe (test_ground_reference_stability.GroundReferenceStabil
+ityTest.test_visual_only_reference_is_valid_when_physical_ground_is_safe) ... ok
+test_high_wheel_velocity_blocks_wheel_state 
+(test_ground_settle_joint_groups.GroundSettleJointGroupsTest.test_high_wheel_velocity_blocks_wheel_state) ... ok
+test_wheel_jitter_below_wheel_threshold_does_not_block_chassis_stability (test_ground_settle_joint_groups.GroundSettleJ
+ointGroupsTest.test_wheel_jitter_below_wheel_threshold_does_not_block_chassis_stability) ... ok
+test_final_window_velocity_rejects_reference 
+(test_ground_settle_terminal_window.GroundSettleTerminalWindowTest.test_final_window_velocity_rejects_reference) ... ok
+test_peak_velocity_does_not_reject_final_stable_reference (test_ground_settle_terminal_window.GroundSettleTerminalWindo
+wTest.test_peak_velocity_does_not_reject_final_stable_reference) ... ok
+test_actual_ground_z_comes_from_prim_world_translation 
+(test_ground_surface_resolution.GroundSurfaceResolutionTest.test_actual_ground_z_comes_from_prim_world_translation) 
+... ok
+test_matching_configured_and_actual_ground_z_is_ok 
+(test_ground_surface_resolution.GroundSurfaceResolutionTest.test_matching_configured_and_actual_ground_z_is_ok) ... ok
+test_height_validation (test_height_manifest.HeightManifestTest.test_height_validation) ... ok
+test_manifest_ensure_creates_supported_entries 
+(test_height_manifest.HeightManifestTest.test_manifest_ensure_creates_supported_entries) ... ok
+test_update_height (test_height_manifest.HeightManifestTest.test_update_height) ... ok
+test_invalid_height_rejected (test_height_sequence_store.HeightSequenceStoreTest.test_invalid_height_rejected) ... ok
+test_new_empty_sequence_does_not_overwrite_until_requested 
+(test_height_sequence_store.HeightSequenceStoreTest.test_new_empty_sequence_does_not_overwrite_until_requested) ... ok
+test_refresh_manifest_is_read_only 
+(test_height_sequence_store.HeightSequenceStoreTest.test_refresh_manifest_is_read_only) ... ok
+test_save_load_and_manifest (test_height_sequence_store.HeightSequenceStoreTest.test_save_load_and_manifest) ... ok
+test_command_round_trip (test_ipc_protocol.IpcProtocolTest.test_command_round_trip) ... ok
+test_error_round_trip (test_ipc_protocol.IpcProtocolTest.test_error_round_trip) ... ok
+test_incremental_line_buffer (test_ipc_protocol.IpcProtocolTest.test_incremental_line_buffer) ... ok
+test_invalid_json_is_safe_error_message (test_ipc_protocol.IpcProtocolTest.test_invalid_json_is_safe_error_message) 
+... ok
+test_priority_wheel_stop_round_trip (test_ipc_protocol.IpcProtocolTest.test_priority_wheel_stop_round_trip) ... ok
+test_status_round_trip (test_ipc_protocol.IpcProtocolTest.test_status_round_trip) ... ok
+test_eula_prompt_detection (test_isaac_launch_preflight.IsaacLaunchPreflightTest.test_eula_prompt_detection) ... ok
+test_isaac4_requires_python310 (test_isaac_launch_preflight.IsaacLaunchPreflightTest.test_isaac4_requires_python310) 
+... ok
+test_isaac5_requires_python311 (test_isaac_launch_preflight.IsaacLaunchPreflightTest.test_isaac5_requires_python311) 
+... ok
+test_missing_isaacsim_error_is_actionable 
+(test_isaac_launch_preflight.IsaacLaunchPreflightTest.test_missing_isaacsim_error_is_actionable) ... ok
+test_front_knee_negative_command_is_allowed 
+(test_knee_negative_command_space.KneeNegativeCommandSpaceTest.test_front_knee_negative_command_is_allowed) ... ok
+test_knee_limit_range_keeps_negative_side 
+(test_knee_negative_command_space.KneeNegativeCommandSpaceTest.test_knee_limit_range_keeps_negative_side) ... ok
+test_rear_knee_negative_command_is_allowed 
+(test_knee_negative_command_space.KneeNegativeCommandSpaceTest.test_rear_knee_negative_command_is_allowed) ... ok
+test_live_body_pose_offsets_local_collider_bound 
+(test_live_collider_world_bounds.LiveColliderWorldBoundsTest.test_live_body_pose_offsets_local_collider_bound) ... ok
+test_rotated_mesh_uses_real_points_instead_of_rotated_aabb_corners (test_live_collider_world_bounds.LiveColliderWorldBo
+undsTest.test_rotated_mesh_uses_real_points_instead_of_rotated_aabb_corners) ... ok
+test_live_frames_drop_oldest_without_blocking_events 
+(test_live_telemetry_backpressure.LiveTelemetryBackpressureTest.test_live_frames_drop_oldest_without_blocking_events) 
+... ok
+test_ground_reference_result_allows_visual_warning_when_physical_safe (test_motion_ready_respawn_ready.MotionReadyRespa
+wnReadyTest.test_ground_reference_result_allows_visual_warning_when_physical_safe) ... ok
+test_respawn_ready_requires_valid_stable_reference 
+(test_motion_ready_respawn_ready.MotionReadyRespawnReadyTest.test_respawn_ready_requires_valid_stable_reference) ... ok
+test_respawn_ready_uses_valid_reference_when_current_ground_failed (test_motion_ready_respawn_ready.MotionReadyRespawnR
+eadyTest.test_respawn_ready_uses_valid_reference_when_current_ground_failed) ... ok
+test_unverified_never_motion_ready 
+(test_motion_ready_respawn_ready.MotionReadyRespawnReadyTest.test_unverified_never_motion_ready) ... ok
+test_visual_warning_with_reliable_collision_is_motion_ready (test_motion_ready_respawn_ready.MotionReadyRespawnReadyTes
+t.test_visual_warning_with_reliable_collision_is_motion_ready) ... ok
+test_adapter_config_default_writes_authoritative_joint_limits (test_no_physx_limit_by_default.RuntimePhysxLimitDefaultT
+est.test_adapter_config_default_writes_authoritative_joint_limits) ... ok
+test_cli_default_applies_physx_joint_limits 
+(test_no_physx_limit_by_default.RuntimePhysxLimitDefaultTest.test_cli_default_applies_physx_joint_limits) ... ok
+test_cli_flag_enables_physx_joint_limits 
+(test_no_physx_limit_by_default.RuntimePhysxLimitDefaultTest.test_cli_flag_enables_physx_joint_limits) ... ok
+test_explicit_opt_out_is_available_for_diagnostics 
+(test_no_physx_limit_by_default.RuntimePhysxLimitDefaultTest.test_explicit_opt_out_is_available_for_diagnostics) ... ok
+test_height_sequence_store_paths_unchanged 
+(test_no_task_regression.NoTaskRegressionTest.test_height_sequence_store_paths_unchanged) ... ok
+test_manifest_supported_heights_unchanged 
+(test_no_task_regression.NoTaskRegressionTest.test_manifest_supported_heights_unchanged) ... ok
+test_playback_plan_timing_is_direct (test_no_task_regression.NoTaskRegressionTest.test_playback_plan_timing_is_direct) 
+... ok
+test_sim_launch_mode_defaults_remain_subprocess_and_no_sim_disabled 
+(test_no_task_regression.NoTaskRegressionTest.test_sim_launch_mode_defaults_remain_subprocess_and_no_sim_disabled) ... 
+ok
+test_default_sim_launch_mode_is_subprocess 
+(test_no_thread_default.NoThreadDefaultTest.test_default_sim_launch_mode_is_subprocess) ... ok
+test_no_sim_opens_without_worker (test_no_thread_default.NoThreadDefaultTest.test_no_sim_opens_without_worker) ... ok
+test_thread_worker_branch_and_choice_are_removed 
+(test_no_thread_default.NoThreadDefaultTest.test_thread_worker_branch_and_choice_are_removed) ... ok
+test_contact_unavailable_does_not_override_pose_success 
+(test_physical_success.PhysicalSuccessAnalysisTest.test_contact_unavailable_does_not_override_pose_success) ... ok
+test_fails_when_replay_does_not_clear_obstacle 
+(test_physical_success.PhysicalSuccessAnalysisTest.test_fails_when_replay_does_not_clear_obstacle) ... ok
+test_finish_event_duration_covers_plan_when_last_sample_precedes_finish (test_physical_success.PhysicalSuccessAnalysisT
+est.test_finish_event_duration_covers_plan_when_last_sample_precedes_finish) ... ok
+test_passes_when_replay_crosses_obstacle_and_finishes 
+(test_physical_success.PhysicalSuccessAnalysisTest.test_passes_when_replay_crosses_obstacle_and_finishes) ... ok
+test_valid_contact_data_without_support_fails 
+(test_physical_success.PhysicalSuccessAnalysisTest.test_valid_contact_data_without_support_fails) ... ok
+test_default_safe_limit_records_do_not_write_to_physx 
+(test_physx_joint_limit_units.PhysxJointLimitUnitsTest.test_default_safe_limit_records_do_not_write_to_physx) ... ok
+test_explicit_physx_write_limits_stay_inside_two_pi 
+(test_physx_joint_limit_units.PhysxJointLimitUnitsTest.test_explicit_physx_write_limits_stay_inside_two_pi) ... ok
+test_empty_selected_plan_warns_instead_of_silent_active 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_empty_selected_plan_warns_instead_of_silent_active) ... ok
+test_play_selected_step_does_not_respawn 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_play_selected_step_does_not_respawn) ... ok
+test_playback_debug_selected_reports_plan_count 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_playback_debug_selected_reports_plan_count) ... ok
+test_playback_manager_scheduled_delay_is_visible_and_cancellable (test_play_selected_playback.PlaySelectedPlaybackTest.
+test_playback_manager_scheduled_delay_is_visible_and_cancellable) ... ok
+test_playback_manager_sends_events_after_schedule 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_playback_manager_sends_events_after_schedule) ... ok
+test_process_client_queues_restore_sim_state_before_connect 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_process_client_queues_restore_sim_state_before_connect) ... 
+ok
+test_restore_sim_state_is_valid_ipc_message 
+(test_play_selected_playback.PlaySelectedPlaybackTest.test_restore_sim_state_is_valid_ipc_message) ... ok
+test_a_one_speed_scale_and_legacy_metadata_is_opaque 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_a_one_speed_scale_and_legacy_metadata_is_opaque) ... ok
+test_b_stop_priority_rejects_stale_nonzero_fifty_times 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_b_stop_priority_rejects_stale_nonzero_fifty_times) ... ok
+test_c_recording_stop_waits_for_zero_ack_and_writes_boundary 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_c_recording_stop_waits_for_zero_ack_and_writes_boundary) 
+... ok
+test_d_manual_and_playback_use_identical_actuator_values 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_d_manual_and_playback_use_identical_actuator_values) ... 
+ok
+test_e_fast_and_raw_have_equal_actuator_signatures 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_e_fast_and_raw_have_equal_actuator_signatures) ... ok
+test_f_servo_mapping_sign_units_and_knee_limit 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_f_servo_mapping_sign_units_and_knee_limit) ... ok
+test_g_wheel_mapping_direction_and_units 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_g_wheel_mapping_direction_and_units) ... ok
+test_h_no_sim_respawn_is_deterministic_ten_times 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_h_no_sim_respawn_is_deterministic_ten_times) ... ok
+test_i_all_height_geometry_keeps_front_footprint_and_bottom 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_i_all_height_geometry_keeps_front_footprint_and_bottom) 
+... ok
+test_j_baseline_hash_is_stable_and_live_mismatch_is_explicit 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_j_baseline_hash_is_stable_and_live_mismatch_is_explicit) 
+... ok
+test_k_stop_callback_p95_and_no_background_resend 
+(test_recording_baseline_lock.RemovalAndBaselineLockTest.test_k_stop_callback_p95_and_no_background_resend) ... ok
+test_manual_respawn_uses_existing_transport_and_preserves_height_manager_and_estop (test_respawn_quick_action.RespawnQu
+ickActionTest.test_manual_respawn_uses_existing_transport_and_preserves_height_manager_and_estop) ... ok
+test_non_playback_respawn_source_releases_operation_immediately 
+(test_respawn_quick_action.RespawnQuickActionTest.test_non_playback_respawn_source_releases_operation_immediately) ... 
+ok
+test_quick_commands_places_respawn_to_the_right_of_estop 
+(test_respawn_quick_action.RespawnQuickActionTest.test_quick_commands_places_respawn_to_the_right_of_estop) ... ok
+test_respawn_command_posts_existing_respawn_path 
+(test_respawn_quick_action.RespawnQuickActionTest.test_respawn_command_posts_existing_respawn_path) ... ok
+test_collision_penetration_computes_bounded_positive_correction (test_robot_ground_diagnostics.RobotGroundDiagnosticsTe
+st.test_collision_penetration_computes_bounded_positive_correction) ... ok
+test_missing_wheel_collision_is_explicit_failure 
+(test_robot_ground_diagnostics.RobotGroundDiagnosticsTest.test_missing_wheel_collision_is_explicit_failure) ... ok
+test_ok_classification_when_collision_clearance_is_non_negative (test_robot_ground_diagnostics.RobotGroundDiagnosticsTe
+st.test_ok_classification_when_collision_clearance_is_non_negative) ... ok
+test_visual_only_intersection_does_not_allow_correction 
+(test_robot_ground_diagnostics.RobotGroundDiagnosticsTest.test_visual_only_intersection_does_not_allow_correction) ... 
+ok
+test_desired_limits_sort_for_front_knee 
+(test_safe_joint_limit_math.SafeJointLimitMathTest.test_desired_limits_sort_for_front_knee) ... ok
+test_desired_limits_sort_for_rear_knee 
+(test_safe_joint_limit_math.SafeJointLimitMathTest.test_desired_limits_sort_for_rear_knee) ... ok
+test_safe_rad_limits_clamp_to_two_pi 
+(test_safe_joint_limit_math.SafeJointLimitMathTest.test_safe_rad_limits_clamp_to_two_pi) ... ok
+test_safe_rad_limits_keep_min_less_than_max 
+(test_safe_joint_limit_math.SafeJointLimitMathTest.test_safe_rad_limits_keep_min_less_than_max) ... ok
+test_command_zero_remains_standing_pose_command 
+(test_servo_limits.ServoLimitsTest.test_command_zero_remains_standing_pose_command) ... ok
+test_requested_command_limits (test_servo_limits.ServoLimitsTest.test_requested_command_limits) ... ok
+test_sequence_state_clamps_out_of_range_servo_commands 
+(test_servo_limits.ServoLimitsTest.test_sequence_state_clamps_out_of_range_servo_commands) ... ok
+test_servo_commands_are_clamped_in_command_space 
+(test_servo_limits.ServoLimitsTest.test_servo_commands_are_clamped_in_command_space) ... ok
+test_final_target_limits_are_sorted_for_sign_negative 
+(test_servo_target_conversion.ServoTargetConversionTest.test_final_target_limits_are_sorted_for_sign_negative) ... ok
+test_final_target_limits_are_sorted_for_sign_positive 
+(test_servo_target_conversion.ServoTargetConversionTest.test_final_target_limits_are_sorted_for_sign_positive) ... ok
+test_front_knee_sign_positive (test_servo_target_conversion.ServoTargetConversionTest.test_front_knee_sign_positive) 
+... ok
+test_rear_knee_sign_negative (test_servo_target_conversion.ServoTargetConversionTest.test_rear_knee_sign_negative) ... 
+ok
+test_adapter_ack_declares_one_tick_and_zero_channel_skew 
+(test_servo_wheel_staging.ServoWheelAtomicBatchTest.test_adapter_ack_declares_one_tick_and_zero_channel_skew) ... ok
+test_one_transport_call_carries_all_twelve_targets 
+(test_servo_wheel_staging.ServoWheelAtomicBatchTest.test_one_transport_call_carries_all_twelve_targets) ... ok
+test_recording_stores_one_canonical_batch_event 
+(test_servo_wheel_staging.ServoWheelAtomicBatchTest.test_recording_stores_one_canonical_batch_event) ... ok
+test_runtime_source_has_no_staging_state_or_looped_ipc 
+(test_servo_wheel_staging.ServoWheelAtomicBatchTest.test_runtime_source_has_no_staging_state_or_looped_ipc) ... ok
+test_stop_wheels_preempts_and_zeros_all_wheels 
+(test_servo_wheel_staging.ServoWheelAtomicBatchTest.test_stop_wheels_preempts_and_zeros_all_wheels) ... ok
+test_build_worker_command_contains_ipc_and_motion_args 
+(test_sim_process_client.SimProcessClientTest.test_build_worker_command_contains_ipc_and_motion_args) ... ok
+test_explicit_detailed_status_never_replaces_lightweight_heartbeat 
+(test_sim_process_client.SimProcessClientTest.test_explicit_detailed_status_never_replaces_lightweight_heartbeat) ... 
+ok
+test_nonblocking_partial_send_preserves_exact_jsonl_bytes 
+(test_sim_process_client.SimProcessClientTest.test_nonblocking_partial_send_preserves_exact_jsonl_bytes) ... ok
+test_stdout_stderr_tail_buffer (test_sim_process_client.SimProcessClientTest.test_stdout_stderr_tail_buffer) ... ok
+test_subprocess_client_does_not_use_threading_thread 
+(test_sim_process_client.SimProcessClientTest.test_subprocess_client_does_not_use_threading_thread) ... ok
+test_timeout_status (test_sim_process_client.SimProcessClientTest.test_timeout_status) ... ok
+test_transport_can_queue_command_messages_before_connect 
+(test_sim_process_client.SimProcessClientTest.test_transport_can_queue_command_messages_before_connect) ... ok
+test_worker_status_parsing (test_sim_process_client.SimProcessClientTest.test_worker_status_parsing) ... ok
+test_dispatches_by_sim_time_not_wall_time 
+(test_sim_time_playback_service.SimTimePlaybackServiceTest.test_dispatches_by_sim_time_not_wall_time) ... ok
+test_manager_waits_for_matching_worker_ack_before_syncing_idle (test_sim_time_playback_service.SimTimePlaybackServiceTe
+st.test_manager_waits_for_matching_worker_ack_before_syncing_idle) ... ok
+test_pause_resume_freezes_sim_time_offset 
+(test_sim_time_playback_service.SimTimePlaybackServiceTest.test_pause_resume_freezes_sim_time_offset) ... ok
+test_process_client_queues_full_plan_message 
+(test_sim_time_playback_service.SimTimePlaybackServiceTest.test_process_client_queues_full_plan_message) ... ok
+test_repeated_identical_plan_uses_unique_request_ids_and_ignores_stale_status (test_sim_time_playback_service.SimTimePl
+aybackServiceTest.test_repeated_identical_plan_uses_unique_request_ids_and_ignores_stale_status) ... ok
+test_record_accept_save_current_height_no_sim 
+(test_sim_ui_controller.SimUiControllerTest.test_record_accept_save_current_height_no_sim) ... ok
+test_com_inside_square_has_positive_margin 
+(test_stability_margin.StabilityMarginTest.test_com_inside_square_has_positive_margin) ... ok
+test_com_outside_square_has_negative_margin 
+(test_stability_margin.StabilityMarginTest.test_com_outside_square_has_negative_margin) ... ok
+test_degenerate_segment_support_reports_negative_off_segment_distance 
+(test_stability_margin.StabilityMarginTest.test_degenerate_segment_support_reports_negative_off_segment_distance) ... 
+ok
+test_adapter_config_from_args_carries_ground_thresholds (test_subprocess_ground_reference.SubprocessGroundReferenceTest
+.test_adapter_config_from_args_carries_ground_thresholds) ... ok
+test_initialize_adapter_ground_reference_delegates_to_adapter (test_subprocess_ground_reference.SubprocessGroundReferen
+ceTest.test_initialize_adapter_ground_reference_delegates_to_adapter) ... ok
+test_subprocess_initializes_ground_reference_before_adapter_ready (test_subprocess_ground_reference.SubprocessGroundRef
+erenceTest.test_subprocess_initializes_ground_reference_before_adapter_ready) ... ok
+test_single_subprocess_uses_shared_runtime_entry_points (test_subprocess_worker_runtime_parity.SubprocessWorkerRuntimeP
+arityTest.test_single_subprocess_uses_shared_runtime_entry_points) ... ok
+test_worker_loops_do_not_contain_removed_task_policy (test_subprocess_worker_runtime_parity.SubprocessWorkerRuntimePari
+tyTest.test_worker_loops_do_not_contain_removed_task_policy) ... ok
+test_case_g_load_5cm_updates_permanent_shared_sequence_without_playing (test_task_separation_refactor.HeightSequenceSha
+ringTest.test_case_g_load_5cm_updates_permanent_shared_sequence_without_playing) ... ok
+test_case_h_missing_then_valid_load_recovers_without_busy_lock (test_task_separation_refactor.HeightSequenceSharingTest
+.test_case_h_missing_then_valid_load_recovers_without_busy_lock) ... ok
+test_case_f_stop_clears_queue_and_reenables_play 
+(test_task_separation_refactor.OperationConflictTest.test_case_f_stop_clears_queue_and_reenables_play) ... ok
+test_operations_are_mutually_exclusive_and_recover 
+(test_task_separation_refactor.OperationConflictTest.test_operations_are_mutually_exclusive_and_recover) ... ok
+test_analysis_and_export_need_sequence_but_not_connection (test_task_separation_refactor.PlaybackAvailabilityMatrixTest
+.test_analysis_and_export_need_sequence_but_not_connection) ... ok
+test_case_a_ready_nonempty_idle_enables_play 
+(test_task_separation_refactor.PlaybackAvailabilityMatrixTest.test_case_a_ready_nonempty_idle_enables_play) ... ok
+test_case_b_empty_sequence_disables_play_with_reason 
+(test_task_separation_refactor.PlaybackAvailabilityMatrixTest.test_case_b_empty_sequence_disables_play_with_reason) 
+... ok
+test_case_c_recording_disables_play_with_reason 
+(test_task_separation_refactor.PlaybackAvailabilityMatrixTest.test_case_c_recording_disables_play_with_reason) ... ok
+test_case_d_active_enables_pause_and_stop_only 
+(test_task_separation_refactor.PlaybackAvailabilityMatrixTest.test_case_d_active_enables_pause_and_stop_only) ... ok
+test_case_e_paused_enables_resume_and_stop 
+(test_task_separation_refactor.PlaybackAvailabilityMatrixTest.test_case_e_paused_enables_resume_and_stop) ... ok
+test_ui_has_only_retained_tabs_and_one_poll_callback 
+(test_task_separation_refactor.UiStructureTest.test_ui_has_only_retained_tabs_and_one_poll_callback) ... ok
+test_finish_replay_flushes_replay_finished_event 
+(test_telemetry_replay_finish.TelemetryReplayFinishTest.test_finish_replay_flushes_replay_finished_event) ... ok
+test_all_four_knees_still_accept_negative_sixty (test_ui_motion_speed_height_version_refactor.GeometryAndRegressionCont
+ractTest.test_all_four_knees_still_accept_negative_sixty) ... ok
+test_fixed_wider_obstacle_geometry_for_all_heights (test_ui_motion_speed_height_version_refactor.GeometryAndRegressionC
+ontractTest.test_fixed_wider_obstacle_geometry_for_all_heights) ... ok
+test_legacy_cm_maps_only_five_and_ten 
+(test_ui_motion_speed_height_version_refactor.HeightAndVersionContractTest.test_legacy_cm_maps_only_five_and_ten) ... 
+ok
+test_legacy_versions_are_read_only_and_75mm_can_be_empty (test_ui_motion_speed_height_version_refactor.HeightAndVersion
+ContractTest.test_legacy_versions_are_read_only_and_75mm_can_be_empty) ... ok
+test_only_integer_mm_heights_are_accepted 
+(test_ui_motion_speed_height_version_refactor.HeightAndVersionContractTest.test_only_integer_mm_heights_are_accepted) 
+... ok
+test_save_current_requires_confirmation_and_creates_backup (test_ui_motion_speed_height_version_refactor.HeightAndVersi
+onContractTest.test_save_current_requires_confirmation_and_creates_backup) ... ok
+test_two_new_versions_are_immutable_and_load_independently (test_ui_motion_speed_height_version_refactor.HeightAndVersi
+onContractTest.test_two_new_versions_are_immutable_and_load_independently) ... ok
+test_generate_callback_is_lock_free_and_fast_for_all_heights (test_ui_motion_speed_height_version_refactor.LightweightR
+untimeContractTest.test_generate_callback_is_lock_free_and_fast_for_all_heights) ... ok
+test_light_status_is_small_and_excludes_detailed_payloads (test_ui_motion_speed_height_version_refactor.LightweightRunt
+imeContractTest.test_light_status_is_small_and_excludes_detailed_payloads) ... ok
+test_protocol_contains_every_refactor_request_and_ack (test_ui_motion_speed_height_version_refactor.LightweightRuntimeC
+ontractTest.test_protocol_contains_every_refactor_request_and_ack) ... ok
+test_speed_callback_is_lock_free_and_parser_runs_5_to_10hz_status (test_ui_motion_speed_height_version_refactor.Lightwe
+ightRuntimeContractTest.test_speed_callback_is_lock_free_and_parser_runs_5_to_10hz_status) ... ok
+test_ui_tabs_save_icon_and_debounced_speed_slider (test_ui_motion_speed_height_version_refactor.LightweightRuntimeContr
+actTest.test_ui_tabs_save_icon_and_debounced_speed_slider) ... ok
+test_worker_ipc_replaces_stale_status_and_preserves_critical (test_ui_motion_speed_height_version_refactor.LightweightR
+untimeContractTest.test_worker_ipc_replaces_stale_status_and_preserves_critical) ... ok
+test_worker_parser_uses_authoritative_motion_reference_fields (test_ui_motion_speed_height_version_refactor.Lightweight
+RuntimeContractTest.test_worker_parser_uses_authoritative_motion_reference_fields) ... ok
+test_adapter_applies_scale_once 
+(test_ui_motion_speed_height_version_refactor.SpeedSemanticsContractTest.test_adapter_applies_scale_once) ... ok
+test_legacy_plan_is_canonical_and_raw_fast_signatures_match (test_ui_motion_speed_height_version_refactor.SpeedSemantic
+sContractTest.test_legacy_plan_is_canonical_and_raw_fast_signatures_match) ... ok
+test_playback_segment_uses_atomic_executor 
+(test_ui_motion_speed_height_version_refactor.SpeedSemanticsContractTest.test_playback_segment_uses_atomic_executor) 
+... ok
+test_servo_target_never_scales_and_rate_does 
+(test_ui_motion_speed_height_version_refactor.SpeedSemanticsContractTest.test_servo_target_never_scales_and_rate_does) 
+... ok
+test_wheel_velocity_and_joint_path_scale_but_duration_does_not (test_ui_motion_speed_height_version_refactor.SpeedSeman
+ticsContractTest.test_wheel_velocity_and_joint_path_scale_but_duration_does_not) ... ok
+test_controller_update_does_not_step_simulation 
+(test_ui_refresh_policy.UiRefreshPolicyTest.test_controller_update_does_not_step_simulation) ... ok
+test_full_json_snapshot_is_gated_by_explicit_sim_state_refresh 
+(test_ui_refresh_policy.UiRefreshPolicyTest.test_full_json_snapshot_is_gated_by_explicit_sim_state_refresh) ... ok
+test_refresh_cli_defaults_are_not_50ms_full_refresh 
+(test_ui_refresh_policy.UiRefreshPolicyTest.test_refresh_cli_defaults_are_not_50ms_full_refresh) ... ok
+test_tk_poll_uses_configured_refresh_interval 
+(test_ui_refresh_policy.UiRefreshPolicyTest.test_tk_poll_uses_configured_refresh_interval) ... ok
+test_body1_with_rigid_body_and_collider_beats_base_body0 (test_wheel_body_resolution_scoring.WheelBodyResolutionScoring
+Test.test_body1_with_rigid_body_and_collider_beats_base_body0) ... ok
+test_collider_on_child_body1_joint_name_mismatch 
+(test_wheel_collision_resolution.WheelCollisionResolutionTest.test_collider_on_child_body1_joint_name_mismatch) ... ok
+test_resolver_failure_is_not_confirmed_missing 
+(test_wheel_collision_resolution.WheelCollisionResolutionTest.test_resolver_failure_is_not_confirmed_missing) ... ok
+test_true_missing_is_confirmed_missing 
+(test_wheel_collision_resolution.WheelCollisionResolutionTest.test_true_missing_is_confirmed_missing) ... ok
+test_cmd_quote_wraps_spaces_parentheses_chinese_and_ampersand 
+(test_windows_batch_launcher.WindowsBatchLauncherTest.test_cmd_quote_wraps_spaces_parentheses_chinese_and_ampersand) 
+... ok
+test_wrapper_uses_minimal_config_file_arguments 
+(test_windows_batch_launcher.WindowsBatchLauncherTest.test_wrapper_uses_minimal_config_file_arguments) ... ok
+test_current_python_preflight_success_selects_direct_python 
+(test_worker_launch_plan.WorkerLaunchPlanTest.test_current_python_preflight_success_selects_direct_python) ... ok
+test_explicit_headless_propagates (test_worker_launch_plan.WorkerLaunchPlanTest.test_explicit_headless_propagates) ... 
+ok
+test_gui_mode_does_not_pass_headless 
+(test_worker_launch_plan.WorkerLaunchPlanTest.test_gui_mode_does_not_pass_headless) ... ok
+test_no_sim_does_not_run_preflight_or_start_worker 
+(test_worker_launch_plan.WorkerLaunchPlanTest.test_no_sim_does_not_run_preflight_or_start_worker) ... ok
+test_old_worker_python_mode_maps_to_new_launch_mode 
+(test_worker_launch_plan.WorkerLaunchPlanTest.test_old_worker_python_mode_maps_to_new_launch_mode) ... ok
+test_error_classification (test_worker_startup_diagnostics.WorkerStartupDiagnosticsTest.test_error_classification) ... 
+ok
+test_last_meaningful_line (test_worker_startup_diagnostics.WorkerStartupDiagnosticsTest.test_last_meaningful_line) ... 
+ok
+test_phase_diagnosis_without_ipc_points_at_launcher 
+(test_worker_startup_diagnostics.WorkerStartupDiagnosticsTest.test_phase_diagnosis_without_ipc_points_at_launcher) ... 
+ok
+test_process_exit_before_ipc_reads_stderr_tail 
+(test_worker_startup_diagnostics.WorkerStartupDiagnosticsTest.test_process_exit_before_ipc_reads_stderr_tail) ... ok
+test_combine_commit_removes_old_steps_and_reindexes 
+(test_workflow_regressions.WorkflowRegressionTest.test_combine_commit_removes_old_steps_and_reindexes) ... ok
+test_combine_explicit_selection_and_contiguous_requirement 
+(test_workflow_regressions.WorkflowRegressionTest.test_combine_explicit_selection_and_contiguous_requirement) ... ok
+test_play_selected_applies_command_state_before_and_fallback 
+(test_workflow_regressions.WorkflowRegressionTest.test_play_selected_applies_command_state_before_and_fallback) ... ok
+test_play_selected_restores_sim_state_before_if_present 
+(test_workflow_regressions.WorkflowRegressionTest.test_play_selected_restores_sim_state_before_if_present) ... ok
+test_refresh_steps_tree_preserves_combine_multi_selection_source 
+(test_workflow_regressions.WorkflowRegressionTest.test_refresh_steps_tree_preserves_combine_multi_selection_source) 
+... ok
+test_replace_save_file_contains_only_replacement_and_clears_target 
+(test_workflow_regressions.WorkflowRegressionTest.test_replace_save_file_contains_only_replacement_and_clears_target) 
+... ok
+test_replace_twice_only_latest_remains 
+(test_workflow_regressions.WorkflowRegressionTest.test_replace_twice_only_latest_remains) ... ok
+[INFO] Accepted recorded step 001: step_001
+[PERF] Accept recorded step took 11.2ms manager=add_step 5.4ms
+[INFO] Combine preview ready for steps [1, 2].
+[INFO] Combined steps [1, 2] into step 001.
+[PERF] Combine selected steps took 4.7ms manager=combine_steps 4.5ms
+[INFO] --no-sim mode: Isaac Sim startup skipped.
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.
+[INFO] Zero target applied; finalizing recording.
+[INFO] Step recording stopped; pending step has 3 events.
+[WARN] Recorded step has many events; coalesced from 21 to 3.
+[INFO] Accepted recorded step 001: step_001_recorded_height_100mm_dur_0.00s
+[PERF] Accept recorded step took 0.7ms manager=add_step 0.3ms
+[INFO] Replaced step 001.
+[PERF] Accept replacement took 95.4ms manager=replace_step 89.2ms
+[INFO] Exported full step JSON: C:\Users\kskzz\AppData\Local\Temp\tmpmygshjqx\height_100mm\step_001_full.json
+[INFO] Grounded respawn reference INVALID: classification=OK stable=True physics_valid=False visual_valid=True root_z=None
+[INFO] Grounded respawn reference VALID: classification=OK stable=True physics_valid=True visual_valid=True root_z=None
+[INFO] --no-sim mode: Isaac Sim startup skipped.
+[PLAYBACK DEBUG] plan label=10cm step 001 events=0 final_time=0.000s profile=raw first_commands=[]
+[WARN] Selected step 001 has no motion events to play.
+[PLAYBACK DEBUG] play_step click args=['1'] can_playback=True reason=ok restore_start_state=True mode=TEST sim_ready=False no_sim=True
+[PLAYBACK DEBUG] selected step index=1 sim_state_before=False command_state_before=True events=1
+[PLAYBACK DEBUG] plan label=100mm step 001 events=1 final_time=0.200s profile=raw first_commands=['servo front_left_hip 10']
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[PLAYBACK DEBUG] start-state restore step=001 restore_full_sim_pose=True fallback_command_state=True sim_state_before=False command_state_before=True
+[WARN] No sim_state_before saved for this step; using command_state_before only.
+[INFO] Applied command_state_before for step 001 before playback.
+[INFO] Playback scheduled in 0.30s: 100mm step 001
+[PLAYBACK DEBUG] manager active=True scheduled=True index=0 count=1 last_info=playback scheduled; starts in 0.30s: 100mm step 001 (1 events)
+[PLAYBACK DEBUG] Playback selected debug | controller_selected_index=1 | manager_count=1 | can_playback=(True, '') | mode=TEST sim_ready=False no_sim=True | playback_status={'active': False, 'paused': False, 'scheduled': False, 'scheduled_start_at': 0.0, 'starts_in_s': 0.0, 'index': 0, 'count': 0, 'label': '', 'profile': 'raw', 'started_at': 0.0, 'events_sent': 0, 'last_event_command': '', 'last_event_time': 0.0, 'completed_at': 0.0, 'stop_reason': '', 'last_error': '', 'last_info': '', 'worker_managed': False, 'worker_plan_id': '', 'worker_acknowledged': False, 'dispatch_clock': 'wall_clock', 'plan_sha256': '', 'source_sha256': '', 'max_dispatch_jitter_s': 0.0, 'progress_detail': {'playback_state': 'IDLE', 'status_text': 'Idle', 'current_step_index': 0, 'total_steps': 0, 'current_step_id': '', 'current_command_index_in_step': 0, 'commands_in_current_step': 0, 'global_command_index': 0, 'total_commands': 0, 'elapsed_time': 0.0, 'estimated_remaining_time': 0.0, 'playback_profile': 'raw', 'last_error': '', 'command_phase': 'idle', 'selected_playback': False, 'scheduler_lateness_s': 0.0}, 'timing': {}} |  | Step 001 summary | name=step_001 | type=test duration=0.200s events=1 height=10cm | note= |  | command_state_after: | servos: front_left_hip=0.0, front_left_knee=0.0, front_right_hip=0.0, front_right_knee=0.0, rear_left_hip=0.0, rear_left_knee=0.0, rear_right_hip=0.0, rear_right_knee=0.0 | wheels: fl=0.00, fr=0.00, rl=0.00, rr=0.00 |  | plan_count=1 final_time=0.200s | plan_first_commands=['servo front_left_hip 10']
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.
+[INFO] Zero target applied; finalizing recording.
+[INFO] Step recording stopped; pending step has 2 events.
+[WARN] Recorded step has many events; coalesced from 3 to 2.
+[INFO] Respawn requested by manual; playback stopped and wheels stopped.
+[INFO] Respawn requested by determinism_2; playback stopped and wheels stopped.
+[INFO] Respawn requested by manual; playback stopped and wheels stopped.
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+[INFO] --no-sim mode: Isaac Sim startup skipped.
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.
+[INFO] Zero target applied; finalizing recording.
+[INFO] Step recording stopped; pending step has 3 events.
+[INFO] Accepted recorded step 001: step_001_recorded_height_100mm_dur_0.00s
+[PERF] Accept recorded step took 0.7ms manager=add_step 0.3ms
+[INFO] Saved 1 steps / 3 commands at 2026-08-04T18:26:42-04:00: C:\Users\kskzz\AppData\Local\Temp\tmplmcy3784\height_100mm\versions\v001_20260804_182642_811111_manual
+[PERF] Save New Version took 141.8ms
+[INFO] Loaded 1 steps from v001_20260804_182642_969393_compat-import at 50 mm.
+[PERF] Load steps for current height took 18.9ms manager=adopt_steps 0.2ms
+[INFO] No version exists for 50 mm; ready for a new recording.
+[PERF] Load steps for current height took 0.0ms manager=adopt_steps 0.0ms
+[INFO] Loaded 1 steps from v001_20260804_182643_130434_compat-import at 50 mm.
+[PERF] Load steps for current height took 27.1ms manager=adopt_steps 0.4ms
+[PLAYBACK DEBUG] plan label=case-f events=1 final_time=0.200s profile=raw first_commands=['servo front_left_hip 10']
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[INFO] Playback started: case-f
+[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=1 last_info=playing case-f (1 events)
+[INFO] --no-sim mode: Isaac Sim startup skipped.
+[INFO] Combined steps [1, 2] into step 001.
+[PERF] Combine selected steps took 1.3ms manager=combine_steps 1.2ms
+[PLAYBACK DEBUG] plan label=step 2 events=1 final_time=0.133s profile=raw first_commands=['servo front_right_hip 20']
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[PLAYBACK DEBUG] start-state restore step=002 restore_full_sim_pose=True fallback_command_state=True sim_state_before=False command_state_before=True
+[WARN] No sim_state_before saved for this step; using command_state_before only.
+[INFO] Applied command_state_before for step 002 before playback.
+[INFO] Playback scheduled in 0.30s: step 2
+[PLAYBACK DEBUG] manager active=True scheduled=True index=0 count=1 last_info=playback scheduled; starts in 0.30s: step 2 (1 events)
+[PLAYBACK DEBUG] plan label=step 1 events=1 final_time=0.100s profile=raw first_commands=['servo front_left_hip 5']
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[PLAYBACK DEBUG] start-state restore step=001 restore_full_sim_pose=True fallback_command_state=True sim_state_before=True command_state_before=True
+[INFO] Restored sim_state_before for step 001 before playback.
+[INFO] Playback scheduled in 0.30s: step 1
+[PLAYBACK DEBUG] manager active=True scheduled=True index=0 count=1 last_info=playback scheduled; starts in 0.30s: step 1 (1 events)
+[INFO] Replaced step 001.
+[PERF] Accept replacement took 0.4ms manager=replace_step 0.4ms
+[INFO] Saved 1 steps / 1 commands at 2026-08-04T18:26:45-04:00: C:\Users\kskzz\AppData\Local\Temp\tmpeba7od0_\height_100mm\versions\v001_20260804_182645_809159_manual
+[PERF] Save New Version took 165.1ms
+[INFO] Replaced step 001.
+[PERF] Accept replacement took 0.8ms manager=replace_step 0.7ms
+[INFO] Replaced step 001.
+[PERF] Accept replacement took 0.4ms manager=replace_step 0.3ms
+[PLAYBACK DEBUG] plan label=all events=1 final_time=0.100s profile=raw first_commands=['servo front_left_hip 5']
+test_respawn_and_play_calls_respawn_before_playback 
+(test_workflow_regressions.WorkflowRegressionTest.test_respawn_and_play_calls_respawn_before_playback) ... ok
+test_save_creates_immutable_versions_and_keeps_old_one 
+(test_workflow_regressions.WorkflowRegressionTest.test_save_creates_immutable_versions_and_keeps_old_one) ... ok
+test_save_empty_sequence_creates_new_version_without_clearing_old 
+(test_workflow_regressions.WorkflowRegressionTest.test_save_empty_sequence_creates_new_version_without_clearing_old) 
+... ok
+test_servo_wheel_command_is_stateless_atomic_alias 
+(test_workflow_regressions.WorkflowRegressionTest.test_servo_wheel_command_is_stateless_atomic_alias) ... ok
+test_start_record_allowed_after_stateless_servo_wheel_apply 
+(test_workflow_regressions.WorkflowRegressionTest.test_start_record_allowed_after_stateless_servo_wheel_apply) ... ok
+
+----------------------------------------------------------------------
+Ran 204 tests in 6.415s
+
+OK
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[INFO] Playback Respawn requested; wheels stopped.
+[INFO] Playback scheduled in 0.30s: all
+[PLAYBACK DEBUG] manager active=True scheduled=True index=0 count=1 last_info=playback scheduled; starts in 0.30s: all (1 events)
+[INFO] Saved 2 steps / 2 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmpdh238kyl\height_100mm\versions\v001_20260804_182646_017512_manual
+[PERF] Save New Version took 173.7ms
+[INFO] Saved 1 steps / 1 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmpdh238kyl\height_100mm\versions\v002_20260804_182646_191818_manual
+[PERF] Save New Version took 165.8ms
+[INFO] Saved 1 steps / 1 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmp0n4qtx1z\height_100mm\versions\v001_20260804_182646_370177_manual
+[PERF] Save New Version took 151.5ms
+[INFO] Saved 0 steps / 0 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmp0n4qtx1z\height_100mm\versions\v002_20260804_182646_521767_manual
+[PERF] Save New Version took 133.5ms
+[INFO] Servo+Wheel controls closed; wheels stopped.
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+EXIT_CODE=0

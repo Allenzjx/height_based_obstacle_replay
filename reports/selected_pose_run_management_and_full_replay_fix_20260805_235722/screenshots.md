@@ -1,0 +1,21 @@
+# 截图和动画证据
+
+- `screenshots/01_run_management_new_ui.png`
+- `screenshots/02_pending_run_selection_not_opened.png`
+- `screenshots/03_open_run.png`
+- `screenshots/04_new_empty_run.png`
+- `screenshots/05_update_current_run.png`
+- `screenshots/06_save_as_new_run.png`
+- `screenshots/07_robot_different_pose.png`
+- `screenshots/08_previous_step_pose_restored_raw_running.png`
+- `screenshots/09_selected_step_actual_motion_raw_complete.png`
+- `screenshots/10_previous_step_pose_restored_fast_running.png`
+- `screenshots/11_selected_step_actual_motion_fast_complete.png`
+- `screenshots/12_step10_segment37.png`
+- `screenshots/13_step11.png`
+- `screenshots/14_last_step_completed_raw.png`
+- `screenshots/15_last_step_completed_fast.png`
+- `screenshots/16_selection_independence.png`
+- `run_open_update_save_as_new.gif`
+- `selected_pose_restore_and_motion.gif`
+- `formal_50mm_step10_to_complete.gif`

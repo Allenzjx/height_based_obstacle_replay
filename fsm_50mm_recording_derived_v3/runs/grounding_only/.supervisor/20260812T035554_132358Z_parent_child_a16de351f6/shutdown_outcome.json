@@ -1,0 +1,29 @@
+{
+  "child_pid": 99620,
+  "child_returncode": 0,
+  "close_error": "",
+  "close_kwargs": {
+    "skip_cleanup": true,
+    "wait_for_replicator": false
+  },
+  "close_wait_s": 1.6099999998696148,
+  "created_utc": "2026-08-12T03:59:17.579317+00:00",
+  "elapsed_s": 203.31300000008196,
+  "handshake_state": "FAST_EXIT_REQUESTED",
+  "intended_returncode": 0,
+  "parent_pid": 162124,
+  "preclose_observed": true,
+  "preclose_verification": {
+    "checksum_row_count": 44,
+    "checksums_preclose_sha256": "6f6e23f16bca68810c15f8c0409ac275c81979ba5fd34f197304236a8cca0c92",
+    "marker_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T035554_809032Z_grounding_only_trial_01_d23791139e\\preclose_complete.json",
+    "marker_sha256": "f44de9a70ed5bb53f1083b8c8f3fb1cea0263d873d3e85a91565614f225ced5b",
+    "ok": true,
+    "verified_file_count": 22
+  },
+  "process_returned_normally": true,
+  "runtime_version": "5.1.0.0",
+  "schema_version": "fsm50.shutdown_outcome.v1",
+  "shutdown_mode": "fast",
+  "status": "FAST_EXIT_VERIFIED"
+}

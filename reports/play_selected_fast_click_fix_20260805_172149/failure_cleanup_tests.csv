@@ -1,0 +1,10 @@
+﻿scenario,evidence,result,cleanup
+readiness false / active conflict,test_operation_and_dirty_staging_conflicts_block_selected_restore + visible Recording/Height checks,PASS,No Selected transaction; original conflicting owner preserved
+no selection,FailureCleanupTest.test_no_selection_has_visible_feedback_without_starting_transaction,PASS,Visible Select an accepted step first; no pending; IDLE
+restore timeout,FailureCleanupTest.test_restore_timeout_cleans_pending_and_reenables_playback,PASS,pending cleared; active/start_requested false; IDLE; retry available
+restore error,RestoreTransactionTest.test_restore_failure_releases_operation_and_never_starts_plan,PASS,Explicit error; pending cleared; IDLE; retry available
+plan empty,PlaySelectedPlaybackTest.test_empty_selected_plan_warns_instead_of_silent_active,PASS,Explicit no-motion error; inactive
+duplicate operation owner,SingleOperationOwnershipTest.test_existing_operation_owner_must_match_restore_request,PASS,Wrong owner rejected without global reentry
+worker rejection,FailureCleanupTest.test_worker_rejection_releases_selected_operation,PASS,Explicit rejection; inactive; IDLE; retry available
+first command not applied,FailureCleanupTest.test_first_command_watchdog_releases_selected_operation,PASS,Watchdog error; stop requested; inactive; IDLE; retry available
+Stop during restore,real_isaac_regression_final,PASS,pending false; no late plan; IDLE

@@ -1,0 +1,157 @@
+TASK SEPARATION REFACTOR - FILE INVENTORY
+========================================
+
+ADDED
+-----
+height_generate_panel.py
+  Height Generate-only panel; generates/resets the obstacle and loads/opens
+  the shared sequence without any playback implementation.
+operation_coordinator.py
+  Thread-safe IDLE/RECORDING/PLAYBACK/SCENE_UPDATE/RESPAWNING authority.
+playback_availability.py
+  Pure, centralized availability matrix and user-facing reasons.
+task_separation_gui_e2e.py
+  Visible Tk + real Isaac validation driver and screenshot capture.
+tests/test_task_separation_refactor.py
+  Cases A-H, shared-manager identity, operation conflicts, exact tabs,
+  guarded callbacks, one poll loop, and stop recovery.
+
+MODIFIED
+--------
+README.md
+README_TELEMETRY.md
+docs/TROUBLESHOOTING.md
+  Replaced removed-task instructions with the current eight-task architecture.
+config/telemetry.yaml
+telemetry/config.py
+telemetry/collector.py
+height_replay_ui.py
+sim_process_client.py
+sim_worker_process.py
+  Removed task-specific camera/Vision/Stability and automatic report settings,
+  command-line propagation, startup objects, and finish-time generation.
+height_sequence_store.py
+  Made manifest refresh a read-only in-memory snapshot; explicit Save/Clear
+  remain the only recording/manifest write paths.
+isaac_launch_preflight.py
+worker_startup_diagnostics.py
+  Removed task-camera launch environment and task-specific diagnostics.
+playback.py
+  Unified operation ownership, worker completion/stop cleanup, unique request
+  ids for repeated identical plans, and stale acknowledgement protection.
+robot_ground_diagnostics.py
+  Retained generic ground/respawn diagnostics; removed dead camera/viewport-task
+  guards and comparison wrappers.
+sim_ipc_protocol.py
+sim_transport.py
+sim_worker.py
+sim_worker_runtime.py
+  Removed task-specific IPC/runtime services; retained generic commands,
+  telemetry, respawn, state, and the unique playback service.
+sim_obstacle_scene.py
+  Removed onboard/task-camera creation; retained the generic Isaac GUI view.
+sim_ui_controller.py
+  Removed task controllers/tabs/pollers, established permanent shared
+  authorities, centralized guarded buttons, separated worker/playback stop,
+  and implemented the eight retained tabs.
+telemetry/live_packet.py
+telemetry/visualization/report_generator.py
+  Kept generic telemetry consumers/offline reporting; removed dashboard-task
+  wording and renamed the PNG output to telemetry_report.png.
+tests/controller_test_utils.py
+tests/test_ground_bound_sanitization.py
+tests/test_height_sequence_store.py
+tests/test_respawn_quick_action.py
+tests/test_robot_ground_diagnostics.py
+tests/test_sim_time_playback_service.py
+tests/test_sim_ui_controller.py
+tests/test_subprocess_worker_runtime_parity.py
+tests/test_telemetry_replay_finish.py
+tests/test_worker_launch_plan.py
+  Updated retained tests for the simplified runtime; added unique-plan-id and
+  read-only-manifest regressions.
+
+DELETED PRODUCTION/TASK FILES
+-----------------------------
+analysis_task/__init__.py
+analysis_task/coordinator.py
+analysis_task/sequence_manager.py
+analysis_task/state.py
+analysis_task/validation_result.py
+camera_validation.py
+obstacle_height_vision.py
+sim_onboard_camera.py
+sim_camera_viewport.py
+vision_task_state.py
+vision_gui_e2e.py
+stability_gui_e2e.py
+height_task_panel.py
+telemetry/visualization/live_dashboard.py
+telemetry/visualization/live_dashboard_model.py
+
+DELETED TASK-SPECIFIC TESTS
+---------------------------
+tests/test_action_failure_does_not_clear_ready.py
+tests/test_analysis_emergency_stop.py
+tests/test_analysis_ipc_schema.py
+tests/test_analysis_multi_trial.py
+tests/test_camera_coverage.py
+tests/test_camera_geometry_diagnostics.py
+tests/test_camera_ground_truth_isolation.py
+tests/test_camera_health.py
+tests/test_camera_look_at_conventions.py
+tests/test_camera_provenance_smoke_config.py
+tests/test_camera_target_frame_conversion.py
+tests/test_camera_validation_ipc.py
+tests/test_camera_view_readiness.py
+tests/test_camera_viewport_camera_path_verification.py
+tests/test_camera_viewport_control.py
+tests/test_camera_viewport_creation_plan.py
+tests/test_camera_viewport_main_identity.py
+tests/test_camera_viewport_pending_single_owner.py
+tests/test_camera_viewport_perspective_restore.py
+tests/test_camera_viewport_physics_invariance.py
+tests/test_camera_viewport_restore.py
+tests/test_camera_viewport_runtime_diagnostics.py
+tests/test_camera_viewport_secondary.py
+tests/test_camera_viewport_without_motion_ready.py
+tests/test_generated_validation_without_motion_ready.py
+tests/test_ground_calibration.py
+tests/test_ground_trigger_isolation.py
+tests/test_grounded_respawn_and_viewport_guard.py
+tests/test_height_provenance.py
+tests/test_height_validation_result.py
+tests/test_live_dashboard_lifecycle.py
+tests/test_live_dashboard_model.py
+tests/test_obstacle_height_vision.py
+tests/test_runtime_ready_motion_ready.py
+tests/test_stability_detection_workflow.py
+tests/test_stability_gui_e2e_state_machine.py
+tests/test_stability_task_finalization.py
+tests/test_stability_task_fresh_frame_gate.py
+tests/test_stability_task_isolation.py
+tests/test_stability_task_no_ground_truth_routing.py
+tests/test_stability_task_playback_gate.py
+tests/test_stability_task_state.py
+tests/test_stability_task_steps_loading.py
+tests/test_stability_ui_panel.py
+tests/test_telemetry_live_quality.py
+tests/test_validation_readiness_reason.py
+tests/test_vision_auto_replay.py
+tests/test_vision_gui_e2e_state_machine.py
+tests/test_vision_ipc.py
+tests/test_vision_obstacle_generation.py
+tests/test_vision_obstacle_update_respawn_split.py
+tests/test_vision_roi_source.py
+tests/test_vision_status_scroll.py
+tests/test_vision_steps_source.py
+tests/test_vision_task_isolation.py
+tests/test_vision_task_state.py
+tests/test_vision_validation_gate.py
+tests/test_worker_smoke_execution_branches.py
+
+CACHE CLEANUP
+-------------
+Removed 11 generated __pycache__ directories, including obsolete sourceless
+Vision/Stability bytecode. No source, recording, report, screenshot, or model
+file was removed by this cache cleanup.

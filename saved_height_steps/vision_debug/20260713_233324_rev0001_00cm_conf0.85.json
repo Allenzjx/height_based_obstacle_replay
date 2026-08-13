@@ -1,0 +1,14 @@
+{
+  "confidence": 0.85,
+  "detected_height_cm": 0,
+  "detection_revision": 1,
+  "point_count": 0,
+  "quantization_error_cm": 0.0,
+  "raw_height_cm": 0.0,
+  "reason": "stable",
+  "stable": true,
+  "stable_count": 7,
+  "timestamp": 1784000004.6315253,
+  "top_plane_mad_m": 0.0,
+  "valid": true
+}

@@ -1,0 +1,19 @@
+{
+  "actual_viewport_video": true,
+  "artifact_valid": true,
+  "capture_requested": true,
+  "contact_mode": "formal_grounding_diagnostic",
+  "created_utc": "2026-08-12T04:15:39.321850+00:00",
+  "diagnostic_only": false,
+  "error": "",
+  "fps": 15.0,
+  "frame_count": 26,
+  "frame_directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\viewport_frames",
+  "not_camera_video": false,
+  "render_product_path": "/Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0",
+  "schema_version": "fsm50.recording_viewport_video.v1",
+  "source": "actual_active_isaac_gui_viewport_render_product",
+  "valid": true,
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T041221_837907Z_grounding_only_trial_03_957540f80a\\diagnostic_artifact\\fsm50_viewport.mp4",
+  "video_sha256": "59732e91231fcebdd856458bf5300e9c05369be341b1517996a082e6cfea4a52"
+}

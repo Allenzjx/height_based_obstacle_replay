@@ -1,0 +1,15 @@
+PROJECT_GIT_REPOSITORY=false
+METHOD=pre-change and post-change recursive SHA-256 maps
+PROTECTED_ROOT=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps
+BEFORE_FILE_COUNT=55
+AFTER_FILE_COUNT=55
+CHANGED=0
+MISSING=0
+ADDED=0
+IDENTICAL=true
+FORMAL_ACCEPTED_STEPS_MODIFIED=false
+OLD_RECORDINGS_REWRITTEN=false
+OLD_REPORTS_MODIFIED=false
+TEST_SAVE_ROOTS=Windows temporary directories only
+NEW_FORMAL_ROOT=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps_fsm_reference_v1
+NEW_FORMAL_ACCEPTED_STEP_COUNT=0

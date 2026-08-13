@@ -1,0 +1,2222 @@
+{
+  "success": false,
+  "started_at": 1785898415.5857708,
+  "visible_gui_requested": true,
+  "single_worker_requested": true,
+  "formal_source_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+  "formal_source_sha256_before": "66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8",
+  "temporary_version_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\temporary_version_store_v2",
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785898439.2812333,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898439.3376799,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898439.7738035,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898439.8343143,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898440.1193678,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898440.1742032,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898440.477294,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898440.531853,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898441.2119157,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898441.2770796,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898441.5430417,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_START",
+      "completed_at": 1785898441.6034698,
+      "details": {}
+    },
+    {
+      "stage": "HEIGHT_WAIT",
+      "completed_at": 1785898442.6605487,
+      "details": {}
+    },
+    {
+      "stage": "MANUAL_IDLE_START",
+      "completed_at": 1785898442.7205806,
+      "details": {}
+    },
+    {
+      "stage": "MANUAL_IDLE_WAIT",
+      "completed_at": 1785898443.010581,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "servo_wheel_controls": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\servo_wheel_controls.png",
+    "isaac_startup": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\isaac_startup.png",
+    "height_0": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_0_50mm.png",
+    "height_1": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_1_75mm.png",
+    "height_2": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_2_100mm.png",
+    "height_3": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_3_50mm.png",
+    "height_4": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_4_100mm.png",
+    "height_5": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\height_5_75mm.png",
+    "isaac_75mm_wide": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\isaac_75mm_wide.png",
+    "failure": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\final_real_isaac\\screenshots\\failure.png"
+  },
+  "height_transactions": [
+    {
+      "requested_height_mm": 50,
+      "request_id": "15b8f478f5ca4b848338dbb62cb9fc2f",
+      "requested_revision": 2,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 50,
+        "request_id": "15b8f478f5ca4b848338dbb62cb9fc2f",
+        "requested_revision": 2,
+        "source": "ui"
+      },
+      "callback_ms": 0.33769989386200905,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790302.4210934,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 50,
+        "measured_height_mm": 50.00000074505806,
+        "height_mm": 50,
+        "height_cm": 5.0,
+        "source": "ui",
+        "request_id": "15b8f478f5ca4b848338dbb62cb9fc2f",
+        "obstacle_revision": 2,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.05000000074505806,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.1494953001383692,
+        "scene_height_mm": 50,
+        "scene_height_cm": 5.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 2,
+        "worker_operation_s": 0.14982989989221096,
+        "request_enqueued_wall_time": 1785898439.337398
+      },
+      "ack_wall_ms": 299.89849985577166,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 50,
+      "worker_scene_height_mm": 50
+    },
+    {
+      "requested_height_mm": 75,
+      "request_id": "259e7687a7b249708a133d6120ab4be7",
+      "requested_revision": 3,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 75,
+        "request_id": "259e7687a7b249708a133d6120ab4be7",
+        "requested_revision": 3,
+        "source": "ui"
+      },
+      "callback_ms": 0.3915000706911087,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790302.9177283,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 75,
+        "measured_height_mm": 75.00000298023224,
+        "height_mm": 75,
+        "height_cm": 7.5,
+        "source": "ui",
+        "request_id": "259e7687a7b249708a133d6120ab4be7",
+        "obstacle_revision": 3,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "measured_width_m": 2.000000031789142,
+        "measured_length_m": 2.0573757035484164,
+        "front_face_x_m": 0.521312100542076,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.07500000298023224,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.12662869994528592,
+        "scene_height_mm": 75,
+        "scene_height_cm": 7.5,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 3,
+        "worker_operation_s": 0.12693120003677905,
+        "request_enqueued_wall_time": 1785898439.8339667
+      },
+      "ack_wall_ms": 159.41899991594255,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 75,
+      "worker_scene_height_mm": 50
+    },
+    {
+      "requested_height_mm": 100,
+      "request_id": "966753ce435942dd872cdaad66bf66ab",
+      "requested_revision": 4,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 100,
+        "request_id": "966753ce435942dd872cdaad66bf66ab",
+        "requested_revision": 4,
+        "source": "ui"
+      },
+      "callback_ms": 0.2723000943660736,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790303.2576178,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 75.00000298023224,
+        "requested_height_mm": 100,
+        "measured_height_mm": 100.00000149011612,
+        "height_mm": 100,
+        "height_cm": 10.0,
+        "source": "ui",
+        "request_id": "966753ce435942dd872cdaad66bf66ab",
+        "obstacle_revision": 4,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.10000000149011612,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.1298938998952508,
+        "scene_height_mm": 100,
+        "scene_height_cm": 10.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 4,
+        "worker_operation_s": 0.13018480013124645,
+        "request_enqueued_wall_time": 1785898440.1739676
+      },
+      "ack_wall_ms": 174.40219991840422,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 100,
+      "worker_scene_height_mm": 75
+    },
+    {
+      "requested_height_mm": 50,
+      "request_id": "0d5203754845447c874318da864b3324",
+      "requested_revision": 5,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 50,
+        "request_id": "0d5203754845447c874318da864b3324",
+        "requested_revision": 5,
+        "source": "ui"
+      },
+      "callback_ms": 0.29230001382529736,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790303.6152685,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 100.00000149011612,
+        "requested_height_mm": 50,
+        "measured_height_mm": 50.00000074505806,
+        "height_mm": 50,
+        "height_cm": 5.0,
+        "source": "ui",
+        "request_id": "0d5203754845447c874318da864b3324",
+        "obstacle_revision": 5,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.05000000074505806,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.13418009993620217,
+        "scene_height_mm": 50,
+        "scene_height_cm": 5.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 5,
+        "worker_operation_s": 0.13450239994563162,
+        "request_enqueued_wall_time": 1785898440.5316317
+      },
+      "ack_wall_ms": 589.1050999052823,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 50,
+      "worker_scene_height_mm": 50
+    },
+    {
+      "requested_height_mm": 100,
+      "request_id": "405168035fad42ce95628f4376127726",
+      "requested_revision": 6,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 100,
+        "request_id": "405168035fad42ce95628f4376127726",
+        "requested_revision": 6,
+        "source": "ui"
+      },
+      "callback_ms": 0.5749999545514584,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790304.3604938,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 100,
+        "measured_height_mm": 100.00000149011612,
+        "height_mm": 100,
+        "height_cm": 10.0,
+        "source": "ui",
+        "request_id": "405168035fad42ce95628f4376127726",
+        "obstacle_revision": 6,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.10000000149011612,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.13985099992714822,
+        "scene_height_mm": 100,
+        "scene_height_cm": 10.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 6,
+        "worker_operation_s": 0.14011369994841516,
+        "request_enqueued_wall_time": 1785898441.2766485
+      },
+      "ack_wall_ms": 174.41540001891553,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 100,
+      "worker_scene_height_mm": 50
+    },
+    {
+      "requested_height_mm": 75,
+      "request_id": "4bb66c75a63042b981a73f9afc52a3fd",
+      "requested_revision": 7,
+      "ipc_payload": {
+        "type": "set_height",
+        "height_mm": 75,
+        "request_id": "4bb66c75a63042b981a73f9afc52a3fd",
+        "requested_revision": 7,
+        "source": "ui"
+      },
+      "callback_ms": 0.3428999334573746,
+      "operation_after_callback": "SCENE_UPDATE",
+      "started_monotonic": 1790304.6868845,
+      "ack": {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 100.00000149011612,
+        "requested_height_mm": 75,
+        "measured_height_mm": 75.00000298023224,
+        "height_mm": 75,
+        "height_cm": 7.5,
+        "source": "ui",
+        "request_id": "4bb66c75a63042b981a73f9afc52a3fd",
+        "obstacle_revision": 7,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "measured_width_m": 2.000000031789142,
+        "measured_length_m": 2.0573757035484164,
+        "front_face_x_m": 0.521312100542076,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.07500000298023224,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.12482999986968935,
+        "scene_height_mm": 75,
+        "scene_height_cm": 7.5,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 7,
+        "worker_operation_s": 0.125145300058648,
+        "request_enqueued_wall_time": 1785898441.603167
+      },
+      "ack_wall_ms": 267.7607999648899,
+      "operation_after_ack": "IDLE",
+      "ui_loaded_height_mm": 75,
+      "worker_scene_height_mm": 75
+    }
+  ],
+  "manual_wheel_states": [
+    {
+      "label": "ordinary_idle_before_recording",
+      "velocity": 0.3,
+      "ui_callback_triggered": true,
+      "controller_readiness": [
+        true,
+        ""
+      ],
+      "operation": "IDLE",
+      "generation_before": 1,
+      "generation_sent": 1,
+      "command_state_before": {
+        "servos": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "wheels": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        }
+      },
+      "started_wall": 1785898442.720579,
+      "worker_received": true,
+      "command_state_after": {
+        "servos": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "wheels": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        }
+      },
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": 0.2889259457588196,
+        "front_right_ankle": 0.31437140703201294,
+        "rear_left_ankle": 0.29999205470085144,
+        "rear_right_ankle": 0.29363781213760376
+      },
+      "stale_command_rejected": false,
+      "worker_generation": 1
+    }
+  ],
+  "servo_wheel": {},
+  "mini_playback": {},
+  "knee_test": {},
+  "formal_plan_integrity": {},
+  "formal_replay_trace": [],
+  "formal_raw": {},
+  "formal_fast": {},
+  "playback_handshakes": [],
+  "ui_after_probe_ms": [],
+  "ui_after_probe_rows": [],
+  "rtf_samples": [
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.282051282388049,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.2820512804745807,
+    1.2820512804745807,
+    1.2820512804745807,
+    1.2820512804745807,
+    1.2820512804745807,
+    1.2738853512101829,
+    1.2820512804745807,
+    1.2820512804746491,
+    1.2820512804746491,
+    1.2820512804746491,
+    1.2820512804746491,
+    1.2820512804746491,
+    1.2820512804746491,
+    1.2820512823880477
+  ],
+  "worker_loop_hz_samples": [
+    1708.56770613423,
+    123.91861643917994,
+    377.0217795231387,
+    588.3261385372928,
+    122.20394822955575,
+    221.94405231517973,
+    390.203930326082,
+    131.1477559261676,
+    50.28569608136758,
+    793.4839114923755,
+    392.24338770331815,
+    210.99592038185173,
+    466.52217450682656,
+    476.4419329499937,
+    94.22549645140293,
+    375.78621497976553,
+    410.6930801860559,
+    56.04958005798633
+  ],
+  "status_payload_bytes": [
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3124.0,
+    3156.0,
+    3156.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3145.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    3149.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    8623.0,
+    9278.0,
+    9402.0,
+    9384.0,
+    9384.0,
+    9384.0,
+    9384.0,
+    9420.0,
+    9411.0,
+    9411.0,
+    9411.0,
+    9411.0,
+    9389.0,
+    9389.0,
+    9425.0,
+    9425.0,
+    9425.0,
+    9425.0,
+    9431.0,
+    9421.0,
+    9421.0,
+    9427.0,
+    9427.0,
+    9427.0,
+    9435.0,
+    9421.0,
+    9421.0,
+    9421.0,
+    9421.0,
+    9428.0,
+    9418.0,
+    9409.0,
+    9409.0,
+    9409.0,
+    9409.0,
+    9372.0,
+    9372.0,
+    9440.0
+  ],
+  "tabs": [
+    "Sim Connection",
+    "Run Manager",
+    "Record / Servo+Wheel",
+    "Playback",
+    "Height Generate",
+    "Combine",
+    "Sim State"
+  ],
+  "speed_scale_absent": true,
+  "worker_pid": 137612,
+  "worker_session_id": "f940e318706340b48c95bbb48ba7d953",
+  "startup_geometry": {
+    "height_mm": 50,
+    "measured_height_mm": 50.00000074505806,
+    "measured_width_m": 2.0000000298023224,
+    "measured_length_m": 2.057375557085507,
+    "measured_bounds": {
+      "min": [
+        0.5213121737735307,
+        -1.0000000149011612,
+        0.0
+      ],
+      "max": [
+        2.5786877308590377,
+        1.0000000149011612,
+        0.05000000074505806
+      ]
+    },
+    "visual_updated": true,
+    "collision_updated": true,
+    "obstacle_prim_valid": true,
+    "obstacle_revision": 1
+  },
+  "isaac_window_title": "Isaac Sim 5.1.0",
+  "error": "AssertionError: recording did not start: [WARN] Grounded respawn reference is not valid.",
+  "failed_stage": "MANUAL_RECORD_START",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 186, in _tick\n    getattr(self, f\"_stage_{self.stage.lower()}\")()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_wheel_servo_batch_replay_completion_e2e.py\", line 224, in _stage_manual_record_start\n    raise AssertionError(f\"recording did not start: {self.controller.status}\")\nAssertionError: recording did not start: [WARN] Grounded respawn reference is not valid.\n",
+  "latest_sim_status": {
+    "last_operation_ack": {
+      "type": "stop_ack",
+      "command_id": "1370a7c1c472444caaf2f808c2c0a131",
+      "received_wall_time": 1785898443.070191,
+      "target_applied_wall_time": 1785898443.07269,
+      "target_applied_sim_time": 5.6166666666667355,
+      "zero_target_applied": true,
+      "error": ""
+    },
+    "operation_ack_history": [
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 50,
+        "measured_height_mm": 50.00000074505806,
+        "height_mm": 50,
+        "height_cm": 5.0,
+        "source": "ui",
+        "request_id": "15b8f478f5ca4b848338dbb62cb9fc2f",
+        "obstacle_revision": 2,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.05000000074505806,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.1494953001383692,
+        "scene_height_mm": 50,
+        "scene_height_cm": 5.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 2,
+        "worker_operation_s": 0.14982989989221096,
+        "request_enqueued_wall_time": 1785898439.337398
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 75,
+        "measured_height_mm": 75.00000298023224,
+        "height_mm": 75,
+        "height_cm": 7.5,
+        "source": "ui",
+        "request_id": "259e7687a7b249708a133d6120ab4be7",
+        "obstacle_revision": 3,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "measured_width_m": 2.000000031789142,
+        "measured_length_m": 2.0573757035484164,
+        "front_face_x_m": 0.521312100542076,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.07500000298023224,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.12662869994528592,
+        "scene_height_mm": 75,
+        "scene_height_cm": 7.5,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 3,
+        "worker_operation_s": 0.12693120003677905,
+        "request_enqueued_wall_time": 1785898439.8339667
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 75.00000298023224,
+        "requested_height_mm": 100,
+        "measured_height_mm": 100.00000149011612,
+        "height_mm": 100,
+        "height_cm": 10.0,
+        "source": "ui",
+        "request_id": "966753ce435942dd872cdaad66bf66ab",
+        "obstacle_revision": 4,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.10000000149011612,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.1298938998952508,
+        "scene_height_mm": 100,
+        "scene_height_cm": 10.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 4,
+        "worker_operation_s": 0.13018480013124645,
+        "request_enqueued_wall_time": 1785898440.1739676
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 100.00000149011612,
+        "requested_height_mm": 50,
+        "measured_height_mm": 50.00000074505806,
+        "height_mm": 50,
+        "height_cm": 5.0,
+        "source": "ui",
+        "request_id": "0d5203754845447c874318da864b3324",
+        "obstacle_revision": 5,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.05000000074505806
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.05000000074505806,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.13418009993620217,
+        "scene_height_mm": 50,
+        "scene_height_cm": 5.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 5,
+        "worker_operation_s": 0.13450239994563162,
+        "request_enqueued_wall_time": 1785898440.5316317
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 50.00000074505806,
+        "requested_height_mm": 100,
+        "measured_height_mm": 100.00000149011612,
+        "height_mm": 100,
+        "height_cm": 10.0,
+        "source": "ui",
+        "request_id": "405168035fad42ce95628f4376127726",
+        "obstacle_revision": 6,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.5213121737735307,
+            -1.0000000149011612,
+            0.0
+          ],
+          "max": [
+            2.5786877308590377,
+            1.0000000149011612,
+            0.10000000149011612
+          ]
+        },
+        "measured_width_m": 2.0000000298023224,
+        "measured_length_m": 2.057375557085507,
+        "front_face_x_m": 0.5213121737735307,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.10000000149011612,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.13985099992714822,
+        "scene_height_mm": 100,
+        "scene_height_cm": 10.0,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 6,
+        "worker_operation_s": 0.14011369994841516,
+        "request_enqueued_wall_time": 1785898441.2766485
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "ok": true,
+        "accepted": true,
+        "old_height_mm": 100.00000149011612,
+        "requested_height_mm": 75,
+        "measured_height_mm": 75.00000298023224,
+        "height_mm": 75,
+        "height_cm": 7.5,
+        "source": "ui",
+        "request_id": "4bb66c75a63042b981a73f9afc52a3fd",
+        "obstacle_revision": 7,
+        "obstacle_updated": true,
+        "visual_updated": true,
+        "collision_updated": true,
+        "prim_path": "/World/Obstacle",
+        "prim_valid": true,
+        "measured_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "visual_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "collision_bounds": {
+          "min": [
+            0.521312100542076,
+            -1.000000015894571,
+            0.0
+          ],
+          "max": [
+            2.5786878040904924,
+            1.000000015894571,
+            0.07500000298023224
+          ]
+        },
+        "measured_width_m": 2.000000031789142,
+        "measured_length_m": 2.0573757035484164,
+        "front_face_x_m": 0.521312100542076,
+        "center_y_m": 0.0,
+        "bottom_z_m": 0.0,
+        "top_z_m": 0.07500000298023224,
+        "update_mode": "minimal_recreate_after_in_place_verification_failed",
+        "obstacle_update_s": 0.12482999986968935,
+        "scene_height_mm": 75,
+        "scene_height_cm": 7.5,
+        "scene_ready": true,
+        "respawn_policy": "never",
+        "respawn_requested": false,
+        "respawned": false,
+        "motion_ready": true,
+        "respawn_warning": "",
+        "respawn_result": {
+          "ok": true,
+          "respawned": false,
+          "skipped": true
+        },
+        "control_ready": true,
+        "error": "",
+        "updated": true,
+        "revision": 7,
+        "worker_operation_s": 0.125145300058648,
+        "request_enqueued_wall_time": 1785898441.603167
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "9761a8966cd3479cb7b5dec7416fee1b",
+        "received_wall_time": 1785898443.0251398,
+        "target_applied_wall_time": 1785898443.0261514,
+        "target_applied_sim_time": 5.5500000000000655,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "1370a7c1c472444caaf2f808c2c0a131",
+        "received_wall_time": 1785898443.070191,
+        "target_applied_wall_time": 1785898443.07269,
+        "target_applied_sim_time": 5.6166666666667355,
+        "zero_target_applied": true,
+        "error": ""
+      }
+    ],
+    "requested_launch_mode": "explicit-python",
+    "type": "status",
+    "ready": true,
+    "runtime_ready": true,
+    "starting": false,
+    "phase": "running",
+    "phase_elapsed_s": 4.4219999997876585,
+    "height_mm": 75,
+    "height_cm": 7.5,
+    "scene_height_mm": 75,
+    "obstacle_revision": 7,
+    "last_set_height_source": "ui",
+    "last_set_height_request_id": "4bb66c75a63042b981a73f9afc52a3fd",
+    "obstacle_updated": true,
+    "measured_height_mm": 75.00000298023224,
+    "measured_width_m": 2.000000031789142,
+    "measured_length_m": 2.0573757035484164,
+    "measured_bounds": {
+      "min": [
+        0.521312100542076,
+        -1.000000015894571,
+        0.0
+      ],
+      "max": [
+        2.5786878040904924,
+        1.000000015894571,
+        0.07500000298023224
+      ]
+    },
+    "visual_updated": true,
+    "collision_updated": true,
+    "obstacle_prim_valid": true,
+    "scene_ready": true,
+    "respawned": false,
+    "error": "",
+    "traceback": "",
+    "pid": 137612,
+    "sim_time": 5.6166666666667355,
+    "sim_steps": 674,
+    "real_time_factor": 1.2820512823880477,
+    "respawn_count": 0,
+    "last_respawn_at": 0.0,
+    "restore_count": 0,
+    "last_restore_result": "",
+    "last_restore_error": "",
+    "perf": {
+      "outbound_backlog": 0,
+      "status_replaced": 0,
+      "frames_sent": 60,
+      "bytes_sent": 375321,
+      "status_enqueued": 25,
+      "status_send_hz": 5.545286506197437,
+      "socket_send_blocking_ms": 0.0,
+      "send_call_average_ms": 0.1731016750757893,
+      "send_call_max_ms": 0.49889995716512203
+    },
+    "command_state": {
+      "servos": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "servo_target_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "servo_actual_deg": [
+      0.2848590957921849,
+      -0.2367475100828795,
+      0.007903887070163488,
+      -0.14997486587633346,
+      -0.540134988102605,
+      0.4100612924357052,
+      -0.620007753865263,
+      0.4672642334562678
+    ],
+    "wheel_canonical_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_effective_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_measured_rad_s": [
+      -0.0020494461059570312,
+      0.01650714874267578,
+      0.003274499671533704,
+      -0.0029030947480350733
+    ],
+    "target_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.07935156363204786,
+          "target_actual_rad": 0.0013849460519850254
+        },
+        "front_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.02684400080484552,
+          "target_actual_rad": 0.0004685161984525621
+        },
+        "front_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.006745560524854715,
+          "target_actual_rad": -0.00011773224105127156
+        },
+        "front_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.1251883495021952,
+          "target_actual_rad": 0.0021849488839507107
+        },
+        "rear_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.1794263347525243,
+          "target_actual_rad": -0.0031315803062170744
+        },
+        "rear_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.16301483092001173,
+          "target_actual_rad": 0.0028451455291360617
+        },
+        "rear_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.3229814231186408,
+          "target_actual_rad": -0.005637089256197214
+        },
+        "rear_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.21524399350241663,
+          "target_actual_rad": 0.0037567163817584515
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "front_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        }
+      }
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": 0.004971729125827551,
+          "deg": 0.2848590957921849,
+          "velocity_rad_s": -0.03176049143075943,
+          "velocity_deg_s": -1.8197421142439327,
+          "applied_torque_nm": -0.24644029140472412,
+          "computed_torque_nm": -0.24644029140472412,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_left_knee": {
+          "rad": -0.004132023546844721,
+          "deg": -0.2367475100828795,
+          "velocity_rad_s": 0.04549727216362953,
+          "velocity_deg_s": 2.6068016743340157,
+          "applied_torque_nm": 0.030487775802612305,
+          "computed_torque_nm": 0.030487775802612305,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_right_hip": {
+          "rad": 0.00013794885308016092,
+          "deg": 0.007903887070163488,
+          "velocity_rad_s": -0.01997147686779499,
+          "velocity_deg_s": -1.1442813351678058,
+          "applied_torque_nm": 1.0448799133300781,
+          "computed_torque_nm": 1.0448799133300781,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_right_knee": {
+          "rad": -0.0026175552047789097,
+          "deg": -0.14997486587633346,
+          "velocity_rad_s": 0.03264395520091057,
+          "velocity_deg_s": 1.8703608596263088,
+          "applied_torque_nm": 0.9228650331497192,
+          "computed_torque_nm": 0.9228650331497192,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_left_hip": {
+          "rad": -0.009427133947610855,
+          "deg": -0.540134988102605,
+          "velocity_rad_s": 0.06943575292825699,
+          "velocity_deg_s": 3.9783755901022726,
+          "applied_torque_nm": -0.3888132572174072,
+          "computed_torque_nm": -0.3888132572174072,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_left_knee": {
+          "rad": 0.007156919687986374,
+          "deg": 0.4100612924357052,
+          "velocity_rad_s": -0.05837249383330345,
+          "velocity_deg_s": -3.344497536301712,
+          "applied_torque_nm": 0.9152853488922119,
+          "computed_torque_nm": 0.9152853488922119,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_right_hip": {
+          "rad": -0.010821176692843437,
+          "deg": -0.620007753865263,
+          "velocity_rad_s": 0.04914551228284836,
+          "velocity_deg_s": 2.815830435815559,
+          "applied_torque_nm": 0.16172170639038086,
+          "computed_torque_nm": 0.16172170639038086,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_right_knee": {
+          "rad": 0.008155299350619316,
+          "deg": 0.4672642334562678,
+          "velocity_rad_s": -0.03742789104580879,
+          "velocity_deg_s": -2.1444601930003286,
+          "applied_torque_nm": -0.3934762477874756,
+          "computed_torque_nm": -0.3934762477874756,
+          "effort_limit_nm": 2.700000047683716
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "rad_s": -0.0020494461059570312
+        },
+        "front_right_ankle": {
+          "rad_s": 0.01650714874267578
+        },
+        "rear_left_ankle": {
+          "rad_s": 0.003274499671533704
+        },
+        "rear_right_ankle": {
+          "rad_s": -0.0029030947480350733
+        }
+      }
+    },
+    "robot_ground": {
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "checked": true,
+      "physical_ground_safe": true,
+      "maximum_collision_penetration_m": 0.0010547553127539244,
+      "root_z_m": 0.09913921356201172,
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "respawn_ready": false
+    },
+    "grounded_reference_valid": false,
+    "grounded_reference_stable": false,
+    "motion_ready": true,
+    "motion_block_reason": "",
+    "respawn_ready": false,
+    "respawn_block_reason": "grounded respawn reference is invalid; grounded respawn reference physics check is invalid; grounded respawn reference is not stable; grounded respawn reference diagnostics were not checked; grounded respawn reference physical contact is not safe",
+    "control_ready": true,
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "wheel_command": {
+      "generation": 3,
+      "command_id": "1370a7c1c472444caaf2f808c2c0a131",
+      "state": "zero_target_applied",
+      "stop_command_received": true,
+      "zero_target_applied": true,
+      "physically_stopped": false,
+      "stale_command_rejected": false,
+      "requested_wall_time": 1785898443.0620394,
+      "enqueued_wall_time": 1785898443.062103,
+      "received_wall_time": 1785898443.070191,
+      "target_applied_wall_time": 1785898443.07269,
+      "measured_stop_wall_time": 0.0,
+      "target_applied_sim_time": 5.6166666666667355,
+      "measured_stop_sim_time": 0.0,
+      "stop_tolerance_rad_s": 0.1,
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": -0.0020494461059570312,
+        "front_right_ankle": 0.01650714874267578,
+        "rear_left_ankle": 0.003274499671533704,
+        "rear_right_ankle": -0.0029030947480350733
+      },
+      "canonical_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "motion_profile": "fixed_100_percent"
+    },
+    "motion_profile": {
+      "mode": "fixed_100_percent",
+      "profile_id": "real-robot-ui-controller-20260626-v1",
+      "servo_velocity_deg_s": 150.0,
+      "wheel_reference_velocity_rad_s": 0.5235987755982988,
+      "wheel_velocity_limit_rad_s": 2.0943951023931953
+    },
+    "motion_batch": {},
+    "physics_dt": 0.008333333333333333,
+    "sim_step_hz": 120.0,
+    "ready_source": "runtime",
+    "last_ready_change_reason": "runtime status",
+    "last_ready_change_message_type": "status",
+    "real_time_factor_lifetime": 1.100557817028591,
+    "real_time_factor_window_samples": 24,
+    "worker_playback": {
+      "active": false,
+      "paused": false,
+      "scheduled": false,
+      "started": false,
+      "plan_id": "",
+      "request_id": "",
+      "worker_session_id": "",
+      "plan_sha256": "",
+      "source_sha256": "",
+      "label": "",
+      "path": "",
+      "index": 0,
+      "count": 0,
+      "event_count": 0,
+      "segment_count": 0,
+      "segment_index": 0,
+      "events_sent": 0,
+      "final_time_s": 0.0,
+      "sim_elapsed_s": 0.0,
+      "wall_elapsed_s": 0.0,
+      "progress": 0.0,
+      "last_event_command": "",
+      "last_event_time": 0.0,
+      "last_event_sim_time_s": 0.0,
+      "max_dispatch_jitter_s": 0.0,
+      "dispatch_clock": "simulation_time",
+      "completed_at": 0.0,
+      "completed_at_sim_time_s": 0.0,
+      "stop_reason": "",
+      "last_error": "",
+      "last_info": "",
+      "first_motion_planned_s": 0.0,
+      "first_command_applied": false,
+      "first_command_applied_sim_time_s": 0.0,
+      "first_command_applied_sim_step": 0,
+      "current_servo_errors": {},
+      "servo_residual_warning_count": 0,
+      "last_servo_residual_warning": {},
+      "progress_detail": {
+        "playback_state": "IDLE",
+        "status_text": "Idle",
+        "current_step_index": 0,
+        "total_steps": 0,
+        "global_command_index": 0,
+        "total_commands": 0,
+        "command_phase": "idle",
+        "last_error": ""
+      },
+      "timing": {}
+    },
+    "worker_session_id": "f940e318706340b48c95bbb48ba7d953",
+    "status_payload_bytes": 9440,
+    "worker_pid": 137612,
+    "worker_returncode": null,
+    "worker": true,
+    "startup_elapsed_s": 26.944812099914998,
+    "connected": true,
+    "ipc_connected": true,
+    "stdout_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785898416182_stdout.log",
+    "stderr_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785898416182_stderr.log",
+    "stdout_tail": [],
+    "stderr_tail": [],
+    "last_meaningful_stdout": "",
+    "last_meaningful_stderr": "",
+    "last_log_activity_at": 1785898441.6498156,
+    "startup_progress_message": "Worker logs are still changing.",
+    "pending_message_count": 0,
+    "pending_send_bytes": 0,
+    "dropped_or_replaced_messages": 0,
+    "error_category": "unknown",
+    "startup_diagnosis": "Worker is ready. If the viewport is black, check viewport camera, renderer warmup, GPU/driver logs, and livestream/headless settings."
+  },
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Obstacle geometry verified at 50.000 mm, width=2.000 m, revision=2, in 0.280s; control ready.",
+    "[INFO] Generate / Update requested for 75 mm.",
+    "[INFO] Obstacle geometry verified at 75.000 mm, width=2.000 m, revision=3, in 0.156s; control ready.",
+    "[INFO] Generate / Update requested for 100 mm.",
+    "[INFO] Obstacle geometry verified at 100.000 mm, width=2.000 m, revision=4, in 0.170s; control ready.",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Obstacle geometry verified at 50.000 mm, width=2.000 m, revision=5, in 0.539s; control ready.",
+    "[INFO] Generate / Update requested for 100 mm.",
+    "[INFO] Obstacle geometry verified at 100.000 mm, width=2.000 m, revision=6, in 0.156s; control ready.",
+    "[INFO] Generate / Update requested for 75 mm.",
+    "[INFO] Obstacle geometry verified at 75.000 mm, width=2.000 m, revision=7, in 0.264s; control ready.",
+    "[WARN] Grounded respawn reference is not valid.",
+    "[WARN] Grounded respawn reference is not valid."
+  ],
+  "ui_closed": true,
+  "worker_reference_cleared": true,
+  "finished_at": 1785898450.058481
+}

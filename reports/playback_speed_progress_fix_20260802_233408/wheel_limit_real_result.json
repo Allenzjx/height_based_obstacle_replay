@@ -1,0 +1,100 @@
+{
+  "started_at": 1785728598.9949615,
+  "success": true,
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785728619.612526,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_SCENE",
+      "completed_at": 1785728620.4256983,
+      "details": {}
+    },
+    {
+      "stage": "START_LIMIT_COMPARE",
+      "completed_at": 1785728621.2314677,
+      "details": {
+        "percent": 100
+      }
+    },
+    {
+      "stage": "WAIT_LIMIT_COMPARE_COMPLETE",
+      "completed_at": 1785728640.09035,
+      "details": {}
+    },
+    {
+      "stage": "START_LIMIT_COMPARE",
+      "completed_at": 1785728640.631386,
+      "details": {
+        "percent": 300
+      }
+    },
+    {
+      "stage": "WAIT_LIMIT_COMPARE_COMPLETE",
+      "completed_at": 1785728653.0466998,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "speed_300_limited_effective": "reports\\playback_speed_progress_fix_20260802_233408\\screenshots\\speed_300_limited_effective.png"
+  },
+  "speed_runs": [],
+  "servo_runs": [],
+  "isaac_pid": 84060,
+  "reused_existing_isaac": false,
+  "physics_dt": 0.008333333333333333,
+  "height_05cm": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+    "step_count": 35,
+    "command_count": 269
+  },
+  "limit_compare_runs": [
+    {
+      "requested_speed_percent": 100,
+      "effective_speed_percent": 100.0,
+      "planned_duration_s": 3.0,
+      "planned_wheel_angle_rad": 3.0,
+      "measured_wheel_angle_rad": 5.766751281451434,
+      "wall_time_s": 18.858879399951547,
+      "command": "wheel all 1"
+    },
+    {
+      "requested_speed_percent": 300,
+      "effective_speed_percent": 209.43951023931953,
+      "planned_duration_s": 1.4323944878270582,
+      "planned_wheel_angle_rad": 3.0,
+      "measured_wheel_angle_rad": 5.866205445956439,
+      "wall_time_s": 11.261148399906233,
+      "command": "wheel all 2.0944"
+    }
+  ],
+  "limit_compare_invariant": {
+    "baseline_100_measured_rad": 5.766751281451434,
+    "limited_300_measured_rad": 5.866205445956439,
+    "deviation_percent": 1.7246133854410528,
+    "tolerance_percent": 10.0
+  },
+  "finished_at": 1785728653.8699038,
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Requested obstacle height 5cm from Isaac subprocess worker.",
+    "[INFO] Scene obstacle update completed at 5cm.",
+    "[INFO] Loaded 35 saved steps for 5cm.",
+    "[PERF] Load steps for current height took 113.1ms manager=adopt_steps 83.0ms",
+    "[WARN] [PERF] UI refresh took 555.1ms",
+    "[PLAYBACK DEBUG] plan label=wheel limit comparison at 100% events=2 final_time=3.000s profile=fast speed=100% first_commands=['wheel all 1', 'wheel stop']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback Respawn requested; wheels stopped.",
+    "[INFO] Playback scheduled in 0.30s: wheel limit comparison at 100%",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=2 last_info=worker playback scheduled: wheel limit comparison at 100% (2 events)",
+    "[PLAYBACK DEBUG] plan label=wheel limit comparison at 300% events=2 final_time=1.432s profile=fast speed=300% first_commands=['wheel all 2.0944', 'wheel stop']",
+    "[INFO] Playback will Respawn from the validated ground reference before replay: ground diagnostics failed; physical ground contact is not safe",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback Respawn requested; wheels stopped.",
+    "[INFO] Playback scheduled in 0.30s: wheel limit comparison at 300%",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=2 last_info=worker playback scheduled: wheel limit comparison at 300% (2 events)",
+    "[WARN] [PERF] UI refresh took 565.2ms"
+  ]
+}

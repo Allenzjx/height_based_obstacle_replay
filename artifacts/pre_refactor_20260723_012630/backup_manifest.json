@@ -1,0 +1,47 @@
+﻿{
+    "stamp":  "20260723_012630",
+    "source_root":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay",
+    "artifact_dir":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\artifacts\\pre_refactor_20260723_012630",
+    "backup_path":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630",
+    "git_repository":  false,
+    "git_bundle_path":  null,
+    "github_push_attempted":  false,
+    "github_push_success":  false,
+    "gh_available":  false,
+    "backup_sha256_manifest":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630\\backup_sha256_manifest.jsonl",
+    "verify_files":  [
+                         {
+                             "relative_path":  "command_model.py",
+                             "backup_path":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630\\command_model.py",
+                             "exists":  true,
+                             "readable":  true,
+                             "size_bytes":  6994,
+                             "sha256":  "8682c8cd4f5ad5830680bbd4a3cf16283a9d1e8cc412710bd9f141c11e7f5892"
+                         },
+                         {
+                             "relative_path":  "sim_ui_controller.py",
+                             "backup_path":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630\\sim_ui_controller.py",
+                             "exists":  true,
+                             "readable":  true,
+                             "size_bytes":  385024,
+                             "sha256":  "92dcc5cc040f4ffd31395525981806cb5773ae1db30d871f6a6095991ce28b53"
+                         },
+                         {
+                             "relative_path":  "saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+                             "backup_path":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+                             "exists":  true,
+                             "readable":  true,
+                             "size_bytes":  374808,
+                             "sha256":  "66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8"
+                         },
+                         {
+                             "relative_path":  "saved_height_steps\\height_10cm\\accepted_steps.jsonl",
+                             "backup_path":  "C:\\robotics_sim\\wlr_robot\\_backups\\height_based_obstacle_replay_pre_refactor_20260723_012630\\saved_height_steps\\height_10cm\\accepted_steps.jsonl",
+                             "exists":  true,
+                             "readable":  true,
+                             "size_bytes":  181390,
+                             "sha256":  "1132b160e4e6e937e060285344d1ae3608b2f749fc28dce24aae26def5f005f5"
+                         }
+                     ],
+    "backup_verified":  true
+}

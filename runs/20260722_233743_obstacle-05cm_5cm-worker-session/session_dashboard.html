@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5cm worker session</title>
+<style>
+body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 24px; background: #f7f7f4; color: #202124; }
+h1 { font-size: 24px; margin: 0 0 16px; }
+h2 { font-size: 18px; margin-top: 28px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.metric { border: 1px solid #d7d7d0; border-radius: 8px; padding: 12px; background: white; }
+.metric b { display: block; font-size: 12px; color: #5d6368; font-weight: 600; }
+.metric span { font-size: 20px; }
+img { max-width: 100%; border: 1px solid #d7d7d0; background: white; }
+table { border-collapse: collapse; width: 100%; background: white; }
+th, td { border: 1px solid #ddd; padding: 6px 8px; font-size: 12px; text-align: left; vertical-align: top; }
+th { background: #efefea; }
+code { background: #eeeeea; padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>5cm worker session</h1>
+<div class="grid"><div class="metric"><b>Samples</b><span>19</span></div><div class="metric"><b>Joint Rows</b><span>228</span></div><div class="metric"><b>Contact Rows</b><span>76</span></div><div class="metric"><b>Events</b><span>10</span></div><div class="metric"><b>Min Static Margin</b><span>0.1984m</span></div><div class="metric"><b>Min Dynamic Margin</b><span>0.1985m</span></div><div class="metric"><b>Max Torque Util</b><span>1</span></div><div class="metric"><b>Mean Overhead</b><span>12ms</span></div><div class="metric"><b>Data Quality</b><span>WARN</span></div></div>
+<h2>Figures</h2>
+<section><img src="figures/summary.png" alt="summary"></section>
+<section><img src="figures/stability_report.png" alt="stability_report"></section>
+<section><img src="figures/joint_report.png" alt="joint_report"></section>
+<section><img src="figures/contact_report.png" alt="contact_report"></section>
+<h2>Stability Summary</h2>
+<table><tbody><tr><th>body_com_sample_count</th><td>247</td></tr>
+<tr><th>contact_sample_count</th><td>76</td></tr>
+<tr><th>dropped_samples</th><td>0</td></tr>
+<tr><th>duration_sim_s</th><td>0.4499999999999984</td></tr>
+<tr><th>duration_wall_s</th><td>8.468330383300781</td></tr>
+<tr><th>event_count</th><td>10</td></tr>
+<tr><th>event_severity_counts</th><td>{&quot;info&quot;: 2, &quot;warning&quot;: 8}</td></tr>
+<tr><th>joint_sample_count</th><td>228</td></tr>
+<tr><th>max_contact_force_n</th><td>NaN</td></tr>
+<tr><th>max_sample_overhead_ms</th><td>155.64000001177192</td></tr>
+<tr><th>max_torque_utilization</th><td>1.0</td></tr>
+<tr><th>mean_sample_overhead_ms</th><td>11.99996843321347</td></tr>
+<tr><th>min_dynamic_margin_m</th><td>0.19849997005495126</td></tr>
+<tr><th>min_equilibrium_margin_m</th><td>NaN</td></tr>
+<tr><th>min_static_margin_m</th><td>0.1983984028192038</td></tr>
+<tr><th>sample_count</th><td>19</td></tr>
+<tr><th>stability_state_counts</th><td>{&quot;safe&quot;: 19}</td></tr></tbody></table>
+<h2>Data Quality Verdict</h2>
+<table><tbody><tr><th>Overall Verdict</th><td>&quot;WARN&quot;</td></tr>
+<tr><th>Stability Conclusion</th><td>&quot;Stability metrics are usable with warnings&quot;</td></tr>
+<tr><th>Static Baseline</th><td>{&quot;sample_count&quot;: 19, &quot;duration_s&quot;: 0.4499999999999984, &quot;com_jitter_xy_m&quot;: 0.00011950783029678405, &quot;com_z_range_m&quot;: 4.3628521320809854e-05, &quot;static_margin_mean_m&quot;: 0.1983995361318584, &quot;static_margin_std_m&quot;: 3.6112203986540666e-07, &quot;support_area_mean_m2&quot;: 0.2223080361969151, &quot;support_area_std_m2&quot;: 3.079769425864938e-05}</td></tr>
+<tr><th>Dynamic Consistency</th><td>{&quot;dynamic_margin_mean_m&quot;: 0.19850802830832734, &quot;dynamic_margin_std_m&quot;: 6.704956931797792e-06, &quot;equilibrium_margin_mean_m&quot;: null, &quot;equilibrium_margin_std_m&quot;: null, &quot;max_torque_utilization&quot;: 1.0, &quot;max_contact_normal_force_n&quot;: null, &quot;finite_torque_rows&quot;: 228, &quot;finite_contact_rows&quot;: 0}</td></tr></tbody></table><h3>Warnings</h3><ul><li>equilibrium stability margin unavailable</li><li>contact normal forces unavailable</li></ul>
+<h2>Recent Events</h2>
+<table><thead><tr><th>Time</th><th>Severity</th><th>Type</th><th>Message</th></tr></thead><tbody><tr><td>0s</td><td>info</td><td>telemetry_started</td><td>Telemetry run started: 5cm worker session</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>torque_limit_warning</td><td>rear_right_hip torque utilization exceeded threshold</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>joint_position_limit_warning</td><td>front_left_knee is close to position limit</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>joint_position_limit_warning</td><td>front_right_knee is close to position limit</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>joint_position_limit_warning</td><td>rear_left_knee is close to position limit</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>joint_position_limit_warning</td><td>rear_right_knee is close to position limit</td></tr>
+<tr><td>1.308s</td><td>warning</td><td>torque_limit_warning</td><td>front_right_ankle torque utilization exceeded threshold</td></tr>
+<tr><td>1.608s</td><td>warning</td><td>torque_limit_warning</td><td>front_left_hip torque utilization exceeded threshold</td></tr>
+<tr><td>1.658s</td><td>warning</td><td>torque_limit_warning</td><td>rear_left_ankle torque utilization exceeded threshold</td></tr>
+<tr><td>1.758s</td><td>info</td><td>telemetry_finished</td><td>worker shutdown</td></tr></tbody></table>
+<h2>Files</h2>
+<table><tbody>
+<tr><th>Run Directory</th><td><code>C:\robotics_sim\wlr_robot\height_based_obstacle_replay\runs\20260722_233743_obstacle-05cm_5cm-worker-session</code></td></tr>
+<tr><th>Telemetry CSV</th><td><code>telemetry_samples.csv</code></td></tr>
+<tr><th>Body COM CSV</th><td><code>body_com_timeseries.csv</code></td></tr>
+<tr><th>Joint CSV</th><td><code>joint_timeseries.csv</code></td></tr>
+<tr><th>Contacts CSV</th><td><code>contacts.csv</code></td></tr>
+<tr><th>Events JSONL</th><td><code>events.jsonl</code></td></tr>
+<tr><th>Model Audit</th><td><code>model_audit.json</code></td></tr>
+</tbody></table>
+</body>
+</html>

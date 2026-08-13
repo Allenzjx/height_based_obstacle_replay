@@ -1,0 +1,33 @@
+{
+  "dynamic_consistency": {
+    "dynamic_margin_mean_m": 0.048580742330802715,
+    "dynamic_margin_std_m": 0.07900269231082938,
+    "equilibrium_margin_mean_m": 0.05096552739556331,
+    "equilibrium_margin_std_m": 0.06860645377512174,
+    "finite_contact_rows": 0,
+    "finite_torque_rows": 6600,
+    "max_contact_normal_force_n": null,
+    "max_torque_utilization": 1.0
+  },
+  "overall_verdict": "WARN",
+  "schema": "telemetry.data_quality.v1",
+  "sources": {
+    "contacts": "C:\\robotics_sim\\wlr_robot\\runs\\20260722_220107_obstacle-00cm_0cm-worker-session\\contacts.csv",
+    "joints": "C:\\robotics_sim\\wlr_robot\\runs\\20260722_220107_obstacle-00cm_0cm-worker-session\\joint_timeseries.csv",
+    "telemetry_samples": "C:\\robotics_sim\\wlr_robot\\runs\\20260722_220107_obstacle-00cm_0cm-worker-session\\telemetry_samples.csv"
+  },
+  "stability_conclusion": "Stability metrics are usable with warnings",
+  "static_baseline": {
+    "com_jitter_xy_m": 0.2522861590328783,
+    "com_z_range_m": 0.06402464938615719,
+    "duration_s": 15.041666666666439,
+    "sample_count": 550,
+    "static_margin_mean_m": 0.04840770572172537,
+    "static_margin_std_m": 0.07855300660607144,
+    "support_area_mean_m2": 0.1371436911875513,
+    "support_area_std_m2": 0.06654559561491778
+  },
+  "warnings": [
+    "contact normal forces unavailable"
+  ]
+}

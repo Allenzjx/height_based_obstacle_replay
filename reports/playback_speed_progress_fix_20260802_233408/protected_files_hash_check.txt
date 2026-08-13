@@ -1,0 +1,8 @@
+Protected file audit: PASS
+Baseline file count: 65
+Final file count checked: 65
+Length differences: 0
+SHA-256 differences: 0
+Missing files: 0
+
+Scope includes formal saved_height_steps, accepted/history command data, saved_sequences, and USD/URDF files under C:\robotics_sim\wlr_robot captured before source edits.

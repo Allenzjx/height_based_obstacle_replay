@@ -1,0 +1,49 @@
+{
+  "dashboard": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\dashboard.html",
+  "data_quality": {
+    "dynamic_consistency": {
+      "dynamic_margin_mean_m": 0.19850802830832734,
+      "dynamic_margin_std_m": 6.704956931797792e-06,
+      "equilibrium_margin_mean_m": null,
+      "equilibrium_margin_std_m": null,
+      "finite_contact_rows": 0,
+      "finite_torque_rows": 228,
+      "max_contact_normal_force_n": null,
+      "max_torque_utilization": 1.0
+    },
+    "overall_verdict": "WARN",
+    "schema": "telemetry.data_quality.v1",
+    "sources": {
+      "contacts": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\contacts.csv",
+      "joints": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\joint_timeseries.csv",
+      "telemetry_samples": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\telemetry_samples.csv"
+    },
+    "stability_conclusion": "Stability metrics are usable with warnings",
+    "static_baseline": {
+      "com_jitter_xy_m": 0.00011950783029678405,
+      "com_z_range_m": 4.3628521320809854e-05,
+      "duration_s": 0.4499999999999984,
+      "sample_count": 19,
+      "static_margin_mean_m": 0.1983995361318584,
+      "static_margin_std_m": 3.6112203986540666e-07,
+      "support_area_mean_m2": 0.2223080361969151,
+      "support_area_std_m2": 3.079769425864938e-05
+    },
+    "warnings": [
+      "equilibrium stability margin unavailable",
+      "contact normal forces unavailable"
+    ]
+  },
+  "figures": [
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\figures\\summary.png",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\figures\\stability_report.png",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\figures\\joint_report.png",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\figures\\contact_report.png"
+  ],
+  "html_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\session_dashboard.html",
+  "ok": true,
+  "plot_backend": "matplotlib",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session",
+  "session_dashboard": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\session_dashboard.html",
+  "session_summary_png": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\runs\\20260722_233743_obstacle-05cm_5cm-worker-session\\session_summary.png"
+}

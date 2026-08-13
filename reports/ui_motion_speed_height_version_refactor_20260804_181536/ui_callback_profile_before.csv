@@ -1,0 +1,4 @@
+callback,samples,average_ms,p95_ms,max_ms,source
+wheel_stop,20,UNAVAILABLE,20.263,20.9642,prior real GUI baseline
+Generate Height UI operation,7,29977.3,50415.0,50415.0,pre-change height generation timing; worker work blocked completion
+Save New Version,legacy synchronous path,UNVERIFIED,UNVERIFIED,>100 observed in regression logs,pre-change synchronous persistence

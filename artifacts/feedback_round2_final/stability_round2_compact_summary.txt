@@ -1,0 +1,73 @@
+summary_file=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\stability_round2_final.json
+ok=True elapsed_s=186.359 hard_errors=0
+expected_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps\height_05cm\accepted_steps.jsonl
+expected_size=374808 sha256=66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8 steps=35 events=159 duration_s=278.8720000004396
+visible_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps\height_05cm\accepted_steps.jsonl
+visible_size=374808 sha256=66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8 steps=35 events=159 duration_s=278.8720000004396 loaded=True read_only=True last_error=
+stability_state=REPORT_READY validation_state=PASS validated_height_cm=5
+playback_current=269 playback_total=269 playback_progress=1.0
+report_path=C:\robotics_sim\wlr_robot\runs\20260722_233120_obstacle-00cm_0cm-worker-session\session_dashboard.html
+stages:
+WAIT_RUNTIME	ok	20.672	
+OPEN_STABILITY_TAB	ok	0.422	
+START_STABILITY_TASK	ok	0.797	waiting for user obstacle generation
+WAIT_TASK_READY	ok	0.047	
+SET_GENERATED_MODE	ok	0.687	
+SELECT_5CM	ok	0.047	
+GENERATE_OBSTACLE	ok	0.500	waiting for worker obstacle ack
+WAIT_OBSTACLE_ACK	ok	6.265	
+WAIT_FRESH_FRAME	ok	0.110	
+WAIT_STABLE_5CM_DETECTION	ok	2.953	
+VALIDATE_5CM	ok	0.297	
+WAIT_VALIDATION_PASS	ok	0.500	
+WAIT_EXACT_5CM_STEPS	ok	0.313	
+PREVIEW_STEPS	ok	0.281	
+VERIFY_CENTRAL_TREE_POPULATED	ok	0.484	
+SELECT_FIRST_STEP	ok	0.437	
+VERIFY_STEP_SUMMARY	ok	0.390	
+VERIFY_JOINT_SELECTOR	ok	0.172	
+VERIFY_TELEMETRY_VALIDITY_AND_UNITS	ok	0.343	
+EXPORT_STEPS	ok	0.266	
+START_PLAYBACK	ok	0.610	
+WAIT_PLAYBACK_STARTED	ok	0.859	
+WAIT_LIVE_PROGRESS	ok	0.484	
+WAIT_PLAYBACK_COMPLETE	ok	135.781	
+FINISH_TASK	ok	0.563	
+WAIT_REPORT_READY	ok	5.406	
+OPEN_REPORT	ok	0.922	
+SAVE_ARTIFACTS	ok	0.625	
+SHUTDOWN	ok	0.547	
+telemetry:
+active_contact_count_label=4 (geometry-estimated)
+contact_force_valid=False
+contact_force_source=disabled
+contact_force_reason=contact sensor disabled or unavailable; support contacts are geometry-estimated
+friction_utilization_valid=False
+friction_utilization_reason=friction utilization requires valid normal and tangential contact forces
+wheel_slip_state=idle_deadband
+equilibrium_status=contact_forces_unavailable
+equilibrium_margin_valid=False
+equilibrium_reason=contact_forces_unavailable
+joint_catalog_count=12
+joint=front_left_hip kind=servo commandable=True available=True source=telemetry_articulation id=0
+joint=front_left_knee kind=servo commandable=True available=True source=telemetry_articulation id=4
+joint=front_right_hip kind=servo commandable=True available=True source=telemetry_articulation id=1
+joint=front_right_knee kind=servo commandable=True available=True source=telemetry_articulation id=5
+joint=rear_left_hip kind=servo commandable=True available=True source=telemetry_articulation id=2
+joint=rear_left_knee kind=servo commandable=True available=True source=telemetry_articulation id=6
+joint=rear_right_hip kind=servo commandable=True available=True source=telemetry_articulation id=3
+joint=rear_right_knee kind=servo commandable=True available=True source=telemetry_articulation id=7
+joint=front_left_ankle kind=wheel commandable=True available=True source=telemetry_articulation id=8
+joint=front_right_ankle kind=wheel commandable=True available=True source=telemetry_articulation id=9
+joint=rear_left_ankle kind=wheel commandable=True available=True source=telemetry_articulation id=10
+joint=rear_right_ankle kind=wheel commandable=True available=True source=telemetry_articulation id=11
+artifact_artifact_dir=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e
+artifact_summary_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\stability_round2_final.json
+artifact_stability_report_path=C:\robotics_sim\wlr_robot\runs\20260722_233120_obstacle-00cm_0cm-worker-session\session_dashboard.html
+artifact_stability_steps_export_dir=C:\robotics_sim\wlr_robot\runs\20260722_233120_obstacle-00cm_0cm-worker-session\trials\trial_001\steps
+artifact_main_stability_task=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\main_stability_task.png
+artifact_live_dashboard_during_playback=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\live_dashboard_during_playback.png
+artifact_live_dashboard_trial_complete=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\live_dashboard_trial_complete.png
+artifact_final_report=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\final_report.png
+artifact_e2e_log=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\e2e_log.txt
+artifact_worker_log=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\worker_log.txt

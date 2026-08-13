@@ -1,0 +1,54 @@
+FINAL RESULT: PASS
+
+Repository baseline
+- git status: not a git repository (exit 128); no reset/clean/checkout was used.
+- existing matching Isaac/project worker at start: none.
+- existing playback at start: none.
+
+Automated commands
+1. python -m unittest tests.test_servo_wheel_staging tests.test_workflow_regressions tests.test_critical_knee_fast_ui_speed_fix -v
+   PASS: 25 tests
+2. python -m unittest tests.test_sim_process_client tests.test_critical_knee_fast_ui_speed_fix -v
+   PASS: 13 tests
+3. python -m unittest tests.test_physx_joint_limit_units tests.test_no_physx_limit_by_default tests.test_critical_knee_fast_ui_speed_fix -v
+   PASS: 12 tests
+4. python -m unittest discover -s tests -p "test_*.py" -v
+   PASS: 201 tests in 15.373s; no traceback except intentionally injected save-error logging asserted by the test.
+5. python -m unittest discover -s tests -p "test_*.py"
+   FINAL REPEAT AFTER VISIBLE -60 EVIDENCE PATCH: 201 tests PASS in 4.574s.
+6. python -m py_compile servo_speed_invariant_e2e.py && python -m unittest discover -s tests -p "test_*.py"
+   FINAL REPEAT AFTER FOUR-SPEED SERVO EVIDENCE: compile PASS; 201 tests PASS in 13.181s.
+
+Real visible GUI / Isaac commands
+1. python playback_speed_progress_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\real_isaac --timeout-s 600
+   PASS; PID 169796; new process, not reused; physics_dt=0.008333333333333333; clean shutdown.
+2. python knee_limit_real_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\real_knee_visible_minus60 --timeout-s 600
+   PASS; PID 4820; new process, not reused; physics_dt=0.008333333333333333; clean shutdown.
+3. python record_play_equivalence_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\real_record_play --timeout-s 600
+   PASS on final run; PID 19980; new process, not reused; physics_dt=0.008333333333333333; clean shutdown.
+4. python servo_speed_invariant_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\real_servo_speed --timeout-s 600
+   PASS on final run; PID 20016; new process, not reused; physics_dt=0.008333333333333333; max endpoint error=0.0222843deg; clean shutdown.
+
+Diagnostic failure retained in evidence history
+- First record/play attempt PID 136476 stopped cleanly after Windows non-blocking socket WSAEWOULDBLOCK during large restore state send. Root cause was fixed with an offset-preserving non-blocking send buffer; the final run passed. The failed result was overwritten by the final result JSON, while the test narrative is preserved here.
+
+Final runtime/process audit
+- no Python Isaac worker/project E2E process remained.
+- workers were always sequential; a second Isaac/worker was never started concurrently.
+- latest knee worker stderr contained no setLimitParams, runtime joint write, or dynamic prim resolution error.
+
+Protected data audit
+- 65 protected files checked by original length and SHA-256.
+- mismatch_count=0.
+- Includes saved_height_steps, accepted_steps/commands, histories, saved_sequences, USD and URDF assets selected at baseline.
+- No servo calibration, joint mapping, wheel mapping, physics parameter, obstacle geometry, or formal recording timestamp/command/target was changed.
+
+Artifacts
+- knee CSV: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\knee_limit_validation.csv
+- timing CSV: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\raw_vs_fast_timing.csv
+- speed CSV: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\speed_accuracy.csv
+- record/play CSV: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\record_play_equivalence.csv
+- UI profiles: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\ui_callback_profile_before.csv ; C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\ui_callback_profile_after.csv
+- save evidence: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\save_persistence_test.txt
+- screenshots: see report directory and real_isaac/real_knee_visible_minus60/real_record_play subdirectories.
+- video: not produced; project had no recording tool and no dependency was installed.

@@ -1,0 +1,5 @@
+joint_name,recording_speed_percent,playback_speed_percent,recording_servo_target_deg,servo_endpoint_difference_deg,recording_wheel_displacement_rad,playback_wheel_displacement_rad,wheel_displacement_difference_rad,recording_motion_duration_s,playback_motion_duration_s,duration_difference_s,recording_timing_source,wheel_displacement_source,speed_scale_application_count,pass
+front_left_ankle,200,200,15.0,0.0326431815907835,-3.6600377950817347,-3.699805798009038,0.039768002927303314,1.5416666666666614,1.5416666666666614,0.0,simulation_time,articulation_joint_state,1,True
+front_right_ankle,200,200,15.0,0.0326431815907835,3.67293169721961,3.709613438695669,0.03668174147605896,1.5416666666666614,1.5416666666666614,0.0,simulation_time,articulation_joint_state,1,True
+rear_left_ankle,200,200,15.0,0.0326431815907835,-3.575723886489868,-3.613746017217636,0.038022130727767944,1.5416666666666614,1.5416666666666614,0.0,simulation_time,articulation_joint_state,1,True
+rear_right_ankle,200,200,15.0,0.0326431815907835,3.664081145077944,3.7043066322803497,0.04022548720240593,1.5416666666666614,1.5416666666666614,0.0,simulation_time,articulation_joint_state,1,True

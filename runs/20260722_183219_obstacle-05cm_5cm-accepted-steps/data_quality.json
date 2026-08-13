@@ -1,0 +1,31 @@
+{
+  "dynamic_consistency": {
+    "dynamic_margin_mean_m": 0.08437254781657182,
+    "dynamic_margin_std_m": 0.12936504457455025,
+    "equilibrium_margin_mean_m": 0.1129943667420768,
+    "equilibrium_margin_std_m": 0.09682066904989486,
+    "finite_contact_rows": 1540,
+    "finite_torque_rows": 2231,
+    "max_contact_normal_force_n": 23.835145950317383,
+    "max_torque_utilization": 1.0
+  },
+  "overall_verdict": "PASS",
+  "schema": "telemetry.data_quality.v1",
+  "sources": {
+    "contacts": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\contacts.csv",
+    "joints": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\joint_timeseries.csv",
+    "telemetry_samples": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\telemetry_samples.csv"
+  },
+  "stability_conclusion": "Stability metrics are usable",
+  "static_baseline": {
+    "com_jitter_xy_m": 0.24119690496648827,
+    "com_z_range_m": 0.014085070077978878,
+    "duration_s": 15.049999999999729,
+    "sample_count": 603,
+    "static_margin_mean_m": 0.08436280892407694,
+    "static_margin_std_m": 0.12921150738011394,
+    "support_area_mean_m2": 0.14118499751110133,
+    "support_area_std_m2": 0.09171539565360773
+  },
+  "warnings": []
+}

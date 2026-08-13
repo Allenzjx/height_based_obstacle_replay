@@ -1,0 +1,11 @@
+﻿current_state,play_all,play_selected,open_run,update_run,save_as_new
+IDLE,Allow,Allow if selected,Allow,Allow if dirty,Allow
+Dirty sequence,Allow,Allow,Prompt,Allow,Allow
+Combobox selection only,Allow current run,Allow current run,Allow pending run,Current run only,Current working copy
+Recording,Block,Block,Block,Block,Block
+Pending recorded step,Block,Block,Block,Block,Block
+Scene Update,Block,Block,Block,Block,Block
+Respawn,Block,Block,Block,Block,Block
+Real Playback active,Block,Block,Block,Block,Block
+Completed worker/stale local,Reconcile then Allow,Reconcile then Allow,Allow,Allow,Allow
+Dirty Servo-Wheel staging,Explicit block,Explicit block,Prompt/block,Allow only if safe,Allow only if safe

@@ -1,0 +1,36 @@
+FINAL RESULTS
+
+1) python -m unittest tests.test_selected_step_previous_saved_state tests.test_play_selected_playback -v
+   PASS — 19 tests in 1.016s; traceback: none.
+
+2) python -m unittest discover -s tests -v
+   PASS — 226 tests in 7.452s; traceback: none.
+   Complete earlier captured console log: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\selected_step_previous_saved_state_fix_20260805_163219\unittest_output.txt
+
+3) python -m py_compile selected_step_previous_saved_state_e2e.py
+   PASS.
+
+4) git diff --check
+   PASS; only Git CRLF conversion notices, no whitespace errors.
+
+5) python selected_step_previous_saved_state_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\selected_step_previous_saved_state_fix_20260805_163219\real_isaac_ui_final
+   PASS — visible Isaac Sim 5.1.0; result success=true; traceback: none.
+   Isaac PID: 143148
+   Worker session: aa7a27ed61224f7f977d0d0a71d74790
+   Existing process reused: False
+   A second concurrent Isaac was not started.
+   UI closed: True
+   Worker reference cleared: True
+   Matching project Isaac/Kit processes after exit: 0
+
+E2E harness history (preserved for audit):
+- real_isaac: product Raw/Fast passed; harness advanced on stale completed plan and failed at Step1 start. Harness plan-ID matching corrected.
+- real_isaac_retry: product paths through Stop passed; harness treated the successful void recording-start API as false. Harness state assertion corrected.
+- real_isaac_final: complete PASS. These two earlier failures were validation-script assertions, not product restore failures.
+- real_isaac_ui_final: complete PASS with actual Tk button.invoke() for Play Selected Step, Play Selected Fast, Step 1 Fast, and Stop Play; this is the authoritative final run.
+
+Protected saved data:
+- 71 files compared by SHA-256; changed/missing: 0.
+- Formal source: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps\height_05cm\accepted_steps.jsonl
+- SHA-256 before: 66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8
+- SHA-256 after:  66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8

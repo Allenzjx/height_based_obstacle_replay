@@ -1,0 +1,100 @@
+{
+  "created_at": "2026-08-03T01:58:27-04:00",
+  "height_interval_cm": 5,
+  "heights": {
+    "0": {
+      "folder": "height_00cm",
+      "height_cm": 0,
+      "height_m": 0.0,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_00cm\\accepted_steps.jsonl"
+    },
+    "10": {
+      "folder": "height_10cm",
+      "height_cm": 10,
+      "height_m": 0.1,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_10cm\\accepted_steps.jsonl"
+    },
+    "15": {
+      "folder": "height_15cm",
+      "height_cm": 15,
+      "height_m": 0.15,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_15cm\\accepted_steps.jsonl"
+    },
+    "20": {
+      "folder": "height_20cm",
+      "height_cm": 20,
+      "height_m": 0.2,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_20cm\\accepted_steps.jsonl"
+    },
+    "25": {
+      "folder": "height_25cm",
+      "height_cm": 25,
+      "height_m": 0.25,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_25cm\\accepted_steps.jsonl"
+    },
+    "30": {
+      "folder": "height_30cm",
+      "height_cm": 30,
+      "height_m": 0.3,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_30cm\\accepted_steps.jsonl"
+    },
+    "35": {
+      "folder": "height_35cm",
+      "height_cm": 35,
+      "height_m": 0.35,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_35cm\\accepted_steps.jsonl"
+    },
+    "40": {
+      "folder": "height_40cm",
+      "height_cm": 40,
+      "height_m": 0.4,
+      "last_saved_at": "",
+      "recorded": false,
+      "step_count": 0,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_40cm\\accepted_steps.jsonl"
+    },
+    "5": {
+      "folder": "height_05cm",
+      "height_cm": 5,
+      "height_m": 0.05,
+      "last_saved_at": "2026-08-03T02:02:41-04:00",
+      "recorded": true,
+      "step_count": 1,
+      "steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_05cm\\accepted_steps.jsonl"
+    }
+  },
+  "schema_version": 1,
+  "supported_heights_cm": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40
+  ],
+  "updated_at": "2026-08-03T02:02:41-04:00"
+}

@@ -1,0 +1,12 @@
+# Real visible GUI/Isaac screenshots
+
+- main_ui: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\main_ui.png`
+- speed_scale: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\speed_scale.png`
+- height_and_versions: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\height_and_versions.png`
+- wider_obstacle: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\wider_obstacle.png`
+- generate_control_ready: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\generate_control_ready.png`
+- servo_wheel_simultaneous: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\servo_wheel_simultaneous.png`
+- four_knees_minus_60: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\four_knees_minus_60.png`
+- two_immutable_versions: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\screenshots\two_immutable_versions.png`
+
+Short validation animation: `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\validation_motion.gif`

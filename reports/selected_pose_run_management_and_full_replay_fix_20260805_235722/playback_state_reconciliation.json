@@ -1,0 +1,53 @@
+{
+  "covered_automatic_cases": [
+    "local active=True / worker inactive",
+    "local operation=PLAYBACK / worker complete",
+    "expired start_requested",
+    "expired pending Selected restore",
+    "worker error / inactive",
+    "stale plan or request identity"
+  ],
+  "non_conflicts": [
+    "step selection",
+    "pending Run combobox selection",
+    "tab selection",
+    "dirty current Run"
+  ],
+  "policy": "Only fresh matching worker activity or a live matching start/restore deadline retains Playback ownership.",
+  "real_gui_selection_independence": {
+    "operation": "IDLE",
+    "readiness_after": [
+      true,
+      ""
+    ],
+    "readiness_before": [
+      true,
+      ""
+    ],
+    "revision_unchanged": true,
+    "selected_step_index": 7,
+    "version_unchanged": true
+  },
+  "real_gui_stale_reconciliation": {
+    "automatic": false,
+    "checked_at": 1785995602.0185316,
+    "local_active": true,
+    "local_plan_id": "stale-local-plan",
+    "local_request_id": "stale-local-request",
+    "local_start_requested": true,
+    "local_worker_managed": true,
+    "operation_after": "IDLE",
+    "operation_before": "PLAYBACK",
+    "pending_selected_restore": false,
+    "reason": "local active while worker inactive; expired local start_requested; stale PLAYBACK operation ownership; stale worker-managed identity",
+    "reconciled": true,
+    "status_age_s": 0.2713939000386745,
+    "worker_active": false,
+    "worker_paused": false,
+    "worker_plan_id": "",
+    "worker_request_id": "",
+    "worker_session_id": "",
+    "worker_stop_reason": ""
+  },
+  "result": "PASS"
+}

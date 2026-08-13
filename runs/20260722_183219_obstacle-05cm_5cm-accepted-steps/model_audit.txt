@@ -1,0 +1,9 @@
+Height Replay Telemetry Model Audit
+Isaac Lab: 2.3.2
+Robot USD: C:\robotics_sim\wlr_robot\usd\wlr_robot_drive_test.usd
+Bodies: 13
+Joints: 12
+ContactSensor available: True
+
+Warnings:
+- none

@@ -1,0 +1,132 @@
+{
+  "artifacts": {
+    "depth": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_depth.pgm",
+    "diagnostic": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_diagnostic.ppm",
+    "obstacle_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_obstacle_mask.pgm",
+    "rgb": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_rgb.ppm",
+    "roi_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_roi_mask.pgm",
+    "top_plane_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_top_plane_mask.pgm"
+  },
+  "camera_backend_class": "Camera",
+  "camera_backend_module": "isaaclab.sensors.camera.camera",
+  "camera_health": {
+    "backend_class": "Camera",
+    "backend_module": "isaaclab.sensors.camera.camera",
+    "camera_pose_available": true,
+    "camera_prim_path": "/World/WLRRobot/base_link/onboard_rgbd_camera",
+    "camera_prim_type": "Camera",
+    "camera_prim_valid": true,
+    "checked": true,
+    "depth_available": true,
+    "depth_dtype": "float32",
+    "depth_fingerprint": "29d14e26a3742893",
+    "depth_finite_ratio": 0.7621560534591195,
+    "depth_max_m": 2.6000397205352783,
+    "depth_median_m": 0.803888201713562,
+    "depth_min_m": 0.4928312301635742,
+    "depth_positive_ratio": 0.7621560534591195,
+    "depth_shape": [
+      240,
+      424
+    ],
+    "depth_std_m": 0.4864283504003403,
+    "frame_age_s": 0.0,
+    "frame_revision": 320,
+    "frames_advanced_during_check": 2,
+    "intrinsics_available": true,
+    "intrinsics_valid": true,
+    "is_isaaclab_camera": true,
+    "ok": true,
+    "parent_has_rigid_body_api": true,
+    "parent_prim_path": "/World/WLRRobot/base_link",
+    "parent_prim_valid": true,
+    "reasons": [
+      "depth fingerprint unchanged during check; static scene may be okay, but verify if robot or scene moved"
+    ],
+    "rgb_available": true,
+    "rgb_dtype": "uint8",
+    "rgb_shape": [
+      240,
+      424,
+      3
+    ],
+    "stale_frame": false
+  },
+  "camera_prim_path": "/World/WLRRobot/base_link/onboard_rgbd_camera",
+  "camera_world_pose": {
+    "pos_w": [
+      0.3461076319217682,
+      -3.2107491279020905e-05,
+      0.282201886177063
+    ],
+    "quat_w": [
+      0.43817344307899475,
+      -0.5547992587089539,
+      0.5550462603569031,
+      -0.43832117319107056
+    ]
+  },
+  "candidate_height_cm": 5,
+  "confidence": 0.9804417294286674,
+  "depth_finite_ratio": 0.7621560534591195,
+  "depth_shape": [
+    240,
+    424
+  ],
+  "expected_height_cm": 5,
+  "failure_reasons": [],
+  "frame_revision": 378,
+  "height_validation": {
+    "absolute_error_cm": 0.14300473336075648,
+    "absolute_error_mm": 1.4300473336075648,
+    "candidate_height_cm": 5,
+    "checked": true,
+    "confidence": 0.9804430580662673,
+    "detected_height_cm": 5,
+    "detection_revision": 4,
+    "expected_height_cm": 5,
+    "frame_revision": 320,
+    "passed": true,
+    "quantization_error_cm": 0.14300473336075648,
+    "raw_height_cm": 5.1430047333607565,
+    "reasons": [],
+    "relative_error_percent": 2.8600946672151295,
+    "stable": true,
+    "stable_count": 7,
+    "stable_required": 5,
+    "timestamp": 1784004601.1993508,
+    "top_plane_mad_m": 6.725401054552549e-05,
+    "valid_point_count": 18731
+  },
+  "intrinsics": [
+    [
+      485.6120300292969,
+      0.0,
+      212.0
+    ],
+    [
+      0.0,
+      485.6120300292969,
+      120.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "is_isaaclab_camera": true,
+  "parent_prim_path": "/World/WLRRobot/base_link",
+  "quantization_error_cm": 0.14300595884877865,
+  "raw_height_cm": 5.143005958848779,
+  "rgb_shape": [
+    240,
+    424,
+    3
+  ],
+  "stable_count": 7,
+  "stable_detected_height_cm": 5,
+  "top_plane_mad_m": 6.729116556192238e-05,
+  "valid_point_count": 18731,
+  "validation_pass": true
+}

@@ -1,0 +1,62 @@
+{
+  "formal_run": {
+    "accepted_steps_sha256_after_fast": "2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f",
+    "accepted_steps_sha256_after_raw": "2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f",
+    "accepted_steps_sha256_before": "2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f",
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v006_20260805_233948_654778_manual",
+    "run_id": "v006_20260805_233948_654778_manual",
+    "source_commands": 74,
+    "source_events": 74,
+    "source_steps": 12
+  },
+  "profiles": {
+    "fast": {
+      "active": false,
+      "events": [
+        78,
+        78
+      ],
+      "final_global_command": 78,
+      "next_play_available": true,
+      "operation": "IDLE",
+      "plan_sha256": "4e355f49c91edfd1a750dc4237b450e9fec7d313c4b1db6b3b82cb362e2e573e",
+      "segments": [
+        62,
+        62
+      ],
+      "steps": [
+        12,
+        12
+      ],
+      "stop_reason": "complete",
+      "success": true,
+      "wheels_stopped": true,
+      "worker_pid": 19924,
+      "worker_session_id": "18425ff82fe546f28309597eae624cc2"
+    },
+    "raw": {
+      "active": false,
+      "events": [
+        78,
+        78
+      ],
+      "final_global_command": 78,
+      "next_play_available": true,
+      "operation": "IDLE",
+      "plan_sha256": "244cb226433fd62cb4b0ab1bd3b1b7d455ddb7eef3b1d5c7bfc213f1344fff18",
+      "segments": [
+        62,
+        62
+      ],
+      "steps": [
+        12,
+        12
+      ],
+      "stop_reason": "complete",
+      "success": true,
+      "wheels_stopped": true,
+      "worker_pid": 126996,
+      "worker_session_id": "aea628e1f6b94627ac73945c6670ec98"
+    }
+  }
+}

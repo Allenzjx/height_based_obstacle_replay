@@ -1,0 +1,68 @@
+FINAL RESULT: PASS
+
+Commands and results
+1. python -m py_compile <project and test Python files>
+   exit=0
+2. python -m unittest discover -s tests -p test_*.py -v
+   Ran 204 tests in 6.415s; OK; exit=0
+3. python ui_motion_speed_height_version_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536 --timeout-s 900
+   exit=0; success=true; visible_gui_requested=true; one_worker_requested=true
+
+Real Isaac/Tk
+- Isaac/worker PID: 110528
+- reused existing process: False
+- exactly one explicit-python subprocess requested: True
+- UI closed: True
+- worker reference cleared: True
+- post-run matching Isaac/worker processes: 0
+- final wheel safety stop requested: True
+- all acceptance criteria: {"all_generate_under_1_5s": true, "atomic_batch_pass": true, "callback_max_under_100ms": true, "callback_p95_under_30ms": true, "four_knees": true, "no_ui_probe_over_200ms": true, "record_play_single_scaling": true, "rtf_at_least_0_9": true, "servo_200_actual_speed_increased": true, "servo_target_error_within_2_5deg": true, "status_under_16kb": true, "two_versions": true, "wheel_200_path_ratio_within_10pct": true}
+
+One earlier mistyped command requested nonexistent tests.test_robot_ground_contact and produced one import error; it was corrected by actual discovery and is not a product failure.
+The first three instrumented real iterations exposed and fixed parser/protocol, exact render-substep timing, self-induced E2E callback batching and direct servo velocity measurement. They were preserved, not deleted.
+
+Full compile output: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\compile_output.txt
+Full unittest output: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\full_test_output.txt
+Real E2E JSON: C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\real_isaac_result.json
+
+Compile tail:
+COMMAND: python -m py_compile <82 project/test/tool files>
+EXIT_CODE=0
+
+
+Unittest tail:
+_step 0.7ms
+[INFO] Replaced step 001.
+[PERF] Accept replacement took 0.4ms manager=replace_step 0.3ms
+[PLAYBACK DEBUG] plan label=all events=1 final_time=0.100s profile=raw first_commands=['servo front_left_hip 5']
+test_respawn_and_play_calls_respawn_before_playback 
+(test_workflow_regressions.WorkflowRegressionTest.test_respawn_and_play_calls_respawn_before_playback) ... ok
+test_save_creates_immutable_versions_and_keeps_old_one 
+(test_workflow_regressions.WorkflowRegressionTest.test_save_creates_immutable_versions_and_keeps_old_one) ... ok
+test_save_empty_sequence_creates_new_version_without_clearing_old 
+(test_workflow_regressions.WorkflowRegressionTest.test_save_empty_sequence_creates_new_version_without_clearing_old) 
+... ok
+test_servo_wheel_command_is_stateless_atomic_alias 
+(test_workflow_regressions.WorkflowRegressionTest.test_servo_wheel_command_is_stateless_atomic_alias) ... ok
+test_start_record_allowed_after_stateless_servo_wheel_apply 
+(test_workflow_regressions.WorkflowRegressionTest.test_start_record_allowed_after_stateless_servo_wheel_apply) ... ok
+
+----------------------------------------------------------------------
+Ran 204 tests in 6.415s
+
+OK
+[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.
+[INFO] Playback Respawn requested; wheels stopped.
+[INFO] Playback scheduled in 0.30s: all
+[PLAYBACK DEBUG] manager active=True scheduled=True index=0 count=1 last_info=playback scheduled; starts in 0.30s: all (1 events)
+[INFO] Saved 2 steps / 2 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmpdh238kyl\height_100mm\versions\v001_20260804_182646_017512_manual
+[PERF] Save New Version took 173.7ms
+[INFO] Saved 1 steps / 1 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmpdh238kyl\height_100mm\versions\v002_20260804_182646_191818_manual
+[PERF] Save New Version took 165.8ms
+[INFO] Saved 1 steps / 1 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmp0n4qtx1z\height_100mm\versions\v001_20260804_182646_370177_manual
+[PERF] Save New Version took 151.5ms
+[INFO] Saved 0 steps / 0 commands at 2026-08-04T18:26:46-04:00: C:\Users\kskzz\AppData\Local\Temp\tmp0n4qtx1z\height_100mm\versions\v002_20260804_182646_521767_manual
+[PERF] Save New Version took 133.5ms
+[INFO] Servo+Wheel controls closed; wheels stopped.
+[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.
+EXIT_CODE=0

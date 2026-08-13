@@ -1,0 +1,13 @@
+Unit conflict coverage: PASS
+- Recording: blocked by existing OperationCoordinator guard.
+- Scene Update / Height Generate: blocked by existing guard.
+- Respawn: blocked by existing guard.
+- Existing Playback: blocked by existing guard.
+- Dirty Servo-Wheel staging: explicitly blocked before restore.
+- Stop during restore: pending transaction cancelled; late matching restore ack did not create a plan; operation returned IDLE; next Play remained available.
+- Stop Wheels and E-stop remain callable; UI refresh/tab viewing is non-blocking.
+
+Real visible Isaac conflict coverage: PASS
+- Recording selected_started=False; operation=RECORDING; status=[WARN] Recording is active.
+- Height Generate selected_started=False; operation=SCENE_UPDATE; operation_after=IDLE; status=[WARN] Scene update is in progress.
+- Stop during restore cancelled=True; worker stayed inactive after late ack; final operation=IDLE.

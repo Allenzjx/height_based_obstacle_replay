@@ -1,0 +1,3 @@
+﻿launch,batch_id,servo_apply_step,wheel_apply_step,applied_sim_time_s,servo_motion_start_sim_time_s,wheel_motion_start_sim_time_s,start_time_difference_s,physics_tick_s,recorded_event,recorded_launch_count,reloaded_launch_count,replay_event,expanded_command_count,result
+1,a063238954c044999622c3e29f8c7a8b,1026,1026,8.550000000000155,8.558333333333488,8.558333333333488,0.0,0.008333333333333333,servo_wheel_launch,2,2,apply_motion_batch/same tick,12,PASS
+2,bd9d91ed60dc40d7814d7ae96dcc405e,1050,1050,8.750000000000144,8.758333333333477,8.758333333333477,0.0,0.008333333333333333,servo_wheel_launch,2,2,apply_motion_batch/same tick,12,PASS

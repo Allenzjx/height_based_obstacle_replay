@@ -1,0 +1,18 @@
+speed_scale.py	统一 SpeedPercentModel；停用 preserve-wheel-distance 运行语义。
+command_model.py	IPC command 增加 command-boundary speed snapshot。
+sim_transport.py	传递唯一的 speed snapshot，不在 transport 重复缩放。
+sim_process_client.py	将 speed_percent 元数据送入 worker。
+sim_worker_process.py	接收完整连续计划和每段 speed snapshot。
+sim_ui_controller.py	录制 canonical 100% 命令、实际 wheel duration 和 v2 metadata；同步最终 Speed UI 文案。
+height_replay_ui.py	从 CLI 解析入口起禁用旧 Preserve Wheel Distance 语义。
+sim_robot_adapter.py	按 speed snapshot 限速推进 servo，目标角不缩放；用限速实际反馈补偿负载偏差。
+sequence_model.py	保留所有 servo waypoint 与跨 step 的非零 wheel progress boundary。
+playback.py	一次性 segment plan、worker 仿真钟调度、独立通道完成条件、actuator-limit 终止保护和 timing instrumentation。
+continuous_speed_semantics_e2e.py	可见真实 Isaac 的正式/临时端到端验收；终态只提交一次，避免 Tk close 后重复 tick。
+generate_continuous_speed_report.py	从真实结果生成本目录全部报告/CSV。
+tests/test_continuous_steps_speed_semantics.py	新增最终语义 A-J 自动验收。
+tests/test_anti_freeze_workflows.py	更新 batch 断言为 completion-aware segment。
+tests/test_critical_knee_fast_ui_speed_fix.py	更新录制/轮速断言为 v2。
+tests/test_playback_speed_progress_fix.py	更新 wheel duration/path 与 worker timing 断言。
+tests/test_playback_speed_scale.py	删除旧 preserve-distance 预期。
+tests/test_servo_wheel_staging.py	spy 接受 speed snapshot metadata。

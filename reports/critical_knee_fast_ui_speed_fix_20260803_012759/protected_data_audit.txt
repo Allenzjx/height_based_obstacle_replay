@@ -1,0 +1,9 @@
+protected_file_count=65
+current_file_count=65
+length_and_sha256_mismatch_count=0
+matching_project_isaac_process_count_after_validation=0
+result=PASS
+
+Scope includes the baseline-selected formal saved steps/sequences, accepted steps/commands,
+history logs, USD and URDF assets. The final audit was repeated after the last source edit,
+the final 201-test regression, and all real GUI/Isaac shutdowns.

@@ -1,0 +1,74 @@
+FINAL RESULT: PASS
+Project: C:\robotics_sim\wlr_robot\height_based_obstacle_replay
+Report timestamp: 20260802_233408
+
+1) Git/worktree preflight
+Command: git status --short
+Result: exit 128; project is not a git repository. No git reset/checkout was run.
+
+2) Python compilation
+Command: rg --files -g '*.py' -g '!artifacts/**' -g '!reports/**' ... python py_compile
+Result: PASS, 98 Python files.
+
+3) Focused A-I and scheduler regression
+Command: python -m unittest tests.test_playback_speed_progress_fix tests.test_sim_time_playback_service -q
+Result: PASS, 14 tests.
+
+4) IPC regression
+Command: python -m unittest tests.test_ipc_protocol tests.test_sim_process_client tests.test_playback_speed_progress_fix tests.test_sim_time_playback_service -q
+Result: PASS, 26 tests.
+
+5) Full regression suite (final run after all source changes)
+Command: python -m unittest discover -s tests -q
+Result: PASS, 193 tests in 3.495 s.
+Traceback: none.
+
+6) No-sim visible Tk smoke
+Command: python height_replay_ui.py --ui --no-sim --height-cm 5 --smoke-test-ms 3500
+Result: PASS, clean exit.
+
+7) Full visible GUI + real Isaac/IsaacLab validation
+Command: python playback_speed_progress_e2e.py --output reports\playback_speed_progress_fix_20260802_233408 --timeout-s 600
+Result: PASS, exit 0.
+Python: C:\Users\kskzz\miniconda3\envs\env_isaaclab\python.exe (existing environment; no environment modification)
+Isaac PID: 102360
+Reused existing Isaac: false (preflight confirmed no existing worker/Isaac; exactly one was started)
+Formal sequence: 35 steps / 269 commands
+Raw start/pause/resume/stop: PASS
+Selected Raw/Fast: PASS
+50/100/200/300 actual wheel movement: PASS; maximum deviation 0.828598%
+Servo command target invariant: PASS; 18.7 deg at all four percentages
+0% pause/hold/resume: PASS; events 1 -> 1 during hold; drift 0.007490 rad
+Tab switch while playing: PASS; events 6 -> 11
+Full Motion-only: PASS; 35/35, 269/269, COMPLETED, active=false, scheduled=false, IDLE
+Actual inter-step median/max: 0 / 0 simulation seconds
+Maximum scheduler lateness: 0.008225 simulation seconds
+Result JSON: gui_isaac_result.json
+Traceback: none.
+
+8) Real wheel-limit same-segment comparison
+Command: python playback_speed_progress_e2e.py --output reports\playback_speed_progress_fix_20260802_233408 --timeout-s 240 --mode limit-only
+Result: PASS, exit 0.
+Isaac PID: 84060
+Reused existing Isaac: false; run started only after PID 102360 exited, so no concurrent second Isaac.
+100%: effective 100%, duration 3.0 s, planned 3 rad, measured 5.766751 rad.
+Requested 300%: effective 209.439510%, duration 1.432394 s, planned 3 rad, measured 5.866205 rad.
+Actual distance deviation: 1.724613% (tolerance 10%).
+Result JSON: wheel_limit_real_result.json
+Traceback: none.
+
+9) Production ownership regression
+Command: rg -n -g '*.py' -g '!tests/**' -g '!artifacts/**' -g '!reports/**' "Vision Auto Replay|Stability Replay" .
+Result: PASS; no production matches.
+
+10) Protected-data SHA-256 audit
+Scope: 65 formal recording/accepted/history/saved-sequence/USD/URDF files captured before edits.
+Result: PASS; 0 length/hash differences after all tests and real GUI runs.
+
+Development diagnostics retained for transparency:
+- reports\playback_speed_progress_fix_20260802_230748: launch preflight diagnostic used the wrong base Python; no worker/Isaac playback began.
+- reports\playback_speed_progress_fix_20260802_231822 and ..._232502/..._232813: validation-harness joint-start sampling assumptions failed; evidence led to worker dispatch snapshots.
+- reports\playback_speed_progress_fix_20260802_233054: exposed the missing IPC whitelist entry during 0% resume; production bug fixed and covered by test_playback_speed_percent_round_trip.
+These are not final result directories and were not overwritten or deleted.
+
+Video: not produced. No existing lightweight recorder was available, and no large dependency was installed. PNG screenshots plus timing/result JSON cover the required stages.

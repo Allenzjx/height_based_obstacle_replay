@@ -1,0 +1,1963 @@
+{
+  "success": false,
+  "started_at": 1785880050.414979,
+  "visible_gui_requested": true,
+  "one_worker_requested": true,
+  "reused_existing_process": false,
+  "temporary_version_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\temporary_version_store_v2",
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785880078.6928582,
+      "details": {}
+    },
+    {
+      "stage": "PROFILE_UI",
+      "completed_at": 1785880079.6868129,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785880079.769147,
+      "details": {
+        "height_mm": 50,
+        "request_id": "5e4bfa62ed3947fe954bb41b4489fa43"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785880079.9439678,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785880079.994647,
+      "details": {
+        "height_mm": 75,
+        "request_id": "4c3054a9d1724eefbc2e8025e8edf359"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785880080.1793995,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785880080.2419033,
+      "details": {
+        "height_mm": 100,
+        "request_id": "e8c74f4ee1b044d1be5d9833ca13ab67"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785880080.6253757,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785880080.6760504,
+      "details": {}
+    },
+    {
+      "stage": "RESPAWN_START",
+      "completed_at": 1785880080.7387094,
+      "details": {
+        "request_id": "099e7b5a15ac4cbf9f822917994112cc"
+      }
+    }
+  ],
+  "screenshots": {
+    "main_ui": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\main_ui.png",
+    "speed_scale": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\speed_scale.png",
+    "height_and_versions": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\height_and_versions.png",
+    "wider_obstacle": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\wider_obstacle.png",
+    "generate_control_ready": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\generate_control_ready.png",
+    "failure": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_174728\\real_isaac\\screenshots\\failure.png"
+  },
+  "callback_rows": [
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.504599893465638
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 28.978199930861592
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 44.62790000252426
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.607700001448393
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 48.38180006481707
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.789499919861555
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 35.74309987016022
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 26.862500002607703
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.698399946093559
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.692200062796474
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.416799992322922
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.052599987015128
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.033600144088268
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.657099885866046
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.585299899801612
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.569399990141392
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.08669999241829
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.019999971613288
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.948200123384595
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.473199998959899
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.488499999046326
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.028200034052134
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.639500148594379
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.389600018039346
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.934700025245547
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.966999921947718
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 11.32400007918477
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 11.788700008764863
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.601199973374605
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.02620018273592
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.573299903422594
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.012199843302369
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.932000026106834
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.5249999538064
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.29120010510087
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.519800120964646
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.970199989154935
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.400099955499172
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.676400080323219
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.806099951267242
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.536699926480651
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.95040014013648
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.4362999983131886
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.157200016081333
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.778099901974201
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.732000133022666
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.580799844115973
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.018300170078874
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.930200150236487
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.2050999365746975
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.658699898049235
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.150400197133422
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.769699811935425
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.034100057557225
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.489199982956052
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.438399992883205
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.411199992522597
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.142399808391929
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.189899984747171
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.297799922525883
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.957600126042962
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.902699962258339
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.215699948370457
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.165200145915151
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.08810007199645
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.82620008289814
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.90290005877614
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.709199795499444
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.26600000821054
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.67930008098483
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.305899867787957
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.970699971541762
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.450500037521124
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.26470011472702
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.34150006994605
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.628899835050106
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.6015001609921455
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.973099963739514
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.333500146865845
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.907899864017963
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.468199986964464
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.169899858534336
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.331399971619248
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.544900057837367
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.965100023895502
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.228100137785077
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.561399929225445
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.19609996303916
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.979999925941229
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.329699980095029
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.789600010961294
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.9772999957203865
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.059100015088916
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.787700043991208
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.5199001003056765
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.598500069230795
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.927900016307831
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.229399936273694
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.370699990540743
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.5997999627143145
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.2562000881880522
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.13970001600682735
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.21730014123022556
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.09069987572729588
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.11550006456673145
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04630000330507755
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022799940779805183
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02019992098212242
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018800143152475357
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018399907276034355
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017900019884109497
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018300022929906845
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017600134015083313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01810002140700817
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017900019884109497
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0171000137925148
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017499784007668495
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01800013706088066
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017900019884109497
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017600134015083313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01769978553056717
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017600134015083313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017499784007668495
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017999904230237007
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01819990575313568
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017600134015083313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017499784007668495
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0171000137925148
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01719989813864231
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01719989813864231
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01719989813864231
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0171000137925148
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017900019884109497
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01740013249218464
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017300015315413475
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01719989813864231
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017399899661540985
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.028300099074840546
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018900027498602867
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.2093999646604061,
+      "height_mm": 50
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.28740009292960167,
+      "height_mm": 75
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.23150001652538776,
+      "height_mm": 100
+    },
+    {
+      "name": "generate_height_respawn",
+      "elapsed_ms": 0.23739994503557682,
+      "height_mm": 75
+    }
+  ],
+  "height_rows": [
+    {
+      "height_mm": 50,
+      "request_id": "5e4bfa62ed3947fe954bb41b4489fa43",
+      "requested_wall": 1771942.8525625,
+      "callback_ms": 0.2093999646604061,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 71.61710015498102,
+      "obstacle_update_ms": 1.4482999686151743,
+      "ack_wall_ms": 174.81280001811683,
+      "control_ready_ms": 174.81280001811683,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 1,
+      "error": ""
+    },
+    {
+      "height_mm": 75,
+      "request_id": "4c3054a9d1724eefbc2e8025e8edf359",
+      "requested_wall": 1771943.0780603,
+      "callback_ms": 0.28740009292960167,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 70.95199986360967,
+      "obstacle_update_ms": 1.3956998009234667,
+      "ack_wall_ms": 184.73659991286695,
+      "control_ready_ms": 184.73659991286695,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 2,
+      "error": ""
+    },
+    {
+      "height_mm": 100,
+      "request_id": "e8c74f4ee1b044d1be5d9833ca13ab67",
+      "requested_wall": 1771943.3253185,
+      "callback_ms": 0.23150001652538776,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 71.83720008470118,
+      "obstacle_update_ms": 1.2214998714625835,
+      "ack_wall_ms": 186.1157000530511,
+      "control_ready_ms": 186.1157000530511,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 3,
+      "error": ""
+    }
+  ],
+  "atomic_rows": [],
+  "servo_rows": [],
+  "wheel_rows": [],
+  "record_play_rows": [],
+  "version_rows": [],
+  "ui_after_probe_ms": [
+    0.4159000236541033,
+    24.14620015770197,
+    17.722100019454956,
+    951.7429999541491,
+    81.93970005959272,
+    53.69789991527796,
+    24.199299979954958,
+    22.544899955391884,
+    15.654100105166435,
+    15.540099935606122,
+    15.546299982815981,
+    15.969600062817335,
+    12.043199967592955,
+    18.953300081193447,
+    15.619199955835938,
+    15.463900053873658,
+    15.730999875813723,
+    15.439399983733892,
+    18.60289997421205,
+    13.289100024849176,
+    14.336199965327978,
+    15.334299998357892,
+    15.473100123926997,
+    15.398100018501282,
+    15.536099905148149,
+    15.09299990721047,
+    10.05270006135106,
+    21.11590001732111,
+    15.769100049510598,
+    15.199000015854836,
+    15.287499874830246,
+    16.247100196778774,
+    17.883099848404527,
+    12.257399968802929,
+    15.810800017789006,
+    15.631600050255656,
+    15.507400035858154,
+    16.084600007161498,
+    15.525300055742264,
+    18.263799836859107,
+    12.349900091066957,
+    15.533600002527237,
+    15.684599988162518,
+    0.8809999562799931,
+    16.508999979123473,
+    18.453099997714162,
+    15.469300094991922,
+    15.559500083327293,
+    15.702500008046627,
+    15.34609985537827,
+    19.120600074529648,
+    19.906200002878904,
+    10.090499883517623,
+    13.532800134271383,
+    15.48000006005168,
+    15.480199828743935,
+    15.46400017105043,
+    18.2023998349905,
+    11.387099977582693,
+    16.510700108483434,
+    15.307500027120113,
+    15.440299874171615,
+    15.507600037381053,
+    15.523500042036176,
+    15.57149994187057,
+    10.057500097900629,
+    21.109099965542555,
+    15.375599963590503,
+    15.158100053668022,
+    15.556700062006712,
+    15.891499817371368,
+    18.33980018272996,
+    197.59439979679883,
+    15.129400184378028,
+    16.63089985959232,
+    15.566700138151646,
+    15.7067000400275,
+    15.373199945315719,
+    15.520599903538823,
+    15.52590006031096,
+    10.256099980324507,
+    21.317899925634265,
+    15.465300064533949,
+    15.645300038158894,
+    15.477299923077226,
+    15.508200041949749,
+    18.697000108659267,
+    12.336599873378873,
+    15.656900126487017,
+    15.576899982988834,
+    15.57719986885786,
+    15.387600054964423,
+    15.433300053700805,
+    18.643500050529838,
+    10.007399832829833,
+    17.99760013818741,
+    15.524499816820025,
+    15.500500099733472,
+    15.700600109994411,
+    15.771999955177307,
+    18.480899976566434,
+    13.682899996638298,
+    13.976699905470014,
+    15.723500167950988,
+    15.332699986174703,
+    15.64999995753169,
+    15.426399884745479,
+    15.734400134533644,
+    10.058499872684479,
+    21.45970007404685,
+    15.427199890837073,
+    15.450100181624293,
+    15.617599943652749,
+    15.367700019851327,
+    20.583000034093857,
+    14.48999997228384,
+    11.495899874716997,
+    16.20130008086562,
+    14.984899898990989,
+    15.766900032758713,
+    15.642500016838312,
+    15.022099949419498,
+    15.727200079709291,
+    14.885199954733253,
+    15.650700079277158,
+    15.381600009277463,
+    15.516999876126647,
+    15.371000161394477,
+    15.98070003092289,
+    12.041999958455563,
+    19.160799914970994,
+    15.4770000372082,
+    15.283999964594841,
+    15.6636000610888,
+    15.525300055742264,
+    18.822899786755443,
+    12.044500093907118,
+    15.925700077787042,
+    15.63669997267425,
+    15.539299929514527,
+    15.646799933165312,
+    15.50990017130971,
+    19.01889988221228,
+    14.454100048169494,
+    13.045799918472767,
+    15.409700106829405,
+    15.70779993198812,
+    15.3247001580894,
+    15.52369981072843,
+    15.544400084763765,
+    13.029699912294745,
+    17.94850011356175,
+    15.213300008326769,
+    15.538200037553906,
+    15.706300036981702,
+    15.108599793165922,
+    19.00800014846027,
+    245.90099998749793,
+    16.19870006106794,
+    14.240199932828546,
+    15.40719997137785,
+    15.28849988244474,
+    15.055900206789374,
+    15.46469982713461,
+    15.523600159212947,
+    17.215200001373887,
+    13.853099895641208,
+    15.55979996919632,
+    15.551300020888448,
+    15.49770007841289,
+    15.36269998177886,
+    16.153299948200583,
+    14.572200132533908,
+    16.831199871376157,
+    14.808600069954991,
+    15.70319989696145,
+    15.305900014936924,
+    15.065599931403995,
+    15.654700109735131,
+    11.70459995046258,
+    19.39549995586276,
+    15.371300047263503,
+    15.489200130105019,
+    15.68579999729991,
+    15.52989985793829,
+    18.183100037276745,
+    10.739000048488379,
+    17.023999942466617,
+    15.602299943566322,
+    15.44310012832284,
+    15.68849990144372,
+    15.871200012043118,
+    18.046600045636296,
+    13.041300000622869,
+    15.96010010689497,
+    15.170299913734198,
+    15.469999983906746,
+    15.696499962359667,
+    16.01490005850792,
+    18.46949988976121,
+    12.4055000487715,
+    15.567800030112267,
+    15.797799918800592,
+    15.437599970027804,
+    15.089699998497963,
+    15.46970009803772,
+    15.571600059047341,
+    15.51830000244081,
+    15.306100016459823,
+    15.824300004169345,
+    15.601899940520525,
+    15.542800072580576,
+    15.678099822252989,
+    20.0316000264138,
+    17.943500075489283,
+    23.790899896994233,
+    15.597800025716424,
+    15.382400015369058,
+    15.440799994394183,
+    15.60440007597208,
+    15.302799874916673,
+    15.642600134015083,
+    15.411099884659052,
+    15.462200157344341,
+    15.446299919858575,
+    15.060600126162171,
+    18.031399929895997,
+    12.926700059324503,
+    15.908599831163883,
+    15.648000175133348,
+    15.473999781534076,
+    15.399100026115775,
+    15.720700146630406,
+    17.598599893972278,
+    13.33600003272295,
+    15.55250003002584,
+    15.502899885177612,
+    16.054400010034442,
+    15.864300075918436,
+    15.298800077289343,
+    18.331100000068545,
+    10.00939984805882,
+    17.16440008021891,
+    15.101799974218011,
+    15.618599951267242,
+    15.569600043818355,
+    15.56119997985661,
+    15.538200037553906,
+    157.76289999485016,
+    11.86350011266768,
+    16.74370002001524,
+    15.709499828517437,
+    15.223999973386526,
+    15.455299988389015,
+    15.424400102347136,
+    15.711199957877398,
+    10.378000093623996,
+    20.838500000536442,
+    15.636299969628453,
+    15.341100050136447,
+    15.760799869894981,
+    15.37930010817945,
+    17.85729988478124,
+    10.018300032243133,
+    18.292600056156516,
+    14.914599945768714,
+    15.413400018587708,
+    15.680599957704544,
+    15.173899941146374,
+    15.246400143951178,
+    11.245799949392676,
+    20.234599942341447,
+    15.528199961408973,
+    15.530000207945704,
+    15.484399860724807,
+    15.538800042122602,
+    18.657200038433075,
+    12.118499958887696,
+    15.57320007123053,
+    15.514599857851863,
+    15.647400170564651,
+    15.458100009709597,
+    15.450999839231372,
+    15.507400035858154,
+    15.678599942475557,
+    15.3483001049608,
+    15.466900076717138,
+    15.533800004050136,
+    15.499399974942207,
+    15.821399865671992,
+    19.837700063362718,
+    16.97929995134473,
+    10.14739996753633,
+    14.79850010946393,
+    15.740599948912859,
+    15.350400004535913,
+    15.42810001410544,
+    15.572699951007962,
+    10.07220009341836,
+    21.25169988721609,
+    15.352100133895874,
+    15.560699859634042,
+    15.508800046518445,
+    15.602600062265992,
+    18.452199874445796
+  ],
+  "rtf_samples": [
+    0.10341824514271178,
+    0.10930047694486511,
+    0.10981425702017979,
+    0.10981425702017979,
+    0.11023715885987614,
+    0.11023715885987614,
+    0.11023715885987614,
+    0.11023715885987614,
+    0.11052166224354731,
+    0.11052166224354731,
+    0.11052166224354731,
+    0.11052166224354731,
+    0.11089987325054573,
+    0.11149893348580393,
+    0.11149893348580393,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.11129660545226429,
+    0.08837916717863105,
+    0.08804955064183981,
+    0.08805635606809978
+  ],
+  "worker_loop_hz_samples": [
+    13.748996938440689,
+    34.14385143891553,
+    33.842837354974506,
+    48.547617131428204,
+    32.23996843866964,
+    16.12539754264979,
+    31.978663851708767,
+    638.8841727526677,
+    6.349174100313886,
+    6.457820741412453
+  ],
+  "status_payload_bytes": [
+    6978.0,
+    6997.0,
+    6991.0,
+    6991.0,
+    7027.0,
+    7027.0,
+    7027.0,
+    7027.0,
+    7020.0,
+    7020.0,
+    7020.0,
+    7020.0,
+    7018.0,
+    7028.0,
+    7028.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7019.0,
+    7041.0,
+    7048.0,
+    7043.0
+  ],
+  "isaac_pid": 129452,
+  "tabs": [
+    "Sim Connection",
+    "Run Manager",
+    "Record / Servo+Wheel",
+    "Speed Scale",
+    "Playback",
+    "Height Generate",
+    "Combine",
+    "Sim State"
+  ],
+  "runtime_ready": true,
+  "control_ready": true,
+  "requested_launch_mode": "explicit-python",
+  "isaac_window_title": "Isaac Sim 5.1.0",
+  "speed_slider_pending_after_100_drags": 1,
+  "height_respawn": {
+    "height_mm": 75,
+    "request_id": "099e7b5a15ac4cbf9f822917994112cc",
+    "requested_wall": 1771943.8221249,
+    "callback_ms": 0.23739994503557682,
+    "ack_wall_ms": 4839.013299904764,
+    "respawned": true,
+    "control_ready": true,
+    "error": ""
+  },
+  "error": "AssertionError: Generate + Respawn failed acceptance: {'height_mm': 75, 'request_id': '099e7b5a15ac4cbf9f822917994112cc', 'requested_wall': 1771943.8221249, 'callback_ms': 0.23739994503557682, 'ack_wall_ms': 4839.013299904764, 'respawned': True, 'control_ready': True, 'error': ''}",
+  "failed_stage": "RESPAWN_WAIT",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 181, in _tick\n    getattr(self, f\"_stage_{self.stage.lower()}\")()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 337, in _stage_respawn_wait\n    raise AssertionError(f\"Generate + Respawn failed acceptance: {self.result['height_respawn']}\")\nAssertionError: Generate + Respawn failed acceptance: {'height_mm': 75, 'request_id': '099e7b5a15ac4cbf9f822917994112cc', 'requested_wall': 1771943.8221249, 'callback_ms': 0.23739994503557682, 'ack_wall_ms': 4839.013299904764, 'respawned': True, 'control_ready': True, 'error': ''}\n",
+  "latest_sim_status": {
+    "last_operation_ack": {
+      "type": "stop_ack",
+      "command_id": "f25023fbb7e94803bc81b5195c06ab51",
+      "received_wall_time": 1785880085.4452288,
+      "target_applied_wall_time": 1785880085.4482293,
+      "target_applied_sim_time": 1.4833333333333305,
+      "zero_target_applied": true,
+      "error": ""
+    },
+    "operation_ack_history": [
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "request_id": "5e4bfa62ed3947fe954bb41b4489fa43",
+        "updated": true,
+        "height_mm": 50,
+        "revision": 1,
+        "control_ready": true,
+        "respawned": false,
+        "obstacle_update_s": 0.0014482999686151743,
+        "worker_operation_s": 0.07161710015498102,
+        "request_enqueued_wall_time": 1785880079.7689679,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "fc6d9a0c1c984e4384e0725e60eee332",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785880079.8540316,
+        "updated_sim_time": 1.0499999999999987,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "request_id": "4c3054a9d1724eefbc2e8025e8edf359",
+        "updated": true,
+        "height_mm": 75,
+        "revision": 2,
+        "control_ready": true,
+        "respawned": false,
+        "obstacle_update_s": 0.0013956998009234667,
+        "worker_operation_s": 0.07095199986360967,
+        "request_enqueued_wall_time": 1785880079.994395,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "request_id": "e8c74f4ee1b044d1be5d9833ca13ab67",
+        "updated": true,
+        "height_mm": 100,
+        "revision": 3,
+        "control_ready": true,
+        "respawned": false,
+        "obstacle_update_s": 0.0012214998714625835,
+        "worker_operation_s": 0.07183720008470118,
+        "request_enqueued_wall_time": 1785880080.2417104,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height_respawn",
+        "request_id": "099e7b5a15ac4cbf9f822917994112cc",
+        "updated": true,
+        "height_mm": 75,
+        "revision": 4,
+        "control_ready": true,
+        "respawned": true,
+        "obstacle_update_s": 0.0013869001995772123,
+        "worker_operation_s": 4.37638369994238,
+        "request_enqueued_wall_time": 1785880080.7385097,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "89ce8260992f43bc823417cd5f3be6a2",
+        "received_wall_time": 1785880085.336623,
+        "target_applied_wall_time": 1785880085.3421235,
+        "target_applied_sim_time": 1.4749999999999972,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "f25023fbb7e94803bc81b5195c06ab51",
+        "received_wall_time": 1785880085.4452288,
+        "target_applied_wall_time": 1785880085.4482293,
+        "target_applied_sim_time": 1.4833333333333305,
+        "zero_target_applied": true,
+        "error": ""
+      }
+    ],
+    "requested_launch_mode": "explicit-python",
+    "type": "status",
+    "ready": true,
+    "runtime_ready": true,
+    "starting": false,
+    "phase": "running",
+    "phase_elapsed_s": 8.327999999979511,
+    "height_mm": 75,
+    "height_cm": 7.5,
+    "scene_height_mm": 75,
+    "obstacle_revision": 4,
+    "last_set_height_source": "ui",
+    "last_set_height_request_id": "099e7b5a15ac4cbf9f822917994112cc",
+    "obstacle_updated": true,
+    "scene_ready": true,
+    "respawned": true,
+    "error": "",
+    "traceback": "",
+    "pid": 129452,
+    "sim_time": 1.4833333333333305,
+    "sim_steps": 178,
+    "real_time_factor": 0.08805635606809978,
+    "respawn_count": 1,
+    "last_respawn_at": 1785880085.1551886,
+    "restore_count": 0,
+    "last_restore_result": "",
+    "last_restore_error": "",
+    "perf": {
+      "outbound_backlog": 0,
+      "status_replaced": 0,
+      "frames_sent": 61,
+      "bytes_sent": 294732,
+      "status_enqueued": 53,
+      "status_send_hz": 1.5443098123167,
+      "socket_send_blocking_ms": 0.0,
+      "send_call_average_ms": 0.16163114733139022,
+      "send_call_max_ms": 0.3980000037699938
+    },
+    "command_state": {
+      "servos": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "servo_target_deg": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "servo_actual_deg": [
+      0.4013548289563488,
+      -0.13068906636264876,
+      -0.008395194616704937,
+      -0.1443782862436617,
+      -0.6295815980083581,
+      0.38874944803882583,
+      -0.6559037596874121,
+      0.4149952236569667
+    ],
+    "wheel_canonical_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_effective_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_measured_rad_s": [
+      0.06006033346056938,
+      -0.0787600576877594,
+      0.016162358224391937,
+      0.00679459935054183
+    ],
+    "target_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.07935156363204786,
+          "target_actual_rad": 0.0013849460519850254
+        },
+        "front_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.02684400080484552,
+          "target_actual_rad": 0.0004685161984525621
+        },
+        "front_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.006745560524854715,
+          "target_actual_rad": -0.00011773224105127156
+        },
+        "front_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.1251883495021952,
+          "target_actual_rad": 0.0021849488839507107
+        },
+        "rear_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.1794263347525243,
+          "target_actual_rad": -0.0031315803062170744
+        },
+        "rear_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.16301483092001173,
+          "target_actual_rad": 0.0028451455291360617
+        },
+        "rear_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.3229814231186408,
+          "target_actual_rad": -0.005637089256197214
+        },
+        "rear_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.21524399350241663,
+          "target_actual_rad": 0.0037567163817584515
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "front_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        }
+      }
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": 0.007004963234066963,
+          "deg": 0.4013548289563488
+        },
+        "front_left_knee": {
+          "rad": -0.0022809545043855906,
+          "deg": -0.13068906636264876
+        },
+        "front_right_hip": {
+          "rad": -0.0001465237874072045,
+          "deg": -0.008395194616704937
+        },
+        "front_right_knee": {
+          "rad": -0.0025198764633387327,
+          "deg": -0.1443782862436617
+        },
+        "rear_left_hip": {
+          "rad": -0.010988271795213223,
+          "deg": -0.6295815980083581
+        },
+        "rear_left_knee": {
+          "rad": 0.006784957833588123,
+          "deg": 0.38874944803882583
+        },
+        "rear_right_hip": {
+          "rad": -0.011447680182754993,
+          "deg": -0.6559037596874121
+        },
+        "rear_right_knee": {
+          "rad": 0.007243033032864332,
+          "deg": 0.4149952236569667
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "rad_s": 0.06006033346056938
+        },
+        "front_right_ankle": {
+          "rad_s": -0.0787600576877594
+        },
+        "rear_left_ankle": {
+          "rad_s": 0.016162358224391937
+        },
+        "rear_right_ankle": {
+          "rad_s": 0.00679459935054183
+        }
+      }
+    },
+    "robot_ground": {
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "checked": true,
+      "physical_ground_safe": true,
+      "maximum_collision_penetration_m": 0.0010957882985646664,
+      "root_z_m": 0.09864231199026108,
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "respawn_ready": true
+    },
+    "grounded_reference_valid": true,
+    "grounded_reference_stable": true,
+    "motion_ready": true,
+    "motion_block_reason": "",
+    "respawn_ready": true,
+    "respawn_block_reason": "",
+    "control_ready": true,
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "wheel_command": {
+      "generation": 3,
+      "command_id": "f25023fbb7e94803bc81b5195c06ab51",
+      "state": "zero_target_applied",
+      "stop_command_received": true,
+      "zero_target_applied": true,
+      "physically_stopped": false,
+      "stale_command_rejected": false,
+      "requested_wall_time": 1785880085.4233978,
+      "enqueued_wall_time": 1785880085.4234197,
+      "received_wall_time": 1785880085.4452288,
+      "target_applied_wall_time": 1785880085.4482293,
+      "measured_stop_wall_time": 0.0,
+      "target_applied_sim_time": 1.4833333333333305,
+      "measured_stop_sim_time": 0.0,
+      "stop_tolerance_rad_s": 0.1,
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": 0.06006033346056938,
+        "front_right_ankle": -0.0787600576877594,
+        "rear_left_ankle": 0.016162358224391937,
+        "rear_right_ankle": 0.00679459935054183
+      },
+      "canonical_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "speed_percent": 100.0
+    },
+    "speed": {
+      "speed_percent": 100.0,
+      "speed_scale": 1.0,
+      "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+      "reference_verified": false,
+      "requested_servo_velocity_deg_s": 150.0,
+      "effective_servo_velocity_deg_s": 150.0,
+      "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+      "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+      "semantics_version": "worker-motion-executor-v1"
+    },
+    "motion_batch": {},
+    "physics_dt": 0.008333333333333333,
+    "sim_step_hz": 120.0,
+    "ready_source": "runtime",
+    "last_ready_change_reason": "runtime status",
+    "last_ready_change_message_type": "status",
+    "worker_playback": {
+      "active": false,
+      "paused": false,
+      "scheduled": false,
+      "started": false,
+      "plan_id": "",
+      "plan_sha256": "",
+      "source_sha256": "",
+      "label": "",
+      "path": "",
+      "index": 0,
+      "count": 0,
+      "events_sent": 0,
+      "final_time_s": 0.0,
+      "sim_elapsed_s": 0.0,
+      "wall_elapsed_s": 0.0,
+      "progress": 0.0,
+      "last_event_command": "",
+      "last_event_time": 0.0,
+      "last_event_sim_time_s": 0.0,
+      "max_dispatch_jitter_s": 0.0,
+      "dispatch_clock": "simulation_time",
+      "completed_at": 0.0,
+      "completed_at_sim_time_s": 0.0,
+      "stop_reason": "",
+      "last_error": "",
+      "last_info": "",
+      "progress_detail": {
+        "playback_state": "IDLE",
+        "status_text": "Idle",
+        "current_step_index": 0,
+        "total_steps": 0,
+        "global_command_index": 0,
+        "total_commands": 0,
+        "command_phase": "idle",
+        "last_error": ""
+      },
+      "timing": {}
+    },
+    "status_payload_bytes": 7043,
+    "worker_pid": 129452,
+    "worker_returncode": null,
+    "worker": true,
+    "startup_elapsed_s": 34.0450254001189,
+    "connected": true,
+    "ipc_connected": true,
+    "stdout_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785880051462_stdout.log",
+    "stderr_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785880051462_stderr.log",
+    "stdout_tail": [],
+    "stderr_tail": [],
+    "last_meaningful_stdout": "",
+    "last_meaningful_stderr": "",
+    "last_log_activity_at": 1785880085.252213,
+    "startup_progress_message": "Worker logs are still changing.",
+    "pending_message_count": 0,
+    "pending_send_bytes": 0,
+    "dropped_or_replaced_messages": 0,
+    "error_category": "unknown",
+    "startup_diagnosis": "Worker is ready. If the viewport is black, check viewport camera, renderer warmup, GPU/driver logs, and livestream/headless settings."
+  },
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Generate / Update requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 0.154s; control ready.",
+    "[INFO] Generate / Update requested for 100 mm.",
+    "[INFO] Obstacle update completed at 100 mm in 0.125s; control ready.",
+    "[INFO] Generate + Respawn requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 4.514s; control ready."
+  ],
+  "ui_closed": true,
+  "worker_reference_cleared": true,
+  "finished_at": 1785880092.0031717
+}

@@ -1,0 +1,12 @@
+temporary_save_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\temporary_save_copy\saved_height_steps\height_05cm\accepted_steps.jsonl
+dirty_after_replace=True
+save_button_state_after_replace=normal
+atomic_replace=True
+fsync=True
+validated=True
+backup_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\critical_knee_fast_ui_speed_fix_20260803_012759\temporary_save_copy\saved_height_steps\height_05cm\accepted_steps.jsonl.backup_20260803_013057_821068
+dirty_after_save=False
+reload_verification=True
+ctrl_s_verification=True
+screenshot_errors=[]
+result=PASS

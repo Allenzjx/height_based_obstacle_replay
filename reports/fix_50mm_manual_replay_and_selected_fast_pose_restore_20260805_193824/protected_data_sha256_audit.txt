@@ -1,0 +1,15 @@
+Protected data SHA-256 audit
+before_file_count=94
+after_file_count=94
+mismatch_count=0
+all_byte_identical=YES
+
+Active formal 50 mm v2 accepted_steps.jsonl
+path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps_fsm_reference_v2\height_050mm\versions\v002_20260805_185955_854964_manual\accepted_steps.jsonl
+before_length=395909
+after_length=395909
+before_sha256=F43061E9D398EB0CB955E48A059ABC13135761166C33E088E389B779CB8F38CD
+after_sha256=F43061E9D398EB0CB955E48A059ABC13135761166C33E088E389B779CB8F38CD
+identical=YES
+
+mismatches=[]

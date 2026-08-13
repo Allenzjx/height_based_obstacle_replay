@@ -1,0 +1,45 @@
+MODIFIED
+command_model.py - retained command names and canonical state without staging mode
+height_manifest.py - integer 50/75/100 mm source of truth and legacy 5/10 cm mapping
+height_replay_ui.py - formal subprocess default, one render-cadence setting, no thread choice
+playback.py - one worker-side canonical executor for Raw/Fast/manual motion
+recording_baseline.py - v2-aware geometry validation; render cadence documented as performance-only
+sequence_model.py - canonical MotionBatch recording metadata
+sim_ipc_protocol.py - small refactor request/ack whitelist
+sim_obstacle_scene.py - one in-place obstacle prim, fixed 1.20 m Y width, explicit physics substeps
+sim_process_client.py - one nonblocking client, compact/detailed separation, no routine log reread
+sim_robot_adapter.py - one authoritative actuator state, atomic apply/write, single speed scaling
+sim_transport.py - sole adapter-or-process transport, no thread worker
+sim_ui_controller.py - async save, one poll, stateless combined apply, speed/height/version UI state
+sim_worker_process.py - sole subprocess worker, nonblocking IPC, lightweight heartbeat
+tests/test_servo_wheel_staging.py - rewritten atomic-batch regression contracts
+tests/test_sim_process_client.py - detailed/heartbeat isolation regression
+
+ADDED
+config/environment_reference.yaml - unique authoritative obstacle geometry
+config/real_robot_motion_reference.yaml - real robot speed provenance and UNVERIFIED fields
+height_generate_panel.py - 50/75/100 controls and Save New Version icon
+height_version_store.py - immutable v2 persistence and async save service
+motion_speed.py - only SpeedScale and MotionReference model
+sim_worker_runtime.py - compact worker status and height/respawn helpers
+tests/test_ui_motion_speed_height_version_refactor.py - 19 focused acceptance contracts
+ui_motion_speed_height_version_e2e.py - visible one-worker 32-step acceptance run
+saved_height_steps_fsm_reference_v2/manifest.json - new versioned formal root; old roots untouched
+tools/generate_ui_motion_speed_height_version_report.py - this evidence generator
+
+DELETED
+sim_worker.py - retired thread-worker runtime
+command_model - Copy.py
+height_replay_ui - Copy.py
+playback - Copy.py
+playback_progress - Copy.py
+recording_baseline - Copy.py
+recording_baseline_gui_e2e - Copy.py
+sequence_model - Copy.py
+sim_ipc_protocol - Copy.py
+sim_obstacle_scene - Copy.py
+sim_process_client - Copy.py
+sim_robot_adapter - Copy.py
+sim_transport - Copy.py
+sim_ui_controller - Copy.py
+sim_worker - Copy.py

@@ -1,0 +1,6 @@
+﻿action,source_run,destination_run,dirty,read_only,old_sha,new_sha,old_sha_after,version_count_before,version_count_after,same_run_id,original_preserved,result
+combobox_selection_only,v001_20260806_005630_766010_run-management-a,v002_20260806_005630_928118_run-management-b,,,,,,,,False,,PASS
+open_selected_run,v001_20260806_005630_766010_run-management-a,v002_20260806_005630_928118_run-management-b,False,False,,,,,,False,,PASS
+new_empty_run,v002_20260806_005630_928118_run-management-b,Unsaved New Run,True,,,,,2,2,False,,PASS
+update_current_run,v002_20260806_005630_928118_run-management-b,v002_20260806_005630_928118_run-management-b,False,,c1a5bedbe4ed3a56586f1b01d51aa774d96b03f75af633155a66bec75a71e186,fdb993a7a14eebb12df367a971db3f03637346c21d6e9d4a11b3b7360cc92d5a,,2,2,True,,PASS
+save_as_new_run,v002_20260806_005630_928118_run-management-b,v003_20260806_005634_223737_manual,,,fdb993a7a14eebb12df367a971db3f03637346c21d6e9d4a11b3b7360cc92d5a,e5e87b397f3f529b5e88f05359dcd662d24eff4346fbf22d0625f28d8e15012f,fdb993a7a14eebb12df367a971db3f03637346c21d6e9d4a11b3b7360cc92d5a,2,3,False,True,PASS

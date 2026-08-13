@@ -1,0 +1,26 @@
+类型	文件	作用
+修改	README.md	更新固定 100%、Servo-Wheel、几何事务与握手说明
+修改	config/environment_reference.yaml	唯一正式障碍物宽度由 1.20 m 增至 2.00 m
+修改	height_generate_panel.py	显示 worker 实测几何和严格事务结果
+修改	height_version_store.py	新版本 metadata 写入实测 width；忽略旧 speed metadata
+修改	motion_speed.py	仅保留固定 canonical motion reference，删除倍率模型
+修改	playback.py	完整性 SHA/计数、原子 batch 重放、contact-aware completion
+修改	playback_progress.py	新增 START_REQUESTED 等权威播放状态
+修改	sim_ipc_protocol.py	删除 set_speed_scale；加入 apply_motion_batch/握手字段
+修改	sim_obstacle_scene.py	真实 USD visual/collision/AABB 事务和可靠最小重建
+修改	sim_process_client.py	batch IPC、播放握手、wheel generation 同步
+修改	sim_robot_adapter.py	一次校验并同 tick 写入完整 servo/wheel vector
+修改	sim_transport.py	统一 manual wheel generation 与 atomic batch transport
+修改	sim_ui_controller.py	Manual Wheel readiness、Servo-Wheel 可见 UI、事务/握手对账
+修改	sim_worker_process.py	worker 权威 start accept/reject、严格 scene/batch 执行
+修改	sim_worker_runtime.py	实际几何 ack、控制就绪和 worker 状态
+修改	tests/test_recording_baseline_lock.py	Recording observer 与控制解耦回归
+修改	tests/test_servo_wheel_staging.py	staging/Launch 原子行为回归
+修改	tests/test_sim_time_playback_service.py	完成策略和 sim-time scheduler 回归
+修改	tests/test_task_separation_refactor.py	已移除任务不回归
+修改	tests/test_ui_motion_speed_height_version_refactor.py	固定 100% 和 height metadata 回归
+修改	tests/test_workflow_regressions.py	正式工作流回归
+新增	generate_completion_fix_report.py	从原始证据生成 CSV/JSON/哈希审计报告
+新增	height_wheel_servo_batch_replay_completion_e2e.py	可视化真实 Isaac 端到端证据采集
+新增	tests/test_height_wheel_servo_batch_replay_completion_fix.py	本轮六问题专项测试
+删除文件：无

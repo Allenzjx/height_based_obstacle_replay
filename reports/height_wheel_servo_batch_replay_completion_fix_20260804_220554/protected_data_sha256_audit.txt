@@ -1,0 +1,10 @@
+Protected recording/version SHA-256 audit
+Files checked: 64
+Mismatches: 0
+All protected files identical: True
+Formal 50 mm accepted_steps.jsonl SHA-256: 66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8
+Formal 50 mm accepted_steps.jsonl length: 374808
+Before manifest: protected_sha256_before.json
+After manifest: protected_sha256_after.json
+No protected recording was written, replaced, migrated, or deleted.
+Mismatch detail: []

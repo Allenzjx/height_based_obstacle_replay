@@ -1,0 +1,7 @@
+ M sim_process_client.py
+ M sim_transport.py
+ M sim_ui_controller.py
+ M sim_worker_process.py
+ M tests/test_play_selected_playback.py
+?? selected_step_previous_saved_state_e2e.py
+?? tests/test_selected_step_previous_saved_state.py

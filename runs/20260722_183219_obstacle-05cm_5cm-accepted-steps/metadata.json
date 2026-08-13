@@ -1,0 +1,17 @@
+{
+  "created_wall_time": 1784759539.2426863,
+  "obstacle_height_cm": 5,
+  "obstacle_height_m": 0.05,
+  "physics_dt": 0.008333333333333333,
+  "render_interval": 2,
+  "robot_body_count": 13,
+  "robot_joint_count": 12,
+  "robot_usd": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+  "run_label": "5cm accepted steps",
+  "runtime": {
+    "executable": "C:\\Users\\kskzz\\miniconda3\\envs\\env_isaaclab\\python.exe",
+    "python_version": "3.11.15 | packaged by Anaconda, Inc. | (main, Mar 11 2026, 17:12:15) [MSC v.1942 64 bit (AMD64)]"
+  },
+  "schema_version": "height_replay_telemetry_run.v1",
+  "source": "auto_play"
+}

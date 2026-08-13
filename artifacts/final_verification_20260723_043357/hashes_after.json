@@ -1,0 +1,47 @@
+[
+  {
+    "path": "saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+    "size_bytes": 374808,
+    "sha256": "66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8"
+  },
+  {
+    "path": "saved_height_steps\\height_10cm\\accepted_steps.jsonl",
+    "size_bytes": 181390,
+    "sha256": "1132b160e4e6e937e060285344d1ae3608b2f749fc28dce24aae26def5f005f5"
+  },
+  {
+    "path": "playback.py",
+    "size_bytes": 33785,
+    "sha256": "b6b40d276dfb49e4dd181f65dbabab5e77a54cfb34b6e648b067d41433f2d836"
+  },
+  {
+    "path": "sim_ui_controller.py",
+    "size_bytes": 387105,
+    "sha256": "720bbcff07f49cd39e3bf2fdef935d12932cdffd527c3230e5fc926bf5334ccb"
+  },
+  {
+    "path": "height_replay_ui.py",
+    "size_bytes": 36060,
+    "sha256": "68c8241aab80381c1db0552ccd9e843296af66916126bc9bf0e71bbbbf76d4d2"
+  },
+  {
+    "path": "telemetry\\collector.py",
+    "size_bytes": 44530,
+    "sha256": "149a043feb42340e32d474c651240b228f9dab38d09fdee3158e4d625ec1037b"
+  },
+  {
+    "path": "telemetry\\physical_success.py",
+    "size_bytes": 15175,
+    "sha256": "0c8fe5799d10c02d1367ff9b7ba280b565ddf4a4e4691ee45046d35b1b0e1f51"
+  },
+  {
+    "path": "telemetry\\visualization\\report_generator.py",
+    "size_bytes": 13760,
+    "sha256": "dfba00127ed30c0447110312076519ce351dc0863f4d44e1ec3b7f05ecfba217"
+  },
+  {
+    "path": "stability_gui_e2e.py",
+    "size_bytes": 38442,
+    "sha256": "40166ca0cd9864c33546a60ba831622ed27b4efcda45c1b6f571185a8129fbb4"
+  }
+]

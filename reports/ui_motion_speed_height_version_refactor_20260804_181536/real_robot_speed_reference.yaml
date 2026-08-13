@@ -1,0 +1,15 @@
+profile_id: real-robot-ui-controller-20260626-v1
+source_files:
+  - C:/robotics_sim/wlr_robot/real_robot_ui_controller/servo_motion.yaml
+  - C:/robotics_sim/wlr_robot/real_robot_ui_controller/hardware_config.yaml
+  - C:/robotics_sim/wlr_robot/real_robot_ui_controller/command_model.py
+  - C:/robotics_sim/wlr_robot/real_robot_ui_controller/real_robot_controller.py
+servo_reference_velocity_deg_s: 150.0
+servo_acceleration_limit_deg_s2: null
+servo_velocity_limit_deg_s: null
+wheel_reference_velocity_rad_s: 0.5235987755982988
+wheel_velocity_limit_rad_s: 2.0943951023931953
+wheel_radius_m: null
+wheel_transmission_ratio: null
+verified: false
+verification_method: "Servo nominal speed and wheel command/limit verified from real controller files; servo acceleration/upper velocity limit, real wheel radius, and transmission ratio are UNVERIFIED."

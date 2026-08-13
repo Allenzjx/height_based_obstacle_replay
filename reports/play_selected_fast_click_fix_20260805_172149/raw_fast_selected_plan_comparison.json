@@ -1,0 +1,138 @@
+{
+  "selected_step": 5,
+  "pre_fix": {
+    "raw": {
+      "profile": "raw",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 7.1399999998975545,
+      "plan_sha256": "5cbb42baab222395ac177fbe4e44951053b6c43151a2bbbe1387fc7f3491da45"
+    },
+    "fast": {
+      "profile": "motion_only",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 4.9850000001024455,
+      "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+    }
+  },
+  "post_fix": {
+    "raw": {
+      "profile": "raw",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 7.1399999998975545,
+      "plan_sha256": "5cbb42baab222395ac177fbe4e44951053b6c43151a2bbbe1387fc7f3491da45"
+    },
+    "fast": {
+      "profile": "motion_only",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 4.9850000001024455,
+      "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+    }
+  },
+  "event_count_unchanged_by_fix": true,
+  "segment_count_unchanged_by_fix": true,
+  "command_signature_equal": true,
+  "servo_targets_equal": true,
+  "wheel_targets_equal": true,
+  "wheel_durations_equal": true,
+  "allowed_differences": [
+    "profile",
+    "planned timestamps/final duration",
+    "plan SHA"
+  ]
+}

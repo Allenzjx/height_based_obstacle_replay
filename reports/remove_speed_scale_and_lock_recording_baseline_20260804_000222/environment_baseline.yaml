@@ -1,0 +1,53 @@
+baseline_id: "fsm-recording-reference-v1:8e1f6009c1984a18"
+authoritative_config: "C:/robotics_sim/wlr_robot/height_based_obstacle_replay/config/fsm_recording_baseline.yaml"
+robot:
+  usd: "C:/robotics_sim/wlr_robot/usd/wlr_robot_drive_test.usd"
+  prim: "/World/WLRRobot"
+  authoritative_grounded_root_pose_wxyz: [-0.003959653899073601, -0.0009929761290550232, 0.09901974350214005, 0.9999808073043823, -0.00001026025438477518, -0.006009926088154316, 0.0015246823895722628]
+  respawn_position_tolerance_m: 0.003
+  reset_root_velocity: zero
+  reset_joint_velocity: zero
+  settle_duration_s: 0.75
+physics:
+  stage_units_m: 1.0
+  gravity_m_s2: [0.0, 0.0, -9.81]
+  physics_timestep_s: 0.008333333333333333
+  render_interval_physics_steps: 2
+  render_timestep_s: 0.016666666666666666
+  substeps: 1
+  solver_position_iterations: 8
+  solver_velocity_iterations: 2
+  contact_offset_m: 0.005
+  rest_offset_m: 0.0
+ground:
+  prim: "/World/defaultGroundPlane"
+  z_m: 0.0
+  collision_enabled: true
+  static_friction: 1.25
+  dynamic_friction: 1.05
+  restitution: 0.0
+  penetration_tolerance_m: 0.003
+  final_minimum_observed_collision_clearance_m: -0.0009420356808763283
+obstacle:
+  prim: "/World/Obstacle"
+  initial_center_m: [1.55, 0.0, 0.025]
+  orientation_wxyz: [1.0, 0.0, 0.0, 0.0]
+  length_m: 2.057375557085507
+  width_m: 0.8822007310718405
+  front_face_x_m: 0.5213121737735307
+  bottom_z_m: 0.0
+  supported_top_z_m: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]
+  static_friction: 1.2
+  dynamic_friction: 1.0
+  restitution: 0.0
+approach_distances:
+  canonical_name: root_to_obstacle_front_m
+  canonical_definition: obstacle_front_face_x_m - robot_articulation_root_x_m
+  authoritative_initial_m: 0.5252718276726043
+  front_wheel_center_definition: obstacle_front_face_x_m - maximum_front_wheel_center_x_m
+  authoritative_front_wheel_center_m: 0.2685148347636752
+  robot_collision_front_definition: obstacle_front_face_x_m - robot_collision_aabb_max_x_m
+  authoritative_robot_collision_front_m: 0.218493329267893
+  lateral_alignment_m: 0.0009929761290550232
+  yaw_alignment_error_deg: 0.17473233799706833
+  eight_height_max_canonical_variation_m: 0.00011495096516256353

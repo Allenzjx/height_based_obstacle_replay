@@ -1,0 +1,36 @@
+{
+  "created_at": "2026-08-04T18:08:09-04:00",
+  "heights": {
+    "100": {
+      "active_version_id": "",
+      "folder": "height_100mm",
+      "height_mm": 100,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "50": {
+      "active_version_id": "",
+      "folder": "height_050mm",
+      "height_mm": 50,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "75": {
+      "active_version_id": "",
+      "folder": "height_075mm",
+      "height_mm": 75,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    }
+  },
+  "schema_version": "height-steps-versions.v2",
+  "supported_heights_mm": [
+    50,
+    75,
+    100
+  ],
+  "updated_at": "2026-08-04T18:08:09-04:00"
+}

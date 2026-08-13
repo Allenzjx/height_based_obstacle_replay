@@ -1,0 +1,11 @@
+{
+  "batch_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T021602_474176Z_grounding_only_trial_01_0e87d586b3",
+  "child_pid": 158192,
+  "parent_pid": 111948,
+  "preclose_marker": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260812T021602_474176Z_grounding_only_trial_01_0e87d586b3\\preclose_complete.json",
+  "schema_version": "fsm50.supervisor_handshake.v1",
+  "sequence": 2,
+  "state": "PRECLOSE_COMPLETE",
+  "token": "35e7fd6ba3514cec9bb1742523d802e3",
+  "updated_utc": "2026-08-12T03:48:14.579443+00:00"
+}

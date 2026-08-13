@@ -1,0 +1,24 @@
+ M README.md
+ M config/environment_reference.yaml
+ M height_generate_panel.py
+ M height_version_store.py
+ M motion_speed.py
+ M playback.py
+ M playback_progress.py
+ M sim_ipc_protocol.py
+ M sim_obstacle_scene.py
+ M sim_process_client.py
+ M sim_robot_adapter.py
+ M sim_transport.py
+ M sim_ui_controller.py
+ M sim_worker_process.py
+ M sim_worker_runtime.py
+ M tests/test_recording_baseline_lock.py
+ M tests/test_servo_wheel_staging.py
+ M tests/test_sim_time_playback_service.py
+ M tests/test_task_separation_refactor.py
+ M tests/test_ui_motion_speed_height_version_refactor.py
+ M tests/test_workflow_regressions.py
+?? generate_completion_fix_report.py
+?? height_wheel_servo_batch_replay_completion_e2e.py
+?? tests/test_height_wheel_servo_batch_replay_completion_fix.py

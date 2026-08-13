@@ -1,0 +1,8 @@
+﻿callback_name,call_count,mean_ms,p95_ms,max_ms,frequency_hz
+RealRobotStyleHeightReplayUi._poll,17,240.9958,277.0535,289.8894,2.4286
+RealRobotStyleHeightReplayUi._refresh,15,241.4378,274.2491,278.804,3.0
+RealRobotStyleHeightReplayUi._refresh_button_states,15,203.2043,228.6466,235.638,3.0
+HeightReplayController.snapshot,15,26.4377,31.6085,32.3771,3.0
+HeightReplayController.update,14,0.025,0.03,0.033,2.8
+HeightGeneratePanel.load_steps,1,340.4986,340.4986,340.4986,0.1429
+RealRobotStyleHeightReplayUi._commit_speed_slider,1,258.2275,258.2275,258.2275,0.1429

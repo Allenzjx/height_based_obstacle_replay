@@ -1,0 +1,1027 @@
+﻿[
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\analysis_task\\coordinator.py",
+        "Length":  3969,
+        "LastWriteTime":  "\/Date(1784761216311)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\analysis_task\\sequence_manager.py",
+        "Length":  4078,
+        "LastWriteTime":  "\/Date(1784764820142)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\analysis_task\\state.py",
+        "Length":  15852,
+        "LastWriteTime":  "\/Date(1784761644585)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\analysis_task\\__init__.py",
+        "Length":  464,
+        "LastWriteTime":  "\/Date(1784761216310)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\telemetry.yaml",
+        "Length":  1280,
+        "LastWriteTime":  "\/Date(1784762859312)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+        "Length":  374808,
+        "LastWriteTime":  "\/Date(1783553147717)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_10cm\\accepted_steps.jsonl",
+        "Length":  181390,
+        "LastWriteTime":  "\/Date(1783554855634)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_15cm\\accepted_steps.jsonl",
+        "Length":  261992,
+        "LastWriteTime":  "\/Date(1783627471713)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_20cm\\accepted_steps.jsonl",
+        "Length":  146836,
+        "LastWriteTime":  "\/Date(1783624980192)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_25cm\\accepted_steps.jsonl",
+        "Length":  140645,
+        "LastWriteTime":  "\/Date(1783622924262)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_30cm\\accepted_steps.jsonl",
+        "Length":  139335,
+        "LastWriteTime":  "\/Date(1783623116663)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_35cm\\accepted_steps.jsonl",
+        "Length":  155162,
+        "LastWriteTime":  "\/Date(1783623590585)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_40cm\\accepted_steps.jsonl",
+        "Length":  176648,
+        "LastWriteTime":  "\/Date(1783623891907)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233324_rev0001_00cm_conf0.85.json",
+        "Length":  308,
+        "LastWriteTime":  "\/Date(1784000004656)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233324_rev0001_00cm_conf0.85.ppm",
+        "Length":  610575,
+        "LastWriteTime":  "\/Date(1784000004654)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233344_rev0002_05cm_conf0.98.json",
+        "Length":  374,
+        "LastWriteTime":  "\/Date(1784000024249)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233344_rev0002_05cm_conf0.98.ppm",
+        "Length":  610575,
+        "LastWriteTime":  "\/Date(1784000024248)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_depth.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784004621682)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_diagnostic.ppm",
+        "Length":  915856,
+        "LastWriteTime":  "\/Date(1784004621687)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_obstacle_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784004621684)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_rgb.ppm",
+        "Length":  305295,
+        "LastWriteTime":  "\/Date(1784004621681)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_roi_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784004621683)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_top_plane_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784004621685)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.json",
+        "Length":  4369,
+        "LastWriteTime":  "\/Date(1784004621688)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_depth.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784175824341)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_diagnostic.ppm",
+        "Length":  915856,
+        "LastWriteTime":  "\/Date(1784175824347)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_obstacle_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784175824344)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_rgb.ppm",
+        "Length":  305295,
+        "LastWriteTime":  "\/Date(1784175824339)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_roi_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784175824343)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_top_plane_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784175824345)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.json",
+        "Length":  8347,
+        "LastWriteTime":  "\/Date(1784175824349)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_depth.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784183599230)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_diagnostic.ppm",
+        "Length":  915856,
+        "LastWriteTime":  "\/Date(1784183599233)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_obstacle_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784183599231)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_rgb.ppm",
+        "Length":  305295,
+        "LastWriteTime":  "\/Date(1784183599229)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_roi_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784183599230)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_top_plane_mask.pgm",
+        "Length":  101775,
+        "LastWriteTime":  "\/Date(1784183599232)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.json",
+        "Length":  8371,
+        "LastWriteTime":  "\/Date(1784183599234)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\baseline_real_gui_20260716_004600.json",
+        "Length":  23823,
+        "LastWriteTime":  "\/Date(1784177160003)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\camera_counterfactual_after.json",
+        "Length":  6561,
+        "LastWriteTime":  "\/Date(1784185710382)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after.json",
+        "Length":  22043906,
+        "LastWriteTime":  "\/Date(1784178747456)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry.json",
+        "Length":  45767595,
+        "LastWriteTime":  "\/Date(1784179162347)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry2.json",
+        "Length":  104443882,
+        "LastWriteTime":  "\/Date(1784179289930)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry3.json",
+        "Length":  75101393,
+        "LastWriteTime":  "\/Date(1784179661254)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry4.json",
+        "Length":  110146752,
+        "LastWriteTime":  "\/Date(1784179865026)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after.json",
+        "Length":  115408468,
+        "LastWriteTime":  "\/Date(1784186689209)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_correction.json",
+        "Length":  115547421,
+        "LastWriteTime":  "\/Date(1784187078072)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_final.json",
+        "Length":  130706946,
+        "LastWriteTime":  "\/Date(1784187642741)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_safeplacement.json",
+        "Length":  132693434,
+        "LastWriteTime":  "\/Date(1784187473619)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_before.json",
+        "Length":  96443485,
+        "LastWriteTime":  "\/Date(1784184805875)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\worker_ground_structure_retry4.json",
+        "Length":  1081219,
+        "LastWriteTime":  "\/Date(1784180322033)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\manifest.json",
+        "Length":  3318,
+        "LastWriteTime":  "\/Date(1784767976501)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\live_dashboard.py",
+        "Length":  27475,
+        "LastWriteTime":  "\/Date(1784762893592)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\live_dashboard_model.py",
+        "Length":  7455,
+        "LastWriteTime":  "\/Date(1784762902083)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\live_overlay.py",
+        "Length":  5223,
+        "LastWriteTime":  "\/Date(1784757763162)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\report_generator.py",
+        "Length":  11211,
+        "LastWriteTime":  "\/Date(1784762019346)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\__init__.py",
+        "Length":  44,
+        "LastWriteTime":  "\/Date(1784757763162)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\collector.py",
+        "Length":  39618,
+        "LastWriteTime":  "\/Date(1784762886833)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\com_metrics.py",
+        "Length":  4989,
+        "LastWriteTime":  "\/Date(1784757620071)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\config.py",
+        "Length":  10277,
+        "LastWriteTime":  "\/Date(1784762854977)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\contact_metrics.py",
+        "Length":  12322,
+        "LastWriteTime":  "\/Date(1784757620074)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\event_recorder.py",
+        "Length":  3345,
+        "LastWriteTime":  "\/Date(1784757192237)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\exporters.py",
+        "Length":  7539,
+        "LastWriteTime":  "\/Date(1784757874065)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\joint_metrics.py",
+        "Length":  9519,
+        "LastWriteTime":  "\/Date(1784758466498)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\live_buffer.py",
+        "Length":  1689,
+        "LastWriteTime":  "\/Date(1784762851224)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\live_packet.py",
+        "Length":  2301,
+        "LastWriteTime":  "\/Date(1784762630568)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\model_audit.py",
+        "Length":  8947,
+        "LastWriteTime":  "\/Date(1784758466499)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\replay_metrics.py",
+        "Length":  2407,
+        "LastWriteTime":  "\/Date(1784757192237)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\stability_metrics.py",
+        "Length":  18419,
+        "LastWriteTime":  "\/Date(1784758694833)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\__init__.py",
+        "Length":  344,
+        "LastWriteTime":  "\/Date(1784757054170)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\controller_test_utils.py",
+        "Length":  5190,
+        "LastWriteTime":  "\/Date(1784170895495)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_action_failure_does_not_clear_ready.py",
+        "Length":  1608,
+        "LastWriteTime":  "\/Date(1784170977890)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_analysis_emergency_stop.py",
+        "Length":  1770,
+        "LastWriteTime":  "\/Date(1784763043354)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_analysis_ipc_schema.py",
+        "Length":  1602,
+        "LastWriteTime":  "\/Date(1784762927561)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_analysis_multi_trial.py",
+        "Length":  2129,
+        "LastWriteTime":  "\/Date(1784763032189)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_anti_freeze_workflows.py",
+        "Length":  9472,
+        "LastWriteTime":  "\/Date(1783542313673)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_coverage.py",
+        "Length":  4677,
+        "LastWriteTime":  "\/Date(1784012013261)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_geometry_diagnostics.py",
+        "Length":  4103,
+        "LastWriteTime":  "\/Date(1784174729981)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_ground_truth_isolation.py",
+        "Length":  7871,
+        "LastWriteTime":  "\/Date(1784011368112)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_health.py",
+        "Length":  5289,
+        "LastWriteTime":  "\/Date(1784001989726)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_look_at_conventions.py",
+        "Length":  1684,
+        "LastWriteTime":  "\/Date(1784174500036)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_provenance_smoke_config.py",
+        "Length":  3946,
+        "LastWriteTime":  "\/Date(1784012013264)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_target_frame_conversion.py",
+        "Length":  2918,
+        "LastWriteTime":  "\/Date(1784174537774)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_validation_ipc.py",
+        "Length":  2529,
+        "LastWriteTime":  "\/Date(1784002021611)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_camera_path_verification.py",
+        "Length":  2569,
+        "LastWriteTime":  "\/Date(1784174575264)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_control.py",
+        "Length":  4933,
+        "LastWriteTime":  "\/Date(1784163753342)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_creation_plan.py",
+        "Length":  2936,
+        "LastWriteTime":  "\/Date(1784174557991)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_main_identity.py",
+        "Length":  3580,
+        "LastWriteTime":  "\/Date(1784167226466)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_pending_single_owner.py",
+        "Length":  967,
+        "LastWriteTime":  "\/Date(1784167226468)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_perspective_restore.py",
+        "Length":  3953,
+        "LastWriteTime":  "\/Date(1784167226467)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_physics_invariance.py",
+        "Length":  3783,
+        "LastWriteTime":  "\/Date(1784167226469)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_restore.py",
+        "Length":  6672,
+        "LastWriteTime":  "\/Date(1784167110448)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_runtime_diagnostics.py",
+        "Length":  1759,
+        "LastWriteTime":  "\/Date(1784178313642)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_secondary.py",
+        "Length":  7064,
+        "LastWriteTime":  "\/Date(1784164082238)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_viewport_without_motion_ready.py",
+        "Length":  2005,
+        "LastWriteTime":  "\/Date(1784171168472)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_camera_view_readiness.py",
+        "Length":  2794,
+        "LastWriteTime":  "\/Date(1784171131591)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_com_metrics.py",
+        "Length":  1584,
+        "LastWriteTime":  "\/Date(1784758601442)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_equilibrium_region.py",
+        "Length":  1291,
+        "LastWriteTime":  "\/Date(1784758601443)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_exporters.py",
+        "Length":  2529,
+        "LastWriteTime":  "\/Date(1784758601444)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_generated_validation_without_motion_ready.py",
+        "Length":  2915,
+        "LastWriteTime":  "\/Date(1784170992607)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_grounded_respawn_and_viewport_guard.py",
+        "Length":  5782,
+        "LastWriteTime":  "\/Date(1784167117277)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_bound_sanitization.py",
+        "Length":  3558,
+        "LastWriteTime":  "\/Date(1784174411937)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_calibration.py",
+        "Length":  1357,
+        "LastWriteTime":  "\/Date(1784171156578)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_diagnostic_states.py",
+        "Length":  2089,
+        "LastWriteTime":  "\/Date(1784171145092)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_reference_stability.py",
+        "Length":  2091,
+        "LastWriteTime":  "\/Date(1784174441012)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_settle_joint_groups.py",
+        "Length":  3584,
+        "LastWriteTime":  "\/Date(1784178272210)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_settle_terminal_window.py",
+        "Length":  4348,
+        "LastWriteTime":  "\/Date(1784174469924)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_surface_resolution.py",
+        "Length":  2387,
+        "LastWriteTime":  "\/Date(1784171041756)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ground_trigger_isolation.py",
+        "Length":  1399,
+        "LastWriteTime":  "\/Date(1784167226470)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_height_manifest.py",
+        "Length":  2212,
+        "LastWriteTime":  "\/Date(1783463328954)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_height_provenance.py",
+        "Length":  8271,
+        "LastWriteTime":  "\/Date(1784185612950)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_height_sequence_store.py",
+        "Length":  2277,
+        "LastWriteTime":  "\/Date(1783463328954)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_height_validation_result.py",
+        "Length":  2824,
+        "LastWriteTime":  "\/Date(1784002007274)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ipc_protocol.py",
+        "Length":  1690,
+        "LastWriteTime":  "\/Date(1783538864174)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_isaac_launch_preflight.py",
+        "Length":  1588,
+        "LastWriteTime":  "\/Date(1783997161370)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_knee_negative_command_space.py",
+        "Length":  894,
+        "LastWriteTime":  "\/Date(1783540426861)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_live_collider_world_bounds.py",
+        "Length":  1885,
+        "LastWriteTime":  "\/Date(1784178379891)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_live_dashboard_lifecycle.py",
+        "Length":  2002,
+        "LastWriteTime":  "\/Date(1784763155865)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_live_dashboard_model.py",
+        "Length":  1286,
+        "LastWriteTime":  "\/Date(1784762107353)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_live_telemetry_backpressure.py",
+        "Length":  932,
+        "LastWriteTime":  "\/Date(1784762911732)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_motion_ready_respawn_ready.py",
+        "Length":  5038,
+        "LastWriteTime":  "\/Date(1784766528405)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_no_physx_limit_by_default.py",
+        "Length":  1245,
+        "LastWriteTime":  "\/Date(1783540398414)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_no_task_regression.py",
+        "Length":  2188,
+        "LastWriteTime":  "\/Date(1783540490047)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_no_thread_default.py",
+        "Length":  1396,
+        "LastWriteTime":  "\/Date(1783538892193)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_obstacle_height_vision.py",
+        "Length":  5522,
+        "LastWriteTime":  "\/Date(1783993233096)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_physx_joint_limit_units.py",
+        "Length":  2012,
+        "LastWriteTime":  "\/Date(1784762107353)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_playback_speed_scale.py",
+        "Length":  2324,
+        "LastWriteTime":  "\/Date(1783472159855)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_play_selected_playback.py",
+        "Length":  7020,
+        "LastWriteTime":  "\/Date(1783550641040)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_respawn_quick_action.py",
+        "Length":  2998,
+        "LastWriteTime":  "\/Date(1784007516876)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_robot_ground_diagnostics.py",
+        "Length":  5398,
+        "LastWriteTime":  "\/Date(1784163822585)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_runtime_ready_motion_ready.py",
+        "Length":  3238,
+        "LastWriteTime":  "\/Date(1784170966904)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_safe_joint_limit_math.py",
+        "Length":  1542,
+        "LastWriteTime":  "\/Date(1783540459252)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_servo_limits.py",
+        "Length":  1736,
+        "LastWriteTime":  "\/Date(1783472062697)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_servo_target_conversion.py",
+        "Length":  1349,
+        "LastWriteTime":  "\/Date(1783540436784)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_servo_wheel_staging.py",
+        "Length":  9199,
+        "LastWriteTime":  "\/Date(1783546036665)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_sim_process_client.py",
+        "Length":  3472,
+        "LastWriteTime":  "\/Date(1783997235536)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_sim_ui_controller.py",
+        "Length":  3543,
+        "LastWriteTime":  "\/Date(1783472047583)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_speed_scale_negative_servo.py",
+        "Length":  1783,
+        "LastWriteTime":  "\/Date(1783540448505)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_gui_e2e_state_machine.py",
+        "Length":  6501,
+        "LastWriteTime":  "\/Date(1784763459959)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_margin.py",
+        "Length":  1432,
+        "LastWriteTime":  "\/Date(1784758601443)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_finalization.py",
+        "Length":  1959,
+        "LastWriteTime":  "\/Date(1784763058868)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_fresh_frame_gate.py",
+        "Length":  2206,
+        "LastWriteTime":  "\/Date(1784762107352)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_isolation.py",
+        "Length":  2462,
+        "LastWriteTime":  "\/Date(1784762330770)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_no_ground_truth_routing.py",
+        "Length":  2461,
+        "LastWriteTime":  "\/Date(1784762107352)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_playback_gate.py",
+        "Length":  3751,
+        "LastWriteTime":  "\/Date(1784766541021)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_state.py",
+        "Length":  2241,
+        "LastWriteTime":  "\/Date(1784762107350)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_task_steps_loading.py",
+        "Length":  4307,
+        "LastWriteTime":  "\/Date(1784764828278)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_stability_ui_panel.py",
+        "Length":  1466,
+        "LastWriteTime":  "\/Date(1784763141122)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_subprocess_ground_reference.py",
+        "Length":  2574,
+        "LastWriteTime":  "\/Date(1784167226464)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_subprocess_worker_runtime_parity.py",
+        "Length":  1666,
+        "LastWriteTime":  "\/Date(1784167226463)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_ui_refresh_policy.py",
+        "Length":  1714,
+        "LastWriteTime":  "\/Date(1783542320336)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_validation_readiness_reason.py",
+        "Length":  3262,
+        "LastWriteTime":  "\/Date(1784171009197)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_auto_replay.py",
+        "Length":  7329,
+        "LastWriteTime":  "\/Date(1784007414042)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_gui_e2e_state_machine.py",
+        "Length":  5309,
+        "LastWriteTime":  "\/Date(1784178342739)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_ipc.py",
+        "Length":  2501,
+        "LastWriteTime":  "\/Date(1783993330161)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_obstacle_generation.py",
+        "Length":  3273,
+        "LastWriteTime":  "\/Date(1784007605025)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_obstacle_update_respawn_split.py",
+        "Length":  2317,
+        "LastWriteTime":  "\/Date(1784171024555)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_roi_source.py",
+        "Length":  2651,
+        "LastWriteTime":  "\/Date(1784012013264)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_status_scroll.py",
+        "Length":  4961,
+        "LastWriteTime":  "\/Date(1784171116182)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_steps_source.py",
+        "Length":  2958,
+        "LastWriteTime":  "\/Date(1784007636354)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_task_isolation.py",
+        "Length":  3076,
+        "LastWriteTime":  "\/Date(1784007550372)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_task_state.py",
+        "Length":  1370,
+        "LastWriteTime":  "\/Date(1784007528170)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_vision_validation_gate.py",
+        "Length":  5399,
+        "LastWriteTime":  "\/Date(1784007684781)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_wheel_body_resolution_scoring.py",
+        "Length":  2863,
+        "LastWriteTime":  "\/Date(1784178362098)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_wheel_collision_resolution.py",
+        "Length":  6334,
+        "LastWriteTime":  "\/Date(1784174725779)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_wheel_speed_scale.py",
+        "Length":  2563,
+        "LastWriteTime":  "\/Date(1783472147339)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_windows_batch_launcher.py",
+        "Length":  2087,
+        "LastWriteTime":  "\/Date(1783997203534)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_worker_launch_plan.py",
+        "Length":  4126,
+        "LastWriteTime":  "\/Date(1783997188932)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_worker_smoke_execution_branches.py",
+        "Length":  5486,
+        "LastWriteTime":  "\/Date(1784185596089)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_worker_startup_diagnostics.py",
+        "Length":  2373,
+        "LastWriteTime":  "\/Date(1783997218378)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tests\\test_workflow_regressions.py",
+        "Length":  11331,
+        "LastWriteTime":  "\/Date(1783544334041)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tools\\compare_runs.py",
+        "Length":  4011,
+        "LastWriteTime":  "\/Date(1784758135279)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\tools\\generate_report.py",
+        "Length":  892,
+        "LastWriteTime":  "\/Date(1784758135278)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\camera_validation.py",
+        "Length":  10418,
+        "LastWriteTime":  "\/Date(1784001267311)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\command_model.py",
+        "Length":  6994,
+        "LastWriteTime":  "\/Date(1784758245486)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_manifest.py",
+        "Length":  7160,
+        "LastWriteTime":  "\/Date(1783545985697)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_replay_ui.py",
+        "Length":  35597,
+        "LastWriteTime":  "\/Date(1784763358724)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_sequence_store.py",
+        "Length":  4540,
+        "LastWriteTime":  "\/Date(1783545993447)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_task_panel.py",
+        "Length":  7482,
+        "LastWriteTime":  "\/Date(1783544214433)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\isaac_launch_preflight.py",
+        "Length":  17979,
+        "LastWriteTime":  "\/Date(1783997440778)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\obstacle_height_vision.py",
+        "Length":  21115,
+        "LastWriteTime":  "\/Date(1784184930480)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback.py",
+        "Length":  13733,
+        "LastWriteTime":  "\/Date(1784758245487)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\README.md",
+        "Length":  48597,
+        "LastWriteTime":  "\/Date(1784766884235)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\README_TELEMETRY.md",
+        "Length":  3863,
+        "LastWriteTime":  "\/Date(1784766899447)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\requirements-telemetry-ui.txt",
+        "Length":  541,
+        "LastWriteTime":  "\/Date(1784762594119)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\robot_ground_diagnostics.py",
+        "Length":  86212,
+        "LastWriteTime":  "\/Date(1784766495553)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sequence_manager.py",
+        "Length":  8178,
+        "LastWriteTime":  "\/Date(1783544407596)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sequence_model.py",
+        "Length":  22142,
+        "LastWriteTime":  "\/Date(1783542506330)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_camera_viewport.py",
+        "Length":  47752,
+        "LastWriteTime":  "\/Date(1784178001913)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_ipc_protocol.py",
+        "Length":  2322,
+        "LastWriteTime":  "\/Date(1784761348198)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_obstacle_scene.py",
+        "Length":  22719,
+        "LastWriteTime":  "\/Date(1784758170050)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_onboard_camera.py",
+        "Length":  86288,
+        "LastWriteTime":  "\/Date(1784184985582)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_process_client.py",
+        "Length":  59646,
+        "LastWriteTime":  "\/Date(1784758494547)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_robot_adapter.py",
+        "Length":  75750,
+        "LastWriteTime":  "\/Date(1784762048501)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_transport.py",
+        "Length":  7961,
+        "LastWriteTime":  "\/Date(1784758245490)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_ui_controller.py",
+        "Length":  344613,
+        "LastWriteTime":  "\/Date(1784766517344)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_worker.py",
+        "Length":  20940,
+        "LastWriteTime":  "\/Date(1784761973237)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_worker_process.py",
+        "Length":  102745,
+        "LastWriteTime":  "\/Date(1784761941746)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_worker_runtime.py",
+        "Length":  27285,
+        "LastWriteTime":  "\/Date(1784758392441)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\speed_scale.py",
+        "Length":  5884,
+        "LastWriteTime":  "\/Date(1783540378893)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\stability_gui_e2e.py",
+        "Length":  17118,
+        "LastWriteTime":  "\/Date(1784766991157)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\vision_gui_e2e.py",
+        "Length":  18527,
+        "LastWriteTime":  "\/Date(1784185449451)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\vision_task_state.py",
+        "Length":  2292,
+        "LastWriteTime":  "\/Date(1784007709881)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\worker_startup_diagnostics.py",
+        "Length":  7369,
+        "LastWriteTime":  "\/Date(1783996554252)\/"
+    },
+    {
+        "FullName":  "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\__init__.py",
+        "Length":  59,
+        "LastWriteTime":  "\/Date(1783462896487)\/"
+    }
+]

@@ -1,0 +1,20 @@
+Protected formal data audit - final
+Baseline file count: 55
+Current file count: 55
+Missing: 0
+Added: 0
+Changed SHA-256: 0
+Result: PASS; all 55 protected files are byte-for-byte identical to the pre-change baseline.
+
+Formal accepted sequence hashes:
+saved_height_steps\height_05cm\accepted_steps.jsonl	66BE488058660467810260CB42D86357736BEE2FF408D0741956C31DB30426F8
+saved_height_steps\height_10cm\accepted_steps.jsonl	1132B160E4E6E937E060285344D1AE3608B2F749FC28DCE24AAE26DEF5F005F5
+saved_height_steps\height_15cm\accepted_steps.jsonl	2D473E494900B824F117561584E4858E6445AE6B4EA020BD0DB17D0915A767C7
+saved_height_steps\height_20cm\accepted_steps.jsonl	504D6DED365F23D10BD3FE3FB4782CF7A7AFFB74B2CFF08F951CB27E49E80DCE
+saved_height_steps\height_25cm\accepted_steps.jsonl	A403A42790D9DC253EA78832D4E02E211748DAF1E429874F934AB432E4F01894
+saved_height_steps\height_30cm\accepted_steps.jsonl	94C3999FFAE8FB2C7364F7AF330F656B1A8ACBD06291A0E04871B3C43702D7D8
+saved_height_steps\height_35cm\accepted_steps.jsonl	B485501817F7C5DCB1CEB2F15EAEBD6A699FFA5ADD1B2FEB08D0052ABD1F94C4
+saved_height_steps\height_40cm\accepted_steps.jsonl	B2778BE704913A73D78DC2C5BAE0F9433DE204A3112E7D668CA48CB8AE22519B
+
+Scope includes formal sequences, manifest, backup, and protected Vision debug assets. Vision/Stability code or assets were not restored or modified.
+

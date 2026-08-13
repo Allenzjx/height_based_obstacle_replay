@@ -1,0 +1,50 @@
+{
+  "created_at": "2026-08-06T00:53:41.056264-04:00",
+  "heights": {
+    "100": {
+      "active_version_id": "",
+      "folder": "height_100mm",
+      "height_mm": 100,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "50": {
+      "active_version_id": "v001_20260806_005403_399532_run-management-a",
+      "folder": "height_050mm",
+      "height_mm": 50,
+      "last_saved_at": "2026-08-06T00:54:03.399514-04:00",
+      "version_count": 1,
+      "versions": [
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\selected_pose_run_management_and_full_replay_fix_20260805_235722\\post_fix_run_management_retry2\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260806_005403_399532_run-management-a\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "5632e918224616a07d8450ece06ab94cf07f258a2edf497058e3d90e5e77b128",
+          "command_count": 1,
+          "created_at": "2026-08-06T00:54:03.399514-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\selected_pose_run_management_and_full_replay_fix_20260805_235722\\post_fix_run_management_retry2\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260806_005403_399532_run-management-a",
+          "read_only": false,
+          "step_count": 1,
+          "updated_at": "2026-08-06T00:54:03.399514-04:00",
+          "version_id": "v001_20260806_005403_399532_run-management-a",
+          "version_name": "run-management-a"
+        }
+      ]
+    },
+    "75": {
+      "active_version_id": "",
+      "folder": "height_075mm",
+      "height_mm": 75,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    }
+  },
+  "schema_version": "height-steps-versions.v2",
+  "supported_heights_mm": [
+    50,
+    75,
+    100
+  ],
+  "updated_at": "2026-08-06T00:54:03.507901-04:00"
+}

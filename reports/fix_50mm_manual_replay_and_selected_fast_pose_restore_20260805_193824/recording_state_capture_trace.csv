@@ -1,0 +1,5 @@
+﻿step_index,request_id,purpose,request_time_monotonic_s,worker_session_id,worker_capture_step,worker_capture_time,classification,full_state_valid,pose_restore_eligible,result
+1,eb310adf700844e99ee72939e2e1c6b1,recording_start,1868803.7089292,99e3318cbfb048c99d69954b0d7b5af0,202,1.6833333333333298,FULL_VALID,True,True,PASS
+1,a4067e34300e45bd9a874c493563f68d,recording_stop,1868804.5906129,99e3318cbfb048c99d69954b0d7b5af0,306,2.5499999999999936,FULL_VALID,True,True,PASS
+2,5e16a28dd4cb4600994eb002c7f9e6cd,recording_start,1868805.0129171,99e3318cbfb048c99d69954b0d7b5af0,370,3.083333333333325,FULL_VALID,True,True,PASS
+2,4b91c8102d6646e2938ec3e8c9c3688e,recording_stop,1868805.9284643,99e3318cbfb048c99d69954b0d7b5af0,490,4.083333333333326,FULL_VALID,True,True,PASS

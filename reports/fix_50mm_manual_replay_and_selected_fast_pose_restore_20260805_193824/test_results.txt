@@ -1,0 +1,27 @@
+Test command/result ledger
+
+PASS  git fetch origin; HEAD == origin/main == 249604b02192f73f096ab4e41fa253ae15b8cf11 (0 ahead / 0 behind).
+PASS  python -m py_compile sim_ui_controller.py sim_worker_process.py sim_robot_adapter.py sim_transport.py sim_process_client.py sim_state_validation.py playback.py latest_50mm_manual_v2_e2e.py pose_checkpoint_selected_fast_e2e.py
+PASS  python -m unittest discover -s tests -p 'test_*.py'
+      Ran 246 tests in 8.549s - OK.
+
+PRE-FIX REPRO (expected product failure)
+FAIL  latest_50mm_manual_v2_e2e.py Fast, worker PID 173756, Step 14 / Segment 56, actuator_limit; report pre_fix_formal_replay_retry/real_isaac_result.json.
+FAIL  latest_50mm_manual_v2_e2e.py Raw, Step 14 / Segment 56, actuator_limit; report pre_fix_formal_raw/real_isaac_result.json (harness success only because require-complete was false; run itself failed).
+FAIL  initial pre_fix_formal_replay harness referenced a nonexistent diagnostic field; transparent harness-only traceback retained in pre_fix_formal_replay/real_isaac_result.json.
+
+POST-FIX REAL ISAAC GUI
+PASS  latest_50mm_manual_v2_e2e.py --profiles fast --require-complete; worker/Isaac host PID 19988; 96/96 events, 64/64 timing segments, Step 16, complete, IDLE.
+PASS  latest_50mm_manual_v2_e2e.py --profiles raw --require-complete; worker/Isaac host PID 129936; 96/96 events, 64/64 timing segments, Step 16, complete, IDLE.
+PASS  pose_checkpoint_selected_fast_e2e.py; worker/Isaac host PID 81148; 2 real recorded steps / 4 FULL_VALID boundaries; 3 physical mouse Selected Fast runs complete; stop-during-restore and both conflicts pass.
+FAIL  first post_fix_recording_selected_fast run reached verified restore and completed playback but the E2E read represented steps from compact timing and reported []; harness-only traceback retained in post_fix_recording_selected_fast/real_isaac_result.json. Corrected final run passed using actual plan events.
+
+Single-instance evidence
+- Process inventory was checked before every launch and after every close.
+- Runs were sequential; never more than one project worker/Isaac host was present.
+- Each Isaac SimulationApp lived inside its one worker PID; no separate second PlaybackManager, SequenceManager, or SimProcessClient was created.
+- Final process inventory: no project Isaac/Kit/worker process remains.
+- No package, Python, Conda, Isaac Sim, or Isaac Lab installation/change was performed.
+
+Protected data
+PASS  94/94 protected files byte-identical; mismatch_count=0.

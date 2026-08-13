@@ -1,0 +1,449 @@
+{
+  "success": true,
+  "started_at": 1785736931.8505924,
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "at": 1785736955.9269028,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_MOTION",
+      "at": 1785736961.6729915,
+      "details": {}
+    }
+  ],
+  "recording": {
+    "speed_percent": 200,
+    "timing": {
+      "source": "simulation_time",
+      "recording_speed_percent": 200.0,
+      "actual_duration_s": 1.5416666666666614,
+      "reference_100_duration_s": 3.083333333333323
+    },
+    "motion_semantics": {
+      "reference_speed_percent": 100.0,
+      "recording_speed_percent": 200.0,
+      "reference_duration_s": 3.083333333333323,
+      "actual_recording_duration_s": 1.5416666666666614,
+      "servo_start_deg": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "servo_target_deg": {
+        "front_left_hip": 15.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheel_angular_displacement_rad": {
+        "front_left_ankle": -3.6600377950817347,
+        "front_right_ankle": 3.67293169721961,
+        "rear_left_ankle": -3.575723886489868,
+        "rear_right_ankle": 3.664081145077944
+      },
+      "wheel_displacement_source": "articulation_joint_state",
+      "derived_wheel_angular_displacement_rad": {
+        "front_left_ankle": 1.8499999999999936,
+        "front_right_ankle": 1.8499999999999936,
+        "rear_left_ankle": 1.8499999999999936,
+        "rear_right_ankle": 1.8499999999999936
+      }
+    },
+    "events": [
+      {
+        "time": 0.0,
+        "command": "servo front_left_hip 15",
+        "kind": "manual",
+        "expanded_commands": [],
+        "command_state_before": {
+          "servos": {
+            "front_left_hip": 0.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.0,
+            "front_right_ankle": 0.0,
+            "rear_left_ankle": 0.0,
+            "rear_right_ankle": 0.0
+          }
+        },
+        "command_state_after": {
+          "servos": {
+            "front_left_hip": 15.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.0,
+            "front_right_ankle": 0.0,
+            "rear_left_ankle": 0.0,
+            "rear_right_ankle": 0.0
+          }
+        },
+        "executed_command": "servo front_left_hip 15",
+        "actual_recording_time_s": 0.0,
+        "recording_timing_source": "simulation_time",
+        "recording_speed_percent": 200.0
+      },
+      {
+        "time": 0.0,
+        "command": "wheel all 0.6",
+        "kind": "manual",
+        "expanded_commands": [],
+        "command_state_before": {
+          "servos": {
+            "front_left_hip": 15.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.0,
+            "front_right_ankle": 0.0,
+            "rear_left_ankle": 0.0,
+            "rear_right_ankle": 0.0
+          }
+        },
+        "command_state_after": {
+          "servos": {
+            "front_left_hip": 15.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.6,
+            "front_right_ankle": 0.6,
+            "rear_left_ankle": 0.6,
+            "rear_right_ankle": 0.6
+          }
+        },
+        "executed_command": "wheel all 1.2",
+        "actual_recording_time_s": 0.0,
+        "recording_timing_source": "simulation_time",
+        "recording_speed_percent": 200.0
+      },
+      {
+        "time": 3.083333333333323,
+        "command": "wheel stop",
+        "kind": "manual",
+        "expanded_commands": [],
+        "command_state_before": {
+          "servos": {
+            "front_left_hip": 15.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.6,
+            "front_right_ankle": 0.6,
+            "rear_left_ankle": 0.6,
+            "rear_right_ankle": 0.6
+          }
+        },
+        "command_state_after": {
+          "servos": {
+            "front_left_hip": 15.0,
+            "front_left_knee": 0.0,
+            "front_right_hip": 0.0,
+            "front_right_knee": 0.0,
+            "rear_left_hip": 0.0,
+            "rear_left_knee": 0.0,
+            "rear_right_hip": 0.0,
+            "rear_right_knee": 0.0
+          },
+          "wheels": {
+            "front_left_ankle": 0.0,
+            "front_right_ankle": 0.0,
+            "rear_left_ankle": 0.0,
+            "rear_right_ankle": 0.0
+          }
+        },
+        "executed_command": "wheel stop",
+        "actual_recording_time_s": 1.5416666666666614,
+        "recording_timing_source": "simulation_time",
+        "recording_speed_percent": 200.0
+      }
+    ],
+    "actual_at_stop": {
+      "sim_time_at_stop_s": 2.291666666666661,
+      "actual_joint_state": {
+        "servos": {
+          "front_left_hip": {
+            "rad": 0.2629101574420929,
+            "deg": 15.063642412551914
+          },
+          "front_left_knee": {
+            "rad": 0.000677555100992322,
+            "deg": 0.03882104767442031
+          },
+          "front_right_hip": {
+            "rad": 0.008100341074168682,
+            "deg": 0.46411535616633326
+          },
+          "front_right_knee": {
+            "rad": -0.004146861378103495,
+            "deg": -0.23759765519113454
+          },
+          "rear_left_hip": {
+            "rad": -0.021731020882725716,
+            "deg": -1.2450957810908403
+          },
+          "rear_left_knee": {
+            "rad": 0.010730694979429245,
+            "deg": 0.6148235335635175
+          },
+          "rear_right_hip": {
+            "rad": 0.0010310993529856205,
+            "deg": 0.059077641184745955
+          },
+          "rear_right_knee": {
+            "rad": 0.001744183013215661,
+            "deg": 0.09993432535566807
+          }
+        }
+      },
+      "joint_pos": [
+        0.2629101574420929,
+        0.008100341074168682,
+        -0.021731020882725716,
+        0.0010310993529856205,
+        0.000677555100992322,
+        -0.004146861378103495,
+        0.010730694979429245,
+        0.001744183013215661,
+        -3.6852023601531982,
+        3.7141239643096924,
+        -3.5223653316497803,
+        3.6038246154785156
+      ]
+    }
+  },
+  "temporary_save": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_05cm\\accepted_steps.jsonl",
+    "backup_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\critical_knee_fast_ui_speed_fix_20260803_012759\\real_record_play\\temporary_recording_store\\height_05cm\\accepted_steps.jsonl.backup_20260803_020241_560002",
+    "saved_at": "2026-08-03T02:02:41-04:00",
+    "step_count": 1,
+    "command_count": 3,
+    "atomic_replace": true,
+    "fsync": true,
+    "validated": true
+  },
+  "playback": {
+    "speed_percent": 200,
+    "worker_plan_id": "402d2709-a250571aa9484d30",
+    "worker_final_time_s": 1.5416666666666614,
+    "worker_timing": {
+      "plan_build_start": 1628825.7948824,
+      "plan_build_end": 1628825.8016509,
+      "step_diagnostics": [
+        {
+          "step_index": 1,
+          "step_id": "step_001_recorded_height_05cm_dur_3.08s",
+          "raw_first_event_s": 0.0,
+          "raw_last_event_s": 3.083333333333323,
+          "raw_duration_s": 3.083333333333323,
+          "first_motion_time_s": 0.0,
+          "last_motion_time_s": 3.083333333333323,
+          "implicit_ui_gap_removed_s": 0.0,
+          "explicit_motion_duration_s": 3.083333333333323,
+          "inter_step_scheduler_gap_s": 0.0,
+          "kept_command_count": 3,
+          "removed_noop_count": 0,
+          "fast_sequence_end_s": 3.083333333333323
+        }
+      ],
+      "raw_sequence_duration_s": 3.083333333333323,
+      "compacted_sequence_duration_s": 3.083333333333323,
+      "fixed_step_gap_s": 0.0,
+      "button_clicked_time": 1628825.794868,
+      "restore_start": 1628825.8052576,
+      "restore_end": 1628825.8120958,
+      "worker_ready_time": 1785736961.6881263,
+      "commands": [
+        {
+          "global_command_index": 1,
+          "source_step_index": 1,
+          "command_index_in_step": 1,
+          "command": "servo front_left_hip 15",
+          "scheduled_time_s": 0.0,
+          "start_sim_time_s": 2.6916666666666598,
+          "start_wall_time": 1785736962.9985778,
+          "intentional_motion_duration": 1.5416666666666614,
+          "implicit_idle_gap": 1.5416666666666614,
+          "scheduler_lateness": 0.0,
+          "pre_dispatch_joint_pos": null,
+          "end_sim_time_s": 2.6916666666666598,
+          "end_wall_time": 1785736962.9985778
+        },
+        {
+          "global_command_index": 2,
+          "source_step_index": 1,
+          "command_index_in_step": 2,
+          "command": "wheel all 1.2",
+          "scheduled_time_s": 0.0,
+          "start_sim_time_s": 2.6916666666666598,
+          "start_wall_time": 1785736962.9985778,
+          "intentional_motion_duration": 1.5416666666666614,
+          "implicit_idle_gap": 1.5416666666666614,
+          "scheduler_lateness": 0.0,
+          "pre_dispatch_joint_pos": [
+            [
+              0.0041124518029391766,
+              0.00032249526702798903,
+              -0.008303191512823105,
+              -0.01008168701082468,
+              -0.00510834064334631,
+              -0.0022127823904156685,
+              0.008615235798060894,
+              0.009207775816321373,
+              -0.022455869242548943,
+              0.03753960505127907,
+              0.061734288930892944,
+              -0.06787684559822083
+            ]
+          ],
+          "end_sim_time_s": 4.233333333333333,
+          "end_wall_time": 1785736968.40543
+        },
+        {
+          "global_command_index": 3,
+          "source_step_index": 1,
+          "command_index_in_step": 3,
+          "command": "wheel stop",
+          "scheduled_time_s": 1.5416666666666614,
+          "start_sim_time_s": 4.233333333333333,
+          "start_wall_time": 1785736968.40543,
+          "intentional_motion_duration": 0.0,
+          "implicit_idle_gap": 0.0,
+          "scheduler_lateness": 1.1324274851176597e-14,
+          "pre_dispatch_joint_pos": [
+            [
+              0.26312825083732605,
+              0.007976384833455086,
+              -0.02178150601685047,
+              0.00101437047123909,
+              0.0009541316539980471,
+              -0.004205323290079832,
+              0.01075289212167263,
+              0.0017434719484299421,
+              -3.722261667251587,
+              3.7471530437469482,
+              -3.552011728286743,
+              3.636429786682129
+            ]
+          ],
+          "end_sim_time_s": 4.233333333333333,
+          "end_wall_time": 1785736968.40543
+        }
+      ],
+      "steps": [
+        {
+          "source_step_index": 1,
+          "source_step_id": "step_001_recorded_height_05cm_dur_3.08s",
+          "start_sim_time_s": 2.6916666666666598,
+          "start_wall_time": 1785736962.9985778,
+          "end_sim_time_s": 4.233333333333333,
+          "end_wall_time": 1785736968.40543
+        }
+      ],
+      "first_command_start": 1785736962.9985778,
+      "final_completion_time": 1785736968.40543
+    },
+    "wheel_angular_displacement_rad": {
+      "front_left_ankle": -3.699805798009038,
+      "front_right_ankle": 3.709613438695669,
+      "rear_left_ankle": -3.613746017217636,
+      "rear_right_ankle": 3.7043066322803497
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": 0.26347988843917847,
+          "deg": 15.096285594142698
+        },
+        "front_left_knee": {
+          "rad": 0.001033475622534752,
+          "deg": 0.05921379140089664
+        },
+        "front_right_hip": {
+          "rad": 0.00740190502256155,
+          "deg": 0.42409791814946324
+        },
+        "front_right_knee": {
+          "rad": -0.0049493578262627125,
+          "deg": -0.2835773147448968
+        },
+        "rear_left_hip": {
+          "rad": -0.02172701805830002,
+          "deg": -1.2448664361451158
+        },
+        "rear_left_knee": {
+          "rad": 0.010480386205017567,
+          "deg": 0.6004818972146361
+        },
+        "rear_right_hip": {
+          "rad": 0.0010011259000748396,
+          "deg": 0.0573602888355241
+        },
+        "rear_right_knee": {
+          "rad": 0.0016977235209196806,
+          "deg": 0.09727239252878782
+        }
+      }
+    }
+  },
+  "equivalence": {
+    "servo_endpoint_difference_deg": 0.0326431815907835,
+    "wheel_displacement_difference_rad": {
+      "front_left_ankle": 0.039768002927303314,
+      "front_right_ankle": 0.03668174147605896,
+      "rear_left_ankle": 0.038022130727767944,
+      "rear_right_ankle": 0.04022548720240593
+    },
+    "max_wheel_displacement_difference_rad": 0.04022548720240593,
+    "recording_motion_duration_s": 1.5416666666666614,
+    "playback_motion_duration_s": 1.5416666666666614,
+    "duration_difference_s": 0.0,
+    "speed_scale_application_count": 1
+  },
+  "finished_at": 1785736968.958393,
+  "isaac_pid": 19980,
+  "physics_dt": 0.008333333333333333,
+  "reused_existing_isaac": false
+}

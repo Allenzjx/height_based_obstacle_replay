@@ -1,0 +1,29 @@
+Changed product/test files
+
+- sim_ui_controller.py: synchronous Fast receipt/restore feedback, one authoritative selected-index resolver shared by Raw/Fast, physical click ID propagation, stable feedback that does not move the button between press/release, immutable pending Fast profile, and selected restore status preservation.
+- playback.py: explicit reuse of an already-owned PLAYBACK operation with restore-request owner validation; no second operation enter; worker compact status now preserves profile and selected-playback fields.
+- sim_worker_process.py: start acknowledgment reports decoded plan profile.
+- play_selected_fast_physical_click_e2e.py: real Windows mouse click acceptance with 18 boundaries, three repeats, worker identity, first command, measured motion, completion, and screenshots/GIF.
+- tests/test_play_selected_fast_click_fix.py: binding/index/profile/signature/single-owner/failure-cleanup tests.
+
+Generated report files are under this report directory only.
+
+Not changed by this task
+
+- operation_coordinator.py (global guard/reentry semantics unchanged)
+- selected_step_previous_saved_state_e2e.py
+- sequence_model.py and Fast compaction/timing implementation
+- all Play All/Play To Selected/Respawn Selected implementations
+- all servo/wheel speeds, targets, durations, limits, tolerances, calibration and actuator configuration
+- robot USD/URDF, obstacle geometry, height generation, recording schema and Servo-Wheel Mode
+- all protected saved steps, versions, sequences and histories (73/73 SHA-256 match)
+
+Pre-existing working-tree items, not caused or altered by this task
+
+- saved_height_steps_fsm_reference_v2/height_050mm/active_version.json
+- saved_height_steps_fsm_reference_v2/manifest.json
+- their two 20260805_170655 backup files
+
+Attachment comparison
+
+The supplied attachment directory contains only pasted-text.txt (the task text), not sim_ui_controller.py, playback.py, or selected_step_previous_saved_state_e2e.py. A source-to-source attachment comparison was therefore unavailable; formal project source was authoritative as instructed.

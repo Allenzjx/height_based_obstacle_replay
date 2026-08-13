@@ -1,0 +1,4 @@
+profile_elapsed_s=5.006089
+full_table_redraw_count=0
+json_sequence_read_count_during_poll=0
+ipc_poll_count=48

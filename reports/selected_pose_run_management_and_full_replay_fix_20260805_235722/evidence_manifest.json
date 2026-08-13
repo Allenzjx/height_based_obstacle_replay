@@ -1,0 +1,27 @@
+{
+  "animations": [
+    "run_open_update_save_as_new.gif",
+    "selected_pose_restore_and_motion.gif",
+    "formal_50mm_step10_to_complete.gif"
+  ],
+  "formal_fast": "PASS",
+  "formal_raw": "PASS",
+  "protected_audit": "PASS",
+  "report": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\selected_pose_run_management_and_full_replay_fix_20260805_235722",
+  "required_artifacts": [
+    "summary.md",
+    "changed_files.txt",
+    "selected_pose_restore_trace.json",
+    "run_management_tests.csv",
+    "playback_conflict_matrix.csv",
+    "playback_state_reconciliation.json",
+    "step10_segment37_before_after.json",
+    "formal_50mm_replay_trace.csv",
+    "raw_fast_completion.json",
+    "test_results.txt",
+    "protected_data_sha256_audit.txt",
+    "screenshots.md"
+  ],
+  "respawn": "SAFELY BLOCKED: grounded reference invalid",
+  "unit_tests": "265 PASS"
+}

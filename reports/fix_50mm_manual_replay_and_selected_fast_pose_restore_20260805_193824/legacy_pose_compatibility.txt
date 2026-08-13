@@ -1,0 +1,23 @@
+Current active version: v002_20260805_185955_854964_manual
+State audit: {'PLACEHOLDER_NO_SIM': 32}; all 16 steps lack a FULL_VALID boundary pair.
+
+Why pose is missing:
+The old subprocess recording path requested lightweight status and synchronously called capture_sim_state.
+Lightweight status had no sim_state, and SimTransport silently fell back to the controller-local
+NullSimRobotAdapter. The resulting non-empty dictionaries contained command data but null root/joint
+pose fields and 'no-sim adapter' diagnostics.
+
+Compatibility policy:
+- PLACEHOLDER_NO_SIM and COMMAND_ONLY are never pose-restore sources for Selected Fast.
+- Current v002 remains usable for Play All Raw/Fast; its legacy_missing_endpoint segments use the
+  conservative finite 1 degree normal completion policy and never claim an empty residual is measured.
+- Selected Fast on this v002 is explicitly blocked with a FULL_VALID/re-record instruction.
+- No command_state is wrapped or advertised as a full pose.
+
+Replay-derived version:
+NOT CREATED. Replaying can create replay-derived checkpoints, but those are not the lost original manual
+poses. This run did not synthesize or activate such a version. For exact manual-pose semantics, re-record
+with the repaired Recording path. A future maintenance operation may create a NEW child version only after
+all replay-derived checkpoints validate; it must preserve parent id/SHA and label the source replay_derived.
+
+Original v002 modified: NO. See protected_data_sha256_audit.txt.

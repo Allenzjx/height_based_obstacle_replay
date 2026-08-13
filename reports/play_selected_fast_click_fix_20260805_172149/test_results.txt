@@ -1,0 +1,34 @@
+Test results
+
+1) python -m unittest tests.test_play_selected_fast_click_fix -v
+   PASS: 11/11, 2.391 s (final focused run)
+
+2) python -m unittest discover -s tests
+   PASS: 237/237, 8.587 s (final full run)
+
+3) python play_selected_fast_physical_click_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\play_selected_fast_click_fix_20260805_172149\real_isaac_physical_final_retry6 --repeat-count 3
+   PASS: success=true, physical mouse runs=3, worker PID=37276, sequential single Isaac/worker only.
+
+4) python selected_step_previous_saved_state_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\play_selected_fast_click_fix_20260805_172149\real_isaac_regression_final
+   PASS: success=true, worker PID=21792, Step1/Stop/Recording/Height/Raw regression covered.
+
+5) git diff --check
+   PASS: no whitespace errors.
+
+Earlier command-entry errors retained for transparency:
+- python -m unittest ... tests.test_playback_worker_scheduler ... -> ImportError: module does not exist.
+- python -m unittest ... tests.test_playback_worker_handshake ... -> ImportError: module does not exist.
+These were invalid test module names, not product-test failures. Correct discovery runs above passed.
+
+Traceback excerpt:
+ModuleNotFoundError: No module named 'tests.test_playback_worker_scheduler'
+ModuleNotFoundError: No module named 'tests.test_playback_worker_handshake'
+
+Isaac/worker process audit:
+- Before authoritative physical run: 0 matching processes.
+- Physical run worker PID: 37276.
+- Before regression run: 0 matching processes.
+- Regression run worker PID: 21792.
+- Runs were sequential; maximum simultaneous Isaac/worker count: 1.
+- After both UI closes: 0 matching processes.
+- No second/concurrent Isaac was started.

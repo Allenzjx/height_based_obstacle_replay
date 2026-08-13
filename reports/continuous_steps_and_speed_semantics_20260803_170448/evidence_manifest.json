@@ -1,0 +1,8 @@
+{
+  "raw_result": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\continuous_steps_and_speed_semantics_20260803_170448\\real_raw_final\\continuous_speed_semantics_real_result.json",
+  "fast_result": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\continuous_steps_and_speed_semantics_20260803_170448\\real_fast_final_retry\\continuous_speed_semantics_real_result.json",
+  "validation_result": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\continuous_steps_and_speed_semantics_20260803_170448\\real_validation_only\\continuous_speed_semantics_real_result.json",
+  "record_result": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\continuous_steps_and_speed_semantics_20260803_170448\\real_record_final\\continuous_speed_semantics_real_result.json",
+  "raw_top_level_note": "TclError: can't invoke \"winfo\" command: application has been destroyed",
+  "accepted_worker_contract": "stop_reason=complete, events_sent=248, segments=159, active=false, scheduled=false"
+}

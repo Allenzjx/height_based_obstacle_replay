@@ -1,0 +1,2 @@
+COMMAND: python -m py_compile <82 project/test/tool files>
+EXIT_CODE=0

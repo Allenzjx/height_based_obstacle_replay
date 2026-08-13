@@ -1,0 +1,270 @@
+{
+  "started_at": 1785720577.3975224,
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785720601.160332,
+      "details": {
+        "tabs": [
+          "Sim Connection",
+          "Run Manager",
+          "Record / Servo+Wheel",
+          "Speed Scale",
+          "Playback",
+          "Height Generate",
+          "Combine",
+          "Sim State"
+        ]
+      }
+    },
+    {
+      "stage": "WAIT_SCENE",
+      "completed_at": 1785720605.1777,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_ACTIVE",
+      "completed_at": 1785720611.3931904,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_PAUSED",
+      "completed_at": 1785720614.0125492,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_RESUMED",
+      "completed_at": 1785720665.1095839,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_STOPPED",
+      "completed_at": 1785720667.633353,
+      "details": {}
+    },
+    {
+      "stage": "START_VARIANT",
+      "completed_at": 1785720669.2542853,
+      "details": {
+        "label": "Play Selected Step",
+        "selected": 1
+      }
+    },
+    {
+      "stage": "WAIT_VARIANT_ACTIVE",
+      "completed_at": 1785720671.585115,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_VARIANT_STOP",
+      "completed_at": 1785720672.5583339,
+      "details": {}
+    },
+    {
+      "stage": "START_VARIANT",
+      "completed_at": 1785720674.1763725,
+      "details": {
+        "label": "Respawn And Play Selected Step",
+        "selected": 1
+      }
+    },
+    {
+      "stage": "WAIT_VARIANT_ACTIVE",
+      "completed_at": 1785720677.8249655,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_VARIANT_STOP",
+      "completed_at": 1785720678.2824347,
+      "details": {}
+    },
+    {
+      "stage": "START_VARIANT",
+      "completed_at": 1785720680.0747442,
+      "details": {
+        "label": "Play To Selected From Start",
+        "selected": 2
+      }
+    },
+    {
+      "stage": "WAIT_VARIANT_ACTIVE",
+      "completed_at": 1785720682.0303705,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_VARIANT_STOP",
+      "completed_at": 1785720682.9928513,
+      "details": {}
+    },
+    {
+      "stage": "START_VARIANT",
+      "completed_at": 1785720684.6114519,
+      "details": {
+        "label": "Play Selected Fast",
+        "selected": 1
+      }
+    },
+    {
+      "stage": "WAIT_VARIANT_ACTIVE",
+      "completed_at": 1785720686.4082882,
+      "details": {}
+    },
+    {
+      "stage": "WAIT_VARIANT_STOP",
+      "completed_at": 1785720687.3448658,
+      "details": {}
+    },
+    {
+      "stage": "START_VARIANT",
+      "completed_at": 1785720687.9157531,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_CONFLICT",
+      "completed_at": 1785720689.7837765,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "main_interface": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\task_separation_refactor_20260802_212936\\main_interface.png",
+    "height_05cm_loaded": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\task_separation_refactor_20260802_212936\\height_05cm_loaded.png",
+    "play_all_enabled": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\task_separation_refactor_20260802_212936\\play_all_enabled.png",
+    "playback_active": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\task_separation_refactor_20260802_212936\\playback_active.png",
+    "playback_idle_after_stop": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\task_separation_refactor_20260802_212936\\playback_idle_after_stop.png"
+  },
+  "success": true,
+  "isaac_pid": 38100,
+  "runtime_ready": true,
+  "height_05cm": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+    "step_count": 35
+  },
+  "play_all": {
+    "active": true,
+    "events_sent": 1,
+    "last_event_command": "wheel all 0.3",
+    "actual_joint_state_changed": true
+  },
+  "pause_resume": {
+    "paused_events_sent": 1,
+    "resumed_events_sent": 2
+  },
+  "stop": {
+    "active": false,
+    "scheduled": false,
+    "queue_cleared": true
+  },
+  "playback_variants": [
+    {
+      "label": "Play Selected Step",
+      "selected_step": 1,
+      "worker_plan_id": "fc2b297a-32b8308cafcd48c9"
+    },
+    {
+      "label": "Respawn And Play Selected Step",
+      "selected_step": 1,
+      "worker_plan_id": "fc2b297a-0b536cf651c345d3"
+    },
+    {
+      "label": "Play To Selected From Start",
+      "selected_step": 2,
+      "worker_plan_id": "9e6ad88a-5497fc8c124a47e7"
+    },
+    {
+      "label": "Play Selected Fast",
+      "selected_step": 1,
+      "worker_plan_id": "29b023c4-f650057e629840e8"
+    }
+  ],
+  "record_stop_recovery": true,
+  "combine": {
+    "before_count": 34,
+    "after_count": 33,
+    "shared_manager": true,
+    "auto_playback": false
+  },
+  "tab_switch_availability_invariant": true,
+  "finished_at": 1785720692.2667801,
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Requested obstacle height 5cm from Isaac subprocess worker.",
+    "[INFO] Scene obstacle update completed at 5cm.",
+    "[INFO] Loaded 35 saved steps for 5cm.",
+    "[PERF] Load steps for current height took 102.3ms manager=adopt_steps 76.4ms",
+    "[WARN] [PERF] UI refresh took 530.5ms",
+    "[PLAYBACK DEBUG] plan label=5cm accepted steps events=269 final_time=278.872s profile=raw speed=1.00 first_commands=['wheel all 0.3', 'wheel stop', 'servo rear_left_hip 3.5', 'servo rear_left_hip 17.3', 'servo rear_left_hip 18.7']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: 5cm accepted steps",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=269 last_info=worker playback scheduled: 5cm accepted steps (269 events)",
+    "[WARN] [PERF] UI refresh took 521.3ms",
+    "[WARN] [PERF] UI refresh took 516.5ms",
+    "[WARN] [PERF] UI refresh took 520.8ms",
+    "[WARN] [PERF] UI refresh took 514.2ms",
+    "[WARN] [PERF] UI refresh took 523.9ms",
+    "[WARN] [PERF] UI refresh took 556.0ms",
+    "[WARN] [PERF] UI refresh took 546.1ms",
+    "[WARN] [PERF] UI refresh took 502.3ms",
+    "[WARN] [PERF] UI refresh took 505.6ms",
+    "[WARN] [PERF] UI refresh took 509.0ms",
+    "[WARN] [PERF] UI refresh took 517.7ms",
+    "[WARN] [PERF] UI refresh took 507.7ms",
+    "[WARN] [PERF] UI refresh took 506.2ms",
+    "[WARN] [PERF] UI refresh took 527.8ms",
+    "[WARN] [PERF] UI refresh took 500.3ms",
+    "[WARN] [PERF] UI refresh took 548.0ms",
+    "[WARN] [PERF] UI refresh took 501.7ms",
+    "[WARN] [PERF] UI refresh took 510.0ms",
+    "[WARN] [PERF] UI refresh took 511.6ms",
+    "[WARN] [PERF] UI refresh took 512.8ms",
+    "[WARN] [PERF] UI refresh took 504.4ms",
+    "[WARN] [PERF] UI refresh took 500.1ms",
+    "[WARN] [PERF] UI refresh took 514.7ms",
+    "[WARN] [PERF] UI refresh took 506.5ms",
+    "[WARN] [PERF] UI refresh took 506.0ms",
+    "[WARN] [PERF] UI refresh took 506.1ms",
+    "[PLAYBACK DEBUG] ui play-selected tree_selection=['step_1'] tree_indices=[1] controller_selected=1 selected_index=1 generated_command=play_step 1 can_playback=True reason=ok",
+    "[PLAYBACK DEBUG] play_step click args=['1'] can_playback=True reason=ok restore_start_state=True mode=TEST sim_ready=True no_sim=False",
+    "[PLAYBACK DEBUG] selected step index=1 sim_state_before=True command_state_before=True events=2",
+    "[PLAYBACK DEBUG] plan label=5cm step 001 events=2 final_time=10.796s profile=raw speed=1.00 first_commands=['wheel all 0.3', 'wheel stop']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[PLAYBACK DEBUG] start-state restore step=001 restore_full_sim_pose=True fallback_command_state=True sim_state_before=True command_state_before=True",
+    "[INFO] Restored sim_state_before for step 001 before playback.",
+    "[INFO] Playback scheduled in 0.30s: 5cm step 001",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=2 last_info=worker playback scheduled: 5cm step 001 (2 events)",
+    "[PLAYBACK DEBUG] ui play-selected tree_selection=['step_1'] tree_indices=[1] controller_selected=1 selected_index=1 generated_command=respawn_play selected 1 can_playback=True reason=ok",
+    "[PLAYBACK DEBUG] plan label=5cm step 001 events=2 final_time=10.796s profile=raw speed=1.00 first_commands=['wheel all 0.3', 'wheel stop']",
+    "[INFO] Playback will Respawn from the validated ground reference before replay: ground diagnostics failed; physical ground contact is not safe",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback Respawn requested; wheels stopped.",
+    "[PLAYBACK DEBUG] start-state restore step=001 restore_full_sim_pose=True fallback_command_state=True sim_state_before=True command_state_before=True",
+    "[INFO] Restored sim_state_before for step 001 before playback.",
+    "[INFO] Playback scheduled in 0.30s: 5cm step 001",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=2 last_info=worker playback scheduled: 5cm step 001 (2 events)",
+    "[WARN] [PERF] UI refresh took 525.2ms",
+    "[PLAYBACK DEBUG] ui play-selected tree_selection=['step_2'] tree_indices=[2] controller_selected=2 selected_index=2 generated_command=play_to_step 2 can_playback=True reason=ok",
+    "[PLAYBACK DEBUG] plan label=5cm steps 1..2 events=5 final_time=14.265s profile=raw speed=1.00 first_commands=['wheel all 0.3', 'wheel stop', 'servo rear_left_hip 3.5', 'servo rear_left_hip 17.3', 'servo rear_left_hip 18.7']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: 5cm steps 1..2",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=5 last_info=worker playback scheduled: 5cm steps 1..2 (5 events)",
+    "[WARN] [PERF] UI refresh took 503.1ms",
+    "[PLAYBACK DEBUG] ui play-selected tree_selection=['step_1'] tree_indices=[1] controller_selected=1 selected_index=1 generated_command=play_step 1 fast can_playback=True reason=ok",
+    "[PLAYBACK DEBUG] play_step click args=['1', 'fast'] can_playback=True reason=ok restore_start_state=True mode=TEST sim_ready=True no_sim=False",
+    "[PLAYBACK DEBUG] selected step index=1 sim_state_before=True command_state_before=True events=2",
+    "[PLAYBACK DEBUG] plan label=5cm step 001 events=2 final_time=8.909s profile=fast speed=1.00 first_commands=['wheel all 0.3', 'wheel stop']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[PLAYBACK DEBUG] start-state restore step=001 restore_full_sim_pose=True fallback_command_state=True sim_state_before=True command_state_before=True",
+    "[INFO] Restored sim_state_before for step 001 before playback.",
+    "[INFO] Playback scheduled in 0.30s: 5cm step 001",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=2 last_info=worker playback scheduled: 5cm step 001 (2 events)",
+    "[WARN] [PERF] UI refresh took 515.1ms",
+    "[INFO] Step recording started. mode=RECORDING_STEP",
+    "[INFO] Step recording stopped; pending step has 0 events.",
+    "[INFO] Pending step discarded.",
+    "[INFO] Combine mode enabled. Select contiguous steps, then Combine Selected Steps.",
+    "[INFO] Combined steps [1, 2] into step 001.",
+    "[PERF] Combine selected steps took 75.7ms manager=combine_steps 74.8ms",
+    "[INFO] Combine mode enabled. Select contiguous steps, then Combine Selected Steps.",
+    "[INFO] Combined steps [1, 2] into step 001.",
+    "[PERF] Combine selected steps took 62.0ms manager=combine_steps 61.3ms"
+  ]
+}

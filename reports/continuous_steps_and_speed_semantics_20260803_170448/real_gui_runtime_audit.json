@@ -1,0 +1,50 @@
+{
+  "result": "PASS",
+  "runs": [
+    {
+      "name": "formal_raw_5cm",
+      "pid": 94444,
+      "requested_headless": false,
+      "effective_headless": false,
+      "requested_livestream": 0,
+      "effective_livestream": 0,
+      "first_visible_render_completed": true,
+      "isaacsim_version": "5.1.0.0",
+      "isaaclab_version": "0.54.3"
+    },
+    {
+      "name": "formal_fast_5cm",
+      "pid": 164384,
+      "requested_headless": false,
+      "effective_headless": false,
+      "requested_livestream": 0,
+      "effective_livestream": 0,
+      "first_visible_render_completed": true,
+      "isaacsim_version": "5.1.0.0",
+      "isaaclab_version": "0.54.3"
+    },
+    {
+      "name": "wheel_servo_validation",
+      "pid": 133720,
+      "requested_headless": false,
+      "effective_headless": false,
+      "requested_livestream": 0,
+      "effective_livestream": 0,
+      "first_visible_render_completed": true,
+      "isaacsim_version": "5.1.0.0",
+      "isaaclab_version": "0.54.3"
+    },
+    {
+      "name": "record_play_validation",
+      "pid": 109856,
+      "requested_headless": false,
+      "effective_headless": false,
+      "requested_livestream": 0,
+      "effective_livestream": 0,
+      "first_visible_render_completed": true,
+      "isaacsim_version": "5.1.0.0",
+      "isaaclab_version": "0.54.3"
+    }
+  ]
+}
+

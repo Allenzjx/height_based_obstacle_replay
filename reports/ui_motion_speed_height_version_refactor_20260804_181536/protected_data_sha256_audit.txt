@@ -1,0 +1,76 @@
+PROJECT_GIT_REPOSITORY=false
+ATTACHMENT_SOURCE_SNAPSHOT=false (attachment contains request text only)
+RESULT=PASS; pre-change and post-change recursive file maps are identical
+saved_height_steps files=55 changed=0 missing=0 added=0 aggregate_pre_and_post=935b1cd992183dea334d33b922bdc9d4c7d0c7bdcf940de85062dbd2a62ff5f3
+saved_height_steps_fsm_reference_v1 files=1 changed=0 missing=0 added=0 aggregate_pre_and_post=02663d5da2cfd36e8dcdcd1cdebf2ca7b80a3423586e7bacb8893d50382692f2
+original config files=2 changed=0 missing=0 aggregate_pre_and_post=c2e38826a4dfa236e6b7fc9c7d28bae29671029a37d7796d0c5dc4b1eb8ef990
+accepted_steps/history/old recordings/old reports modified=false
+all real version writes were redirected to=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\ui_motion_speed_height_version_refactor_20260804_181536\temporary_version_store_v2
+
+CURRENT PER-FILE SHA-256 MAP
+{
+  "original_config": {
+    "config/fsm_recording_baseline.yaml": "399e08d6395e7bb82fefaa03542d9829e937113967900c63802ef4ec09cc1ae1",
+    "config/telemetry.yaml": "b7e1d5471e873c1f81b1533090ff847b75d6c2557fdb74d61bd3bbc2734dfd6d"
+  },
+  "saved_height_steps": {
+    "height_05cm/accepted_steps.jsonl": "66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8",
+    "height_10cm/accepted_steps.jsonl": "1132b160e4e6e937e060285344d1ae3608b2f749fc28dce24aae26def5f005f5",
+    "height_15cm/accepted_steps.jsonl": "2d473e494900b824f117561584e4858e6445ae6b4ea020bd0db17d0915a767c7",
+    "height_20cm/accepted_steps.jsonl": "504d6ded365f23d10bd3fe3fb4782cf7a7affb74b2cff08f951cb27e49e80dce",
+    "height_25cm/accepted_steps.jsonl": "a403a42790d9dc253ea78832d4e02e211748daf1e429874f934ab432e4f01894",
+    "height_25cm/accepted_steps.jsonl.backup_20260803_161658_486389": "673d08730d82e07275401188aa240f6b588eefa7ad1f4520644cf4d6025b7efe",
+    "height_30cm/accepted_steps.jsonl": "94c3999ffae8fb2c7364f7af330f656b1a8acbd06291a0e04871b3c43702d7d8",
+    "height_35cm/accepted_steps.jsonl": "b485501817f7c5dcb1ceb2f15eaebd6a699ffa5add1b2feb08d0052abd1f94c4",
+    "height_40cm/accepted_steps.jsonl": "b2778be704913a73d78dc2c5bae0f9433de204a3112e7d668ca48cb8ae22519b",
+    "manifest.json": "0e23860e3e67c276d8e05b780e0a43e51f53cc774864371176ed1dc76d0d8f21",
+    "vision_debug/20260713_233324_rev0001_00cm_conf0.85.json": "8475599a5454690037d64c648cc27f3a65ac23c687ab63c5a91660a407e0b1e1",
+    "vision_debug/20260713_233324_rev0001_00cm_conf0.85.ppm": "a34934128cc6e3075fa402a0c5389cd07772055af4caa99755e54bd960f5f698",
+    "vision_debug/20260713_233344_rev0002_05cm_conf0.98.json": "16dec281d9e6000e35105af2165efea4bcff702ded12c92eca3ae0ba3383d027",
+    "vision_debug/20260713_233344_rev0002_05cm_conf0.98.ppm": "a27d306a954e7b507651843986173e13d97092254cae1f1d047e3424d6aa4837",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_depth.pgm": "e01b78626f37ec436e4991ab0fec908e771472a4b9cecc17431d14039534826d",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_diagnostic.ppm": "ee1baf6e735e1a582c7af06dd75c113bef22c928ee1053ea62057e80bc8ba00d",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_obstacle_mask.pgm": "1da4fd261339e9a3833526cc387434a34a875db8f3f2516a8fcd82323f9c3551",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_rgb.ppm": "4e21da3fbbf7db51b758b189ba735194c6cdd6e64c1b06aa7f02cb9390aa70e6",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_roi_mask.pgm": "d5ba9c6000fb0af37793181b9ecd6fa58ba45d0ddbb719eddcffb1a54506896f",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.98_top_plane_mask.pgm": "7ceddcb9c5a5dba0ee033a5a31249d362584db47a3f56e03530de5c92e21a7c0",
+    "vision_debug/20260714_005021_frame00378_05cm_conf0.json": "1a2ffe50ae10159058a5bd67bfa806d344ac5ec84f4ed369ae7661337c396b2c",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_depth.pgm": "db0d25df8b56129586d985a0a62b4667e7671b26eaedfc32e09128d7553db61c",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_diagnostic.ppm": "6d19951a6f23612b073c607fd13c17a1a5acb57c38290c8ec406e7e1d32ffc5e",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_obstacle_mask.pgm": "d2f6b3a452b7946276ece2030d8ba889f8a85b2abfb37f04870c03b5ba3882de",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_rgb.ppm": "0af3e8ac30ba37ff90a3d55e7c7559c107b66194ea60435b849783ffd1eafd79",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_roi_mask.pgm": "d5ba9c6000fb0af37793181b9ecd6fa58ba45d0ddbb719eddcffb1a54506896f",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.98_top_plane_mask.pgm": "695db47445a76af5c1a475e844403f1783695d877844e4058852aed5e832ed35",
+    "vision_debug/20260716_002344_frame00345_05cm_conf0.json": "6a3d9f17e12b1b9f57c9fb0ee4230782d71c1d21841497e20d9bbf37488a99c9",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_depth.pgm": "d64e6d9f9aedd837a7d1f242c93d3d5ec90d2ea167a8a3e4cfdf450fe4c0bdde",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_diagnostic.ppm": "41a7d2e098e876ec300905be3c6c3d78923981ee3397621b891467dd33c7848a",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_obstacle_mask.pgm": "d2f6b3a452b7946276ece2030d8ba889f8a85b2abfb37f04870c03b5ba3882de",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_rgb.ppm": "bbc13576777ba6226377683b5933be4f3d8731304bcc517a427fd65962ecb638",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_roi_mask.pgm": "d5ba9c6000fb0af37793181b9ecd6fa58ba45d0ddbb719eddcffb1a54506896f",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.98_top_plane_mask.pgm": "aebf2d269f64e31d2f938a6bdb64a13c7bd8272c03af00b2e3bf2ccc23570c27",
+    "vision_debug/20260716_023319_frame00071_05cm_conf0.json": "fbbb601dff4b9731fcce089691bd15fb9af98de5b8f3ccdfe426bd38efa5ddf6",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_depth.pgm": "27b7e191c2f0581ab4545e1a4a077a5bcd0f9ee9837487b1293bebad9b9852a4",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_diagnostic.ppm": "62f4ed9a5b3af68c2f7c2250a82e1f7b865d77cf940515566f9ce946972576d6",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_obstacle_mask.pgm": "ed0740013eac29d03c0774fdd2423b7cbef4bbce016b675b5474bb5cf8221fd2",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_rgb.ppm": "5978f62bf82b0a4cd053237eea693d83f2e8f9561ec0be6150d50eb5087a851e",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_roi_mask.pgm": "d5ba9c6000fb0af37793181b9ecd6fa58ba45d0ddbb719eddcffb1a54506896f",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.98_top_plane_mask.pgm": "0ab4fcc3d7155d765a73e1c00202bfda82dca7b9c1191201a90916775b44932f",
+    "vision_debug/20260722_233751_frame00006_05cm_conf0.json": "aee887fe9c50e3ac8a0ba15af929d91a1e66c3bd047eb6a967b24c161ed8a742",
+    "vision_debug/baseline_real_gui_20260716_004600.json": "7861810a523f7526df7d96db3385fe3432a36fc438883c927a47b53209389386",
+    "vision_debug/camera_counterfactual_after.json": "945a8cac1ead14a01866cdb53393a34eb378afef8adc6d2901234e64a07c2e5c",
+    "vision_debug/e2e_5cm_after.json": "7950ebc0a66b83d322bb640b7f60daa743b8594ddf7ff017d9f7ed04e80edcde",
+    "vision_debug/e2e_5cm_after_retry.json": "1aa398874ff7919fc05cbd66147c03cc4c30aec506292fd6e19c01b476eb7fbb",
+    "vision_debug/e2e_5cm_after_retry2.json": "09e1447328ded8697d5bc8d7e5ea6dcbaf764acfe7e4a4c5e810514fe8c3a03f",
+    "vision_debug/e2e_5cm_after_retry3.json": "a0a91303a00d09e5b2a4d53e482a50cc1cbf6122df196ed81a062b789a613428",
+    "vision_debug/e2e_5cm_after_retry4.json": "56bad4b211b8f6cec6faf53014654d8395f056b3eea466be23abd9bdd4e42897",
+    "vision_debug/e2e_after.json": "548f22c7cca69dce0652a1abea20f3e641643e153c20c1d688e5570cf5c441fc",
+    "vision_debug/e2e_after_correction.json": "ee49e5e97905e71aa7f4b3d1f4443807551dc966f9e055dc6e444102a8ded488",
+    "vision_debug/e2e_after_final.json": "fd2b8f65a6efb2ecd4d20b88d3f7a9e39a217fee2d2729d0bc3f2892427ff938",
+    "vision_debug/e2e_after_safeplacement.json": "63ffd4d67abab7e33ec00ff128edbe37bed28cada0c11c15b6527ec21c3b60c3",
+    "vision_debug/e2e_before.json": "834383621b8ac75eccc9ac05ea5a094e7f4cd160cf5b3f92cf3b83addbebe820",
+    "vision_debug/worker_ground_structure_retry4.json": "dec3556e88296bd165c52b5f4165dbe80531fbbc8457d7dd0439fabf8b7bfb68"
+  },
+  "saved_height_steps_fsm_reference_v1": {
+    "manifest.json": "d73b4e8484bdde99c925f2f3660ef52077fc71b59a6771f9649ccdee664c1b61"
+  }
+}

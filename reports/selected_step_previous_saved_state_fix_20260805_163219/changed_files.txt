@@ -1,0 +1,19 @@
+产品代码：
+- sim_ui_controller.py：仅为普通 Play Selected Step/Fast 增加 previous-saved-state 解析、匹配 restore ack、detailed-state 验证、取消/失败收尾；将相关选项固定为启用。其他 Playback handler 保持原入口。
+- sim_process_client.py：restore_sim_state 增加可选 request_id，并返回最终 request_id。
+- sim_transport.py：最小透传 restore request_id；no-sim adapter 行为保持同步。
+- sim_worker_process.py：worker status 增加 last_restore_request_id，用于精确匹配 ack。
+
+测试/验证代码：
+- tests/test_selected_step_previous_saved_state.py：新增恢复优先级、缺失、Step 1、顺序、失败、Stop、冲突、Fast 和其他入口回归测试。
+- tests/test_play_selected_playback.py：适配 restore_sim_state 现在返回 request_id 的状态断言。
+- selected_step_previous_saved_state_e2e.py：正式 UI/单可见 Isaac 只读 E2E 验证与截图采集。
+
+报告辅助：
+- reports/selected_step_previous_saved_state_fix_20260805_163219/build_report.py：只读取测试/E2E/Git/哈希结果并生成本目录报告。
+
+明确未修改：
+- playback.py 及其 planner、Raw/Fast timing、Fast gap removal、completion policy、长序列逻辑。
+- Servo/Wheel 速度、target、velocity、duration、trajectory、limits。
+- Height Generate、Obstacle geometry、Respawn pose、Recording、Servo-Wheel、Save Version、Combine、Sim State schema、UI tab 布局、Vision/Stability、FSM/RL/PPO/CoM。
+- saved_height_steps 下任何正式 accepted_steps、manifest 或 version 文件。

@@ -1,0 +1,30 @@
+Final verification commands and results
+
+1. python -m py_compile height_generate_panel.py height_version_store.py latest_50mm_manual_v2_e2e.py operation_coordinator.py playback.py playback_availability.py pose_checkpoint_selected_fast_e2e.py run_management_gui_e2e.py sim_ui_controller.py capture_selected_run_baseline.py tests\test_selected_pose_run_management_and_reconciliation.py
+   PASS
+2. git diff --check
+   PASS (only Git line-ending notices; no whitespace errors)
+3. python -m unittest discover -s tests -p 'test_*.py'
+   PASS: Ran 265 tests in 12.843s; OK; traceback=none
+
+Real visible Isaac GUI / worker runs (strictly sequential; one worker per run):
+- Run Management: PASS, PID=124924, success=True, final_operation=IDLE
+- Selected Raw/Fast: PASS, PID=119708, success=True, final_operation=IDLE
+- Formal Raw: PASS, PID=126996, success=True, stop_reason=complete, final_operation=IDLE
+- Formal Fast: PASS, PID=19924, success=True, stop_reason=complete, final_operation=IDLE
+- Formal Fast + selection/stale probe: PASS, PID=129736, success=True, final_operation=IDLE
+- Respawn after completed Raw: SAFELY BLOCKED by grounded_reference_valid/stable/physics validity; no bypass was attempted. Raw itself completed before the block.
+
+Single-instance controls:
+- All E2E results report single_worker_requested=true.
+- Runs were launched sequentially, never concurrently.
+- Every successful result reports ui_closed=true and worker_reference_cleared=true.
+- Final process inventory is appended after report generation.
+
+Temporary-write rule:
+- Run writes used only report-local temporary_version_store_v2 directories.
+- Formal v006 accepted_steps SHA remained 2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f.
+- protected file audit: 1021/1021 unchanged.
+
+Final process inventory:
+- NO_ISAAC_KIT_OR_SIM_WORKER_PROCESS

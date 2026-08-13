@@ -1,0 +1,120 @@
+{
+  "hard_safety_regressions": {
+    "3.2_over_3.0": "FAIL",
+    "NaN_or_Inf": "FAIL immediately",
+    "hard_safety_cap_deg": 3.0,
+    "sustained_worsening_outside_tolerance": "FAIL"
+  },
+  "post_fix_real_isaac_same_formal_run": {
+    "completion_decision": "contact_residual_accepted",
+    "continued_to_step_11": true,
+    "continued_to_step_12": true,
+    "final_stop_reason": "complete",
+    "servo_actual_deg": {
+      "front_left_hip": 27.99521723662012,
+      "front_left_knee": -13.519400324054903,
+      "front_right_hip": 12.909816431041438,
+      "front_right_knee": 21.65456199845033,
+      "rear_left_hip": 1.356534117468314,
+      "rear_left_knee": 0.11261828012907266,
+      "rear_right_hip": 0.08377573862564427,
+      "rear_right_knee": -0.1421376773709934
+    },
+    "servo_target_deg": {
+      "front_left_hip": 28.1,
+      "front_left_knee": -13.4,
+      "front_right_hip": 10.1,
+      "front_right_knee": 21.5,
+      "rear_left_hip": 1.6,
+      "rear_left_knee": 0.0,
+      "rear_right_hip": 0.0,
+      "rear_right_knee": 0.0
+    },
+    "servo_target_error_deg": {
+      "front_left_hip": -0.10478276337988035,
+      "front_left_knee": -0.11940032405490264,
+      "front_right_hip": 2.8098164310414386,
+      "front_right_knee": 0.1545619984503297,
+      "rear_left_hip": -0.243465882531686,
+      "rear_left_knee": 0.11261828012907266,
+      "rear_right_hip": 0.08377573862564427,
+      "rear_right_knee": -0.1421376773709934
+    },
+    "warning": {
+      "effective_tolerance_deg": 3.0,
+      "joint_velocity_deg_s": {
+        "front_left_hip": -4.41758364760395,
+        "front_left_knee": -5.281715275731868,
+        "front_right_hip": 0.4058357532169945,
+        "front_right_knee": 1.1510066169010353,
+        "rear_left_hip": 5.729205791375831,
+        "rear_left_knee": -3.493350837091562,
+        "rear_right_hip": 4.758290131990288,
+        "rear_right_knee": -3.306621789476464
+      },
+      "max_error_deg": 2.8098164310414386,
+      "measured_errors_deg": {
+        "front_left_hip": -0.10478276337988035,
+        "front_left_knee": -0.11940032405490264,
+        "front_right_hip": 2.8098164310414386,
+        "front_right_knee": 0.1545619984503297,
+        "rear_left_hip": -0.243465882531686,
+        "rear_left_knee": 0.11261828012907266,
+        "rear_right_hip": 0.08377573862564427,
+        "rear_right_knee": -0.1421376773709934
+      },
+      "recent_max_deg": 6.787703235731234,
+      "recent_min_deg": 2.8098164310414386,
+      "recent_slope_deg_s": -2.5942740030609217,
+      "recorded_residual_deg": {
+        "front_left_hip": 3.6938559718266823,
+        "front_left_knee": 0.060451363396227364,
+        "front_right_hip": 1.7964784667209468,
+        "front_right_knee": -0.5077546151766335,
+        "rear_left_hip": -0.09216417236779839,
+        "rear_left_knee": 1.5421819160133396,
+        "rear_right_hip": -0.9952485017884052,
+        "rear_right_knee": 0.8963927726924306
+      },
+      "segment_index": 37,
+      "stability_basis": "bounded_recorded_contact_tolerance",
+      "stability_window_cap_deg": 3.0,
+      "stability_window_s": 0.1,
+      "step_index": 10,
+      "warning": "contact_residual_accepted"
+    }
+  },
+  "pre_fix_real_isaac_reproduction": {
+    "last_error": "actuator_unstable: recorded contact residual did not stabilize; step=10 segment=37 max_error_deg=2.809816 tolerance_deg=3.000000",
+    "measured_errors_deg": {
+      "front_left_hip": -0.10478276337988035,
+      "front_left_knee": -0.11940032405490264,
+      "front_right_hip": 2.8098164310414386,
+      "front_right_knee": 0.1545619984503297,
+      "rear_left_hip": -0.243465882531686,
+      "rear_left_knee": 0.11261828012907266,
+      "rear_right_hip": 0.08377573862564427,
+      "rear_right_knee": -0.1421376773709934
+    },
+    "progress_detail": {
+      "command_phase": "stopped",
+      "current_step_index": 10,
+      "global_command_index": 54,
+      "last_error": "actuator_unstable: recorded contact residual did not stabilize; step=10 segment=37 max_error_deg=2.809816 tolerance_deg=3.000000",
+      "playback_profile": "raw",
+      "playback_state": "IDLE",
+      "selected_playback": false,
+      "status_text": "Stopped",
+      "total_commands": 78,
+      "total_steps": 12
+    },
+    "recent_window": "not emitted by the old abort path",
+    "stop_reason": "actuator_unstable"
+  },
+  "screenshot_reported_case": {
+    "effective_tolerance_deg": 3.0,
+    "max_error_deg": 2.986098,
+    "old_result": "actuator_unstable",
+    "regression_test_result": "contact_residual_accepted; continue"
+  }
+}

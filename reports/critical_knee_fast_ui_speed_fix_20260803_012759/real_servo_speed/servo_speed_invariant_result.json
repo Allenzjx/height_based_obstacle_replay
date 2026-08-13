@@ -1,0 +1,60 @@
+{
+  "success": true,
+  "started_at": 1785738439.630674,
+  "runs": [
+    {
+      "speed_percent": 50,
+      "requested_speed_percent": 50.0,
+      "effective_speed_percent": 50.0,
+      "worker_target_command_deg": -45.0,
+      "articulation_target_actual_deg": -44.97315599919516,
+      "measured_actual_deg": -44.950922927957954,
+      "endpoint_error_deg": 0.02223307123720275,
+      "planned_duration_s": 4.0,
+      "active": false,
+      "scheduled": false
+    },
+    {
+      "speed_percent": 100,
+      "requested_speed_percent": 100.0,
+      "effective_speed_percent": 100.0,
+      "worker_target_command_deg": -45.0,
+      "articulation_target_actual_deg": -44.97315599919516,
+      "measured_actual_deg": -44.95087511663377,
+      "endpoint_error_deg": 0.022280882561389603,
+      "planned_duration_s": 2.0,
+      "active": false,
+      "scheduled": false
+    },
+    {
+      "speed_percent": 200,
+      "requested_speed_percent": 200.0,
+      "effective_speed_percent": 200.0,
+      "worker_target_command_deg": -45.0,
+      "articulation_target_actual_deg": -44.97315599919516,
+      "measured_actual_deg": -44.95089219210669,
+      "endpoint_error_deg": 0.022263807088464205,
+      "planned_duration_s": 1.0,
+      "active": false,
+      "scheduled": false
+    },
+    {
+      "speed_percent": 300,
+      "requested_speed_percent": 300.0,
+      "effective_speed_percent": 300.0,
+      "worker_target_command_deg": -45.0,
+      "articulation_target_actual_deg": -44.97315599919516,
+      "measured_actual_deg": -44.950871701539185,
+      "endpoint_error_deg": 0.02228429765597184,
+      "planned_duration_s": 0.6666666666666666,
+      "active": false,
+      "scheduled": false
+    }
+  ],
+  "finished_at": 1785738499.5036902,
+  "isaac_pid": 20016,
+  "physics_dt": 0.008333333333333333,
+  "max_endpoint_error_deg": 0.02228429765597184,
+  "target_invariant": true,
+  "reused_existing_isaac": false
+}

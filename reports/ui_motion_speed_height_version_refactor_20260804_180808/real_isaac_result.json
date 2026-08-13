@@ -1,0 +1,7877 @@
+{
+  "success": false,
+  "started_at": 1785881290.3313148,
+  "visible_gui_requested": true,
+  "one_worker_requested": true,
+  "reused_existing_process": false,
+  "temporary_version_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2",
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785881312.3380332,
+      "details": {}
+    },
+    {
+      "stage": "PROFILE_UI",
+      "completed_at": 1785881315.5462606,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881315.627093,
+      "details": {
+        "height_mm": 50,
+        "request_id": "1d7e1aa9cba44f21863abe172eca79ad"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881315.9291387,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881315.9920087,
+      "details": {
+        "height_mm": 75,
+        "request_id": "45381f8435454a6a8985432d95b50a88"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881316.2290146,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881316.287298,
+      "details": {
+        "height_mm": 100,
+        "request_id": "ee39e5e43d304d32a0b50dbc286fdc71"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881316.829744,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881316.8892846,
+      "details": {}
+    },
+    {
+      "stage": "RESPAWN_START",
+      "completed_at": 1785881316.9540699,
+      "details": {
+        "request_id": "4135cd42498b44c5bd9f92a5fc218a9a"
+      }
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "completed_at": 1785881319.783142,
+      "details": {}
+    },
+    {
+      "stage": "ATOMIC_START",
+      "completed_at": 1785881319.8352296,
+      "details": {
+        "batch_id": "aecdad750e914097adcc6f88f364b40b"
+      }
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "completed_at": 1785881320.44872,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881320.5011253,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "completed_at": 1785881321.2273493,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RUN",
+      "completed_at": 1785881322.6332057,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881322.6901202,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "completed_at": 1785881323.729212,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RUN",
+      "completed_at": 1785881324.5169747,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881324.578803,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881324.6411889,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BOUNDARY",
+      "completed_at": 1785881324.6982965,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BEFORE",
+      "completed_at": 1785881324.9124184,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_APPLY",
+      "completed_at": 1785881325.0178986,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_RUN",
+      "completed_at": 1785881326.87711,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_STOP",
+      "completed_at": 1785881327.122886,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_AFTER",
+      "completed_at": 1785881327.3011749,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881327.356457,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BOUNDARY",
+      "completed_at": 1785881327.5177438,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BEFORE",
+      "completed_at": 1785881327.6322577,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_APPLY",
+      "completed_at": 1785881327.746093,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_RUN",
+      "completed_at": 1785881329.7104352,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_STOP",
+      "completed_at": 1785881329.8161967,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_AFTER",
+      "completed_at": 1785881329.9224186,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881329.978061,
+      "details": {}
+    },
+    {
+      "stage": "KNEE_START",
+      "completed_at": 1785881330.0300374,
+      "details": {}
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "completed_at": 1785881330.3417819,
+      "details": {}
+    },
+    {
+      "stage": "VERSION_HEIGHT_START",
+      "completed_at": 1785881330.3969975,
+      "details": {}
+    },
+    {
+      "stage": "VERSION_HEIGHT_WAIT",
+      "completed_at": 1785881330.5719793,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881330.629586,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_RUN",
+      "completed_at": 1785881331.682349,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PENDING",
+      "completed_at": 1785881331.8047202,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_SAVE",
+      "completed_at": 1785881331.9947503,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "completed_at": 1785881333.4024076,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881333.4582381,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_RUN",
+      "completed_at": 1785881334.4425378,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PENDING",
+      "completed_at": 1785881334.5604308,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_SAVE",
+      "completed_at": 1785881334.7594075,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "completed_at": 1785881336.2198145,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881336.2833138,
+      "details": {}
+    },
+    {
+      "stage": "LOAD_VERSIONS",
+      "completed_at": 1785881336.7216566,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "main_ui": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\main_ui.png",
+    "speed_scale": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\speed_scale.png",
+    "height_and_versions": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\height_and_versions.png",
+    "wider_obstacle": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\wider_obstacle.png",
+    "generate_control_ready": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\generate_control_ready.png",
+    "servo_wheel_simultaneous": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\servo_wheel_simultaneous.png",
+    "four_knees_minus_60": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\four_knees_minus_60.png",
+    "two_immutable_versions": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\two_immutable_versions.png",
+    "failure": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\screenshots\\failure.png"
+  },
+  "callback_rows": [
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.655099896714091
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 27.289299992844462
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 37.948699900880456
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.512499906122684
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 38.12620020471513
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.627699989825487
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 30.17430007457733
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 17.722800141200423
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.610100062564015
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.57989995367825
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.112799910828471
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.166700135916471
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.665800025686622
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.802999880164862
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.395999876782298
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.732099991291761
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.415599888190627
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.646399920806289
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.482499884441495
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.003300055861473
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.98099983856082
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.385600030422211
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.252199972048402
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.886900005862117
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.92950002849102
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 19.35439999215305
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.276700111106038
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.032699951902032
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.235199911519885
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.389599991962314
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.326800048351288
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.508699988946319
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.53379999473691
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.3605000246316195
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.272100144997239
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.0582999140024185
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.736399976536632
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.373399868607521
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.940500017255545
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.393099971115589
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.937699858099222
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.928700091317296
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.979100078344345
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.582800066098571
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.9419001918286085
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.400199934840202
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.726100014522672
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.7976999301463366
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.442100016400218
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.916099900379777
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.097199955955148
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.954299984499812
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.69280006736517
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.447700085118413
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.414500065147877
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.048599956557155
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.9315001126378775
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.198599934577942
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.955599877983332
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.61699995584786
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.877400213852525
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.76820014975965
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.310599924996495
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.748200118541718
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.20079997740686
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.796000223606825
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.580399883911014
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.943500040099025
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.815000204369426
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.96509999781847
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.809399928897619
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.906899994239211
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.7299000434577465
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.775600042194128
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.255100153386593
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.511799991130829
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.664200056344271
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.195199977606535
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.241200163960457
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.8992999363690615
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.628899835050106
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.042800007387996
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.03610004670918
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.643599899485707
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.126499967649579
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.925399949774146
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.856100004166365
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.321900058537722
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.832599803805351
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.586200023069978
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.3183999843895435
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.767700029537082
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.125700030475855
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.460500113666058
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.228199927136302
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.061400149017572
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.0050999745726585
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.84510001540184
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.591600202023983
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.714300088584423
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.038499943912029266
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02759997732937336
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01850002445280552
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018800143152475357
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01659989356994629
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.17370004206895828
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022799940779805183
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01600012183189392
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01610000617802143
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.3605000674724579
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.23119989782571793
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.15440001152455807
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.18640002235770226
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.08160015568137169
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.2908001188188791
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04559988155961037
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022800173610448837
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018899794667959213
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018399907276034355
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.2242999617010355
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.06869994103908539
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04640012048184872
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0692000612616539
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04959991201758385
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.3879999276250601
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.052999937906861305
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.021799933165311813
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022399937734007835
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017799902707338333
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.5028999876230955
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.09489990770816803
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.10060006752610207
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.061499886214733124
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.09559979662299156
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.1463000662624836
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0700000673532486
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.034400029107928276
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.023399945348501205
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.020399922505021095
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.368200009688735
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.1137999352067709
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.07390021346509457
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05730008706450462
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04579988308250904
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.29479991644620895
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.06969994865357876
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.03929995000362396
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.03520003519952297
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.029399991035461426
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.36409986205399036
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.15110010281205177
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.18259999342262745
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.10389997623860836
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.12059998698532581
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.25560008361935616
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.062300125136971474
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.028999987989664078
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.020799925550818443
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022099819034337997
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.29399991035461426
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05529983900487423
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02050003968179226
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.016700010746717453
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.015999889001250267
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.23949984461069107
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.03609992563724518
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.020600156858563423
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02410006709396839
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01650000922381878
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.08590007200837135
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.035899924114346504
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.031000003218650818
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.027799978852272034
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.024900073185563087
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.3068000078201294
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04770001396536827
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02319994382560253
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.019900035113096237
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.015800120308995247
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.16939989291131496
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.026899855583906174
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018399907276034355
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.016300007700920105
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018900027498602867
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.38070022128522396
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05800020880997181
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.030700117349624634
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.016700010746717453
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.015700003132224083
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.3380000125616789
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.16289995983242989
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.28000003658235073
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.10579987429082394
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04610000178217888
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.15980005264282227
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.025900080800056458
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017999904230237007
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.015500001609325409
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.015500001609325409
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.171000137925148,
+      "height_mm": 50
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.2828999422490597,
+      "height_mm": 75
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.17190002836287022,
+      "height_mm": 100
+    },
+    {
+      "name": "generate_height_respawn",
+      "elapsed_ms": 0.1275001559406519,
+      "height_mm": 75
+    },
+    {
+      "name": "apply_servo_wheel_together",
+      "elapsed_ms": 0.6365000735968351
+    },
+    {
+      "name": "save_new_version_icon",
+      "elapsed_ms": 0.6162000354379416,
+      "speed_percent": 100.0
+    },
+    {
+      "name": "save_new_version_icon",
+      "elapsed_ms": 0.538799911737442,
+      "speed_percent": 200.0
+    }
+  ],
+  "height_rows": [
+    {
+      "height_mm": 50,
+      "request_id": "1d7e1aa9cba44f21863abe172eca79ad",
+      "requested_wall": 1773178.7105078,
+      "callback_ms": 0.171000137925148,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 120.2069001737982,
+      "obstacle_update_ms": 1.669200137257576,
+      "ack_wall_ms": 302.0363999530673,
+      "control_ready_ms": 302.0363999530673,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 1,
+      "error": ""
+    },
+    {
+      "height_mm": 75,
+      "request_id": "45381f8435454a6a8985432d95b50a88",
+      "requested_wall": 1773179.0754228,
+      "callback_ms": 0.2828999422490597,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 111.05850012972951,
+      "obstacle_update_ms": 1.4492000918835402,
+      "ack_wall_ms": 237.00139997527003,
+      "control_ready_ms": 237.00139997527003,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 2,
+      "error": ""
+    },
+    {
+      "height_mm": 100,
+      "request_id": "ee39e5e43d304d32a0b50dbc286fdc71",
+      "requested_wall": 1773179.3707135,
+      "callback_ms": 0.17190002836287022,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 107.85439983010292,
+      "obstacle_update_ms": 1.319000031799078,
+      "ack_wall_ms": 309.03510004282,
+      "control_ready_ms": 309.03510004282,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 3,
+      "error": ""
+    }
+  ],
+  "atomic_rows": [
+    {
+      "batch_id": "aecdad750e914097adcc6f88f364b40b",
+      "callback_ms": 0.6365000735968351,
+      "servo_apply_tick": 673,
+      "wheel_apply_tick": 673,
+      "ack_servo_start_sim_time": 5.608333333333402,
+      "ack_wheel_start_sim_time": 5.608333333333402,
+      "ack_start_difference_s": 0.0,
+      "observed_servo_start_sim_time": 5.666666666666738,
+      "observed_wheel_start_sim_time": 5.600000000000068,
+      "observed_start_difference_s": 0.06666666666666998,
+      "physics_dt_s": 0.008333333333333333,
+      "servo_applied": true,
+      "wheel_applied": true,
+      "pass": true
+    }
+  ],
+  "servo_rows": [
+    {
+      "speed_percent": 100.0,
+      "target_deg": 60.0,
+      "start_actual_deg": 0.9283917553866907,
+      "final_actual_deg": 60.425904945537425,
+      "target_error_deg": 0.4259049455374253,
+      "elapsed_sim_s": 0.8666666666667098,
+      "actual_average_velocity_deg_s": 68.65097675786282,
+      "actual_peak_velocity_deg_s": 138.54013349221026,
+      "requested_velocity_deg_s": 150.0,
+      "effective_velocity_deg_s": 150.0,
+      "actuator_limit": null,
+      "samples": [
+        {
+          "sim_time": 6.266666666666768,
+          "actual_deg": 0.9283917553866907
+        },
+        {
+          "sim_time": 6.333333333333438,
+          "actual_deg": 0.7577460957196805
+        },
+        {
+          "sim_time": 6.400000000000108,
+          "actual_deg": 3.3784318370890394
+        },
+        {
+          "sim_time": 6.533333333333448,
+          "actual_deg": 17.634049210450105
+        },
+        {
+          "sim_time": 6.666666666666788,
+          "actual_deg": 36.10606700941239
+        },
+        {
+          "sim_time": 6.800000000000128,
+          "actual_deg": 53.679190932465985
+        },
+        {
+          "sim_time": 6.933333333333468,
+          "actual_deg": 62.141129370667706
+        },
+        {
+          "sim_time": 7.000000000000138,
+          "actual_deg": 62.58722268573958
+        },
+        {
+          "sim_time": 7.133333333333478,
+          "actual_deg": 60.425904945537425
+        }
+      ]
+    },
+    {
+      "speed_percent": 200.0,
+      "target_deg": 60.0,
+      "start_actual_deg": 1.2028521282913691,
+      "final_actual_deg": 61.94724762088773,
+      "target_error_deg": 1.9472476208877296,
+      "elapsed_sim_s": 0.4666666666666677,
+      "actual_average_velocity_deg_s": 130.16656176984907,
+      "actual_peak_velocity_deg_s": 203.17775036536867,
+      "requested_velocity_deg_s": 300.0,
+      "effective_velocity_deg_s": 300.0,
+      "actuator_limit": null,
+      "samples": [
+        {
+          "sim_time": 7.7333333333335075,
+          "actual_deg": 1.2028521282913691
+        },
+        {
+          "sim_time": 7.8000000000001775,
+          "actual_deg": 0.0718976261123822
+        },
+        {
+          "sim_time": 7.866666666666847,
+          "actual_deg": 3.655316606983955
+        },
+        {
+          "sim_time": 8.000000000000187,
+          "actual_deg": 30.74568332236761
+        },
+        {
+          "sim_time": 8.133333333333512,
+          "actual_deg": 55.7020334174353
+        },
+        {
+          "sim_time": 8.200000000000175,
+          "actual_deg": 61.94724762088773
+        }
+      ]
+    }
+  ],
+  "wheel_rows": [
+    {
+      "speed_percent": 100.0,
+      "canonical_velocity_rad_s": 0.3,
+      "commanded_effective_velocity_rad_s": 0.3,
+      "measured_velocity_rad_s": 0.2757250452414155,
+      "active_duration_s": 1.1999999999999318,
+      "signed_joint_displacement_rad": {
+        "front_left_ankle": -0.39174124225974083,
+        "front_right_ankle": 0.3337894305586815,
+        "rear_left_ankle": -0.31293483451008797,
+        "rear_right_ankle": 0.3622663877904415
+      },
+      "mean_abs_joint_displacement_rad": 0.35018297377973795,
+      "theoretical_joint_displacement_rad": 0.3599999999999795,
+      "theoretical_rolling_path_m": null,
+      "robot_body_displacement_m": 0.021189928434613703,
+      "slip_ratio": null,
+      "slip_status": "UNVERIFIED: wheel radius/transmission unavailable"
+    },
+    {
+      "speed_percent": 200.0,
+      "canonical_velocity_rad_s": 0.3,
+      "commanded_effective_velocity_rad_s": 0.6,
+      "measured_velocity_rad_s": 0.5312960863473777,
+      "active_duration_s": 1.133333333333269,
+      "signed_joint_displacement_rad": {
+        "front_left_ankle": -0.6537783741950989,
+        "front_right_ankle": 0.665333479642868,
+        "rear_left_ankle": -0.6556086540222168,
+        "rear_right_ankle": 0.6820360720157623
+      },
+      "mean_abs_joint_displacement_rad": 0.6641891449689865,
+      "theoretical_joint_displacement_rad": 0.6799999999999613,
+      "theoretical_rolling_path_m": null,
+      "robot_body_displacement_m": 0.031863210656996134,
+      "slip_ratio": null,
+      "slip_status": "UNVERIFIED: wheel radius/transmission unavailable"
+    }
+  ],
+  "record_play_rows": [
+    {
+      "speed_percent": 100.0,
+      "version_id": "v001_20260804_180851_804490_manual",
+      "recorded_batch_id": "592afe63274440deb387c08eefd9528b",
+      "recorded_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "recorded_effective_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "playback_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "playback_executor_speed_percent": 100.0,
+      "playback_elapsed_sim_s": 0.8666666666666174,
+      "double_scaled": false,
+      "canonical_match": true
+    },
+    {
+      "speed_percent": 200.0,
+      "version_id": "v002_20260804_180854_560198_manual",
+      "recorded_batch_id": "0357ad0aa72b424f9c34212283bf5536",
+      "recorded_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "recorded_effective_wheel_rad_s": {
+        "front_left_ankle": 0.5,
+        "front_right_ankle": 0.5,
+        "rear_left_ankle": 0.5,
+        "rear_right_ankle": 0.5
+      },
+      "playback_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "playback_executor_speed_percent": 200.0,
+      "playback_elapsed_sim_s": 0.8666666666666174,
+      "double_scaled": false,
+      "canonical_match": true,
+      "ui_interaction_sim_advanced_s": 0.7333333333332916
+    }
+  ],
+  "version_rows": [
+    {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180851_804490_manual",
+      "backup_path": "",
+      "saved_at": "2026-08-04T18:08:51-04:00",
+      "step_count": 1,
+      "command_count": 2,
+      "atomic_replace": true,
+      "fsync": true,
+      "validated": true,
+      "version_id": "v001_20260804_180851_804490_manual",
+      "version_name": "manual",
+      "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180851_804490_manual\\accepted_steps.jsonl",
+      "accepted_steps_sha256": "3476f07497ed1c0e4e8c49431b150690bf04a94ea3166a2a188373106bd4e0cf"
+    },
+    {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180854_560198_manual",
+      "backup_path": "",
+      "saved_at": "2026-08-04T18:08:54-04:00",
+      "step_count": 2,
+      "command_count": 4,
+      "atomic_replace": true,
+      "fsync": true,
+      "validated": true,
+      "version_id": "v002_20260804_180854_560198_manual",
+      "version_name": "manual",
+      "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180854_560198_manual\\accepted_steps.jsonl",
+      "accepted_steps_sha256": "36ace6dfb2ca21c4310a1bf7fdabcad15412705d9cb8a179a8aea0b0241dca1a"
+    }
+  ],
+  "ui_after_probe_ms": [
+    0.3149001859128475,
+    15.446599805727601,
+    16.00030018016696,
+    15.52989985793829,
+    137.28919997811317,
+    23.748600156977773,
+    10.339699918404222,
+    15.42360009625554,
+    70.54399978369474,
+    19.642500206828117,
+    15.610999893397093,
+    18.585100071504712,
+    37.5985000282526,
+    14.859799994155765,
+    14.687899965792894,
+    10.687100002542138,
+    48.81249996833503,
+    14.373499900102615,
+    14.503700193017721,
+    12.111799791455269,
+    52.896999986842275,
+    14.919200213626027,
+    13.553099939599633,
+    21.947399945929646,
+    46.54580005444586,
+    10.567900026217103,
+    12.163899838924408,
+    17.828800017014146,
+    41.631000116467476,
+    16.100999899208546,
+    25.58739995583892,
+    37.546600215137005,
+    11.239499785006046,
+    23.23200018145144,
+    11.234199861064553,
+    34.86390016041696,
+    23.154699942097068,
+    24.300199933350086,
+    42.853099992498755,
+    10.642900131642818,
+    11.972300009801984,
+    12.176199816167355,
+    15.545000089332461,
+    36.877499893307686,
+    16.0996001213789,
+    14.046999858692288,
+    10.997300036251545,
+    48.923500115051866,
+    10.30760002322495,
+    17.930799862369895,
+    17.159200040623546,
+    52.4333999492228,
+    13.275900157168508,
+    10.785799939185381,
+    15.499199973419309,
+    10.806499980390072,
+    33.37920014746487,
+    20.813699811697006,
+    11.987500125542283,
+    15.498399967327714,
+    43.6402999330312,
+    15.76320012100041,
+    25.31619998626411,
+    33.4925998467952,
+    10.025400202721357,
+    10.411900002509356,
+    19.58379987627268,
+    46.307200100272894,
+    20.244099898263812,
+    10.208399966359138,
+    13.451599981635809,
+    52.70240013487637,
+    13.671899912878871,
+    11.828900082036853,
+    14.630799880251288,
+    45.20769999362528,
+    19.28750006482005,
+    18.85479991324246,
+    10.063900146633387,
+    48.83149988017976,
+    10.654899990186095,
+    17.845200141891837,
+    22.20909995958209,
+    23.98089994676411,
+    15.319199999794364,
+    15.598000027239323,
+    15.525799943134189,
+    15.501900110393763,
+    11.27749984152615,
+    20.942600211128592,
+    14.433699892833829,
+    15.387800056487322,
+    15.503000002354383,
+    15.923999948427081,
+    18.393500009551644,
+    12.798700015991926,
+    15.060900012031198,
+    16.09589997678995,
+    14.710400020703673,
+    15.239299973472953,
+    15.821399865671992,
+    16.125200083479285,
+    10.024300077930093,
+    20.42079996317625,
+    15.434799948707223,
+    17.056900076568127,
+    14.607700053602457,
+    15.720699913799763,
+    18.32020003348589,
+    15.870000002905726,
+    12.320499867200851,
+    15.248100040480494,
+    15.645500039681792,
+    16.310400096699595,
+    15.353800030425191,
+    17.262699780985713,
+    13.66540021263063,
+    15.966299921274185,
+    15.010599978268147,
+    15.30790003016591,
+    15.517599880695343,
+    16.698600025847554,
+    19.27460008300841,
+    10.017799912020564,
+    16.61320007406175,
+    15.887399902567267,
+    15.087299980223179,
+    15.669400105252862,
+    15.702399890869856,
+    15.375800197944045,
+    15.133899869397283,
+    15.435799956321716,
+    15.978900017216802,
+    15.99540002644062,
+    15.183000126853585,
+    15.546599868685007,
+    18.83310009725392,
+    11.961699929088354,
+    15.723899938166142,
+    15.505200019106269,
+    15.914800111204386,
+    16.068599885329604,
+    15.087699983268976,
+    17.517799977213144,
+    13.659000163897872,
+    15.687499893829226,
+    15.319199999794364,
+    15.317199984565377,
+    15.437500085681677,
+    16.204699873924255,
+    18.32190016284585,
+    10.019399924203753,
+    18.273199908435345,
+    16.603600000962615,
+    14.287800062447786,
+    15.525399940088391,
+    15.449500177055597,
+    17.394899856299162,
+    13.680400094017386,
+    15.496700070798397,
+    15.310099814087152,
+    37.72500017657876,
+    17.2412998508662,
+    10.39370009675622,
+    52.85930004902184,
+    22.514399839565158,
+    15.460600145161152,
+    17.97499996609986,
+    12.205000035464764,
+    16.394299920648336,
+    15.52699995227158,
+    15.483400085940957,
+    15.38500003516674,
+    15.458900015801191,
+    19.04439995996654,
+    13.32079991698265,
+    13.866699999198318,
+    15.410900115966797,
+    15.518900007009506,
+    15.586499823257327,
+    15.525800175964832,
+    16.103100031614304,
+    16.019999980926514,
+    15.651399968191981,
+    15.377799980342388,
+    15.407899860292673,
+    15.58350003324449,
+    16.436000121757388,
+    17.931499984115362,
+    10.627999901771545,
+    17.086300067603588,
+    15.807100106030703,
+    15.241899993270636,
+    15.407799975946546,
+    15.498599968850613,
+    15.65459999255836,
+    10.595300002023578,
+    20.424999995157123,
+    15.559699852019548,
+    15.434800181537867,
+    16.049099853262305,
+    15.439999988302588,
+    20.142100052908063,
+    10.019199922680855,
+    16.48300001397729,
+    15.515600098297,
+    16.360600013285875,
+    14.305900083854795,
+    15.56389988400042,
+    16.08740002848208,
+    21.19740005582571,
+    10.03009988926351,
+    15.269200084730983,
+    15.445200027897954,
+    15.33279987052083,
+    15.350300120189786,
+    15.701999887824059,
+    10.94159996137023,
+    19.934700103476644,
+    15.411899890750647,
+    15.484800096601248,
+    15.142800053581595,
+    15.699399868026376,
+    14.949100092053413,
+    15.602899948135018,
+    15.541800064966083,
+    0.629400135949254,
+    25.732999900355935,
+    18.433300079777837,
+    15.270299976691604,
+    15.88399987667799,
+    14.982900116592646,
+    15.675799921154976,
+    18.20009993389249,
+    14.353800099343061,
+    13.595700031146407,
+    15.46670007519424,
+    15.866599977016449,
+    15.397700015455484,
+    15.619399957358837,
+    20.9156998898834,
+    13.439400121569633,
+    10.317499982193112,
+    17.32859993353486,
+    15.098300063982606,
+    15.439999988302588,
+    15.72839985601604,
+    15.41950018145144,
+    12.978099985048175,
+    17.928199842572212,
+    15.561799984425306,
+    15.291300136595964,
+    15.590999973937869,
+    15.527100069448352,
+    17.929399851709604,
+    10.036800056695938,
+    18.42240011319518,
+    15.98039991222322,
+    15.41920006275177,
+    15.471999999135733,
+    16.01310004480183,
+    18.627699930220842,
+    11.815099976956844,
+    15.470099868252873,
+    15.744500095024705,
+    15.314799966290593,
+    15.311500057578087,
+    15.71949990466237,
+    15.634600073099136,
+    10.97719999961555,
+    19.472300074994564,
+    15.598899917677045,
+    15.586599940434098,
+    15.670299995690584,
+    14.97660018503666,
+    15.493599930778146,
+    12.69729994237423,
+    18.265499966219068,
+    15.286199981346726,
+    15.357600059360266,
+    15.345300082117319,
+    15.412099892273545,
+    18.722400069236755,
+    15.570800052955747,
+    12.229599989950657,
+    15.736399916931987,
+    15.173099935054779,
+    15.409300103783607,
+    15.18210000358522,
+    15.360600082203746,
+    16.564699821174145,
+    15.409300103783607,
+    15.000300016254187,
+    15.218599932268262,
+    16.642200062051415,
+    14.569199876859784,
+    22.03150000423193,
+    18.533000024035573,
+    21.900700172409415,
+    15.557399950921535,
+    15.463799936696887,
+    15.282999956980348,
+    15.606600092723966,
+    14.26049997098744,
+    16.9363000895828,
+    15.184099785983562,
+    15.74659999459982,
+    15.871900133788586,
+    15.437700087204576,
+    19.7716997936368,
+    11.051899986341596,
+    15.548000112175941,
+    15.437599970027804,
+    15.631699934601784,
+    15.487200114876032,
+    15.471999999135733,
+    15.485199866816401,
+    10.69320016540587,
+    20.147699862718582,
+    15.711700078099966,
+    15.44849993661046,
+    15.381500124931335,
+    15.619899844750762,
+    18.531000008806586,
+    15.38830017670989,
+    12.636399827897549,
+    15.571200056001544,
+    15.662000048905611,
+    15.96440002322197,
+    15.09139989502728,
+    17.83829997293651,
+    12.419600039720535,
+    15.997400041669607,
+    15.437700087204576,
+    15.693899942561984,
+    15.225399984046817,
+    15.551599906757474,
+    19.43129999563098,
+    16.39450015500188,
+    10.581200011074543,
+    15.561799984425306,
+    15.383099904283881,
+    15.48300008289516,
+    15.738300047814846,
+    15.64099988900125,
+    11.111800093203783,
+    19.46209999732673,
+    16.03819988667965,
+    15.339399920776486,
+    15.544400084763765,
+    15.36460011266172,
+    19.664400024339557,
+    14.830600004643202,
+    12.23059999756515,
+    15.42049995623529,
+    15.68419998511672,
+    15.972499968484044,
+    15.509899938479066,
+    15.58380015194416,
+    10.87939995341003,
+    20.674499915912747,
+    15.477499924600124,
+    15.52320015616715,
+    15.413499902933836,
+    15.519100008532405,
+    19.05749994330108,
+    10.013200109824538,
+    17.336499877274036,
+    15.287300106137991,
+    15.57879988104105,
+    15.482600079849362,
+    15.6402001157403,
+    15.414099907502532,
+    10.534800123423338,
+    20.121099893003702,
+    15.255399979650974,
+    15.681799966841936,
+    15.822899993509054,
+    15.298299957066774,
+    19.07430007122457,
+    11.650600004941225,
+    15.595800010487437,
+    15.81149990670383,
+    15.099000185728073,
+    15.512099955230951,
+    15.790999867022038,
+    15.374500071629882,
+    10.022900067269802,
+    21.03860001079738,
+    15.733700012788177,
+    15.38169989362359,
+    15.413400018587708,
+    15.150299994274974,
+    20.067299949005246,
+    12.461500009521842,
+    13.996500056236982,
+    16.11540000885725,
+    15.429300023242831,
+    15.40419994853437,
+    15.328099951148033,
+    15.518800122663379,
+    10.44550002552569,
+    20.75170003809035,
+    15.481399837881327,
+    15.662400051951408,
+    15.569499926641583,
+    15.392000088468194,
+    19.122299971058965,
+    13.00580007955432,
+    13.817699858918786,
+    15.609800117090344,
+    15.082000056281686,
+    15.385299921035767,
+    15.561599982902408,
+    15.56720002554357,
+    11.268999893218279,
+    19.972100155428052,
+    15.579500002786517,
+    15.582399908453226,
+    15.731600113213062,
+    15.282099833711982,
+    18.91850004903972,
+    10.675899917259812,
+    10.021500056609511,
+    16.59959997050464,
+    21.667500026524067,
+    15.892700059339404,
+    15.777199994772673,
+    16.793000046163797,
+    15.25299996137619,
+    13.90510005876422,
+    15.211199875921011,
+    15.547400107607245,
+    15.496899839490652,
+    15.604500193148851,
+    18.390199868008494,
+    10.025199968367815,
+    17.59140007197857,
+    1.1359001509845257,
+    13.724699849262834,
+    21.658800076693296,
+    15.618199948221445,
+    15.456200111657381,
+    15.419199829921126,
+    15.617100056260824,
+    17.37909996882081,
+    12.664700159803033,
+    17.136599868535995,
+    15.511899953708053,
+    15.981900040060282,
+    15.768999932333827,
+    14.997899997979403,
+    18.72640009969473,
+    14.212700072675943,
+    13.668499886989594,
+    15.34339995123446,
+    15.49640018492937,
+    15.662499936297536,
+    15.499699860811234,
+    15.384300146251917,
+    14.745299937203526,
+    16.290700063109398,
+    15.423999866470695,
+    16.085200011730194,
+    15.49500017426908,
+    15.583799919113517,
+    18.670399906113744,
+    10.568100027740002,
+    17.2091000713408,
+    15.61330002732575,
+    15.431999927386642,
+    15.564600005745888,
+    15.75100002810359,
+    16.82820008136332,
+    14.469999819993973,
+    15.194399980828166,
+    15.39990003220737,
+    15.368200140073895,
+    15.443699900060892,
+    15.641400124877691,
+    18.675699830055237,
+    12.530500069260597,
+    15.345599967986345,
+    15.11529996059835,
+    15.552600147202611,
+    15.472200000658631,
+    15.680599957704544,
+    15.488300006836653,
+    11.64539996534586,
+    13.606199994683266,
+    15.49930009059608,
+    16.249599866569042,
+    14.84570000320673,
+    15.119000105187297,
+    15.509400051087141,
+    11.29099982790649,
+    19.46850004605949,
+    15.998200047761202,
+    15.119899995625019,
+    16.049399971961975,
+    15.488200122490525,
+    19.4478000048548,
+    19.414599984884262,
+    22.725499933585525,
+    15.815200051292777,
+    15.465999953448772,
+    15.204000053927302,
+    15.556099824607372,
+    13.649400090798736,
+    17.37329992465675,
+    15.272099990397692,
+    15.41810017079115,
+    15.623899875208735,
+    15.837900107726455,
+    19.035799894481897,
+    13.130899984389544,
+    13.332400005310774,
+    15.720200026407838,
+    15.217199921607971,
+    15.547600109130144,
+    15.911699971184134,
+    15.449099941179156,
+    14.464400010183454,
+    16.217299969866872,
+    15.523500042036176,
+    15.428000129759312,
+    15.700699994340539,
+    15.87069989182055,
+    15.615700045600533,
+    14.14919993840158,
+    16.800800105556846,
+    15.483299968764186,
+    15.253599965944886,
+    15.21169999614358,
+    15.224399976432323,
+    15.428800135850906,
+    10.043099988251925,
+    21.01779985241592,
+    15.312400180846453,
+    15.215899795293808,
+    16.102800145745277,
+    15.30159986577928,
+    19.08460003323853,
+    11.702600168064237,
+    15.374799957498908,
+    15.150799881666899,
+    15.554500045254827,
+    15.366500010713935,
+    15.290800016373396,
+    15.550700016319752,
+    11.304300045594573,
+    20.221899962052703,
+    15.698299976065755,
+    15.260400017723441,
+    15.5585000757128,
+    15.278799924999475,
+    19.088299944996834,
+    15.561599982902408,
+    15.47349989414215,
+    15.786800067871809,
+    15.308999922126532,
+    15.617500059306622,
+    15.374899841845036,
+    15.61330002732575,
+    15.239000087603927,
+    19.612199859693646,
+    11.70030003413558,
+    15.929700108245015,
+    15.139400027692318,
+    15.63799986615777,
+    15.266400063410401,
+    15.539099927991629,
+    15.973000088706613,
+    14.572199899703264,
+    16.00600010715425,
+    15.516399871557951,
+    20.18400002270937,
+    12.421299936249852,
+    13.992700027301908,
+    15.171899925917387,
+    15.986300073564053,
+    15.447600046172738,
+    20.215600030496716,
+    13.524899957701564,
+    12.447400018572807,
+    15.602099942043424,
+    15.454000094905496,
+    15.523500042036176,
+    15.841600019484758,
+    15.711799962446094,
+    13.985599856823683,
+    16.554299974814057,
+    15.270100207999349,
+    15.664999838918447,
+    15.170100145041943,
+    15.427300008013844,
+    19.957499811425805,
+    10.71520010009408,
+    15.813600039109588,
+    15.286499867215753,
+    15.515099978074431,
+    15.197300119325519,
+    15.333899995312095,
+    15.619500074535608,
+    13.784999959170818,
+    17.10029994137585,
+    15.530100092291832,
+    15.184199903160334,
+    15.371300047263503,
+    15.569600043818355,
+    20.249799825251102,
+    10.766200022771955,
+    15.631200047209859,
+    15.78660006634891,
+    15.561299864202738,
+    15.221500070765615,
+    15.176499960944057,
+    15.534700127318501,
+    11.512900004163384,
+    19.53169982880354,
+    15.48740011639893,
+    15.770399942994118,
+    16.27260004170239,
+    15.118499984964728,
+    19.950099987909198,
+    12.138700112700462,
+    14.634300023317337,
+    15.430699801072478,
+    15.181000111624599,
+    15.167299890890718,
+    15.649600187316537,
+    14.618299901485443,
+    15.024099964648485,
+    16.62970008328557,
+    15.599200036376715,
+    15.436399960890412,
+    15.893900068476796,
+    15.342899831011891,
+    19.443399971351027,
+    10.50940016284585,
+    33.09979988262057,
+    52.72869998589158,
+    49.877900164574385,
+    58.9347998611629,
+    26.739699998870492,
+    10.991499992087483,
+    15.297200065106153,
+    15.705200145021081,
+    15.179699985310435,
+    15.568299917504191,
+    11.306700063869357,
+    19.73509998060763,
+    15.635599847882986,
+    15.244700014591217,
+    15.510600060224533,
+    15.528500080108643,
+    21.26219985075295,
+    18.273300025612116,
+    21.974600153043866,
+    15.632199821993709,
+    15.447100158780813,
+    15.42790001258254,
+    15.885199885815382,
+    10.425599990412593,
+    20.077000139281154,
+    15.592799987643957,
+    15.486199874430895,
+    15.55410004220903,
+    15.867300098761916,
+    20.28439985588193,
+    15.228200005367398,
+    11.136099928990006,
+    15.520600136369467,
+    15.62940003350377,
+    15.595499891787767,
+    15.455099986866117,
+    15.444800024852157,
+    11.145800119265914,
+    19.735199864953756,
+    15.60269994661212,
+    15.848400071263313,
+    15.541600063443184,
+    15.776999993249774,
+    21.527200005948544,
+    16.655500046908855,
+    23.862799862399697,
+    15.680399956181645,
+    15.063100028783083,
+    15.630700159817934,
+    16.067099990323186,
+    12.796199880540371,
+    18.028800142928958,
+    15.85610001347959,
+    14.950299868360162,
+    15.42049995623529,
+    15.607800101861358,
+    22.059899987652898,
+    16.596700064837933,
+    23.366599809378386,
+    15.366900013759732,
+    15.698600094765425,
+    15.486199874430895,
+    15.114200068637729,
+    12.619700049981475,
+    18.412800040096045,
+    15.473299892619252,
+    15.538000036031008,
+    15.792400110512972,
+    15.32089989632368,
+    18.90380005352199,
+    10.874999919906259,
+    16.066099982708693,
+    15.572499949485064,
+    15.272200107574463,
+    15.442200005054474,
+    15.541099943220615,
+    15.194999985396862,
+    12.288500089198351,
+    18.42179987579584,
+    15.6402001157403,
+    18.26520008035004,
+    19.372900016605854,
+    15.455199871212244,
+    15.589599963277578,
+    15.508100157603621,
+    15.689499909058213,
+    19.916800083592534,
+    10.149699868634343,
+    16.515500145033002,
+    15.5863999389112,
+    15.537000028416514,
+    15.765500022098422,
+    15.56089986115694,
+    17.90400012396276,
+    12.552900006994605,
+    15.516299987211823,
+    15.525099821388721,
+    15.637100208550692,
+    15.56089986115694,
+    15.422099968418479,
+    14.51230002567172,
+    16.218299977481365,
+    15.652500092983246,
+    15.273700002580881,
+    15.513199847191572,
+    15.39720012806356,
+    20.00460005365312,
+    10.30920003540814,
+    16.07079990208149,
+    15.561399981379509,
+    15.405199956148863,
+    15.619399957358837,
+    15.792400110512972,
+    15.720299910753965,
+    11.089200153946877,
+    19.15429998189211,
+    15.200000023469329,
+    15.521799912676215,
+    15.41019999422133,
+    15.653599984943867,
+    15.49030002206564,
+    17.18410011380911,
+    13.855199795216322,
+    15.669400105252862,
+    15.399500029161572,
+    15.389099949970841,
+    15.633800067007542,
+    15.35209990106523,
+    12.262900127097964,
+    18.89589987695217,
+    15.403300058096647,
+    15.452800085768104,
+    15.291899908334017,
+    15.552399912849069,
+    19.63890017941594,
+    15.05279983393848,
+    11.8646000046283,
+    15.278900042176247,
+    15.662600053474307,
+    15.369100030511618,
+    15.578199876472354,
+    15.555200167000294,
+    23.68930005468428,
+    22.79009995982051,
+    15.926900086924434,
+    28.884099796414375,
+    10.059100110083818,
+    20.477599930018187,
+    200.2378001343459,
+    10.205499827861786,
+    84.38220014795661,
+    46.88249994069338,
+    10.070400079712272,
+    31.148500042036176,
+    13.53279990144074,
+    15.298699960112572,
+    15.48740011639893,
+    15.453499974682927,
+    18.32009991630912,
+    12.766500003635883,
+    15.541099943220615,
+    16.194300027564168,
+    15.455800108611584,
+    15.71809989400208,
+    15.309599926695228,
+    20.094300154596567,
+    10.22449997253716,
+    16.290100058540702,
+    15.638399869203568,
+    15.522800153121352,
+    15.555699821561575,
+    15.414200024679303,
+    15.498100081458688,
+    10.924299946054816,
+    19.8874999769032,
+    15.935200033709407,
+    15.179600100964308,
+    15.706899808719754,
+    15.427800128236413,
+    22.241099970415235,
+    13.21889995597303,
+    11.570800095796585,
+    15.391599852591753,
+    15.853800112381577,
+    15.5046998988837,
+    15.421300195157528,
+    15.445099910721183,
+    10.04499988630414,
+    21.463700104504824,
+    15.655800001695752,
+    15.093599911779165,
+    15.664900187402964,
+    15.86909987963736,
+    20.705800037831068,
+    10.021199937909842,
+    15.18350001424551,
+    15.640900004655123,
+    15.411000000312924,
+    15.61010000295937,
+    15.418499941006303,
+    15.089499996975064,
+    10.03230013884604,
+    21.187599981203675,
+    15.378599986433983,
+    15.438899863511324,
+    15.577300218865275,
+    15.843999804928899,
+    20.01220011152327,
+    10.25849999859929,
+    16.403199872002006,
+    15.220100060105324,
+    15.2666000649333,
+    15.415099915117025,
+    15.514499973505735,
+    15.545300208032131
+  ],
+  "ui_after_probe_rows": [
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 0.3149001859128475
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.446599805727601
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.00030018016696
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.52989985793829
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 137.28919997811317
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 23.748600156977773
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.339699918404222
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.42360009625554
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 70.54399978369474
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 19.642500206828117
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.610999893397093
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.585100071504712
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 37.5985000282526
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.859799994155765
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.687899965792894
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.687100002542138
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 48.81249996833503
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.373499900102615
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.503700193017721
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 12.111799791455269
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 52.896999986842275
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.919200213626027
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.553099939599633
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 21.947399945929646
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 46.54580005444586
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.567900026217103
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 12.163899838924408
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.828800017014146
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 41.631000116467476
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.100999899208546
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 25.58739995583892
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 37.546600215137005
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.239499785006046
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 23.23200018145144
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.234199861064553
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 34.86390016041696
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 23.154699942097068
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 24.300199933350086
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 42.853099992498755
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.642900131642818
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.972300009801984
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 12.176199816167355
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.545000089332461
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 36.877499893307686
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.0996001213789
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.046999858692288
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.997300036251545
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 48.923500115051866
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.30760002322495
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.930799862369895
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.159200040623546
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 52.4333999492228
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.275900157168508
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.785799939185381
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.499199973419309
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.806499980390072
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 33.37920014746487
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 20.813699811697006
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.987500125542283
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.498399967327714
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 43.6402999330312
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.76320012100041
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 25.31619998626411
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 33.4925998467952
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.025400202721357
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.411900002509356
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 19.58379987627268
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 46.307200100272894
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 20.244099898263812
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.208399966359138
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.451599981635809
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 52.70240013487637
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.671899912878871
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.828900082036853
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.630799880251288
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 45.20769999362528
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 19.28750006482005
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.85479991324246
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.063900146633387
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 48.83149988017976
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.654899990186095
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.845200141891837
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 22.20909995958209
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 23.98089994676411
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.319199999794364
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.598000027239323
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.525799943134189
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.501900110393763
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.27749984152615
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 20.942600211128592
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.433699892833829
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.387800056487322
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.503000002354383
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.923999948427081
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.393500009551644
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 12.798700015991926
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.060900012031198
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.09589997678995
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.710400020703673
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.239299973472953
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.821399865671992
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.125200083479285
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.024300077930093
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 20.42079996317625
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.434799948707223
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.056900076568127
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.607700053602457
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.720699913799763
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.32020003348589
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.870000002905726
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 12.320499867200851
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.248100040480494
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.645500039681792
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.310400096699595
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.353800030425191
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.262699780985713
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.66540021263063
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.966299921274185
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.010599978268147
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.30790003016591
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.517599880695343
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.698600025847554
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 19.27460008300841
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.017799912020564
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.61320007406175
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.887399902567267
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.087299980223179
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.669400105252862
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.702399890869856
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.375800197944045
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.133899869397283
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.435799956321716
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.978900017216802
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.99540002644062
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.183000126853585
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.546599868685007
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.83310009725392
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 11.961699929088354
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.723899938166142
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.505200019106269
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.914800111204386
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.068599885329604
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.087699983268976
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.517799977213144
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.659000163897872
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.687499893829226
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.319199999794364
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.317199984565377
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.437500085681677
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.204699873924255
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.32190016284585
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 10.019399924203753
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 18.273199908435345
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 16.603600000962615
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 14.287800062447786
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.525399940088391
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.449500177055597
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 17.394899856299162
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 13.680400094017386
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.496700070798397
+    },
+    {
+      "stage": "PROFILE_UI",
+      "gap_ms": 15.310099814087152
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 37.72500017657876
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 17.2412998508662
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 10.39370009675622
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 52.85930004902184
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 22.514399839565158
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.460600145161152
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 17.97499996609986
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 12.205000035464764
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.394299920648336
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.52699995227158
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.483400085940957
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.38500003516674
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.458900015801191
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 19.04439995996654
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 13.32079991698265
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 13.866699999198318
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.410900115966797
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.518900007009506
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.586499823257327
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.525800175964832
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.103100031614304
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.019999980926514
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 15.651399968191981
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 15.377799980342388
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 15.407899860292673
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 15.58350003324449
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.436000121757388
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 17.931499984115362
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 10.627999901771545
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 17.086300067603588
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.807100106030703
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.241899993270636
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.407799975946546
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.498599968850613
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.65459999255836
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 10.595300002023578
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 20.424999995157123
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.559699852019548
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.434800181537867
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.049099853262305
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.439999988302588
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 20.142100052908063
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 10.019199922680855
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 16.48300001397729
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 15.515600098297
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.360600013285875
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 14.305900083854795
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.56389988400042
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 16.08740002848208
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 21.19740005582571
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 10.03009988926351
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.269200084730983
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.445200027897954
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.33279987052083
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.350300120189786
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.701999887824059
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 10.94159996137023
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 19.934700103476644
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.411899890750647
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.484800096601248
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.142800053581595
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.699399868026376
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 14.949100092053413
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.602899948135018
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "gap_ms": 15.541800064966083
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 0.629400135949254
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 25.732999900355935
+    },
+    {
+      "stage": "GENERATE_START",
+      "gap_ms": 18.433300079777837
+    },
+    {
+      "stage": "RESPAWN_START",
+      "gap_ms": 15.270299976691604
+    },
+    {
+      "stage": "RESPAWN_START",
+      "gap_ms": 15.88399987667799
+    },
+    {
+      "stage": "RESPAWN_START",
+      "gap_ms": 14.982900116592646
+    },
+    {
+      "stage": "RESPAWN_START",
+      "gap_ms": 15.675799921154976
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.20009993389249
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 14.353800099343061
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 13.595700031146407
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.46670007519424
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.866599977016449
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.397700015455484
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.619399957358837
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.9156998898834
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 13.439400121569633
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.317499982193112
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 17.32859993353486
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.098300063982606
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.439999988302588
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.72839985601604
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.41950018145144
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.978099985048175
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 17.928199842572212
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.561799984425306
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.291300136595964
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.590999973937869
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.527100069448352
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 17.929399851709604
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.036800056695938
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.42240011319518
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.98039991222322
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.41920006275177
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.471999999135733
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.01310004480183
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.627699930220842
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 11.815099976956844
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.470099868252873
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.744500095024705
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.314799966290593
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.311500057578087
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.71949990466237
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.634600073099136
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.97719999961555
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.472300074994564
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.598899917677045
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.586599940434098
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.670299995690584
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 14.97660018503666
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.493599930778146
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.69729994237423
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.265499966219068
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.286199981346726
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.357600059360266
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.345300082117319
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.412099892273545
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.722400069236755
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.570800052955747
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.229599989950657
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.736399916931987
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.173099935054779
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.409300103783607
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.18210000358522
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.360600082203746
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.564699821174145
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.409300103783607
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.000300016254187
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.218599932268262
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.642200062051415
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 14.569199876859784
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 22.03150000423193
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.533000024035573
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 21.900700172409415
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.557399950921535
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.463799936696887
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.282999956980348
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.606600092723966
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 14.26049997098744
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.9363000895828
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.184099785983562
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.74659999459982
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.871900133788586
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.437700087204576
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.7716997936368
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 11.051899986341596
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.548000112175941
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.437599970027804
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.631699934601784
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.487200114876032
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.471999999135733
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.485199866816401
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.69320016540587
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.147699862718582
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.711700078099966
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.44849993661046
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.381500124931335
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.619899844750762
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 18.531000008806586
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.38830017670989
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.636399827897549
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.571200056001544
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.662000048905611
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.96440002322197
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.09139989502728
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 17.83829997293651
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.419600039720535
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.997400041669607
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.437700087204576
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.693899942561984
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.225399984046817
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.551599906757474
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.43129999563098
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.39450015500188
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.581200011074543
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.561799984425306
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.383099904283881
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.48300008289516
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.738300047814846
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.64099988900125
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 11.111800093203783
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.46209999732673
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.03819988667965
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.339399920776486
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.544400084763765
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.36460011266172
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.664400024339557
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 14.830600004643202
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.23059999756515
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.42049995623529
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.68419998511672
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.972499968484044
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.509899938479066
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.58380015194416
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.87939995341003
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.674499915912747
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.477499924600124
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.52320015616715
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.413499902933836
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.519100008532405
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.05749994330108
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.013200109824538
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 17.336499877274036
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.287300106137991
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.57879988104105
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.482600079849362
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.6402001157403
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.414099907502532
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.534800123423338
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.121099893003702
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.255399979650974
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.681799966841936
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.822899993509054
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.298299957066774
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.07430007122457
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 11.650600004941225
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.595800010487437
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.81149990670383
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.099000185728073
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.512099955230951
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.790999867022038
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.374500071629882
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.022900067269802
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 21.03860001079738
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.733700012788177
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.38169989362359
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.413400018587708
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.150299994274974
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.067299949005246
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 12.461500009521842
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 13.996500056236982
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 16.11540000885725
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.429300023242831
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.40419994853437
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.328099951148033
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.518800122663379
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 10.44550002552569
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 20.75170003809035
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.481399837881327
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.662400051951408
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.569499926641583
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.392000088468194
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 19.122299971058965
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 13.00580007955432
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 13.817699858918786
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.609800117090344
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.082000056281686
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.385299921035767
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.561599982902408
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "gap_ms": 15.56720002554357
+    },
+    {
+      "stage": "ATOMIC_START",
+      "gap_ms": 11.268999893218279
+    },
+    {
+      "stage": "ATOMIC_START",
+      "gap_ms": 19.972100155428052
+    },
+    {
+      "stage": "ATOMIC_START",
+      "gap_ms": 15.579500002786517
+    },
+    {
+      "stage": "ATOMIC_START",
+      "gap_ms": 15.582399908453226
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.731600113213062
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.282099833711982
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 18.91850004903972
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 10.675899917259812
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 10.021500056609511
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 16.59959997050464
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 21.667500026524067
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.892700059339404
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.777199994772673
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 16.793000046163797
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.25299996137619
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 13.90510005876422
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.211199875921011
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.547400107607245
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.496899839490652
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 15.604500193148851
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 18.390199868008494
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 10.025199968367815
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "gap_ms": 17.59140007197857
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 1.1359001509845257
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 13.724699849262834
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 21.658800076693296
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.618199948221445
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.456200111657381
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.419199829921126
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.617100056260824
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 17.37909996882081
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 12.664700159803033
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 17.136599868535995
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.511899953708053
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.981900040060282
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.768999932333827
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.997899997979403
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 18.72640009969473
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.212700072675943
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 13.668499886989594
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.34339995123446
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.49640018492937
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.662499936297536
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.499699860811234
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.384300146251917
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.745299937203526
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.290700063109398
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.423999866470695
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.085200011730194
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.49500017426908
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.583799919113517
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 18.670399906113744
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 10.568100027740002
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 17.2091000713408
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.61330002732575
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.431999927386642
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.564600005745888
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.75100002810359
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.82820008136332
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.469999819993973
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.194399980828166
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.39990003220737
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.368200140073895
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.443699900060892
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.641400124877691
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 18.675699830055237
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 12.530500069260597
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.345599967986345
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.11529996059835
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.552600147202611
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.472200000658631
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.680599957704544
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.488300006836653
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 11.64539996534586
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 13.606199994683266
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.49930009059608
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.249599866569042
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.84570000320673
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.119000105187297
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.509400051087141
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 11.29099982790649
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.46850004605949
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.998200047761202
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.119899995625019
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.049399971961975
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.488200122490525
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.4478000048548
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.414599984884262
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 22.725499933585525
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.815200051292777
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.465999953448772
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.204000053927302
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.556099824607372
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 13.649400090798736
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 17.37329992465675
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.272099990397692
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.41810017079115
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.623899875208735
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.837900107726455
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.035799894481897
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 13.130899984389544
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 13.332400005310774
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.720200026407838
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.217199921607971
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.547600109130144
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.911699971184134
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.449099941179156
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.464400010183454
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.217299969866872
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.523500042036176
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.428000129759312
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.700699994340539
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.87069989182055
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.615700045600533
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 14.14919993840158
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.800800105556846
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.483299968764186
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.253599965944886
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.21169999614358
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.224399976432323
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.428800135850906
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 10.043099988251925
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 21.01779985241592
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.312400180846453
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.215899795293808
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 16.102800145745277
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.30159986577928
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.08460003323853
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 11.702600168064237
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.374799957498908
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.150799881666899
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.554500045254827
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.366500010713935
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.290800016373396
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.550700016319752
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 11.304300045594573
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 20.221899962052703
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.698299976065755
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.260400017723441
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.5585000757128
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 15.278799924999475
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "gap_ms": 19.088299944996834
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.561599982902408
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.47349989414215
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.786800067871809
+    },
+    {
+      "stage": "SERVO_RESET",
+      "gap_ms": 15.308999922126532
+    },
+    {
+      "stage": "KNEE_START",
+      "gap_ms": 15.617500059306622
+    },
+    {
+      "stage": "KNEE_START",
+      "gap_ms": 15.374899841845036
+    },
+    {
+      "stage": "KNEE_START",
+      "gap_ms": 15.61330002732575
+    },
+    {
+      "stage": "KNEE_START",
+      "gap_ms": 15.239000087603927
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 19.612199859693646
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 11.70030003413558
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 15.929700108245015
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 15.139400027692318
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 15.63799986615777
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 15.266400063410401
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "gap_ms": 15.539099927991629
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.973000088706613
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 14.572199899703264
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.00600010715425
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.516399871557951
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 20.18400002270937
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 12.421299936249852
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 13.992700027301908
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.171899925917387
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.986300073564053
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.447600046172738
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 20.215600030496716
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 13.524899957701564
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 12.447400018572807
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.602099942043424
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.454000094905496
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.523500042036176
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.841600019484758
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.711799962446094
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 13.985599856823683
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.554299974814057
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.270100207999349
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.664999838918447
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.170100145041943
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.427300008013844
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.957499811425805
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 10.71520010009408
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.813600039109588
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.286499867215753
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.515099978074431
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.197300119325519
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.333899995312095
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.619500074535608
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 13.784999959170818
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 17.10029994137585
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.530100092291832
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.184199903160334
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.371300047263503
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.569600043818355
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 20.249799825251102
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 10.766200022771955
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.631200047209859
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.78660006634891
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.561299864202738
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.221500070765615
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.176499960944057
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.534700127318501
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 11.512900004163384
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.53169982880354
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.48740011639893
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.770399942994118
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.27260004170239
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.118499984964728
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.950099987909198
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 12.138700112700462
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 14.634300023317337
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.430699801072478
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.181000111624599
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.167299890890718
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.649600187316537
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 14.618299901485443
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.024099964648485
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.62970008328557
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.599200036376715
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.436399960890412
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.893900068476796
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.342899831011891
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.443399971351027
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 10.50940016284585
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 33.09979988262057
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 52.72869998589158
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 49.877900164574385
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 58.9347998611629
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 26.739699998870492
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.991499992087483
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.297200065106153
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.705200145021081
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.179699985310435
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.568299917504191
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 11.306700063869357
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 19.73509998060763
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.635599847882986
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.244700014591217
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.510600060224533
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.528500080108643
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 21.26219985075295
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.273300025612116
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 21.974600153043866
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.632199821993709
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.447100158780813
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.42790001258254
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.885199885815382
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.425599990412593
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.077000139281154
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.592799987643957
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.486199874430895
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.55410004220903
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.867300098761916
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.28439985588193
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.228200005367398
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 11.136099928990006
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.520600136369467
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.62940003350377
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.595499891787767
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.455099986866117
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.444800024852157
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 11.145800119265914
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 19.735199864953756
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.60269994661212
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.848400071263313
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.541600063443184
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.776999993249774
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 21.527200005948544
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.655500046908855
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 23.862799862399697
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.680399956181645
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.063100028783083
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.630700159817934
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.067099990323186
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 12.796199880540371
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.028800142928958
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.85610001347959
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 14.950299868360162
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.42049995623529
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.607800101861358
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 22.059899987652898
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.596700064837933
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 23.366599809378386
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.366900013759732
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.698600094765425
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.486199874430895
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.114200068637729
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 12.619700049981475
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.412800040096045
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.473299892619252
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.538000036031008
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.792400110512972
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.32089989632368
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.90380005352199
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.874999919906259
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.066099982708693
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.572499949485064
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.272200107574463
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.442200005054474
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.541099943220615
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.194999985396862
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 12.288500089198351
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.42179987579584
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.6402001157403
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 18.26520008035004
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.372900016605854
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.455199871212244
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.589599963277578
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.508100157603621
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.689499909058213
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.916800083592534
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 10.149699868634343
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.515500145033002
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.5863999389112
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.537000028416514
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.765500022098422
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.56089986115694
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 17.90400012396276
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 12.552900006994605
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.516299987211823
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.525099821388721
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.637100208550692
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.56089986115694
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.422099968418479
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 14.51230002567172
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.218299977481365
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.652500092983246
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.273700002580881
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.513199847191572
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.39720012806356
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 20.00460005365312
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 10.30920003540814
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 16.07079990208149
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.561399981379509
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.405199956148863
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.619399957358837
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.792400110512972
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.720299910753965
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 11.089200153946877
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.15429998189211
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.200000023469329
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.521799912676215
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.41019999422133
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.653599984943867
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.49030002206564
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 17.18410011380911
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 13.855199795216322
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.669400105252862
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.399500029161572
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.389099949970841
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.633800067007542
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.35209990106523
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 12.262900127097964
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 18.89589987695217
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.403300058096647
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.452800085768104
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.291899908334017
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.552399912849069
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 19.63890017941594
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.05279983393848
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 11.8646000046283
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.278900042176247
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.662600053474307
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.369100030511618
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.578199876472354
+    },
+    {
+      "stage": "RECORD_RUN",
+      "gap_ms": 15.555200167000294
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 23.68930005468428
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 22.79009995982051
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.926900086924434
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 28.884099796414375
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.059100110083818
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.477599930018187
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 200.2378001343459
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.205499827861786
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 84.38220014795661
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 46.88249994069338
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.070400079712272
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 31.148500042036176
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 13.53279990144074
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.298699960112572
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.48740011639893
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.453499974682927
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 18.32009991630912
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 12.766500003635883
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.541099943220615
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.194300027564168
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.455800108611584
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.71809989400208
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.309599926695228
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.094300154596567
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.22449997253716
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.290100058540702
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.638399869203568
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.522800153121352
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.555699821561575
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.414200024679303
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.498100081458688
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.924299946054816
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 19.8874999769032
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.935200033709407
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.179600100964308
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.706899808719754
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.427800128236413
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 22.241099970415235
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 13.21889995597303
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 11.570800095796585
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.391599852591753
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.853800112381577
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.5046998988837
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.421300195157528
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.445099910721183
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.04499988630414
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 21.463700104504824
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.655800001695752
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.093599911779165
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.664900187402964
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.86909987963736
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.705800037831068
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.021199937909842
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.18350001424551
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.640900004655123
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.411000000312924
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.61010000295937
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.418499941006303
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.089499996975064
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.03230013884604
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 21.187599981203675
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.378599986433983
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.438899863511324
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.577300218865275
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.843999804928899
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 20.01220011152327
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 10.25849999859929
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 16.403199872002006
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.220100060105324
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.2666000649333
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.415099915117025
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.514499973505735
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "gap_ms": 15.545300208032131
+    }
+  ],
+  "rtf_samples": [
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005693832903,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.608828005974357,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5698005699502434,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5333333333333599,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5673758868396483,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.5698005699502737,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.6060606054961337,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.533333333333303,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758862774496,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.5673758868395878,
+    0.56980056938326,
+    0.56980056938326,
+    0.56980056938326,
+    0.56980056938326,
+    0.56980056938326,
+    0.56980056938326,
+    0.56980056938326,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.6060606067789471,
+    0.569800569950213,
+    0.569800569950213,
+    0.569800569950213
+  ],
+  "worker_loop_hz_samples": [
+    128.99751186645827,
+    170.8574802684276,
+    95.12779221333945,
+    205.8913228652378,
+    103.25032008894692,
+    170.88759012778854,
+    209.23566223096574,
+    98.32285758549324,
+    172.43051604766475,
+    190.29269406316195,
+    128.85663897841678,
+    245.7817703853666,
+    128.08197213205824,
+    255.57023315572468,
+    257.54278356571155,
+    127.44495179246718,
+    155.70018347385306,
+    253.61962745059802,
+    257.0578448371024,
+    354.4229771511277,
+    136.5337293848294,
+    307.3223393504512,
+    2216.143451931264,
+    129.51836948972698,
+    67.45203320125074,
+    126.82609744397143,
+    125.45772470416361,
+    129.1311894143067,
+    128.97047747201165,
+    272.0551723856165,
+    151.37581671586705,
+    140.05504159393308,
+    289.3738308805016,
+    318.6590824609271,
+    319.2905374169473,
+    258.0237317632445,
+    129.22108774235832,
+    306.61737782748264,
+    139.33495442163218,
+    157.04226560586946,
+    259.37393575859574,
+    287.37490230402113,
+    278.1046472615729,
+    124.18754170443495,
+    127.92488265176124,
+    126.7346807550476,
+    312.8238219448602,
+    254.43552676841333,
+    129.91062152262896,
+    128.67176965714418,
+    139.8603842770657,
+    151.4388586934185,
+    159.90022209732908,
+    136.09353657998926,
+    141.2204977786722,
+    299.67878235083145,
+    317.98840528262167,
+    129.60355881106886,
+    256.55991680286934,
+    272.87502824965003,
+    270.47952577398837,
+    273.81647163018215,
+    251.62138477741937,
+    129.54101988346136,
+    129.69243423195059,
+    148.6704222762811,
+    154.1235759053693,
+    153.85621333324067,
+    137.8948963277527,
+    125.43431594990187,
+    139.66773032962286,
+    148.63755091831993,
+    144.66886202354004,
+    157.8145837585694,
+    306.922050875013,
+    127.03816886410235,
+    258.02456397534235,
+    316.95218787345624,
+    257.55231916498207,
+    130.13081373920838,
+    274.436890154764,
+    146.6286413997164,
+    310.82929333290514,
+    140.51801915621985,
+    63.21387230307038,
+    129.58613429270244,
+    319.55007275004334,
+    259.036739955888,
+    312.01248041263403,
+    139.2847381072284,
+    155.8840383056637,
+    258.7954050043918,
+    136.47545369189152,
+    134.18676125983708,
+    272.3464510391345,
+    138.78480019717932,
+    309.7935425622963,
+    138.79611689296,
+    268.6082560980021,
+    260.20956585282335,
+    258.62891142559613,
+    316.701239546383,
+    261.72486521619055,
+    261.29829317833935,
+    272.7829134373001,
+    248.40014731628943,
+    138.7470103365291,
+    97.71971045088038,
+    128.43565370543064,
+    134.48225985835467,
+    54.22910782815616,
+    146.9397051037077,
+    313.30467808934736,
+    139.35704149399672,
+    286.35756716592465,
+    311.29676586516547,
+    132.35895076226873,
+    72.47415671514716,
+    100.41605725185022,
+    33.35871375509561
+  ],
+  "status_payload_bytes": [
+    7328.0,
+    7328.0,
+    7325.0,
+    7325.0,
+    7328.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7323.0,
+    7323.0,
+    7330.0,
+    7330.0,
+    7327.0,
+    7327.0,
+    7327.0,
+    7316.0,
+    7322.0,
+    7322.0,
+    7333.0,
+    7333.0,
+    7330.0,
+    7330.0,
+    7320.0,
+    7320.0,
+    7320.0,
+    7320.0,
+    7320.0,
+    7325.0,
+    7325.0,
+    7323.0,
+    7323.0,
+    7323.0,
+    7323.0,
+    7321.0,
+    7321.0,
+    7321.0,
+    7324.0,
+    7324.0,
+    7315.0,
+    7315.0,
+    7315.0,
+    7327.0,
+    7327.0,
+    7327.0,
+    7320.0,
+    7320.0,
+    7320.0,
+    7320.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7349.0,
+    7351.0,
+    7351.0,
+    7351.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    7340.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8284.0,
+    8287.0,
+    8287.0,
+    8299.0,
+    8334.0,
+    8334.0,
+    8328.0,
+    8328.0,
+    8328.0,
+    8328.0,
+    8354.0,
+    8354.0,
+    8354.0,
+    8343.0,
+    8343.0,
+    8314.0,
+    8314.0,
+    8356.0,
+    8356.0,
+    8356.0,
+    8356.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8343.0,
+    8335.0,
+    8335.0,
+    8335.0,
+    8335.0,
+    8343.0,
+    8343.0,
+    8342.0,
+    8342.0,
+    8342.0,
+    8342.0,
+    8342.0,
+    8336.0,
+    8336.0,
+    8359.0,
+    8359.0,
+    8359.0,
+    8359.0,
+    8359.0,
+    8359.0,
+    8344.0,
+    8344.0,
+    8344.0,
+    8350.0,
+    8350.0,
+    8350.0,
+    8350.0,
+    8335.0,
+    8335.0,
+    8329.0,
+    8329.0,
+    8310.0,
+    8310.0,
+    8364.0,
+    8364.0,
+    8364.0,
+    8342.0,
+    8342.0,
+    8342.0,
+    8342.0,
+    8349.0,
+    8349.0,
+    8346.0,
+    8346.0,
+    8355.0,
+    8315.0,
+    8315.0,
+    8315.0,
+    8315.0,
+    8347.0,
+    8347.0,
+    8282.0,
+    8282.0,
+    8254.0,
+    8254.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8294.0,
+    8294.0,
+    8294.0,
+    8294.0,
+    8292.0,
+    8292.0,
+    8297.0,
+    8297.0,
+    8297.0,
+    8297.0,
+    8294.0,
+    8294.0,
+    8294.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8275.0,
+    8275.0,
+    8275.0,
+    8275.0,
+    8272.0,
+    8272.0,
+    8272.0,
+    8272.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8285.0,
+    8318.0,
+    8318.0,
+    8365.0,
+    8366.0,
+    8366.0,
+    8372.0,
+    8372.0,
+    8334.0,
+    8334.0,
+    8353.0,
+    8353.0,
+    8312.0,
+    8312.0,
+    8312.0,
+    8312.0,
+    8287.0,
+    8287.0,
+    8287.0,
+    8287.0,
+    8289.0,
+    8289.0,
+    8292.0,
+    8292.0,
+    8292.0,
+    8292.0,
+    8291.0,
+    8291.0,
+    8281.0,
+    8281.0,
+    8281.0,
+    8281.0,
+    8288.0,
+    8288.0,
+    8288.0,
+    8288.0,
+    8288.0,
+    8287.0,
+    8287.0,
+    8287.0,
+    8287.0,
+    8296.0,
+    8296.0,
+    8284.0,
+    8284.0,
+    8284.0,
+    8286.0,
+    8286.0,
+    8314.0,
+    8314.0,
+    8314.0,
+    8314.0,
+    8367.0,
+    8367.0,
+    8387.0,
+    8405.0,
+    8405.0,
+    8386.0,
+    8386.0,
+    8386.0,
+    8386.0,
+    8386.0,
+    8313.0,
+    8313.0,
+    8313.0,
+    8313.0,
+    8310.0,
+    8310.0,
+    8310.0,
+    8327.0,
+    8327.0,
+    8327.0,
+    8327.0,
+    8363.0,
+    8363.0,
+    8363.0,
+    8363.0,
+    8325.0,
+    8325.0,
+    8323.0,
+    8323.0,
+    8323.0,
+    8323.0,
+    8370.0,
+    8370.0,
+    8683.0,
+    8683.0,
+    8717.0,
+    8717.0,
+    8717.0,
+    8717.0,
+    8717.0,
+    8717.0,
+    8798.0,
+    8798.0,
+    8816.0,
+    8816.0,
+    8816.0,
+    8816.0,
+    8794.0,
+    8794.0,
+    8794.0,
+    8794.0,
+    8791.0,
+    8791.0,
+    8791.0,
+    8791.0,
+    8572.0,
+    8572.0,
+    8572.0,
+    8780.0,
+    8780.0,
+    8780.0,
+    8780.0,
+    8743.0,
+    8743.0,
+    8743.0,
+    8743.0,
+    8738.0,
+    8738.0,
+    8738.0,
+    8775.0,
+    8775.0,
+    8775.0,
+    8775.0,
+    8765.0,
+    8765.0,
+    8792.0,
+    8792.0,
+    8806.0,
+    8806.0,
+    8807.0,
+    8777.0,
+    8757.0,
+    8793.0,
+    8793.0,
+    8793.0,
+    8793.0,
+    8762.0,
+    8762.0,
+    8742.0,
+    8742.0,
+    8742.0,
+    8742.0,
+    8774.0,
+    8774.0,
+    8774.0,
+    8774.0,
+    8774.0,
+    8774.0,
+    8775.0,
+    8775.0,
+    8562.0,
+    8562.0,
+    8562.0,
+    8548.0,
+    8585.0,
+    8595.0
+  ],
+  "isaac_pid": 3744,
+  "tabs": [
+    "Sim Connection",
+    "Run Manager",
+    "Record / Servo+Wheel",
+    "Speed Scale",
+    "Playback",
+    "Height Generate",
+    "Combine",
+    "Sim State"
+  ],
+  "runtime_ready": true,
+  "control_ready": true,
+  "requested_launch_mode": "explicit-python",
+  "isaac_window_title": "Isaac Sim 5.1.0",
+  "speed_slider_pending_after_100_drags": 1,
+  "height_respawn": {
+    "height_mm": 75,
+    "request_id": "4135cd42498b44c5bd9f92a5fc218a9a",
+    "requested_wall": 1773180.0374859,
+    "callback_ms": 0.1275001559406519,
+    "ack_wall_ms": 2829.0662998333573,
+    "respawned": true,
+    "control_ready": true,
+    "error": ""
+  },
+  "knee_batch_id": "f399ba391763477e92a4183ecd0056cc",
+  "knee_minus_60": {
+    "targets_deg": {
+      "front_left_knee": -60.0,
+      "front_right_knee": -60.0,
+      "rear_left_knee": -60.0,
+      "rear_right_knee": -60.0
+    },
+    "all_four_applied": true
+  },
+  "version_load_validation": [
+    {
+      "version_id": "v001_20260804_180851_804490_manual",
+      "count": 1,
+      "sha256": "3476f07497ed1c0e4e8c49431b150690bf04a94ea3166a2a188373106bd4e0cf",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180851_804490_manual"
+    },
+    {
+      "version_id": "v002_20260804_180854_560198_manual",
+      "count": 2,
+      "sha256": "36ace6dfb2ca21c4310a1bf7fdabcad15412705d9cb8a179a8aea0b0241dca1a",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180854_560198_manual"
+    }
+  ],
+  "performance_summary": {
+    "ordinary_callback_count": 207,
+    "ordinary_callback_average_ms": 3.78343043623915,
+    "ordinary_callback_p95_ms": 9.048400004394347,
+    "ordinary_callback_max_ms": 38.12620020471513,
+    "ui_after_probe_average_ms": 16.97764222248735,
+    "ui_after_probe_p95_ms": 22.89947995450346,
+    "ui_after_probe_max_ms": 200.2378001343459,
+    "real_time_factor_average": 0.5714463236253785,
+    "real_time_factor_p50": 0.5685882281114238,
+    "worker_loop_hz_average": 195.94114542668757,
+    "status_payload_bytes_average": 8708.575,
+    "status_payload_bytes_max": 8816.0,
+    "outbound_backlog": 0,
+    "status_replaced": 0,
+    "frames_sent": 229,
+    "bytes_sent": 4095482,
+    "status_enqueued": 162,
+    "status_send_hz": 6.126098702494237,
+    "socket_send_blocking_ms": 0.0,
+    "send_call_average_ms": 0.27836724713151895,
+    "send_call_max_ms": 5.075799999758601
+  },
+  "acceptance_criteria": {
+    "callback_p95_under_30ms": true,
+    "callback_max_under_100ms": true,
+    "no_ui_probe_over_200ms": false,
+    "status_under_16kb": true,
+    "rtf_at_least_0_9": false,
+    "all_generate_under_1_5s": true,
+    "atomic_batch_pass": true,
+    "two_versions": true,
+    "four_knees": true
+  },
+  "error": "AssertionError: acceptance criteria failed: {'callback_p95_under_30ms': True, 'callback_max_under_100ms': True, 'no_ui_probe_over_200ms': False, 'status_under_16kb': True, 'rtf_at_least_0_9': False, 'all_generate_under_1_5s': True, 'atomic_batch_pass': True, 'two_versions': True, 'four_knees': True}",
+  "failed_stage": "FINALIZE",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 186, in _tick\n    getattr(self, f\"_stage_{self.stage.lower()}\")()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 828, in _stage_finalize\n    raise AssertionError(f\"acceptance criteria failed: {criteria}\")\nAssertionError: acceptance criteria failed: {'callback_p95_under_30ms': True, 'callback_max_under_100ms': True, 'no_ui_probe_over_200ms': False, 'status_under_16kb': True, 'rtf_at_least_0_9': False, 'all_generate_under_1_5s': True, 'atomic_batch_pass': True, 'two_versions': True, 'four_knees': True}\n",
+  "latest_sim_status": {
+    "last_operation_ack": {
+      "type": "stop_ack",
+      "command_id": "c4d516c66af247b3b34187f2f27d1c8f",
+      "received_wall_time": 1785881337.0820467,
+      "target_applied_wall_time": 1785881337.084054,
+      "target_applied_sim_time": 15.399999999999766,
+      "zero_target_applied": true,
+      "error": ""
+    },
+    "operation_ack_history": [
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "eaae15440e1d4fe789e2f75ea61c80fa",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881320.5087898,
+        "updated_sim_time": 5.933333333333418,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "57fab1a31fa34e49a18dd4e6ab4a6d87",
+        "source": "servo_reset",
+        "batch_received_wall_time": 1785881320.5117905,
+        "batch_applied_wall_time": 1785881320.5152938,
+        "batch_applied_sim_time": 5.933333333333418,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 713,
+        "servo_motion_start_sim_time": 5.941666666666752,
+        "wheel_motion_start_sim_time": 5.941666666666752,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "586a9b272018437b8323ef2fe72f0f1b",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881321.2470334,
+        "updated_sim_time": 6.333333333333438,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "11d57eccc4764618be9d0e9968acfaaf",
+        "source": "servo_100",
+        "batch_received_wall_time": 1785881321.249414,
+        "batch_applied_wall_time": 1785881321.2509139,
+        "batch_applied_sim_time": 6.333333333333438,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 761,
+        "servo_motion_start_sim_time": 6.341666666666772,
+        "wheel_motion_start_sim_time": 6.341666666666772,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "53cc302935da43329bcdd83c3294f995",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881322.717653,
+        "updated_sim_time": 7.200000000000148,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "207cd77295f24650b390eb0b0886f82d",
+        "source": "servo_reset",
+        "batch_received_wall_time": 1785881322.7190423,
+        "batch_applied_wall_time": 1785881322.7210414,
+        "batch_applied_sim_time": 7.200000000000148,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 865,
+        "servo_motion_start_sim_time": 7.208333333333481,
+        "wheel_motion_start_sim_time": 7.208333333333481,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "d04f994ceb4146b5bab1b73f11d0c14d",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881323.758432,
+        "updated_sim_time": 7.8000000000001775,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "88f4adf0ad63478ca01bf49b8d64dca4",
+        "source": "servo_200",
+        "batch_received_wall_time": 1785881323.7594252,
+        "batch_applied_wall_time": 1785881323.7619035,
+        "batch_applied_sim_time": 7.8000000000001775,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 937,
+        "servo_motion_start_sim_time": 7.808333333333511,
+        "wheel_motion_start_sim_time": 7.808333333333511,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "81233a640cdc4205849205263a1f69fe",
+        "received_wall_time": 1785881324.6812465,
+        "target_applied_wall_time": 1785881324.6822445,
+        "target_applied_sim_time": 8.333333333333501,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "e2e21d7f68464fd8993a317686c66e1a",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881324.6869118,
+        "updated_sim_time": 8.333333333333501,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "16037b65cc9e4f46af676613fc411db7",
+        "source": "wheel_100",
+        "batch_received_wall_time": 1785881324.9408972,
+        "batch_applied_wall_time": 1785881324.945556,
+        "batch_applied_sim_time": 8.466666666666827,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1017,
+        "servo_motion_start_sim_time": 8.47500000000016,
+        "wheel_motion_start_sim_time": 8.47500000000016,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "be4f124baa974fc4951bfb278b0983b7",
+        "received_wall_time": 1785881326.9671566,
+        "target_applied_wall_time": 1785881326.968102,
+        "target_applied_sim_time": 9.666666666666758,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "2bda5a83915f4fc5897dddce7374db2c",
+        "received_wall_time": 1785881327.4682038,
+        "target_applied_wall_time": 1785881327.469204,
+        "target_applied_sim_time": 9.93333333333341,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "b587bb9fa4a94522adb92daa6b13c3b5",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881327.4722033,
+        "updated_sim_time": 9.93333333333341,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "b1a27b1caa384462ac7e20d7dda5b714",
+        "source": "wheel_200",
+        "batch_received_wall_time": 1785881327.733859,
+        "batch_applied_wall_time": 1785881327.735864,
+        "batch_applied_sim_time": 10.066666666666736,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1209,
+        "servo_motion_start_sim_time": 10.075000000000069,
+        "wheel_motion_start_sim_time": 10.075000000000069,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.6,
+          "front_right_ankle": 0.6,
+          "rear_left_ankle": 0.6,
+          "rear_right_ankle": 0.6
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "392f20e0a0854346a0aa9ffc26fdbc28",
+        "received_wall_time": 1785881329.7401803,
+        "target_applied_wall_time": 1785881329.7406812,
+        "target_applied_sim_time": 11.200000000000005,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "dbed35a423b743edb35420fcc07e3ef0",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881330.1019459,
+        "updated_sim_time": 11.399999999999993,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "f399ba391763477e92a4183ecd0056cc",
+        "source": "knee_minus_60_real_e2e",
+        "batch_received_wall_time": 1785881330.1044571,
+        "batch_applied_wall_time": 1785881330.1059606,
+        "batch_applied_sim_time": 11.399999999999993,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1369,
+        "servo_motion_start_sim_time": 11.408333333333326,
+        "wheel_motion_start_sim_time": 11.408333333333326,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "request_id": "0a302dacb5744e7bb216e1d7d22de270",
+        "updated": true,
+        "height_mm": 50,
+        "revision": 5,
+        "control_ready": true,
+        "respawned": false,
+        "obstacle_update_s": 0.00135709997266531,
+        "worker_operation_s": 0.11730220005847514,
+        "request_enqueued_wall_time": 1785881330.3968725,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "55d096e6f0d6439c9c80679fc55bf5ba",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881330.6821268,
+        "updated_sim_time": 11.733333333333308,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "592afe63274440deb387c08eefd9528b",
+        "source": "real_recording",
+        "batch_received_wall_time": 1785881330.6846354,
+        "batch_applied_wall_time": 1785881330.686635,
+        "batch_applied_sim_time": 11.733333333333308,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1409,
+        "servo_motion_start_sim_time": 11.74166666666664,
+        "wheel_motion_start_sim_time": 11.74166666666664,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 15.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "recording_metadata": {
+          "recording_active": true,
+          "height_mm": 50,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "08b6abd1494e4985b4515791bd3ad180",
+        "received_wall_time": 1785881331.7561846,
+        "target_applied_wall_time": 1785881331.7566848,
+        "target_applied_sim_time": 12.333333333333274,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "d2b8cbbdea65475db5e12ad9fe281af0",
+        "received_wall_time": 1785881331.9975328,
+        "target_applied_wall_time": 1785881331.9989522,
+        "target_applied_sim_time": 12.4666666666666,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "f9d6ac58a77647c2bf3b5b092d44edb5",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881333.4636714,
+        "updated_sim_time": 13.333333333333217,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "0357ad0aa72b424f9c34212283bf5536",
+        "source": "real_recording",
+        "batch_received_wall_time": 1785881333.4663649,
+        "batch_applied_wall_time": 1785881333.4683638,
+        "batch_applied_sim_time": 13.333333333333217,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1601,
+        "servo_motion_start_sim_time": 13.34166666666655,
+        "wheel_motion_start_sim_time": 13.34166666666655,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 30.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.5,
+          "front_right_ankle": 0.5,
+          "rear_left_ankle": 0.5,
+          "rear_right_ankle": 0.5
+        },
+        "recording_metadata": {
+          "recording_active": true,
+          "height_mm": 50,
+          "version_id": "v001_20260804_180851_804490_manual",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "80480b70f81849949a124d31da553cbb",
+        "received_wall_time": 1785881334.4774292,
+        "target_applied_wall_time": 1785881334.478434,
+        "target_applied_sim_time": 13.933333333333183,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "330ade6b865c46dabf7b9e2906008a54",
+        "received_wall_time": 1785881334.8234506,
+        "target_applied_wall_time": 1785881334.8244472,
+        "target_applied_sim_time": 14.133333333333171,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "7207dc6b206c4bd2806aa08b731574b4",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881335.1998641,
+        "updated_sim_time": 14.33333333333316,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "c4039c10af4d44e19c518aa03b0c33f4",
+        "received_wall_time": 1785881336.8223705,
+        "target_applied_wall_time": 1785881336.8233795,
+        "target_applied_sim_time": 15.26666666666644,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "6b007c581f584cf29a645b8f6c9990ad",
+        "received_wall_time": 1785881336.8253865,
+        "target_applied_wall_time": 1785881336.8258915,
+        "target_applied_sim_time": 15.26666666666644,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "40d8a63064914902ade80296f68de04d",
+        "received_wall_time": 1785881337.0790472,
+        "target_applied_wall_time": 1785881337.0800464,
+        "target_applied_sim_time": 15.399999999999766,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "c4d516c66af247b3b34187f2f27d1c8f",
+        "received_wall_time": 1785881337.0820467,
+        "target_applied_wall_time": 1785881337.084054,
+        "target_applied_sim_time": 15.399999999999766,
+        "zero_target_applied": true,
+        "error": ""
+      }
+    ],
+    "requested_launch_mode": "explicit-python",
+    "type": "status",
+    "ready": true,
+    "runtime_ready": true,
+    "starting": false,
+    "phase": "running",
+    "phase_elapsed_s": 26.42200000002049,
+    "height_mm": 50,
+    "height_cm": 5.0,
+    "scene_height_mm": 50,
+    "obstacle_revision": 5,
+    "last_set_height_source": "ui",
+    "last_set_height_request_id": "0a302dacb5744e7bb216e1d7d22de270",
+    "obstacle_updated": true,
+    "scene_ready": true,
+    "respawned": false,
+    "error": "",
+    "traceback": "",
+    "pid": 3744,
+    "sim_time": 15.399999999999766,
+    "sim_steps": 1848,
+    "real_time_factor": 0.569800569950213,
+    "respawn_count": 1,
+    "last_respawn_at": 1785881319.7392528,
+    "restore_count": 0,
+    "last_restore_result": "",
+    "last_restore_error": "",
+    "perf": {
+      "outbound_backlog": 0,
+      "status_replaced": 0,
+      "frames_sent": 229,
+      "bytes_sent": 4095482,
+      "status_enqueued": 162,
+      "status_send_hz": 6.126098702494237,
+      "socket_send_blocking_ms": 0.0,
+      "send_call_average_ms": 0.27836724713151895,
+      "send_call_max_ms": 5.075799999758601
+    },
+    "command_state": {
+      "servos": {
+        "front_left_hip": 30.0,
+        "front_left_knee": -60.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": -60.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": -60.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": -60.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "servo_target_deg": [
+      30.0,
+      -60.0,
+      0.0,
+      -60.0,
+      0.0,
+      -60.0,
+      0.0,
+      -60.0
+    ],
+    "servo_actual_deg": [
+      28.802453522363965,
+      -59.96065294984367,
+      0.7553712709617788,
+      -59.87715388724026,
+      0.7353892857406421,
+      60.17169213481872,
+      0.951920583138621,
+      59.95384325124117
+    ],
+    "wheel_canonical_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_effective_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_measured_rad_s": [
+      -0.006271953694522381,
+      0.08010842651128769,
+      -0.11521133780479431,
+      -0.0005282287602312863
+    ],
+    "target_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "command_deg": 30.0,
+          "applied_command_deg": 28.73489309016051,
+          "tracking_compensation_deg": -1.2651069098394885,
+          "target_actual_deg": 30.07935156363205,
+          "target_actual_rad": 0.524983721650284
+        },
+        "front_left_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -60.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -59.97315599919516,
+          "target_actual_rad": -1.0467290349981453
+        },
+        "front_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 1.275930870202061,
+          "tracking_compensation_deg": 1.275930870202061,
+          "target_actual_deg": -0.006745560524854715,
+          "target_actual_rad": -0.00011773224105127156
+        },
+        "front_right_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -59.98596127620931,
+          "tracking_compensation_deg": 0.01403872379069071,
+          "target_actual_deg": -59.874811650497804,
+          "target_actual_rad": -1.045012602312647
+        },
+        "rear_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": -0.8125456639260451,
+          "tracking_compensation_deg": -0.8125456639260451,
+          "target_actual_deg": -0.1794263347525243,
+          "target_actual_rad": -0.0031315803062170744
+        },
+        "rear_left_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -59.940143833648335,
+          "tracking_compensation_deg": 0.0598561663516648,
+          "target_actual_deg": 60.16301483092001,
+          "target_actual_rad": 1.0500426967257337
+        },
+        "rear_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": -1.0233088325750122,
+          "tracking_compensation_deg": -1.0233088325750122,
+          "target_actual_deg": -0.3229814231186408,
+          "target_actual_rad": -0.005637089256197214
+        },
+        "rear_right_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -60.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 60.21524399350242,
+          "target_actual_rad": 1.0509542675783563
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "front_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        }
+      }
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": 0.5026976466178894,
+          "deg": 28.802453522363965
+        },
+        "front_left_knee": {
+          "rad": -1.0465108156204224,
+          "deg": -59.96065294984367
+        },
+        "front_right_hip": {
+          "rad": 0.013183715753257275,
+          "deg": 0.7553712709617788
+        },
+        "front_right_knee": {
+          "rad": -1.045053482055664,
+          "deg": -59.87715388724026
+        },
+        "rear_left_hip": {
+          "rad": 0.012834964320063591,
+          "deg": 0.7353892857406421
+        },
+        "rear_left_knee": {
+          "rad": 1.0501941442489624,
+          "deg": 60.17169213481872
+        },
+        "rear_right_hip": {
+          "rad": 0.016614148393273354,
+          "deg": 0.951920583138621
+        },
+        "rear_right_knee": {
+          "rad": 1.0463919639587402,
+          "deg": 59.95384325124117
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "rad_s": -0.006271953694522381
+        },
+        "front_right_ankle": {
+          "rad_s": 0.08010842651128769
+        },
+        "rear_left_ankle": {
+          "rad_s": -0.11521133780479431
+        },
+        "rear_right_ankle": {
+          "rad_s": -0.0005282287602312863
+        }
+      }
+    },
+    "robot_ground": {
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "checked": true,
+      "physical_ground_safe": true,
+      "maximum_collision_penetration_m": 0.0010916017388111349,
+      "root_z_m": 0.09872717410326004,
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "respawn_ready": true
+    },
+    "grounded_reference_valid": true,
+    "grounded_reference_stable": true,
+    "motion_ready": true,
+    "motion_block_reason": "",
+    "respawn_ready": true,
+    "respawn_block_reason": "",
+    "control_ready": true,
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "wheel_command": {
+      "generation": 13,
+      "command_id": "c4d516c66af247b3b34187f2f27d1c8f",
+      "state": "zero_target_applied",
+      "stop_command_received": true,
+      "zero_target_applied": true,
+      "physically_stopped": false,
+      "stale_command_rejected": false,
+      "requested_wall_time": 1785881337.0191772,
+      "enqueued_wall_time": 1785881337.0192165,
+      "received_wall_time": 1785881337.0820467,
+      "target_applied_wall_time": 1785881337.084054,
+      "measured_stop_wall_time": 0.0,
+      "target_applied_sim_time": 15.399999999999766,
+      "measured_stop_sim_time": 0.0,
+      "stop_tolerance_rad_s": 0.1,
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": -0.006271953694522381,
+        "front_right_ankle": 0.08010842651128769,
+        "rear_left_ankle": -0.11521133780479431,
+        "rear_right_ankle": -0.0005282287602312863
+      },
+      "canonical_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "speed_percent": 200.0
+    },
+    "speed": {
+      "speed_percent": 200.0,
+      "speed_scale": 2.0,
+      "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+      "reference_verified": false,
+      "requested_servo_velocity_deg_s": 300.0,
+      "effective_servo_velocity_deg_s": 300.0,
+      "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+      "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+      "semantics_version": "worker-motion-executor-v1"
+    },
+    "motion_batch": {
+      "batch_id": "playback-eb23c226-544b625c51654f1e-1-86e06d1b",
+      "source": "playback",
+      "batch_received_wall_time": 1785881335.991145,
+      "batch_applied_wall_time": 1785881335.992145,
+      "batch_applied_sim_time": 14.7999999999998,
+      "servo_applied": false,
+      "wheel_applied": true,
+      "first_physics_step": 1777,
+      "servo_motion_start_sim_time": 14.808333333333133,
+      "wheel_motion_start_sim_time": 14.808333333333133,
+      "motion_start_skew_s": 0.0,
+      "physics_dt_s": 0.008333333333333333,
+      "speed_percent_snapshot": 200.0,
+      "executor_speed_percent": 200.0,
+      "requested_servo_velocity_deg_s": 300.0,
+      "effective_servo_velocity_deg_s": 300.0,
+      "canonical_servo_targets_deg": {},
+      "canonical_wheel_velocity_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_wheel_velocity_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "recording_metadata": {
+        "plan_id": "eb23c226-544b625c51654f1e",
+        "source_step": 2,
+        "source_step_id": "step_002_recorded_height_050mm_dur_0.67s"
+      },
+      "high_priority": false,
+      "error": ""
+    },
+    "physics_dt": 0.008333333333333333,
+    "sim_step_hz": 120.0,
+    "ready_source": "runtime",
+    "last_ready_change_reason": "runtime status",
+    "last_ready_change_message_type": "status",
+    "real_time_factor_lifetime": 0.5544621905983046,
+    "real_time_factor_window_samples": 24,
+    "worker_playback": {
+      "active": false,
+      "paused": false,
+      "scheduled": false,
+      "started": true,
+      "plan_id": "eb23c226-544b625c51654f1e",
+      "plan_sha256": "eb23c22640f100534726f1aa5fb37ba20357b94e6dc4ec166a1df8375fd73f0f",
+      "source_sha256": "",
+      "label": "recorded-200",
+      "path": "",
+      "index": 13,
+      "count": 13,
+      "events_sent": 13,
+      "final_time_s": 0.6666666666666288,
+      "sim_elapsed_s": 0.6666666666666288,
+      "wall_elapsed_s": 2.2567825317382812,
+      "progress": 1.0,
+      "last_event_command": "wheel stop",
+      "last_event_time": 1785881335.9896483,
+      "last_event_sim_time_s": 14.7999999999998,
+      "max_dispatch_jitter_s": 0.0,
+      "dispatch_clock": "simulation_time",
+      "completed_at": 1785881335.9896483,
+      "completed_at_sim_time_s": 14.7999999999998,
+      "stop_reason": "complete",
+      "last_error": "",
+      "last_info": "worker playback complete",
+      "progress_detail": {
+        "playback_state": "COMPLETED",
+        "status_text": "Completed",
+        "current_step_index": 2,
+        "total_steps": 2,
+        "global_command_index": 13,
+        "total_commands": 13,
+        "command_phase": "completed",
+        "last_error": ""
+      },
+      "timing": {}
+    },
+    "status_payload_bytes": 8595,
+    "worker_pid": 3744,
+    "worker_returncode": null,
+    "worker": true,
+    "startup_elapsed_s": 46.2352613999974,
+    "connected": true,
+    "ipc_connected": true,
+    "stdout_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785881290951_stdout.log",
+    "stderr_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785881290951_stderr.log",
+    "stdout_tail": [],
+    "stderr_tail": [],
+    "last_meaningful_stdout": "",
+    "last_meaningful_stderr": "",
+    "last_log_activity_at": 1785881335.9888885,
+    "startup_progress_message": "Worker logs are still changing.",
+    "pending_message_count": 0,
+    "pending_send_bytes": 0,
+    "dropped_or_replaced_messages": 0,
+    "error_category": "unknown",
+    "startup_diagnosis": "Worker is ready. If the viewport is black, check viewport camera, renderer warmup, GPU/driver logs, and livestream/headless settings."
+  },
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Generate / Update requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 0.233s; control ready.",
+    "[INFO] Generate / Update requested for 100 mm.",
+    "[INFO] Obstacle update completed at 100 mm in 0.262s; control ready.",
+    "[INFO] Generate + Respawn requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 2.818s; control ready.",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Obstacle update completed at 50 mm in 0.170s; control ready.",
+    "[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.",
+    "[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.",
+    "[INFO] Zero target applied; finalizing recording.",
+    "[INFO] Step recording stopped; pending step has 2 events.",
+    "[INFO] Accepted recorded step 001: step_001_recorded_height_050mm_dur_0.67s",
+    "[PERF] Accept recorded step took 0.7ms manager=add_step 0.4ms",
+    "[INFO] Saved 1 steps / 2 commands at 2026-08-04T18:08:51-04:00: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180851_804490_manual",
+    "[PERF] Save New Version took 159.7ms",
+    "[PLAYBACK DEBUG] plan label=recorded-100 events=13 final_time=0.667s profile=raw first_commands=['servo front_left_hip 15', 'servo front_left_knee -60', 'servo front_right_hip 0', 'servo front_right_knee -60', 'servo rear_left_hip 0']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: recorded-100",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=13 last_info=worker playback scheduled: recorded-100 (13 events)",
+    "[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.",
+    "[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.",
+    "[INFO] Zero target applied; finalizing recording.",
+    "[INFO] Step recording stopped; pending step has 2 events.",
+    "[INFO] Accepted recorded step 002: step_002_recorded_height_050mm_dur_0.67s",
+    "[PERF] Accept recorded step took 0.9ms manager=add_step 0.6ms",
+    "[INFO] Saved 2 steps / 4 commands at 2026-08-04T18:08:54-04:00: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180808\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180854_560198_manual",
+    "[PERF] Save New Version took 166.4ms",
+    "[PLAYBACK DEBUG] plan label=recorded-200 events=13 final_time=0.667s profile=raw first_commands=['servo front_left_hip 30', 'servo front_left_knee -60', 'servo front_right_hip 0', 'servo front_right_knee -60', 'servo rear_left_hip 0']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: recorded-200",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=13 last_info=worker playback scheduled: recorded-200 (13 events)",
+    "[INFO] Loaded 1 steps from v001_20260804_180851_804490_manual at 50 mm.",
+    "[PERF] Load steps for current height took 68.8ms manager=adopt_steps 3.5ms",
+    "[INFO] Loaded 2 steps from v002_20260804_180854_560198_manual at 50 mm.",
+    "[PERF] Load steps for current height took 64.8ms manager=adopt_steps 4.2ms"
+  ],
+  "ui_closed": true,
+  "worker_reference_cleared": true,
+  "finished_at": 1785881343.8092046
+}

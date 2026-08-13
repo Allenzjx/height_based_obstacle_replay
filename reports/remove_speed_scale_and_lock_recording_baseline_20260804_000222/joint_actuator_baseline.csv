@@ -1,0 +1,9 @@
+joint_name,articulation_joint,direction,lower_deg,upper_deg,initial_command_deg,reference_velocity_deg_s,acceleration_limit_deg_s2,effort_limit_nm,stiffness,damping,armature,ui_unit,internal_unit
+front_left_hip,front_left_hip,1,-135,135,0,30,,2.7,600,60,0.005,deg,rad
+front_left_knee,front_left_knee,1,-60,210,0,30,,2.7,600,60,0.005,deg,rad
+front_right_hip,front_right_hip,1,-135,135,0,30,,2.7,600,60,0.005,deg,rad
+front_right_knee,front_right_knee,1,-60,210,0,30,,2.7,600,60,0.005,deg,rad
+rear_left_hip,rear_left_hip,-1,-135,135,0,30,,2.7,600,60,0.005,deg,rad
+rear_left_knee,rear_left_knee,-1,-60,210,0,30,,2.7,600,60,0.005,deg,rad
+rear_right_hip,rear_right_hip,-1,-135,135,0,30,,2.7,600,60,0.005,deg,rad
+rear_right_knee,rear_right_knee,-1,-60,210,0,30,,2.7,600,60,0.005,deg,rad

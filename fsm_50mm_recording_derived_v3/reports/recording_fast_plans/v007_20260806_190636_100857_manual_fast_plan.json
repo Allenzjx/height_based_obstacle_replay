@@ -1,0 +1,4729 @@
+{
+  "event_count": 119,
+  "final_time_s": 74.65066666563058,
+  "plan_sha256": "1ac372f238ad10055b116c49aab0bb2a220ab68bd86708169dac950220a14898",
+  "profile_normalized": "motion_only",
+  "profile_requested": "fast",
+  "schema_version": "fsm50.recording_fast_plan.v1",
+  "segment_count": 92,
+  "segments": [
+    {
+      "command_end_s": 0.08133333333333333,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 12.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 0,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 1
+        }
+      ],
+      "command_start_s": 0.0,
+      "commands": [
+        "servo rear_left_hip 12.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 0,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.08133333333333333,
+      "servo_duration_s": 0.08133333333333333,
+      "servo_target_deg": {
+        "rear_left_hip": 12.2
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 1,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 0.16599999999999998,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 24.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 1,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 1
+        }
+      ],
+      "command_start_s": 0.08133333333333333,
+      "commands": [
+        "servo rear_left_hip 24.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 1,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.08466666666666665,
+      "servo_duration_s": 0.08466666666666667,
+      "servo_target_deg": {
+        "rear_left_hip": 24.9
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 1,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.165999999781722,
+      "command_provenance": [
+        {
+          "base_command": "wheel all 0.300",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 2,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 2
+        }
+      ],
+      "command_start_s": 0.16599999999999998,
+      "commands": [
+        "wheel all 0.300"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 2,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 4.499999999934516,
+        "front_right_ankle": 4.499999999934516,
+        "rear_left_ankle": 4.499999999934516,
+        "rear_right_ankle": 4.499999999934516
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 14.999999999781721,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 2,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 14.999999999781721,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      }
+    },
+    {
+      "command_end_s": 15.165999999781722,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 3,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 2
+        }
+      ],
+      "command_start_s": 15.165999999781722,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 3,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 2,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.238666666448388,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 10.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 4,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.165999999781722,
+      "commands": [
+        "servo front_right_knee 10.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 4,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07266666666666666,
+      "servo_duration_s": 0.07266666666666667,
+      "servo_target_deg": {
+        "front_right_knee": 10.9
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.281333333115056,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 17.3",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 5,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.238666666448388,
+      "commands": [
+        "servo front_right_knee 17.3"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 5,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0426666666666673,
+      "servo_duration_s": 0.04266666666666667,
+      "servo_target_deg": {
+        "front_right_knee": 17.3
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.344666666448388,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 26.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 6,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.281333333115056,
+      "commands": [
+        "servo front_right_knee 26.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 6,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.06333333333333258,
+      "servo_duration_s": 0.06333333333333334,
+      "servo_target_deg": {
+        "front_right_knee": 26.8
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.379999999781722,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 32.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 7,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.344666666448388,
+      "commands": [
+        "servo front_right_knee 32.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 7,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03533333333333388,
+      "servo_duration_s": 0.035333333333333335,
+      "servo_target_deg": {
+        "front_right_knee": 32.1
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.387333333115055,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 33.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 8,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.379999999781722,
+      "commands": [
+        "servo front_right_knee 33.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 8,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.007333333333333414,
+      "servo_duration_s": 0.007333333333333343,
+      "servo_target_deg": {
+        "front_right_knee": 33.2
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.393999999781721,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 34.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 9,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.387333333115055,
+      "commands": [
+        "servo front_right_knee 34.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 9,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0066666666666659324,
+      "servo_duration_s": 0.006666666666666667,
+      "servo_target_deg": {
+        "front_right_knee": 34.2
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.415333333115054,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 37.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 10,
+          "source_event_index": 6,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.393999999781721,
+      "commands": [
+        "servo front_right_knee 37.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 10,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.02133333333333276,
+      "servo_duration_s": 0.021333333333333305,
+      "servo_target_deg": {
+        "front_right_knee": 37.4
+      },
+      "source_event_indices": [
+        6
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.45399999978172,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip -5.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 11,
+          "source_event_index": 7,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.415333333115054,
+      "commands": [
+        "servo front_right_hip -5.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 11,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03866666666666596,
+      "servo_duration_s": 0.03866666666666667,
+      "servo_target_deg": {
+        "front_right_hip": -5.8
+      },
+      "source_event_indices": [
+        7
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.46799999978172,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip -7.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 12,
+          "source_event_index": 8,
+          "source_expanded_index": 0,
+          "source_step_index": 3
+        }
+      ],
+      "command_start_s": 15.45399999978172,
+      "commands": [
+        "servo front_right_hip -7.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 12,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.013999999999999346,
+      "servo_duration_s": 0.014000000000000004,
+      "servo_target_deg": {
+        "front_right_hip": -7.9
+      },
+      "source_event_indices": [
+        8
+      ],
+      "source_step_index": 3,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.55999999978172,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 11.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 13,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 4
+        }
+      ],
+      "command_start_s": 15.46799999978172,
+      "commands": [
+        "servo rear_left_hip 11.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 13,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.09200000000000053,
+      "servo_duration_s": 0.092,
+      "servo_target_deg": {
+        "rear_left_hip": 11.1
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 4,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 15.60199999978172,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 4.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 14,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 4
+        }
+      ],
+      "command_start_s": 15.55999999978172,
+      "commands": [
+        "servo rear_left_hip 4.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 14,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.041999999999999815,
+      "servo_duration_s": 0.041999999999999996,
+      "servo_target_deg": {
+        "rear_left_hip": 4.8
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 4,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 20.801999999706048,
+      "command_provenance": [
+        {
+          "base_command": "wheel all 0.300",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 15,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 5
+        }
+      ],
+      "command_start_s": 15.60199999978172,
+      "commands": [
+        "wheel all 0.300"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 15,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 1.5599999999772989,
+        "front_right_ankle": 1.5599999999772989,
+        "rear_left_ankle": 1.5599999999772989,
+        "rear_right_ankle": 1.5599999999772989
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 5.199999999924328,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 5,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 5.19999999992433,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      }
+    },
+    {
+      "command_end_s": 20.801999999706048,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 16,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 5
+        }
+      ],
+      "command_start_s": 20.801999999706048,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 16,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 5,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 20.89133333303938,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -13.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 17,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 6
+        }
+      ],
+      "command_start_s": 20.801999999706048,
+      "commands": [
+        "servo front_left_knee -13.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 17,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.08933333333333238,
+      "servo_duration_s": 0.08933333333333333,
+      "servo_target_deg": {
+        "front_left_knee": -13.4
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 6,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.01133333303938,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -31.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 18,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 6
+        }
+      ],
+      "command_start_s": 20.89133333303938,
+      "commands": [
+        "servo front_left_knee -31.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 18,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.120000000000001,
+      "servo_duration_s": 0.12,
+      "servo_target_deg": {
+        "front_left_knee": -31.4
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 6,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.032666666372716,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -34.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 19,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 6
+        }
+      ],
+      "command_start_s": 21.01133333303938,
+      "commands": [
+        "servo front_left_knee -34.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 19,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333334537,
+      "servo_duration_s": 0.021333333333333353,
+      "servo_target_deg": {
+        "front_left_knee": -34.6
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 6,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.057333333039384,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 3.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 20,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 7
+        }
+      ],
+      "command_start_s": 21.032666666372716,
+      "commands": [
+        "servo front_left_hip 3.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 20,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.02466666666666839,
+      "servo_duration_s": 0.024666666666666667,
+      "servo_target_deg": {
+        "front_left_hip": 3.7
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 7,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.21266666637272,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 27.0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 21,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 7
+        }
+      ],
+      "command_start_s": 21.057333333039384,
+      "commands": [
+        "servo front_left_hip 27.0"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 21,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.15533333333333488,
+      "servo_duration_s": 0.15533333333333335,
+      "servo_target_deg": {
+        "front_left_hip": 27.0
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 7,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.28999999970605,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 38.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 22,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 7
+        }
+      ],
+      "command_start_s": 21.21266666637272,
+      "commands": [
+        "servo front_left_hip 38.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 22,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07733333333333192,
+      "servo_duration_s": 0.07733333333333334,
+      "servo_target_deg": {
+        "front_left_hip": 38.6
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 7,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 21.297333333039383,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 39.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 23,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 7
+        }
+      ],
+      "command_start_s": 21.28999999970605,
+      "commands": [
+        "servo front_left_hip 39.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 23,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0073333333333316375,
+      "servo_duration_s": 0.007333333333333343,
+      "servo_target_deg": {
+        "front_left_hip": 39.7
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 7,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.097333332824014,
+      "command_provenance": [
+        {
+          "base_command": "wheel all 0.300",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 24,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 8
+        }
+      ],
+      "command_start_s": 21.297333333039383,
+      "commands": [
+        "wheel all 0.300"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 24,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 4.439999999935389,
+        "front_right_ankle": 4.439999999935389,
+        "rear_left_ankle": 4.439999999935389,
+        "rear_right_ankle": 4.439999999935389
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 14.799999999784632,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 8,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 14.799999999784632,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      }
+    },
+    {
+      "command_end_s": 36.097333332824014,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 25,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 8
+        }
+      ],
+      "command_start_s": 36.097333332824014,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 25,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 8,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.16799999949068,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -24.0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 26,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.097333332824014,
+      "commands": [
+        "servo front_left_knee -24.0"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 26,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07066666666666777,
+      "servo_duration_s": 0.07066666666666667,
+      "servo_target_deg": {
+        "front_left_knee": -24.0
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.252666666157346,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -11.3",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 27,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.16799999949068,
+      "commands": [
+        "servo front_left_knee -11.3"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 27,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.08466666666666356,
+      "servo_duration_s": 0.08466666666666667,
+      "servo_target_deg": {
+        "front_left_knee": -11.3
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.28799999949068,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee -6.0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 28,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.252666666157346,
+      "commands": [
+        "servo front_left_knee -6.0"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 28,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03533333333333388,
+      "servo_duration_s": 0.035333333333333335,
+      "servo_target_deg": {
+        "front_left_knee": -6.0
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.344666666157345,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 31.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 29,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.28799999949068,
+      "commands": [
+        "servo front_left_hip 31.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 29,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.05666666666666487,
+      "servo_duration_s": 0.05666666666666669,
+      "servo_target_deg": {
+        "front_left_hip": 31.2
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.42199999949068,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 19.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 30,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.344666666157345,
+      "commands": [
+        "servo front_left_hip 19.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 30,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07733333333333547,
+      "servo_duration_s": 0.07733333333333332,
+      "servo_target_deg": {
+        "front_left_hip": 19.6
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.44333333282401,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 16.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 31,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.42199999949068,
+      "commands": [
+        "servo front_left_hip 16.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 31,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.021333333333333353,
+      "servo_target_deg": {
+        "front_left_hip": 16.4
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.46466666615734,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 32,
+          "source_event_index": 6,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.44333333282401,
+      "commands": [
+        "servo front_left_hip 13.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 32,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.02133333333333333,
+      "servo_target_deg": {
+        "front_left_hip": 13.2
+      },
+      "source_event_indices": [
+        6
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.52066666615734,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 4.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 33,
+          "source_event_index": 7,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.46466666615734,
+      "commands": [
+        "servo front_left_hip 4.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 33,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.055999999999997385,
+      "servo_duration_s": 0.05599999999999999,
+      "servo_target_deg": {
+        "front_left_hip": 4.8
+      },
+      "source_event_indices": [
+        7
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.56333333282401,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip -1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 34,
+          "source_event_index": 8,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.52066666615734,
+      "commands": [
+        "servo front_left_hip -1.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 34,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04266666666666907,
+      "servo_duration_s": 0.04266666666666667,
+      "servo_target_deg": {
+        "front_left_hip": -1.6
+      },
+      "source_event_indices": [
+        8
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 36.569999999490676,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip -2.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 35,
+          "source_event_index": 9,
+          "source_expanded_index": 0,
+          "source_step_index": 9
+        }
+      ],
+      "command_start_s": 36.56333333282401,
+      "commands": [
+        "servo front_left_hip -2.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 35,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.006666666666667709,
+      "servo_duration_s": 0.006666666666666667,
+      "servo_target_deg": {
+        "front_left_hip": -2.6
+      },
+      "source_event_indices": [
+        9
+      ],
+      "source_step_index": 9,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.569999999257846,
+      "command_provenance": [
+        {
+          "base_command": "wheel all 0.300",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 36,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 10
+        }
+      ],
+      "command_start_s": 36.569999999490676,
+      "commands": [
+        "wheel all 0.300"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 36,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 4.799999999930151,
+        "front_right_ankle": 4.799999999930151,
+        "rear_left_ankle": 4.799999999930151,
+        "rear_right_ankle": 4.799999999930151
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 15.99999999976717,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 10,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 15.99999999976717,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      }
+    },
+    {
+      "command_end_s": 52.569999999257846,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 37,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 10
+        }
+      ],
+      "command_start_s": 52.569999999257846,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 37,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 10,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.61199999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 3.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 38,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.569999999257846,
+      "commands": [
+        "servo front_left_hip 3.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 38,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04200000000000159,
+      "servo_duration_s": 0.042,
+      "servo_target_deg": {
+        "front_left_hip": 3.7
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.774666665924514,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 28.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 39,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.61199999925785,
+      "commands": [
+        "servo front_left_hip 28.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 39,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.16266666666666652,
+      "servo_duration_s": 0.16266666666666668,
+      "servo_target_deg": {
+        "front_left_hip": 28.1
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.81733333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 0.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 40,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.774666665924514,
+      "commands": [
+        "servo front_left_knee 0.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 40,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04266666666666907,
+      "servo_duration_s": 0.04266666666666667,
+      "servo_target_deg": {
+        "front_left_knee": 0.4
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.85199999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 5.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 41,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.81733333259118,
+      "commands": [
+        "servo front_left_knee 5.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 41,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0346666666666664,
+      "servo_duration_s": 0.034666666666666665,
+      "servo_target_deg": {
+        "front_left_knee": 5.6
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.87333333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 8.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 42,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.85199999925785,
+      "commands": [
+        "servo front_left_knee 8.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 42,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.02133333333333334,
+      "servo_target_deg": {
+        "front_left_knee": 8.8
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.88733333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 10.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 43,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.87333333259118,
+      "commands": [
+        "servo front_left_knee 10.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 43,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014000000000002899,
+      "servo_duration_s": 0.013999999999999997,
+      "servo_target_deg": {
+        "front_left_knee": 10.9
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.901999999257846,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 13.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 44,
+          "source_event_index": 6,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.88733333259118,
+      "commands": [
+        "servo front_left_knee 13.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 44,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014666666666663275,
+      "servo_duration_s": 0.014666666666666661,
+      "servo_target_deg": {
+        "front_left_knee": 13.1
+      },
+      "source_event_indices": [
+        6
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.908666665924514,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_knee 14.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 45,
+          "source_event_index": 7,
+          "source_expanded_index": 0,
+          "source_step_index": 11
+        }
+      ],
+      "command_start_s": 52.901999999257846,
+      "commands": [
+        "servo front_left_knee 14.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 45,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.006666666666667709,
+      "servo_duration_s": 0.006666666666666667,
+      "servo_target_deg": {
+        "front_left_knee": 14.1
+      },
+      "source_event_indices": [
+        7
+      ],
+      "source_step_index": 11,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 52.98599999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 16.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 46,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 12
+        }
+      ],
+      "command_start_s": 52.908666665924514,
+      "commands": [
+        "servo rear_left_hip 16.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 46,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07733333333333547,
+      "servo_duration_s": 0.07733333333333332,
+      "servo_target_deg": {
+        "rear_left_hip": 16.4
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 12,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.00733333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 19.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 47,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 12
+        }
+      ],
+      "command_start_s": 52.98599999925785,
+      "commands": [
+        "servo rear_left_hip 19.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 47,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.021333333333333353,
+      "servo_target_deg": {
+        "rear_left_hip": 19.6
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 12,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.02133333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 21.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 48,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 12
+        }
+      ],
+      "command_start_s": 53.00733333259118,
+      "commands": [
+        "servo rear_left_hip 21.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 48,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014000000000002899,
+      "servo_duration_s": 0.013999999999999986,
+      "servo_target_deg": {
+        "rear_left_hip": 21.7
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 12,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.042666665924514,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_hip 24.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 49,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 12
+        }
+      ],
+      "command_start_s": 53.02133333259118,
+      "commands": [
+        "servo rear_left_hip 24.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 49,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.02133333333333333,
+      "servo_target_deg": {
+        "rear_left_hip": 24.9
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 12,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.13799999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 14.3",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 50,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.042666665924514,
+      "commands": [
+        "servo rear_right_hip 14.3"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 50,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.09533333333333616,
+      "servo_duration_s": 0.09533333333333334,
+      "servo_target_deg": {
+        "rear_right_hip": 14.3
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.215333332591186,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 25.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 51,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.13799999925785,
+      "commands": [
+        "servo rear_right_hip 25.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 51,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.07733333333333547,
+      "servo_duration_s": 0.07733333333333332,
+      "servo_target_deg": {
+        "rear_right_hip": 25.9
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.24399999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 30.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 52,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.215333332591186,
+      "commands": [
+        "servo rear_right_hip 30.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 52,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.028666666666666174,
+      "servo_duration_s": 0.02866666666666667,
+      "servo_target_deg": {
+        "rear_right_hip": 30.2
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.276666665924516,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_knee -4.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 53,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.24399999925785,
+      "commands": [
+        "servo rear_right_knee -4.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 53,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03266666666666396,
+      "servo_duration_s": 0.03266666666666667,
+      "servo_target_deg": {
+        "rear_right_knee": -4.9
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.39666666592451,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_knee -22.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 54,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.276666665924516,
+      "commands": [
+        "servo rear_right_knee -22.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 54,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.11999999999999744,
+      "servo_duration_s": 0.12,
+      "servo_target_deg": {
+        "rear_right_knee": -22.9
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.42533333259118,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_knee -27.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 55,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 13
+        }
+      ],
+      "command_start_s": 53.39666666592451,
+      "commands": [
+        "servo rear_right_knee -27.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 55,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.028666666666666174,
+      "servo_duration_s": 0.02866666666666667,
+      "servo_target_deg": {
+        "rear_right_knee": -27.2
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 13,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.47466666592452,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 22.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 56,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.42533333259118,
+      "commands": [
+        "servo rear_right_hip 22.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 56,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04933333333333678,
+      "servo_duration_s": 0.049333333333333326,
+      "servo_target_deg": {
+        "rear_right_hip": 22.8
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.52399999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 15.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 57,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.47466666592452,
+      "commands": [
+        "servo rear_right_hip 15.4"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 57,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04933333333333678,
+      "servo_duration_s": 0.04933333333333333,
+      "servo_target_deg": {
+        "rear_right_hip": 15.4
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.53866666592452,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 58,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.52399999925785,
+      "commands": [
+        "servo rear_right_hip 13.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 58,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014666666666663275,
+      "servo_duration_s": 0.014666666666666673,
+      "servo_target_deg": {
+        "rear_right_hip": 13.2
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.55266666592452,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 11.1",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 59,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.53866666592452,
+      "commands": [
+        "servo rear_right_hip 11.1"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 59,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014000000000002899,
+      "servo_duration_s": 0.013999999999999997,
+      "servo_target_deg": {
+        "rear_right_hip": 11.1
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.601999999257856,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip 3.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 60,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.55266666592452,
+      "commands": [
+        "servo rear_right_hip 3.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 60,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04933333333333678,
+      "servo_duration_s": 0.04933333333333333,
+      "servo_target_deg": {
+        "rear_right_hip": 3.7
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.63733333259119,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 61,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.601999999257856,
+      "commands": [
+        "servo rear_right_hip -1.6"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 61,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03533333333333388,
+      "servo_duration_s": 0.035333333333333335,
+      "servo_target_deg": {
+        "rear_right_hip": -1.6
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.65133333259119,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -3.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 62,
+          "source_event_index": 6,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.63733333259119,
+      "commands": [
+        "servo rear_right_hip -3.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 62,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014000000000002899,
+      "servo_duration_s": 0.014,
+      "servo_target_deg": {
+        "rear_right_hip": -3.7
+      },
+      "source_event_indices": [
+        6
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.68666666592453,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -9.0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 63,
+          "source_event_index": 7,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.65133333259119,
+      "commands": [
+        "servo rear_right_hip -9.0"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 63,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03533333333333388,
+      "servo_duration_s": 0.035333333333333335,
+      "servo_target_deg": {
+        "rear_right_hip": -9.0
+      },
+      "source_event_indices": [
+        7
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.714666665924526,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 64,
+          "source_event_index": 8,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.68666666592453,
+      "commands": [
+        "servo rear_right_hip -13.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 64,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.027999999999998693,
+      "servo_duration_s": 0.027999999999999994,
+      "servo_target_deg": {
+        "rear_right_hip": -13.2
+      },
+      "source_event_indices": [
+        8
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.72199999925786,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -14.3",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 65,
+          "source_event_index": 9,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.714666665924526,
+      "commands": [
+        "servo rear_right_hip -14.3"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 65,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.00733333333333519,
+      "servo_duration_s": 0.007333333333333343,
+      "servo_target_deg": {
+        "rear_right_hip": -14.3
+      },
+      "source_event_indices": [
+        9
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.74333333259119,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_right_hip -17.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 66,
+          "source_event_index": 10,
+          "source_expanded_index": 0,
+          "source_step_index": 14
+        }
+      ],
+      "command_start_s": 53.72199999925786,
+      "commands": [
+        "servo rear_right_hip -17.5"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 66,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.02133333333333333,
+      "servo_target_deg": {
+        "rear_right_hip": -17.5
+      },
+      "source_event_indices": [
+        10
+      ],
+      "source_step_index": 14,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.763999999257855,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip -4.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 67,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.74333333259119,
+      "commands": [
+        "servo front_right_hip -4.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 67,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.020666666666663502,
+      "servo_duration_s": 0.02066666666666667,
+      "servo_target_deg": {
+        "front_right_hip": -4.8
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.82066666592452,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip 3.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 68,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.763999999257855,
+      "commands": [
+        "servo front_right_hip 3.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 68,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.05666666666666487,
+      "servo_duration_s": 0.056666666666666664,
+      "servo_target_deg": {
+        "front_right_hip": 3.7
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.84199999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip 6.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 69,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.82066666592452,
+      "commands": [
+        "servo front_right_hip 6.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 69,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.021333333333333336,
+      "servo_target_deg": {
+        "front_right_hip": 6.9
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.88399999925785,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_hip 13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 70,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.84199999925785,
+      "commands": [
+        "servo front_right_hip 13.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 70,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04200000000000159,
+      "servo_duration_s": 0.041999999999999996,
+      "servo_target_deg": {
+        "front_right_hip": 13.2
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.897999999257856,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 35.3",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 71,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.88399999925785,
+      "commands": [
+        "servo front_right_knee 35.3"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 71,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.014000000000002899,
+      "servo_duration_s": 0.014000000000000009,
+      "servo_target_deg": {
+        "front_right_knee": 35.3
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.90533333259119,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 34.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 72,
+          "source_event_index": 5,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.897999999257856,
+      "commands": [
+        "servo front_right_knee 34.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 72,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.00733333333333519,
+      "servo_duration_s": 0.007333333333333295,
+      "servo_target_deg": {
+        "front_right_knee": 34.2
+      },
+      "source_event_indices": [
+        5
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.91199999925786,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 33.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 73,
+          "source_event_index": 6,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.90533333259119,
+      "commands": [
+        "servo front_right_knee 33.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 73,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.006666666666667709,
+      "servo_duration_s": 0.006666666666666667,
+      "servo_target_deg": {
+        "front_right_knee": 33.2
+      },
+      "source_event_indices": [
+        6
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 53.94733333259119,
+      "command_provenance": [
+        {
+          "base_command": "servo front_right_knee 27.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 74,
+          "source_event_index": 7,
+          "source_expanded_index": 0,
+          "source_step_index": 15
+        }
+      ],
+      "command_start_s": 53.91199999925786,
+      "commands": [
+        "servo front_right_knee 27.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 74,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.03533333333333388,
+      "servo_duration_s": 0.03533333333333336,
+      "servo_target_deg": {
+        "front_right_knee": 27.9
+      },
+      "source_event_indices": [
+        7
+      ],
+      "source_step_index": 15,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 54.94733333257664,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 75,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo front_left_knee -18.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 76,
+          "source_event_index": 0,
+          "source_expanded_index": 1,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo front_right_hip 13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 77,
+          "source_event_index": 0,
+          "source_expanded_index": 2,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo front_right_knee 27.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 78,
+          "source_event_index": 0,
+          "source_expanded_index": 3,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo rear_left_hip 1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 79,
+          "source_event_index": 0,
+          "source_expanded_index": 4,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo rear_left_knee 0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 80,
+          "source_event_index": 0,
+          "source_expanded_index": 5,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo rear_right_hip -17.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 81,
+          "source_event_index": 0,
+          "source_expanded_index": 6,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "servo rear_right_knee -27.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 82,
+          "source_event_index": 0,
+          "source_expanded_index": 7,
+          "source_step_index": 16
+        },
+        {
+          "base_command": "wheel fl -1.19",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 83,
+          "source_event_index": 0,
+          "source_expanded_index": 8,
+          "source_step_index": 16
+        }
+      ],
+      "command_start_s": 53.94733333259119,
+      "commands": [
+        "servo front_left_hip 9",
+        "servo front_left_knee -18.7",
+        "servo front_right_hip 13.2",
+        "servo front_right_knee 27.9",
+        "servo rear_left_hip 1.6",
+        "servo rear_left_knee 0",
+        "servo rear_right_hip -17.5",
+        "servo rear_right_knee -27.2",
+        "wheel fl -1.19"
+      ],
+      "concurrent": true,
+      "decoded_segment_index": 75,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": -1.1899999999826831,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.9999999999854481,
+      "servo_duration_s": 0.21866666666666665,
+      "servo_target_deg": {
+        "front_left_hip": 9.0,
+        "front_left_knee": -18.7,
+        "front_right_hip": 13.2,
+        "front_right_knee": 27.9,
+        "rear_left_hip": 1.6,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": -17.5,
+        "rear_right_knee": -27.2
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 16,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.9999999999854481,
+      "wheel_target_rad_s": {
+        "front_left_ankle": -1.19,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 54.94733333257664,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 84,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 16
+        }
+      ],
+      "command_start_s": 54.94733333257664,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 76,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 16,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 54.99933333257664,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee 7.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 85,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 17
+        }
+      ],
+      "command_start_s": 54.94733333257664,
+      "commands": [
+        "servo rear_left_knee 7.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 77,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0519999999999996,
+      "servo_duration_s": 0.052,
+      "servo_target_deg": {
+        "rear_left_knee": 7.8
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 17,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 55.11199999924331,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee 24.7",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 86,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 17
+        }
+      ],
+      "command_start_s": 54.99933333257664,
+      "commands": [
+        "servo rear_left_knee 24.7"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 78,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.11266666666666936,
+      "servo_duration_s": 0.11266666666666665,
+      "servo_target_deg": {
+        "rear_left_knee": 24.7
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 17,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 55.13333333257664,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee 27.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 87,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 17
+        }
+      ],
+      "command_start_s": 55.11199999924331,
+      "commands": [
+        "servo rear_left_knee 27.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 79,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.021333333333330984,
+      "servo_duration_s": 0.02133333333333333,
+      "servo_target_deg": {
+        "rear_left_knee": 27.9
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 17,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 55.13999999924331,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee 28.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 88,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 17
+        }
+      ],
+      "command_start_s": 55.13333333257664,
+      "commands": [
+        "servo rear_left_knee 28.9"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 80,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.006666666666667709,
+      "servo_duration_s": 0.006666666666666667,
+      "servo_target_deg": {
+        "rear_left_knee": 28.9
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 17,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.27333333256015,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip -25.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 89,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo front_left_knee -30.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 90,
+          "source_event_index": 0,
+          "source_expanded_index": 1,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo front_right_hip 13.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 91,
+          "source_event_index": 0,
+          "source_expanded_index": 2,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo front_right_knee 27.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 92,
+          "source_event_index": 0,
+          "source_expanded_index": 3,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo rear_left_hip 1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 93,
+          "source_event_index": 0,
+          "source_expanded_index": 4,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo rear_left_knee 28.9",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 94,
+          "source_event_index": 0,
+          "source_expanded_index": 5,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo rear_right_hip -17.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 95,
+          "source_event_index": 0,
+          "source_expanded_index": 6,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "servo rear_right_knee -27.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 96,
+          "source_event_index": 0,
+          "source_expanded_index": 7,
+          "source_step_index": 18
+        },
+        {
+          "base_command": "wheel fl -1.07",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 97,
+          "source_event_index": 0,
+          "source_expanded_index": 8,
+          "source_step_index": 18
+        }
+      ],
+      "command_start_s": 55.13999999924331,
+      "commands": [
+        "servo front_left_hip -25.9",
+        "servo front_left_knee -30.4",
+        "servo front_right_hip 13.2",
+        "servo front_right_knee 27.9",
+        "servo rear_left_hip 1.6",
+        "servo rear_left_knee 28.9",
+        "servo rear_right_hip -17.5",
+        "servo rear_right_knee -27.2",
+        "wheel fl -1.07"
+      ],
+      "concurrent": true,
+      "decoded_segment_index": 81,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": -1.21266666664902,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 1.1333333333168412,
+      "servo_duration_s": 0.23266666666666666,
+      "servo_target_deg": {
+        "front_left_hip": -25.9,
+        "front_left_knee": -30.4,
+        "front_right_hip": 13.2,
+        "front_right_knee": 27.9,
+        "rear_left_hip": 1.6,
+        "rear_left_knee": 28.9,
+        "rear_right_hip": -17.5,
+        "rear_right_knee": -27.2
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 18,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 1.1333333333168412,
+      "wheel_target_rad_s": {
+        "front_left_ankle": -1.07,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.27333333256015,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 98,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 18
+        }
+      ],
+      "command_start_s": 56.27333333256015,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 82,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 18,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.280666665893484,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee 30.0",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 99,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 19
+        }
+      ],
+      "command_start_s": 56.27333333256015,
+      "commands": [
+        "servo rear_left_knee 30.0"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 83,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.00733333333333519,
+      "servo_duration_s": 0.007333333333333343,
+      "servo_target_deg": {
+        "rear_left_knee": 30.0
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 19,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.49266666589349,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee -1.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 100,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 19
+        }
+      ],
+      "command_start_s": 56.280666665893484,
+      "commands": [
+        "servo rear_left_knee -1.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 84,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.2120000000000033,
+      "servo_duration_s": 0.212,
+      "servo_target_deg": {
+        "rear_left_knee": -1.8
+      },
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 19,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.499333332560155,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee -2.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 101,
+          "source_event_index": 2,
+          "source_expanded_index": 0,
+          "source_step_index": 19
+        }
+      ],
+      "command_start_s": 56.49266666589349,
+      "commands": [
+        "servo rear_left_knee -2.8"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 85,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.006666666666667709,
+      "servo_duration_s": 0.006666666666666665,
+      "servo_target_deg": {
+        "rear_left_knee": -2.8
+      },
+      "source_event_indices": [
+        2
+      ],
+      "source_step_index": 19,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.541999999226825,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee -9.2",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 102,
+          "source_event_index": 3,
+          "source_expanded_index": 0,
+          "source_step_index": 19
+        }
+      ],
+      "command_start_s": 56.499333332560155,
+      "commands": [
+        "servo rear_left_knee -9.2"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 86,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04266666666666907,
+      "servo_duration_s": 0.042666666666666665,
+      "servo_target_deg": {
+        "rear_left_knee": -9.2
+      },
+      "source_event_indices": [
+        3
+      ],
+      "source_step_index": 19,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 56.583999999226826,
+      "command_provenance": [
+        {
+          "base_command": "servo rear_left_knee -15.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 103,
+          "source_event_index": 4,
+          "source_expanded_index": 0,
+          "source_step_index": 19
+        }
+      ],
+      "command_start_s": 56.541999999226825,
+      "commands": [
+        "servo rear_left_knee -15.5"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 87,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.04200000000000159,
+      "servo_duration_s": 0.042,
+      "servo_target_deg": {
+        "rear_left_knee": -15.5
+      },
+      "source_event_indices": [
+        4
+      ],
+      "source_step_index": 19,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 73.45066666564804,
+      "command_provenance": [
+        {
+          "base_command": "wheel all 0.300",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 104,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 20
+        }
+      ],
+      "command_start_s": 56.583999999226826,
+      "commands": [
+        "wheel all 0.300"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 88,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 5.059999999926367,
+        "front_right_ankle": 5.059999999926367,
+        "rear_left_ankle": 5.059999999926367,
+        "rear_right_ankle": 5.059999999926367
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 16.866666666421217,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 20,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 16.866666666421224,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.3,
+        "front_right_ankle": 0.3,
+        "rear_left_ankle": 0.3,
+        "rear_right_ankle": 0.3
+      }
+    },
+    {
+      "command_end_s": 73.45066666564804,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 105,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 20
+        }
+      ],
+      "command_start_s": 73.45066666564804,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 89,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 20,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    {
+      "command_end_s": 74.65066666563058,
+      "command_provenance": [
+        {
+          "base_command": "servo front_left_hip 5.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 106,
+          "source_event_index": 0,
+          "source_expanded_index": 0,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo front_left_knee 1.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 107,
+          "source_event_index": 0,
+          "source_expanded_index": 1,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo front_right_hip 0.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 108,
+          "source_event_index": 0,
+          "source_expanded_index": 2,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo front_right_knee 0.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 109,
+          "source_event_index": 0,
+          "source_expanded_index": 3,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo rear_left_hip 1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 110,
+          "source_event_index": 0,
+          "source_expanded_index": 4,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo rear_left_knee -2.8",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 111,
+          "source_event_index": 0,
+          "source_expanded_index": 5,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo rear_right_hip 1.6",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 112,
+          "source_event_index": 0,
+          "source_expanded_index": 6,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "servo rear_right_knee 0.4",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 113,
+          "source_event_index": 0,
+          "source_expanded_index": 7,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "wheel fl 1.5",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 114,
+          "source_event_index": 0,
+          "source_expanded_index": 8,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "wheel fr -1.18",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 115,
+          "source_event_index": 0,
+          "source_expanded_index": 9,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "wheel rl -0.43",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 116,
+          "source_event_index": 0,
+          "source_expanded_index": 10,
+          "source_step_index": 21
+        },
+        {
+          "base_command": "wheel rr -0.49",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 117,
+          "source_event_index": 0,
+          "source_expanded_index": 11,
+          "source_step_index": 21
+        }
+      ],
+      "command_start_s": 73.45066666564804,
+      "commands": [
+        "servo front_left_hip 5.8",
+        "servo front_left_knee 1.4",
+        "servo front_right_hip 0.5",
+        "servo front_right_knee 0.4",
+        "servo rear_left_hip 1.6",
+        "servo rear_left_knee -2.8",
+        "servo rear_right_hip 1.6",
+        "servo rear_right_knee 0.4",
+        "wheel fl 1.5",
+        "wheel fr -1.18",
+        "wheel rl -0.43",
+        "wheel rr -0.49"
+      ],
+      "concurrent": true,
+      "decoded_segment_index": 90,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 1.7999999999738066,
+        "front_right_ankle": -1.4159999999793944,
+        "rear_left_ankle": -0.5159999999924912,
+        "rear_right_ankle": -0.5879999999914435
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 1.1999999999825377,
+      "servo_duration_s": 0.212,
+      "servo_target_deg": {
+        "front_left_hip": 5.8,
+        "front_left_knee": 1.4,
+        "front_right_hip": 0.5,
+        "front_right_knee": 0.4,
+        "rear_left_hip": 1.6,
+        "rear_left_knee": -2.8,
+        "rear_right_hip": 1.6,
+        "rear_right_knee": 0.4
+      },
+      "source_event_indices": [
+        0
+      ],
+      "source_step_index": 21,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 1.1999999999825377,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 1.5,
+        "front_right_ankle": -1.18,
+        "rear_left_ankle": -0.43,
+        "rear_right_ankle": -0.49
+      }
+    },
+    {
+      "command_end_s": 74.65066666563058,
+      "command_provenance": [
+        {
+          "base_command": "wheel stop",
+          "dispatch_command": true,
+          "mapping_error": "",
+          "plan_event_index": 118,
+          "source_event_index": 1,
+          "source_expanded_index": 0,
+          "source_step_index": 21
+        }
+      ],
+      "command_start_s": 74.65066666563058,
+      "commands": [
+        "wheel stop"
+      ],
+      "concurrent": false,
+      "decoded_segment_index": 91,
+      "expected_wheel_displacement_rad": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "explicit_hold_s": 0.0,
+      "final_segment_duration_s": 0.0,
+      "servo_duration_s": 0.0,
+      "servo_target_deg": {},
+      "source_event_indices": [
+        1
+      ],
+      "source_step_index": 21,
+      "source_version": "v007_20260806_190636_100857_manual",
+      "wheel_duration_s": 0.0,
+      "wheel_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    }
+  ],
+  "source_version": "v007_20260806_190636_100857_manual",
+  "timing": {
+    "actuator_command_semantics": "direct_recorded_values_v1",
+    "compacted_sequence_duration_s": 89.06666666537058,
+    "final_implicit_idle_s": 0.0,
+    "fixed_step_gap_s": 0.0,
+    "plan_build_end": 2399244.531,
+    "plan_build_start": 2399244.343,
+    "plan_integrity": {
+      "event_count": 119,
+      "input_step_count": 21,
+      "input_step_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "missing_required_step_indices": [],
+      "represented_step_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "required_step_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "segment_count": 92
+    },
+    "raw_sequence_duration_s": 303.8666666622448,
+    "scheduler_model": "continuous_worker_completion_aware_v2",
+    "servo_reference_velocity_deg_s": 150.0,
+    "step_diagnostics": [
+      {
+        "explicit_motion_duration_s": 0.39999999999417923,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 0.0,
+        "implicit_ui_gap_removed_s": 0.0,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 0.39999999999417923,
+        "raw_duration_s": 9.133333333200426,
+        "raw_first_event_s": 0.0,
+        "raw_last_event_s": 9.133333333200426,
+        "removed_noop_count": 1,
+        "step_id": "step_001_recorded_height_050mm_dur_9.13s",
+        "step_index": 1
+      },
+      {
+        "explicit_motion_duration_s": 14.999999999781721,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 0.39999999999417923,
+        "implicit_ui_gap_removed_s": 10.79999999984284,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 15.3999999997759,
+        "raw_duration_s": 22.399999999674037,
+        "raw_first_event_s": 9.133333333200426,
+        "raw_last_event_s": 31.533333332874463,
+        "removed_noop_count": 1,
+        "step_id": "step_002_recorded_height_050mm_dur_22.40s",
+        "step_index": 2
+      },
+      {
+        "explicit_motion_duration_s": 1.9333333333051996,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 15.3999999997759,
+        "implicit_ui_gap_removed_s": 8.533333333209157,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 9,
+        "last_motion_time_s": 17.3333333330811,
+        "raw_duration_s": 10.866666666508536,
+        "raw_first_event_s": 31.533333332874463,
+        "raw_last_event_s": 42.399999999383,
+        "removed_noop_count": 1,
+        "step_id": "step_003_recorded_height_050mm_dur_10.87s",
+        "step_index": 3
+      },
+      {
+        "explicit_motion_duration_s": 0.19999999999708962,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 17.3333333330811,
+        "implicit_ui_gap_removed_s": 23.066666666331002,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 17.53333333307819,
+        "raw_duration_s": 24.46666666631063,
+        "raw_first_event_s": 42.399999999383,
+        "raw_last_event_s": 66.86666666569363,
+        "removed_noop_count": 1,
+        "step_id": "step_004_recorded_height_050mm_dur_24.47s",
+        "step_index": 4
+      },
+      {
+        "explicit_motion_duration_s": 5.19999999992433,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 17.53333333307819,
+        "implicit_ui_gap_removed_s": 4.133333333273185,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 22.73333333300252,
+        "raw_duration_s": 7.333333333226619,
+        "raw_first_event_s": 66.86666666569363,
+        "raw_last_event_s": 74.19999999892025,
+        "removed_noop_count": 1,
+        "step_id": "step_005_recorded_height_050mm_dur_7.33s",
+        "step_index": 5
+      },
+      {
+        "explicit_motion_duration_s": 0.7999999999883585,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 22.73333333300252,
+        "implicit_ui_gap_removed_s": 4.99999999992724,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 3,
+        "last_motion_time_s": 23.53333333299088,
+        "raw_duration_s": 6.999999999898137,
+        "raw_first_event_s": 74.19999999892025,
+        "raw_last_event_s": 81.19999999881838,
+        "removed_noop_count": 1,
+        "step_id": "step_006_recorded_height_050mm_dur_7.00s",
+        "step_index": 6
+      },
+      {
+        "explicit_motion_duration_s": 1.1999999999825377,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 23.53333333299088,
+        "implicit_ui_gap_removed_s": 3.6666666666133096,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 4,
+        "last_motion_time_s": 24.733333332973416,
+        "raw_duration_s": 3.8666666666103993,
+        "raw_first_event_s": 81.19999999881838,
+        "raw_last_event_s": 85.06666666542878,
+        "removed_noop_count": 1,
+        "step_id": "step_007_recorded_height_050mm_dur_3.87s",
+        "step_index": 7
+      },
+      {
+        "explicit_motion_duration_s": 14.799999999784632,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 24.733333332973416,
+        "implicit_ui_gap_removed_s": 2.0666666666365927,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 39.53333333275805,
+        "raw_duration_s": 16.666666666424135,
+        "raw_first_event_s": 85.06666666542878,
+        "raw_last_event_s": 101.73333333185292,
+        "removed_noop_count": 1,
+        "step_id": "step_008_recorded_height_050mm_dur_16.67s",
+        "step_index": 8
+      },
+      {
+        "explicit_motion_duration_s": 3.1333333332877373,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 39.53333333275805,
+        "implicit_ui_gap_removed_s": 7.266666666560923,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 10,
+        "last_motion_time_s": 42.666666666045785,
+        "raw_duration_s": 10.19999999985157,
+        "raw_first_event_s": 101.73333333185292,
+        "raw_last_event_s": 111.93333333170449,
+        "removed_noop_count": 1,
+        "step_id": "step_009_recorded_height_050mm_dur_10.20s",
+        "step_index": 9
+      },
+      {
+        "explicit_motion_duration_s": 15.99999999976717,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 42.666666666045785,
+        "implicit_ui_gap_removed_s": 1.9333333333051996,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 58.666666665812954,
+        "raw_duration_s": 17.93333333307237,
+        "raw_first_event_s": 111.93333333170449,
+        "raw_last_event_s": 129.86666666477686,
+        "removed_noop_count": 1,
+        "step_id": "step_010_recorded_height_050mm_dur_17.93s",
+        "step_index": 10
+      },
+      {
+        "explicit_motion_duration_s": 1.7999999999738066,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 58.666666665812954,
+        "implicit_ui_gap_removed_s": 8.333333333212067,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 8,
+        "last_motion_time_s": 60.46666666578676,
+        "raw_duration_s": 10.733333333177143,
+        "raw_first_event_s": 129.86666666477686,
+        "raw_last_event_s": 140.599999997954,
+        "removed_noop_count": 1,
+        "step_id": "step_011_recorded_height_050mm_dur_10.73s",
+        "step_index": 11
+      },
+      {
+        "explicit_motion_duration_s": 0.9999999999854481,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 60.46666666578676,
+        "implicit_ui_gap_removed_s": 7.999999999883585,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 4,
+        "last_motion_time_s": 61.46666666577221,
+        "raw_duration_s": 9.399999999863212,
+        "raw_first_event_s": 140.599999997954,
+        "raw_last_event_s": 149.9999999978172,
+        "removed_noop_count": 1,
+        "step_id": "step_012_recorded_height_050mm_dur_9.40s",
+        "step_index": 12
+      },
+      {
+        "explicit_motion_duration_s": 0.7999999999883585,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 61.46666666577221,
+        "implicit_ui_gap_removed_s": 9.06666666653473,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 6,
+        "last_motion_time_s": 62.26666666576057,
+        "raw_duration_s": 10.266666666517267,
+        "raw_first_event_s": 149.9999999978172,
+        "raw_last_event_s": 160.26666666433448,
+        "removed_noop_count": 1,
+        "step_id": "step_013_recorded_height_050mm_dur_10.27s",
+        "step_index": 13
+      },
+      {
+        "explicit_motion_duration_s": 2.599999999962165,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 62.26666666576057,
+        "implicit_ui_gap_removed_s": 4.466666666601668,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 11,
+        "last_motion_time_s": 64.86666666572273,
+        "raw_duration_s": 6.266666666575475,
+        "raw_first_event_s": 160.26666666433448,
+        "raw_last_event_s": 166.53333333090995,
+        "removed_noop_count": 1,
+        "step_id": "step_014_recorded_height_050mm_dur_6.27s",
+        "step_index": 14
+      },
+      {
+        "explicit_motion_duration_s": 1.3999999999796273,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 64.86666666572273,
+        "implicit_ui_gap_removed_s": 12.53333333315095,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 8,
+        "last_motion_time_s": 66.26666666570236,
+        "raw_duration_s": 14.133333333127666,
+        "raw_first_event_s": 166.53333333090995,
+        "raw_last_event_s": 180.66666666403762,
+        "removed_noop_count": 1,
+        "step_id": "step_015_recorded_height_050mm_dur_14.13s",
+        "step_index": 15
+      },
+      {
+        "explicit_motion_duration_s": 0.9999999999854481,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 66.26666666570236,
+        "implicit_ui_gap_removed_s": 34.13333333283663,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 10,
+        "last_motion_time_s": 67.26666666568781,
+        "raw_duration_s": 40.86666666607198,
+        "raw_first_event_s": 180.66666666403762,
+        "raw_last_event_s": 221.5333333301096,
+        "removed_noop_count": 4,
+        "step_id": "step_016_recorded_height_050mm_dur_40.87s",
+        "step_index": 16
+      },
+      {
+        "explicit_motion_duration_s": 0.5999999999912689,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 67.26666666568781,
+        "implicit_ui_gap_removed_s": 9.99999999985448,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 4,
+        "last_motion_time_s": 67.86666666567908,
+        "raw_duration_s": 5.266666666590027,
+        "raw_first_event_s": 221.5333333301096,
+        "raw_last_event_s": 226.79999999669963,
+        "removed_noop_count": 1,
+        "step_id": "step_017_recorded_height_050mm_dur_5.27s",
+        "step_index": 17
+      },
+      {
+        "explicit_motion_duration_s": 1.1333333333168412,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 67.86666666567908,
+        "implicit_ui_gap_removed_s": 15.933333333101473,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 10,
+        "last_motion_time_s": 68.99999999899592,
+        "raw_duration_s": 16.666666666424135,
+        "raw_first_event_s": 226.79999999669963,
+        "raw_last_event_s": 243.46666666312376,
+        "removed_noop_count": 4,
+        "step_id": "step_018_recorded_height_050mm_dur_16.67s",
+        "step_index": 18
+      },
+      {
+        "explicit_motion_duration_s": 1.9999999999708962,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 68.99999999899592,
+        "implicit_ui_gap_removed_s": 6.333333333241171,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 5,
+        "last_motion_time_s": 70.99999999896681,
+        "raw_duration_s": 8.333333333212067,
+        "raw_first_event_s": 243.46666666312376,
+        "raw_last_event_s": 251.79999999633583,
+        "removed_noop_count": 1,
+        "step_id": "step_019_recorded_height_050mm_dur_8.33s",
+        "step_index": 19
+      },
+      {
+        "explicit_motion_duration_s": 16.866666666421224,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 70.99999999896681,
+        "implicit_ui_gap_removed_s": 2.5333333332964685,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 2,
+        "last_motion_time_s": 87.86666666538804,
+        "raw_duration_s": 18.799999999726424,
+        "raw_first_event_s": 251.79999999633583,
+        "raw_last_event_s": 270.59999999606225,
+        "removed_noop_count": 1,
+        "step_id": "step_020_recorded_height_050mm_dur_18.80s",
+        "step_index": 20
+      },
+      {
+        "explicit_motion_duration_s": 1.1999999999825377,
+        "fast_sequence_end_s": 89.06666666537058,
+        "first_motion_time_s": 87.86666666538804,
+        "implicit_ui_gap_removed_s": 31.066666666214587,
+        "inter_step_scheduler_gap_s": 0.0,
+        "kept_command_count": 13,
+        "last_motion_time_s": 89.06666666537058,
+        "raw_duration_s": 33.26666666618257,
+        "raw_first_event_s": 270.59999999606225,
+        "raw_last_event_s": 303.8666666622448,
+        "removed_noop_count": 1,
+        "step_id": "step_021_recorded_height_050mm_dur_33.27s",
+        "step_index": 21
+      }
+    ],
+    "wheel_duration_source": "recorded_simulation_time"
+  }
+}

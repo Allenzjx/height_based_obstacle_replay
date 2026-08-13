@@ -1,0 +1,142 @@
+{
+  "checks": [
+    {
+      "actual": 603,
+      "expected": ">= 20",
+      "name": "telemetry_samples_present",
+      "passed": true
+    },
+    {
+      "actual": "PASS",
+      "expected": "PASS or WARN",
+      "name": "data_quality_not_insufficient",
+      "passed": true
+    },
+    {
+      "actual": true,
+      "expected": true,
+      "name": "replay_started",
+      "passed": true
+    },
+    {
+      "actual": "",
+      "expected": "Replay complete",
+      "name": "replay_finished_success",
+      "passed": false
+    },
+    {
+      "actual": 13,
+      "expected": ">= 268",
+      "name": "all_events_dispatched",
+      "passed": false
+    },
+    {
+      "actual": 15.049999999999729,
+      "expected": ">= 133.733s",
+      "name": "sim_duration_covers_plan",
+      "passed": false
+    },
+    {
+      "actual": 0.21967080235481262,
+      "expected": ">= 2.513m",
+      "name": "base_crossed_obstacle_clearance",
+      "passed": false
+    },
+    {
+      "actual": 0.18365803360939026,
+      "expected": ">= 2.413m",
+      "name": "ended_past_obstacle",
+      "passed": false
+    },
+    {
+      "actual": 0.11750788576456501,
+      "expected": "<= 0.85rad",
+      "name": "not_flipped_roll_pitch",
+      "passed": true
+    },
+    {
+      "actual": {
+        "final": 0.06829594075679779,
+        "min": 0.06596452742815018
+      },
+      "expected": "no floor penetration/collapse",
+      "name": "base_height_reasonable",
+      "passed": true
+    },
+    {
+      "actual": 3.0,
+      "expected": ">= 2",
+      "name": "final_contacts_present",
+      "passed": true
+    },
+    {
+      "actual": 603,
+      "expected": "> 0",
+      "name": "static_margin_finite",
+      "passed": true
+    }
+  ],
+  "data_quality": {
+    "overall_verdict": "PASS",
+    "path": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\data_quality.json",
+    "warnings": []
+  },
+  "expected": {
+    "event_count": 269,
+    "final_time_s": 134.233,
+    "height_cm": 5
+  },
+  "failure_reasons": [
+    "replay_finished_success: actual= expected=Replay complete",
+    "all_events_dispatched: actual=13 expected=>= 268",
+    "sim_duration_covers_plan: actual=15.049999999999729 expected=>= 133.733s",
+    "base_crossed_obstacle_clearance: actual=0.21967080235481262 expected=>= 2.513m",
+    "ended_past_obstacle: actual=0.18365803360939026 expected=>= 2.413m"
+  ],
+  "metrics": {
+    "duration_s": 15.049999999999729,
+    "final_active_contacts": 3.0,
+    "final_base_x_m": 0.18365803360939026,
+    "final_base_z_m": 0.06829594075679779,
+    "finite_static_margin_count": 603,
+    "first_clearance_time_s": null,
+    "forward_progress_m": 0.22436106018722057,
+    "initial_base_x_m": -0.004690257832407951,
+    "last_replay_state": "active",
+    "last_sequence_success": null,
+    "max_abs_pitch_rad": 0.03987365978688635,
+    "max_abs_roll_pitch_rad": 0.11750788576456501,
+    "max_abs_roll_rad": 0.11750788576456501,
+    "max_base_x_m": 0.21967080235481262,
+    "max_base_z_m": 0.10480815917253494,
+    "min_active_contacts": 1.0,
+    "min_base_z_m": 0.06596452742815018,
+    "min_static_margin_m": -0.3363854468045847,
+    "sample_count": 603
+  },
+  "ok": false,
+  "replay": {
+    "command_event_count": 11,
+    "finish_message": "",
+    "finished": false,
+    "finished_success": false,
+    "max_event_index": 13,
+    "started": true
+  },
+  "run_dir": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps",
+  "scene": {
+    "clear_x_m": 2.5125,
+    "obstacle_length_m": 1.65,
+    "obstacle_x_m": 1.55,
+    "required_clearance_m": 0.1375,
+    "robot_length_m": 0.55
+  },
+  "schema": "height_replay_physical_success.v1",
+  "sources": {
+    "events": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\events.jsonl",
+    "metadata": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\metadata.json",
+    "stability_summary": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\stability_summary.json",
+    "telemetry_samples": "runs\\20260722_183219_obstacle-05cm_5cm-accepted-steps\\telemetry_samples.csv"
+  },
+  "verdict": "FAIL"
+}

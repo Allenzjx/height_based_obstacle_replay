@@ -1,0 +1,35 @@
+FINAL AUTOMATED TESTS
+Command: python -m unittest discover -s tests -q
+Result: PASS, Ran 187 tests, failures=0, errors=0
+
+Command: python -m compileall -q .
+Result: PASS
+
+Command: banned percentage runtime/source/config/docs/tests rg scan
+Result: PASS, NO_MATCHES
+
+Command: forbidden FSM/CoM/RL/Vision/Stability source scan
+Result: PASS, NO_FORBIDDEN_AUTONOMY_MATCHES
+
+Command: pre/post old saved_height_steps SHA-256 map comparison
+Result: PASS, 55/55 identical, changed=0, missing=0, added=0
+
+FINAL VISIBLE ISAAC GUI
+Command: python recording_baseline_gui_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\remove_speed_scale_and_lock_recording_baseline_20260804_000222\real_isaac --timeout-s 1200
+Result: PASS, exit code 0
+Isaac PID: 92564
+Visible GUI requested: true
+Requested headless: false
+Effective headless: false
+Reused existing process: false
+Stop cycles: 20/20 PASS
+Formal heights: 8/8 PASS
+Formal respawns: 10/10 PASS
+Raw playback: 3/3 events, complete
+Fast playback: 3/3 events, complete
+UI closed: true
+Worker reference cleared: true
+Final traceback: none
+
+CALIBRATION/FIX HISTORY
+Earlier bounded attempts exposed and fixed: missing first-visible top-level status, instance-proxy USD bounds, physical contact-jitter classification, asynchronous respawn test orchestration, non-playback respawn lock release, and rotated-local-AABB false ground penetration. Each failed/diagnostic worker was closed through the UI safety path before another worker was started. The final evidence above supersedes those attempts.

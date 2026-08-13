@@ -1,0 +1,11 @@
+warning: in the working copy of 'sim_process_client.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sim_transport.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sim_ui_controller.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'sim_worker_process.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/test_play_selected_playback.py', LF will be replaced by CRLF the next time Git touches it
+ sim_process_client.py                |  12 +-
+ sim_transport.py                     |   6 +-
+ sim_ui_controller.py                 | 477 ++++++++++++++++++++++++++++++++++-
+ sim_worker_process.py                |   5 +
+ tests/test_play_selected_playback.py |   2 +-
+ 5 files changed, 488 insertions(+), 14 deletions(-)

@@ -1,0 +1,28 @@
+Python source audit against the pre-change baseline
+Baseline: 232 files
+Current: 235 files
+Deleted: 0
+Added: 3
+Modified: 15
+
+Added:
+continuous_speed_semantics_e2e.py
+generate_continuous_speed_report.py
+tests\test_continuous_steps_speed_semantics.py
+
+Modified:
+command_model.py
+height_replay_ui.py
+playback.py
+sequence_model.py
+sim_process_client.py
+sim_robot_adapter.py
+sim_transport.py
+sim_ui_controller.py
+sim_worker_process.py
+speed_scale.py
+tests\test_anti_freeze_workflows.py
+tests\test_critical_knee_fast_ui_speed_fix.py
+tests\test_playback_speed_progress_fix.py
+tests\test_playback_speed_scale.py
+tests\test_servo_wheel_staging.py

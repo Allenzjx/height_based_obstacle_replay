@@ -1,0 +1,133 @@
+TASK SEPARATION REFACTOR - VALIDATION RESULTS
+============================================
+
+Environment / preflight
+-----------------------
+Environment: C:\Users\kskzz\miniconda3\envs\env_isaaclab\python.exe
+Preflight command:
+  C:\Users\kskzz\miniconda3\envs\env_isaaclab\python.exe isaac_launch_preflight.py --preflight-child --isaaclab-root C:\robotics_sim\IsaacLab
+Result: PASS
+  isaacsim 5.1.0.0
+  isaaclab 0.54.3
+  Python 3.11.15
+  imports/compatibility passed
+
+Static checks
+-------------
+Command:
+  python -m py_compile <all project Python files, excluding historical/data/report trees>
+Result: PASS, 95 Python files
+
+Runtime import command imported 31 retained top-level/telemetry modules.
+Result: PASS, no removed-module import error
+
+Targeted removed-task source scan:
+Result: PASS, 0 matching requested pattern groups in runtime/formal docs/tests
+
+Authority construction scan:
+  SequenceManager: one controller construction site
+  PlaybackManager: one controller construction site
+  SimProcessClient: one lazy controller construction site
+Result: PASS
+
+Automated tests
+---------------
+Command:
+  python -m unittest discover -s tests -v
+Result: PASS
+  Ran 183 tests in 3.433s
+  failures=0, errors=0
+
+Coverage includes:
+- availability Cases A-H;
+- operation conflicts and finally-style recovery;
+- shared permanent SequenceManager identity;
+- missing-height then valid-height recovery;
+- exact eight tabs and guarded button bindings;
+- one UI polling loop and close cancellation;
+- Stop queue/schedule/operation cleanup;
+- repeated identical plans use unique request ids and ignore stale worker state;
+- manifest refresh is read-only;
+- preserved timing, speed, wheel-distance, selected-step restore, respawn,
+  recording, Combine, ground, and telemetry behavior.
+
+Real GUI / Isaac validation
+---------------------------
+Pre-launch process check:
+  NO_MATCHING_PROJECT_OR_ISAAC_PROCESSES
+
+Command:
+  C:\Users\kskzz\miniconda3\envs\env_isaaclab\python.exe task_separation_gui_e2e.py --output C:\robotics_sim\wlr_robot\height_based_obstacle_replay\reports\task_separation_refactor_20260802_215310 --timeout-s 600
+
+Process topology during run:
+  GUI E2E PID: 139416
+  sole Isaac worker PID: 109200
+  second worker/Isaac instance: none
+
+Worker safety config:
+  save_scene=false
+  telemetry_enabled=false
+
+Result: PASS (`gui_isaac_result.json` success=true)
+- exact tabs: Sim Connection, Run Manager, Record / Servo+Wheel, Speed Scale,
+  Playback, Height Generate, Combine, Sim State;
+- generated 5 cm obstacle and received worker acknowledgement;
+- loaded formal 5 cm bucket read-only: 35 steps, 269 playback events;
+- Play All and Play All Fast enabled without tab-mode dependency;
+- Play All reached worker, sent `wheel all 0.3`, and actual joint state changed;
+- Pause held events_sent at 1; Resume advanced it to 2;
+- Stop produced active=false, scheduled=false, local plan/queue cleared, and
+  availability returned to Available;
+- Play Selected Step reached worker;
+- Respawn And Play Selected Step reached worker;
+- Play To Selected From Start reached worker;
+- Play Selected Fast reached worker;
+- the two identical selected plans had different request ids;
+- recording stop/discard restored Playback availability;
+- Combine used the same manager and did not auto-play;
+- Height Generate did not auto-play;
+- switching tabs did not alter Playback availability;
+- shutdown left no matching project/Isaac process.
+
+Worker logs
+-----------
+stdout:
+  C:\Users\kskzz\AppData\Local\Temp\height_replay_worker_logs\worker_1785721991458_stdout.log
+stderr:
+  C:\Users\kskzz\AppData\Local\Temp\height_replay_worker_logs\worker_1785721991458_stderr.log
+
+Worker stdout contains the unique request ids and all real playback schedules.
+Worker stderr contains only the environment's existing h5py/HDF5 build/runtime
+version warning; no traceback, CUDA failure, or removed-task error occurred.
+
+Protected data verification
+---------------------------
+Before/after SHA-256 set: 54 formal recording/manifest/command files
+Result after final GUI run:
+  PROTECTED_CHANGED_COUNT=0
+  PROTECTED_MISSING_COUNT=0
+  PROTECTED_HASH_COMPARE_PASS_AFTER_FINAL_GUI
+
+Screenshots
+-----------
+main_interface.png
+height_05cm_loaded.png
+play_all_enabled.png
+playback_active.png
+playback_idle_after_stop.png
+
+All five were visually inspected and show the project Tk window, not another
+desktop window.
+
+Final status
+------------
+All application, test, real GUI/Isaac, screenshot, cleanup, and 54-file formal
+recording checks PASS.
+
+One scope item cannot be byte-for-byte verified: an early exploratory run used
+the old default `save_scene=true` and created or recreated
+`C:\robotics_sim\wlr_robot\usd\wlr_robot_height_replay_env.usd` at 21:21:21.
+Current SHA-256:
+`8992B4374014FFE5C0F55AF77DB1D605980C1EB1CAD0E8136632CC38455D3241`.
+No pre-run hash exists for that external file. It was not deleted or rewritten
+again; every subsequent/final run used `save_scene=false`.

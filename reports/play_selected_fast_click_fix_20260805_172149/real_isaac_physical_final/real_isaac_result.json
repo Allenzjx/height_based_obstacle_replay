@@ -1,0 +1,997 @@
+{
+  "success": false,
+  "started_at": 1785965870.2641063,
+  "visible_gui_requested": true,
+  "single_worker_requested": true,
+  "physical_mouse_required": true,
+  "formal_source_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+  "formal_source_sha256_before": "66be488058660467810260cb42d86357736bee2ff408d0741956c31db30426f8",
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785965889.4180717,
+      "details": {}
+    },
+    {
+      "stage": "MANUAL_START",
+      "completed_at": 1785965889.5190406,
+      "details": {}
+    },
+    {
+      "stage": "MANUAL_WAIT",
+      "completed_at": 1785965890.2446282,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "button_before_click": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\play_selected_fast_click_fix_20260805_172149\\real_isaac_physical_final\\screenshots\\run_1_play_selected_fast_button.png",
+    "restoring_immediate": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\play_selected_fast_click_fix_20260805_172149\\real_isaac_physical_final\\screenshots\\run_2_physical_click_restoring.png",
+    "failure": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\play_selected_fast_click_fix_20260805_172149\\real_isaac_physical_final\\screenshots\\failure.png"
+  },
+  "runs": [],
+  "ui_after_probe_ms": [],
+  "ui_after_probe_rows": [],
+  "rtf_samples": [
+    1.4184397156936996,
+    1.4184397156936996,
+    1.2820512823880477,
+    1.2820512823880477,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.4184397156936996,
+    1.2820512823880477,
+    1.4184397156936996,
+    1.2820512823880477
+  ],
+  "worker_loop_hz_samples": [
+    1591.2449047310138,
+    82.23472881420183,
+    440.6281138496819,
+    303.1566182187645,
+    386.9925363258221,
+    217.65081612223972,
+    151.65090973236624
+  ],
+  "status_payload_bytes": [
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3220.0,
+    3251.0,
+    3251.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3240.0,
+    3245.0,
+    3245.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3244.0,
+    3247.0,
+    3247.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    8719.0,
+    9464.0,
+    9459.0,
+    9481.0,
+    9481.0,
+    9487.0,
+    9487.0,
+    9487.0,
+    9487.0,
+    9489.0,
+    9479.0,
+    9562.0
+  ],
+  "worker_pid": 166756,
+  "worker_session_id": "5fcb8da504ec496892324864eb16df0b",
+  "loaded_step_count": 35,
+  "selected_step": 5,
+  "previous_step": 4,
+  "raw_fast_plan_comparison": {
+    "raw": {
+      "profile": "raw",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 7.1399999998975545,
+      "plan_sha256": "5cbb42baab222395ac177fbe4e44951053b6c43151a2bbbe1387fc7f3491da45"
+    },
+    "fast": {
+      "profile": "motion_only",
+      "event_count": 2,
+      "segment_count": 2,
+      "source_steps": [
+        5
+      ],
+      "command_signature": [
+        "wheel all 0.3",
+        "wheel stop"
+      ],
+      "servo_targets": [
+        [],
+        []
+      ],
+      "wheel_targets": [
+        [
+          0.3
+        ],
+        [
+          0.0
+        ]
+      ],
+      "wheel_durations": [
+        4.9850000001024455,
+        0.0
+      ],
+      "final_time_s": 4.9850000001024455,
+      "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+    }
+  },
+  "manual_state_before_click": {
+    "servos": {
+      "front_left_hip": -20.0,
+      "front_left_knee": 0.0,
+      "front_right_hip": 0.0,
+      "front_right_knee": 0.0,
+      "rear_left_hip": 0.0,
+      "rear_left_knee": 0.0,
+      "rear_right_hip": 0.0,
+      "rear_right_knee": 0.0
+    },
+    "wheels": {
+      "front_left_ankle": 0.0,
+      "front_right_ankle": 0.0,
+      "rear_left_ankle": 0.0,
+      "rear_right_ankle": 0.0
+    }
+  },
+  "physical_click_geometry": [
+    {
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "raw_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+      "button_state": [
+        "active",
+        "hover"
+      ],
+      "raw_button_state": [],
+      "same_guard_state": true,
+      "button_rect": [
+        1316,
+        340,
+        354,
+        25
+      ],
+      "center": [
+        1493,
+        352
+      ],
+      "screen": [
+        1707,
+        1067
+      ],
+      "winfo_containing": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "target_matches": true
+    },
+    {
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "raw_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+      "button_state": [
+        "active",
+        "hover"
+      ],
+      "raw_button_state": [],
+      "same_guard_state": true,
+      "button_rect": [
+        1316,
+        340,
+        354,
+        25
+      ],
+      "center": [
+        1493,
+        352
+      ],
+      "screen": [
+        1707,
+        1067
+      ],
+      "winfo_containing": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "target_matches": true
+    }
+  ],
+  "immediate_feedback": [
+    {
+      "click_id": "2a1944edbb70472cafa057910c31b946",
+      "elapsed_ms": 208.00169999711215,
+      "visible_feedback_ms": 48.305199947208166,
+      "visible_text": "Idle | Playing Step 0 / 0\n-\nCommand 0 / 0 | Total command 0 / 0\nElapsed 0.000s | Remaining 0.000s\nProfile: Raw | direct recorded actuator commands",
+      "status": "Command: servo front_left_hip -20",
+      "playback_state": "IDLE",
+      "pending": false
+    },
+    {
+      "click_id": "629e29a576ac4b2aa7c4ded606cf8ef4",
+      "elapsed_ms": 190.1752999983728,
+      "visible_feedback_ms": 46.12209997139871,
+      "visible_text": "Idle | Playing Step 0 / 0\n-\nCommand 0 / 0 | Total command 0 / 0\nElapsed 0.000s | Remaining 0.000s\nProfile: Raw | direct recorded actuator commands",
+      "status": "Stopping wheels...",
+      "playback_state": "IDLE",
+      "pending": false
+    }
+  ],
+  "error": "AssertionError: physical click did not enter the Tk button callback",
+  "failed_stage": "PHYSICAL_CLICK",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 186, in _tick\n    getattr(self, f\"_stage_{self.stage.lower()}\")()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\play_selected_fast_physical_click_e2e.py\", line 362, in _stage_physical_click\n    raise AssertionError(\"physical click did not enter the Tk button callback\")\nAssertionError: physical click did not enter the Tk button callback\n",
+  "latest_sim_status": {
+    "last_operation_ack": {
+      "type": "stop_ack",
+      "command_id": "0d80b81630244b1ab6e994cff921cc20",
+      "received_wall_time": 1785965890.6844368,
+      "target_applied_wall_time": 1785965890.6859539,
+      "target_applied_sim_time": 2.8166666666666593,
+      "zero_target_applied": true,
+      "error": ""
+    },
+    "operation_ack_history": [
+      {
+        "type": "stop_ack",
+        "command_id": "0d80b81630244b1ab6e994cff921cc20",
+        "received_wall_time": 1785965890.6844368,
+        "target_applied_wall_time": 1785965890.6859539,
+        "target_applied_sim_time": 2.8166666666666593,
+        "zero_target_applied": true,
+        "error": ""
+      }
+    ],
+    "requested_launch_mode": "explicit-python",
+    "type": "status",
+    "ready": true,
+    "runtime_ready": true,
+    "starting": false,
+    "phase": "running",
+    "phase_elapsed_s": 1.875,
+    "height_mm": 50,
+    "height_cm": 5.0,
+    "scene_height_mm": 50,
+    "obstacle_revision": 1,
+    "last_set_height_source": "startup",
+    "last_set_height_request_id": "",
+    "obstacle_updated": false,
+    "measured_height_mm": 50.00000074505806,
+    "measured_width_m": 2.0000000298023224,
+    "measured_length_m": 2.057375557085507,
+    "measured_bounds": {
+      "min": [
+        0.5213121737735307,
+        -1.0000000149011612,
+        0.0
+      ],
+      "max": [
+        2.5786877308590377,
+        1.0000000149011612,
+        0.05000000074505806
+      ]
+    },
+    "visual_updated": true,
+    "collision_updated": true,
+    "obstacle_prim_valid": true,
+    "scene_ready": true,
+    "respawned": false,
+    "error": "",
+    "traceback": "",
+    "pid": 166756,
+    "sim_time": 3.216666666666658,
+    "sim_steps": 386,
+    "real_time_factor": 1.2820512823880477,
+    "respawn_count": 0,
+    "last_respawn_at": 0.0,
+    "restore_count": 0,
+    "last_restore_result": "",
+    "last_restore_error": "",
+    "last_restore_request_id": "",
+    "perf": {
+      "outbound_backlog": 0,
+      "status_replaced": 0,
+      "frames_sent": 41,
+      "bytes_sent": 256381,
+      "status_enqueued": 13,
+      "status_send_hz": 7.246376810754689,
+      "socket_send_blocking_ms": 0.0,
+      "send_call_average_ms": 0.17852442361777876,
+      "send_call_max_ms": 0.2817001659423113
+    },
+    "command_state": {
+      "servos": {
+        "front_left_hip": -20.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "servo_target_deg": [
+      -20.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "servo_actual_deg": [
+      -19.824308169712896,
+      0.14132237689967603,
+      -0.20001952852288465,
+      -0.01442277652828169,
+      -0.21760763916163772,
+      -0.034020151729521976,
+      -13.494009445995978,
+      -0.5935167050868098
+    ],
+    "wheel_canonical_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_effective_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_measured_rad_s": [
+      -0.08586370944976807,
+      0.038422711193561554,
+      -0.000217425127630122,
+      0.05513525754213333
+    ],
+    "target_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "command_deg": -20.0,
+          "applied_command_deg": -20.741857753807977,
+          "tracking_compensation_deg": -0.7418577538079774,
+          "target_actual_deg": -19.92064843636795,
+          "target_actual_rad": -0.34768090434688087
+        },
+        "front_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.02684400080484552,
+          "target_actual_rad": 0.0004685161984525621
+        },
+        "front_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.006745560524854715,
+          "target_actual_rad": -0.00011773224105127156
+        },
+        "front_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.1251883495021952,
+          "target_actual_rad": 0.0021849488839507107
+        },
+        "rear_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.1794263347525243,
+          "target_actual_rad": -0.0031315803062170744
+        },
+        "rear_left_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.16301483092001173,
+          "target_actual_rad": 0.0028451455291360617
+        },
+        "rear_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -0.3229814231186408,
+          "target_actual_rad": -0.005637089256197214
+        },
+        "rear_right_knee": {
+          "command_deg": 0.0,
+          "applied_command_deg": 0.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 0.21524399350241663,
+          "target_actual_rad": 0.0037567163817584515
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "front_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        }
+      }
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": -0.34599944949150085,
+          "deg": -19.824308169712896,
+          "velocity_rad_s": -0.0973794162273407,
+          "velocity_deg_s": -5.579429561274384,
+          "applied_torque_nm": -2.700000047683716,
+          "computed_torque_nm": -2.9854612350463867,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_left_knee": {
+          "rad": 0.0024665407836437225,
+          "deg": 0.14132237689967603,
+          "velocity_rad_s": 0.09308888763189316,
+          "velocity_deg_s": 5.333600380875047,
+          "applied_torque_nm": -2.700000047683716,
+          "computed_torque_nm": -6.720828056335449,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_right_hip": {
+          "rad": -0.0034909993410110474,
+          "deg": -0.20001952852288465,
+          "velocity_rad_s": 0.03298310190439224,
+          "velocity_deg_s": 1.8897925343715836,
+          "applied_torque_nm": 0.10913431644439697,
+          "computed_torque_nm": 0.10913431644439697,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "front_right_knee": {
+          "rad": -0.0002517249376978725,
+          "deg": -0.01442277652828169,
+          "velocity_rad_s": -0.045346662402153015,
+          "velocity_deg_s": -2.5981723706479394,
+          "applied_torque_nm": 2.700000047683716,
+          "computed_torque_nm": 4.163425445556641,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_left_hip": {
+          "rad": -0.0037979697808623314,
+          "deg": -0.21760763916163772,
+          "velocity_rad_s": -0.013176015578210354,
+          "velocity_deg_s": -0.7549300834300783,
+          "applied_torque_nm": 1.1944551467895508,
+          "computed_torque_nm": 1.1944551467895508,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_left_knee": {
+          "rad": -0.0005937636597082019,
+          "deg": -0.034020151729521976,
+          "velocity_rad_s": 0.03791197016835213,
+          "velocity_deg_s": 2.172195883672458,
+          "applied_torque_nm": -0.21755003929138184,
+          "computed_torque_nm": -0.21755003929138184,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_right_hip": {
+          "rad": -0.23551489412784576,
+          "deg": -13.494009445995978,
+          "velocity_rad_s": -0.09575144201517105,
+          "velocity_deg_s": -5.4861535097609275,
+          "applied_torque_nm": 2.700000047683716,
+          "computed_torque_nm": 143.9780731201172,
+          "effort_limit_nm": 2.700000047683716
+        },
+        "rear_right_knee": {
+          "rad": -0.010358820669353008,
+          "deg": -0.5935167050868098,
+          "velocity_rad_s": 0.07495739310979843,
+          "velocity_deg_s": 4.294742268494447,
+          "applied_torque_nm": 2.700000047683716,
+          "computed_torque_nm": 3.986335277557373,
+          "effort_limit_nm": 2.700000047683716
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "rad_s": -0.08586370944976807
+        },
+        "front_right_ankle": {
+          "rad_s": 0.038422711193561554
+        },
+        "rear_left_ankle": {
+          "rad_s": -0.000217425127630122
+        },
+        "rear_right_ankle": {
+          "rad_s": 0.05513525754213333
+        }
+      }
+    },
+    "robot_ground": {
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "checked": true,
+      "physical_ground_safe": true,
+      "maximum_collision_penetration_m": 0.0010547553127539244,
+      "root_z_m": 0.09913921356201172,
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "respawn_ready": false
+    },
+    "grounded_reference_valid": false,
+    "grounded_reference_stable": false,
+    "motion_ready": true,
+    "motion_block_reason": "",
+    "respawn_ready": false,
+    "respawn_block_reason": "grounded respawn reference is invalid; grounded respawn reference physics check is invalid; grounded respawn reference is not stable; grounded respawn reference diagnostics were not checked; grounded respawn reference physical contact is not safe",
+    "control_ready": true,
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "wheel_command": {
+      "generation": 2,
+      "command_id": "0d80b81630244b1ab6e994cff921cc20",
+      "state": "physically_stopped",
+      "stop_command_received": true,
+      "zero_target_applied": true,
+      "physically_stopped": true,
+      "stale_command_rejected": false,
+      "requested_wall_time": 1785965890.6552036,
+      "enqueued_wall_time": 1785965890.6552262,
+      "received_wall_time": 1785965890.6844368,
+      "target_applied_wall_time": 1785965890.6859539,
+      "measured_stop_wall_time": 1785965890.693463,
+      "target_applied_sim_time": 2.8166666666666593,
+      "measured_stop_sim_time": 2.8249999999999926,
+      "stop_tolerance_rad_s": 0.1,
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": -0.08586370944976807,
+        "front_right_ankle": 0.038422711193561554,
+        "rear_left_ankle": -0.000217425127630122,
+        "rear_right_ankle": 0.05513525754213333
+      },
+      "canonical_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "motion_profile": "fixed_100_percent"
+    },
+    "motion_profile": {
+      "mode": "fixed_100_percent",
+      "profile_id": "real-robot-ui-controller-20260626-v1",
+      "servo_velocity_deg_s": 150.0,
+      "wheel_reference_velocity_rad_s": 0.5235987755982988,
+      "wheel_velocity_limit_rad_s": 2.0943951023931953
+    },
+    "motion_batch": {},
+    "physics_dt": 0.008333333333333333,
+    "sim_step_hz": 120.0,
+    "ready_source": "runtime",
+    "last_ready_change_reason": "runtime status",
+    "last_ready_change_message_type": "status",
+    "real_time_factor_lifetime": 1.315555555555551,
+    "real_time_factor_window_samples": 13,
+    "worker_playback": {
+      "active": false,
+      "paused": false,
+      "scheduled": false,
+      "started": false,
+      "plan_id": "",
+      "request_id": "",
+      "worker_session_id": "",
+      "plan_sha256": "",
+      "source_sha256": "",
+      "label": "",
+      "profile": "raw",
+      "path": "",
+      "index": 0,
+      "count": 0,
+      "event_count": 0,
+      "segment_count": 0,
+      "segment_index": 0,
+      "events_sent": 0,
+      "final_time_s": 0.0,
+      "sim_elapsed_s": 0.0,
+      "wall_elapsed_s": 0.0,
+      "progress": 0.0,
+      "last_event_command": "",
+      "last_event_time": 0.0,
+      "last_event_sim_time_s": 0.0,
+      "max_dispatch_jitter_s": 0.0,
+      "dispatch_clock": "simulation_time",
+      "completed_at": 0.0,
+      "completed_at_sim_time_s": 0.0,
+      "stop_reason": "",
+      "last_error": "",
+      "last_info": "",
+      "first_motion_planned_s": 0.0,
+      "first_command_applied": false,
+      "first_command_applied_sim_time_s": 0.0,
+      "first_command_applied_sim_step": 0,
+      "current_servo_errors": {},
+      "servo_residual_warning_count": 0,
+      "last_servo_residual_warning": {},
+      "progress_detail": {
+        "playback_state": "IDLE",
+        "status_text": "Idle",
+        "current_step_index": 0,
+        "total_steps": 0,
+        "global_command_index": 0,
+        "total_commands": 0,
+        "playback_profile": "raw",
+        "selected_playback": false,
+        "command_phase": "idle",
+        "last_error": ""
+      },
+      "timing": {}
+    },
+    "worker_session_id": "5fcb8da504ec496892324864eb16df0b",
+    "status_payload_bytes": 9562,
+    "worker_pid": 166756,
+    "worker_returncode": null,
+    "worker": true,
+    "startup_elapsed_s": 20.25026339991018,
+    "connected": true,
+    "ipc_connected": true,
+    "stdout_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785965870842_stdout.log",
+    "stderr_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785965870842_stderr.log",
+    "stdout_tail": [],
+    "stderr_tail": [],
+    "last_meaningful_stdout": "",
+    "last_meaningful_stderr": "",
+    "last_log_activity_at": 1785965889.2196438,
+    "startup_progress_message": "Worker logs are still changing.",
+    "pending_message_count": 0,
+    "pending_send_bytes": 0,
+    "dropped_or_replaced_messages": 0,
+    "error_category": "unknown",
+    "startup_diagnosis": "Worker is ready. If the viewport is black, check viewport camera, renderer warmup, GPU/driver logs, and livestream/headless settings."
+  },
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker..."
+  ],
+  "ui_closed": true,
+  "worker_reference_cleared": true,
+  "finished_at": 1785965897.540083
+}

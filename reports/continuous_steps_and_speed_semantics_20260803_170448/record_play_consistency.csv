@@ -1,0 +1,4 @@
+﻿recording_speed_percent,playback_speed_percent,servo_endpoint_difference_deg,servo_velocity_difference_deg_s,wheel_velocity_difference_rad_s,wheel_duration_difference_s,wheel_path_mean_abs_error_rad,double_scaling,validation_source
+100,100,0.7565833360547654,0.0,0.0,0.0,0.5973811578005552,False,visible_real_isaac
+200,200,0.7271785179042141,0.0,0.0,0.0,0.14262450253590941,False,visible_real_isaac
+100,200,0.0,30.0,0.3,0.0,2x playback path expected,False,automated_case_I

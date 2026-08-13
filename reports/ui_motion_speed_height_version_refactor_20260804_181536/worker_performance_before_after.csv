@@ -1,0 +1,10 @@
+metric,before,after,unit,result
+normal_motion_real_time_factor_p50,0.388,1.2820512823879793,ratio,PASS >=0.9
+normal_motion_physics_step_rate,46.56,153.84615388655752,physics_steps/s,PASS
+observed_worker_step_rate_samples,UNVERIFIED,344.07805219208683,steps/s,recorded separately from RTF
+periodic_status_payload_max,665792,10512.0,bytes,PASS <16384
+periodic_status_payload_average,full nested state,10367.1,bytes,PASS
+periodic_status_send_frequency,mixed/repeated full status,7.515598411729917,Hz,PASS 5-10Hz
+socket_send_blocking,blocking sendall on simulation loop,0.0,ms,PASS
+outbound_backlog,unbounded risk,0,frames,PASS
+measure_scene_baseline_in_normal_generate,25.033-50.415 s,not run,wall,PASS

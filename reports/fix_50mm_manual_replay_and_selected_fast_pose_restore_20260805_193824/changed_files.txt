@@ -1,0 +1,25 @@
+MODIFIED
+playback.py - fixes mixed servo/wheel false-stall completion, velocity-gated real stall, legacy endpoint marker, and visible failure status.
+sim_process_client.py - request-id/purpose detailed-state protocol.
+sim_transport.py - request-id forwarding and prohibition on subprocess NullSim fallback.
+sim_robot_adapter.py - FULL_VALID capture markers and reset-before-write full articulation restore order.
+sim_ui_controller.py - asynchronous recording checkpoints, strict Selected Fast resolver/verification, retry/error handling, command fallback compatibility.
+sim_worker_process.py - detailed capture correlation and post-physics restore verification before OK acknowledgment.
+tests/test_play_selected_fast_click_fix.py - full-pose fixtures and restore-verification acknowledgments.
+tests/test_selected_step_previous_saved_state.py - complete pose fixtures and correlated fake worker protocol.
+ui_motion_speed_height_version_e2e.py - asynchronous recording-preparation compatibility.
+
+ADDED
+sim_state_validation.py - shared FULL_VALID/COMMAND_ONLY/PLACEHOLDER_NO_SIM/INVALID classifier and centralized pose tolerances.
+latest_50mm_manual_v2_e2e.py - active-version read-only Raw/Fast/full-state audit and full worker timing capture.
+pose_checkpoint_selected_fast_e2e.py - visible real-Isaac recording and three physical-click Selected Fast transactions.
+tests/test_pose_checkpoint_protocol.py - classifier, timeout, restore-order, mixed-channel, and velocity-gated stall regressions.
+generate_fix_50mm_pose_report.py - reproducible evidence bundle generator.
+
+DELETED
+None.
+
+PRESERVED PRE-EXISTING USER CHANGES (NOT MODIFIED BY THIS FIX)
+saved_height_steps_fsm_reference_v2/height_050mm/active_version.json
+saved_height_steps_fsm_reference_v2/manifest.json
+the ten pre-existing 19:05 backup files listed in git_baseline.txt

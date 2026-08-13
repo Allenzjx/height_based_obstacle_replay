@@ -1,0 +1,73 @@
+{
+  "runs": [
+    {
+      "click_id": "e48bb48373fc485593d4f2719736ef98",
+      "operation_owner_id": "55e22abe3dd848a68623f3ce00ab077b",
+      "restore_request_id": "55e22abe3dd848a68623f3ce00ab077b",
+      "worker_request_id": "393db53fd9f6488385fde0e6733a31d1",
+      "operation_begin_count": 1,
+      "playback_manager_enter_count": 0,
+      "successful_finish_count": 1,
+      "restore_stage": "PLAYBACK/RESTORING",
+      "start_stage": "PLAYBACK/START_REQUESTED",
+      "finish": [
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858631.0028352,
+          "relative_ms": 4877.4337999057025,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        }
+      ],
+      "final_operation": "IDLE"
+    },
+    {
+      "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+      "operation_owner_id": "21e15b26497a4d6ab234cd694a1757bd",
+      "restore_request_id": "21e15b26497a4d6ab234cd694a1757bd",
+      "worker_request_id": "7e8128b53f8a4c67b791f194bdf0754c",
+      "operation_begin_count": 1,
+      "playback_manager_enter_count": 0,
+      "successful_finish_count": 1,
+      "restore_stage": "PLAYBACK/RESTORING",
+      "start_stage": "PLAYBACK/START_REQUESTED",
+      "finish": [
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858636.4328131,
+          "relative_ms": 4741.448600078002,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        }
+      ],
+      "final_operation": "IDLE"
+    },
+    {
+      "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+      "operation_owner_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1",
+      "restore_request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1",
+      "worker_request_id": "1fd97672dd36479797be046a5c235a81",
+      "operation_begin_count": 1,
+      "playback_manager_enter_count": 0,
+      "successful_finish_count": 1,
+      "restore_stage": "PLAYBACK/RESTORING",
+      "start_stage": "PLAYBACK/START_REQUESTED",
+      "finish": [
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858642.0408577,
+          "relative_ms": 4832.528800005093,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        }
+      ],
+      "final_operation": "IDLE"
+    }
+  ]
+}

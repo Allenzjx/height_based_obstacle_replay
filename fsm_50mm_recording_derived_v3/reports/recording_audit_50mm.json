@@ -1,0 +1,3841 @@
+{
+  "active_version": "v012_20260806_231025_027004_manual",
+  "disk_version_ids": [
+    "v003_20260805_224517_157723_manual",
+    "v005_20260805_225441_439112_manual",
+    "v006_20260805_233948_654778_manual",
+    "v007_20260806_190636_100857_manual",
+    "v008_20260806_211408_578700_manual",
+    "v009_20260806_215232_433234_manual",
+    "v010_20260806_220745_363972_manual",
+    "v011_20260806_223621_672618_manual",
+    "v012_20260806_231025_027004_manual"
+  ],
+  "disk_versions_missing_from_manifest": [],
+  "manifest_version_ids": [
+    "v001_20260805_162057_740045_manual",
+    "v002_20260805_185955_854964_manual",
+    "v003_20260805_224517_157723_manual",
+    "v004_20260805_224517_863127_manual",
+    "v005_20260805_225441_439112_manual",
+    "v006_20260805_233948_654778_manual",
+    "v007_20260806_190636_100857_manual",
+    "v008_20260806_211408_578700_manual",
+    "v009_20260806_215232_433234_manual",
+    "v010_20260806_220745_363972_manual",
+    "v011_20260806_223621_672618_manual",
+    "v012_20260806_231025_027004_manual"
+  ],
+  "manifest_versions_missing_on_disk": [
+    "v001_20260805_162057_740045_manual",
+    "v002_20260805_185955_854964_manual",
+    "v004_20260805_224517_863127_manual"
+  ],
+  "recording_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm",
+  "schema_version": "fsm50.recording_audit.v1",
+  "versions": [
+    {
+      "accepted_steps_sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394",
+      "actual_recorded_command_count": 136,
+      "actual_step_count": 24,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 202,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v003_20260805_224517_157723_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 3,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 136,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v003_20260805_224517_157723_manual_fast_plan.csv",
+        "duration_s": 78.52266666679965,
+        "event_count": 160,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v003_20260805_224517_157723_manual_fast_plan.json",
+        "plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+        "segment_count": 112
+      },
+      "final_root_pose": [
+        0.8229134678840637,
+        -0.029724955558776855,
+        0.15124350786209106,
+        0.9965564608573914,
+        0.06648761034011841,
+        -0.00792505033314228,
+        0.048907846212387085
+      ],
+      "initial_root_pose": [],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 136,
+        "created_at": "2026-08-05T22:45:17-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "v002_20260805_185955_854964_manual",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 24,
+        "updated_at": "2026-08-05T22:45:17-04:00",
+        "version_id": "v003_20260805_224517_157723_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 136,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 24,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 1,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 1,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 2,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 2,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 3,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 3,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 4,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 4,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 5,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 5,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 6,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 6,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 7,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 7,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 8,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 8,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 9,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 9,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 10,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 10,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 11,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 11,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 12,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 12,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 13,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 13,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 14,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 14,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 15,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 15,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_before",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 16,
+          "valid": false
+        },
+        {
+          "classification": "PLACEHOLDER_NO_SIM",
+          "field": "sim_state_after",
+          "reason": "state is a NullSim/no-sim placeholder and is not pose-restore eligible",
+          "step_index": 16,
+          "valid": false
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 16,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v003_20260805_224517_157723_manual"
+    },
+    {
+      "accepted_steps_sha256": "57eeb83156277cf5f9c58ea53891e39222b891a2dcd1cc3ad3e3a0d7de0fcae1",
+      "actual_recorded_command_count": 139,
+      "actual_step_count": 22,
+      "auxiliary_files": [
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_184801_777524",
+          "sha256": "7634b2b79de081d32d890f002dc898d62e3811c14f01c9cba999970b68fb0bad",
+          "size_bytes": 391739
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_184802_294513",
+          "sha256": "39f08ff9b68456002e7f2983c7df18580355b39b349da59ac23f30d0d3c6b700",
+          "size_bytes": 1027
+        }
+      ],
+      "decoded_actuator_command_count": 205,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v005_20260805_225441_439112_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "",
+        "baseline_id": "",
+        "baseline_sha256": "",
+        "baseline_version": "",
+        "physics_configuration_id": "",
+        "scene_baseline": {}
+      },
+      "environment_json_present": false,
+      "event_count": 139,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v005_20260805_225441_439112_manual_fast_plan.csv",
+        "duration_s": 79.63733333222547,
+        "event_count": 167,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v005_20260805_225441_439112_manual_fast_plan.json",
+        "plan_sha256": "f2e7a7b63d6f9245b5e8ce9c7cd3f493907b948a7f25d842471d93620fcb4e88",
+        "segment_count": 116
+      },
+      "final_root_pose": [
+        1.0364131927490234,
+        0.0018939003348350525,
+        0.1514735221862793,
+        0.995301365852356,
+        -0.001067842124029994,
+        -0.002799463924020529,
+        0.0967797264456749
+      ],
+      "initial_root_pose": [
+        -0.005424102768301964,
+        -0.0009553432464599609,
+        0.09862380474805832,
+        0.9999814033508301,
+        -0.0002247608790639788,
+        -0.005911136977374554,
+        0.0015253573656082153
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "57eeb83156277cf5f9c58ea53891e39222b891a2dcd1cc3ad3e3a0d7de0fcae1",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 139,
+        "created_at": "2026-08-05T22:54:41-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 22,
+        "updated_at": "2026-08-06T18:48:02.285500-04:00",
+        "version_id": "v005_20260805_225441_439112_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 139,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 22,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 44,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v005_20260805_225441_439112_manual"
+    },
+    {
+      "accepted_steps_sha256": "97ac90301aa4eb3a06274808cac3fcc5dad1eb6b534f708fd179931f2d960513",
+      "actual_recorded_command_count": 135,
+      "actual_step_count": 22,
+      "auxiliary_files": [
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_173516_138793",
+          "sha256": "2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f",
+          "size_bytes": 2305266
+        },
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_175324_506783",
+          "sha256": "10001c0d5ff32b9c222e3719306cb8efe9b5abdf0b9c5c6e5c705be795268796",
+          "size_bytes": 2100110
+        },
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_180108_667343",
+          "sha256": "d33c3a101d0492e5dab4f6d517251de2221f42687f0db8fe86ec4f4ca5e57638",
+          "size_bytes": 2692774
+        },
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_180323_999459",
+          "sha256": "5ed1e7355d67b525f3053020c4158f3b671ff7d6884e45404ab3b56a8af78d91",
+          "size_bytes": 3263050
+        },
+        {
+          "relative_path": "accepted_steps.jsonl.backup_20260806_180940_270436",
+          "sha256": "3d31a17a6caa944d5ac696e284646da2d9df1f2f0e81b63ed3046dc55f404f79",
+          "size_bytes": 4047094
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_173516_391386",
+          "sha256": "7e3ec8b3b85c481a09e06202c961af18ea3ce34454ae4e01f998fbc6822ccff3",
+          "size_bytes": 1062
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_175324_910923",
+          "sha256": "f33112f95deb66d47132343352db6e74b30d296100a2cbf86dc09e6d6da3c9e7",
+          "size_bytes": 1069
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_180109_166168",
+          "sha256": "e267b360a27b1d0475ba695953f313ec1d345be4c442f36c127f0e790eaebfea",
+          "size_bytes": 1069
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_180324_651750",
+          "sha256": "1a19e96888b15c090eb7f06d4266ecf9120ad60732f64e17d6e4f3927efb105e",
+          "size_bytes": 1070
+        },
+        {
+          "relative_path": "metadata.json.backup_20260806_180940_804599",
+          "sha256": "a9285e692206822b9d6eb2abd863cf344134ed6f1f4dbd609f00bc2a7b759d38",
+          "size_bytes": 1070
+        }
+      ],
+      "decoded_actuator_command_count": 201,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v006_20260805_233948_654778_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "",
+        "baseline_id": "",
+        "baseline_sha256": "",
+        "baseline_version": "",
+        "physics_configuration_id": "",
+        "scene_baseline": {}
+      },
+      "environment_json_present": false,
+      "event_count": 135,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v006_20260805_233948_654778_manual_fast_plan.csv",
+        "duration_s": 73.25399999970425,
+        "event_count": 166,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v006_20260805_233948_654778_manual_fast_plan.json",
+        "plan_sha256": "9cd6cd72e9f73fc5dfddf739f31a6a397069bfad7e58f48b385cc688292ecd1e",
+        "segment_count": 113
+      },
+      "final_root_pose": [
+        1.03753662109375,
+        -0.008217938244342804,
+        0.14861741662025452,
+        0.9991326928138733,
+        -0.0006624332745559514,
+        -0.002918241312727332,
+        0.041533466428518295
+      ],
+      "initial_root_pose": [
+        -0.005424102768301964,
+        -0.0009553432464599609,
+        0.09862380474805832,
+        0.9999814033508301,
+        -0.0002247608790639788,
+        -0.005911136977374554,
+        0.0015253573656082153
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "97ac90301aa4eb3a06274808cac3fcc5dad1eb6b534f708fd179931f2d960513",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 135,
+        "created_at": "2026-08-05T23:39:48-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "v005_20260805_225441_439112_manual",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 22,
+        "updated_at": "2026-08-06T18:09:40.799085-04:00",
+        "version_id": "v006_20260805_233948_654778_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 135,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 22,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 44,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v006_20260805_233948_654778_manual"
+    },
+    {
+      "accepted_steps_sha256": "95d14e0a7babfff79f88fddb271b02107e3afc6d6ab1046bd060a707f73cacb6",
+      "actual_recorded_command_count": 113,
+      "actual_step_count": 21,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 146,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v007_20260806_190636_100857_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 15,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 113,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v007_20260806_190636_100857_manual_fast_plan.csv",
+        "duration_s": 74.65066666563058,
+        "event_count": 119,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v007_20260806_190636_100857_manual_fast_plan.json",
+        "plan_sha256": "1ac372f238ad10055b116c49aab0bb2a220ab68bd86708169dac950220a14898",
+        "segment_count": 92
+      },
+      "final_root_pose": [
+        1.06219482421875,
+        -0.0418759286403656,
+        0.14683251082897186,
+        0.999946653842926,
+        -0.00041678547859191895,
+        -0.008378814905881882,
+        0.006042318418622017
+      ],
+      "initial_root_pose": [
+        -0.005448978394269943,
+        -0.0009545758366584778,
+        0.09861396998167038,
+        0.9999813437461853,
+        -0.00022802063904237002,
+        -0.0059140934608876705,
+        0.0015239686472341418
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "95d14e0a7babfff79f88fddb271b02107e3afc6d6ab1046bd060a707f73cacb6",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 113,
+        "created_at": "2026-08-06T19:06:36.100857-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 21,
+        "updated_at": "2026-08-06T19:06:36.100857-04:00",
+        "version_id": "v007_20260806_190636_100857_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 113,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 21,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 42,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v007_20260806_190636_100857_manual"
+    },
+    {
+      "accepted_steps_sha256": "737b23a2152275e6ca716cd49006f3f34f1ae01466ac16960bc64d528dc4ea8c",
+      "actual_recorded_command_count": 142,
+      "actual_step_count": 23,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 197,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v008_20260806_211408_578700_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "",
+        "baseline_id": "",
+        "baseline_sha256": "",
+        "baseline_version": "",
+        "physics_configuration_id": "",
+        "scene_baseline": {}
+      },
+      "environment_json_present": false,
+      "event_count": 142,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v008_20260806_211408_578700_manual_fast_plan.csv",
+        "duration_s": 78.51533333357662,
+        "event_count": 162,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v008_20260806_211408_578700_manual_fast_plan.json",
+        "plan_sha256": "a80928c079c0fdca8080999993d2b8705d17a4686f962914eb5effe4e5993b7c",
+        "segment_count": 119
+      },
+      "final_root_pose": [
+        1.0176844596862793,
+        -0.02786806970834732,
+        0.15212085843086243,
+        0.9985741376876831,
+        -0.004712076857686043,
+        -0.00286139571107924,
+        0.05309802293777466
+      ],
+      "initial_root_pose": [
+        -0.0054504405707120895,
+        -0.0009543895721435547,
+        0.0986134260892868,
+        0.9999813437461853,
+        -0.00022838504810351878,
+        -0.005913971923291683,
+        0.0015240468783304095
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "737b23a2152275e6ca716cd49006f3f34f1ae01466ac16960bc64d528dc4ea8c",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 142,
+        "created_at": "2026-08-06T21:14:08.578700-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 23,
+        "updated_at": "2026-08-06T21:14:08.578700-04:00",
+        "version_id": "v008_20260806_211408_578700_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 142,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 23,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 46,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v008_20260806_211408_578700_manual"
+    },
+    {
+      "accepted_steps_sha256": "60db11a138088fd4a4c2886a681e0a195402a896f66932220c6c393d3d6c17c1",
+      "actual_recorded_command_count": 154,
+      "actual_step_count": 23,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 231,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v009_20260806_215232_433234_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 9,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 154,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v009_20260806_215232_433234_manual_fast_plan.csv",
+        "duration_s": 75.95133333228267,
+        "event_count": 193,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v009_20260806_215232_433234_manual_fast_plan.json",
+        "plan_sha256": "f6c6934f631a01f906280ede55b8eec7fef8a37cf45242d970ef5e5285ff4c12",
+        "segment_count": 132
+      },
+      "final_root_pose": [
+        1.0068737268447876,
+        -0.022737108170986176,
+        0.15132731199264526,
+        0.998526930809021,
+        0.0026929841842502356,
+        -0.0006972126429900527,
+        0.054187510162591934
+      ],
+      "initial_root_pose": [
+        -0.005450135096907616,
+        -0.0009543746709823608,
+        0.09861345589160919,
+        0.9999812841415405,
+        -0.00022851506946608424,
+        -0.005913909524679184,
+        0.0015240729553624988
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "60db11a138088fd4a4c2886a681e0a195402a896f66932220c6c393d3d6c17c1",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 154,
+        "created_at": "2026-08-06T21:52:32.433234-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 23,
+        "updated_at": "2026-08-06T21:52:32.433234-04:00",
+        "version_id": "v009_20260806_215232_433234_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 154,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 23,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 46,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v009_20260806_215232_433234_manual"
+    },
+    {
+      "accepted_steps_sha256": "f962128da9e9551235a6f6769308eed0c947657fe804c9e0e26025f456c72e92",
+      "actual_recorded_command_count": 168,
+      "actual_step_count": 26,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 212,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v010_20260806_220745_363972_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 11,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 168,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v010_20260806_220745_363972_manual_fast_plan.csv",
+        "duration_s": 82.46733333219248,
+        "event_count": 178,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v010_20260806_220745_363972_manual_fast_plan.json",
+        "plan_sha256": "6c37a2751ca170954dc617831406d7c43833ef8ccf85deb9991af40c3ee6718e",
+        "segment_count": 142
+      },
+      "final_root_pose": [
+        1.0981929302215576,
+        -0.019426219165325165,
+        0.14963585138320923,
+        0.9999310374259949,
+        0.006431627552956343,
+        -0.0019021292682737112,
+        -0.009639290161430836
+      ],
+      "initial_root_pose": [
+        -0.005450522527098656,
+        -0.0009543299674987793,
+        0.09861314296722412,
+        0.9999813437461853,
+        -0.00022865337086841464,
+        -0.005914304871112108,
+        0.001524099032394588
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "f962128da9e9551235a6f6769308eed0c947657fe804c9e0e26025f456c72e92",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 168,
+        "created_at": "2026-08-06T22:07:45.363972-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 26,
+        "updated_at": "2026-08-06T22:07:45.363972-04:00",
+        "version_id": "v010_20260806_220745_363972_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 168,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 26,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 25,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 25,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 26,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 26,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 52,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v010_20260806_220745_363972_manual"
+    },
+    {
+      "accepted_steps_sha256": "f2440352a75f35eadc51419f3421a995e281c9fc0fb341ab0bbe003a7161f723",
+      "actual_recorded_command_count": 185,
+      "actual_step_count": 28,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 262,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v011_20260806_223621_672618_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 11,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 185,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v011_20260806_223621_672618_manual_fast_plan.csv",
+        "duration_s": 84.58866666549088,
+        "event_count": 217,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v011_20260806_223621_672618_manual_fast_plan.json",
+        "plan_sha256": "5bdf49b4e46fc48b5c438fa65aeac860794c5a89e221dbe86b7b93d90cdbac27",
+        "segment_count": 158
+      },
+      "final_root_pose": [
+        0.9950292110443115,
+        -0.07083053141832352,
+        0.1480146050453186,
+        0.9976643323898315,
+        0.00018948031356558204,
+        -0.0022169521544128656,
+        0.06827149540185928
+      ],
+      "initial_root_pose": [
+        -0.005450280383229256,
+        -0.0009545311331748962,
+        0.0986131951212883,
+        0.9999812841415405,
+        -0.000228514225455001,
+        -0.0059144943952560425,
+        0.0015241287183016539
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "f2440352a75f35eadc51419f3421a995e281c9fc0fb341ab0bbe003a7161f723",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 185,
+        "created_at": "2026-08-06T22:36:21.672618-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 28,
+        "updated_at": "2026-08-06T22:36:21.672618-04:00",
+        "version_id": "v011_20260806_223621_672618_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 185,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 28,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 20,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 21,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 22,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 23,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 24,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 25,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 25,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 26,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 26,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 27,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 27,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 28,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 28,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 56,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v011_20260806_223621_672618_manual"
+    },
+    {
+      "accepted_steps_sha256": "3ebc1491969a3f7e700f399bcde5011f74be06ed3298aeae04221b046f41bd7d",
+      "actual_recorded_command_count": 118,
+      "actual_step_count": 19,
+      "auxiliary_files": [],
+      "decoded_actuator_command_count": 162,
+      "directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v012_20260806_231025_027004_manual",
+      "embedded_recording_baseline": {
+        "actuator_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "baseline_sha256": "8e1f6009c1984a185846e27944b9878329b94bac77649e7645b3f134dd02ba1d",
+        "baseline_version": "fsm-recording-reference-v1",
+        "physics_configuration_id": "fsm-recording-reference-v1:8e1f6009c1984a18",
+        "scene_baseline": {
+          "height_mm": 50,
+          "measurement": "cached-lightweight-startup",
+          "obstacle_bottom_z_m": 0.0,
+          "obstacle_bounds": {
+            "max": [
+              2.5786877308590377,
+              1.0000000149011612,
+              0.05000000074505806
+            ],
+            "min": [
+              0.5213121737735307,
+              -1.0000000149011612,
+              0.0
+            ]
+          },
+          "obstacle_front_face_x_m": 0.5213121737735307,
+          "obstacle_height_m": 0.05,
+          "obstacle_length_m": 2.057375557085507,
+          "obstacle_revision": 15,
+          "obstacle_width_m": 2.0000000298023224
+        }
+      },
+      "environment_json_present": false,
+      "event_count": 118,
+      "fast_plan": {
+        "csv_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v012_20260806_231025_027004_manual_fast_plan.csv",
+        "duration_s": 69.69933333235741,
+        "event_count": 134,
+        "json_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\recording_fast_plans\\v012_20260806_231025_027004_manual_fast_plan.json",
+        "plan_sha256": "edaf002669c93352519afef5339ab5967e874f6b0104ae7d4005998c2123d584",
+        "segment_count": 99
+      },
+      "final_root_pose": [
+        0.89985191822052,
+        -0.07963167876005173,
+        0.15201222896575928,
+        0.9972962737083435,
+        -0.006519414484500885,
+        -0.0010254870867356658,
+        0.0731888860464096
+      ],
+      "initial_root_pose": [
+        -0.005450483411550522,
+        -0.0009543374180793762,
+        0.0986131802201271,
+        0.9999814033508301,
+        -0.0002286583330715075,
+        -0.00591416098177433,
+        0.001524050603620708
+      ],
+      "media_files": [],
+      "metadata": {
+        "accepted_steps_sha256": "3ebc1491969a3f7e700f399bcde5011f74be06ed3298aeae04221b046f41bd7d",
+        "actuator_baseline_id": "fsm-recording-reference-v1",
+        "actuator_command_semantics": "fixed-100-percent-direct-v1",
+        "command_count": 118,
+        "created_at": "2026-08-06T23:10:25.027004-04:00",
+        "environment_baseline_id": "fixed-wide-obstacle-v2",
+        "height_mm": 50,
+        "motion_profile_id": "real-robot-ui-controller-20260626-v1",
+        "motion_profile_mode": "fixed_100_percent",
+        "note": "",
+        "obstacle_front_face_x_m": 0.5213121737735307,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_width_m": 2.0,
+        "parent_version_id": "",
+        "robot_asset_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_asset_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "robot_respawn_pose": null,
+        "schema_version": "height-steps-versions.v2",
+        "step_count": 19,
+        "updated_at": "2026-08-06T23:10:25.027004-04:00",
+        "version_id": "v012_20260806_231025_027004_manual",
+        "version_name": "manual"
+      },
+      "metadata_command_count": 118,
+      "metadata_sha256_matches": true,
+      "metadata_step_count": 19,
+      "missing_required_files": [],
+      "snapshot_audit": [
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 1,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 2,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 3,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 4,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 5,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 6,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 7,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 8,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 9,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 10,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 11,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 12,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 13,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 14,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 15,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 16,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 17,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 18,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_before",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        },
+        {
+          "classification": "FULL_VALID",
+          "field": "sim_state_after",
+          "reason": "full Isaac pose checkpoint is valid",
+          "step_index": 19,
+          "valid": true
+        }
+      ],
+      "snapshot_full_valid_count": 38,
+      "standalone_telemetry_files": [],
+      "valid": true,
+      "version": "v012_20260806_231025_027004_manual"
+    }
+  ]
+}

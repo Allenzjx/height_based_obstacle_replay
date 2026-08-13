@@ -1,0 +1,7 @@
+已从运行时删除：Speed Scale tab、百分比 slider、GlobalSpeedModel/SpeedPercentModel、requested/effective/pending percent、set_speed_scale IPC、manual/playback multiplier、servo/wheel target scaling、preserve-wheel-distance、speed snapshot/timer/task operation。
+
+motion_speed.py 现在只提供固定 MotionReference；Manual、Recording、Raw、Fast 和 Servo-Wheel Launch 都直接发送 canonical actuator command。Fast 只删除 implicit UI idle，不改变 target、servo profile、wheel velocity、wheel active duration或命令顺序。
+
+只读状态显示 Motion profile: Fixed 100%。旧 recording 中的 speed metadata 可被读取但被忽略，不参与 runtime scaling，也没有重写旧文件。
+
+真实 batch ack：motion_profile=fixed_100_percent；requested/effective servo velocity=150.0 deg/s；wheel target 为 canonical rad/s 值。正式 config 的 wheel default/max、stiffness/damping/effort limit 未因本轮修复调整。

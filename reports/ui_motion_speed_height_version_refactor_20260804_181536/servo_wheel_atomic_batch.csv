@@ -1,0 +1,2 @@
+batch_id,callback_ms,servo_apply_tick,wheel_apply_tick,ack_servo_start_sim_time,ack_wheel_start_sim_time,ack_start_difference_s,observed_servo_start_sim_time,observed_wheel_start_sim_time,observed_start_difference_s,physics_dt_s,servo_applied,wheel_applied,pass
+003145fe1cfc4e58acec3f39be1bbd38,0.8747000247240067,1105,1105,9.208333333333451,9.208333333333451,0.0,9.266666666666781,9.200000000000118,0.06666666666666288,0.008333333333333333,True,True,True

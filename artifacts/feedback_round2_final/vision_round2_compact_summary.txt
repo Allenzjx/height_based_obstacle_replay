@@ -1,0 +1,19 @@
+summary_file=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\artifacts\e2e\vision_round2_final.json
+ok=True elapsed_s=170.844 hard_errors=0
+stages:
+WAIT_RUNTIME	ok	23.375	
+START_VISION_TASK	ok	0.032	
+GENERATE_5CM	ok	0.016	
+WAIT_SCENE_CONFIRMATION	ok	5.625	
+WAIT_STABLE_DETECTION	ok	2.031	
+VALIDATE_HEIGHT	ok	0.031	
+WAIT_VALIDATION	ok	0.687	
+WAIT_STEPS	ok	0.203	
+EXPORT_STEPS	ok	0.218	
+VALIDATE_GROUND	ok	0.141	
+CALIBRATE_GROUND	ok	0.031	
+WAIT_GROUND_RESULT	ok	0.141	
+START_PLAYBACK	ok	0.094	
+WAIT_PLAYBACK_COMPLETE	ok	134.906	
+SAVE_REPORT	ok	0.140	
+SHUTDOWN	ok	0.156	

@@ -1,0 +1,28 @@
+Modified source files
+=====================
+height_generate_panel.py - Save/Discard/Cancel guards for height/reload/generate/reset operations.
+height_replay_ui.py - PhysX runtime-limit default on plus explicit diagnostic opt-out.
+height_sequence_store.py - Atomic sequence save integration and save report.
+playback.py - Semantic Fast planner, zero fixed pads, one speed application, shared speed model.
+sequence_manager.py - Atomic save integration.
+sequence_model.py - Semantic motion compaction, forward-compatible recording metadata, fsync/validate/backup/replace persistence.
+sim_process_client.py - Authoritative limit flag propagation and exact non-blocking IPC send buffer.
+sim_robot_adapter.py - Dynamic articulation limit diagnostics and per-servo runtime USD stage overrides.
+sim_ui_controller.py - GUI caching/performance, Save UI/dirty workflow, shared speed model, simulation-time recording semantics and actual wheel displacement.
+sim_worker_process.py - Default runtime limit write plus real four-knee A/B/screenshot smoke evidence.
+sim_worker_runtime.py - Shared runtime limit default.
+speed_scale.py - Single SpeedPercentModel authority; servo endpoint and wheel-distance invariants.
+tests/test_no_physx_limit_by_default.py - Runtime limit default/opt-out expectations.
+tests/test_playback_speed_progress_fix.py - Updated endpoint/distance/Fast/0% expectations.
+tests/test_playback_speed_scale.py - Updated semantic timing expectations.
+tests/test_sim_process_client.py - Partial-send/would-block IPC regression test.
+
+New source/test files
+=====================
+critical_fix_validation.py - Read-only formal timing and temporary-copy GUI/save/performance validation.
+knee_limit_real_e2e.py - Visible GUI + real Isaac four-knee validation.
+record_play_equivalence_e2e.py - Visible GUI + real Isaac temporary recording/playback equivalence validation.
+servo_speed_invariant_e2e.py - Visible GUI + real Isaac 50/100/200/300% same-action servo endpoint validation.
+tests/test_critical_knee_fast_ui_speed_fix.py - Requirements A/B/C/G/H/J regression coverage.
+
+Generated evidence files are under this report directory and are not runtime source.

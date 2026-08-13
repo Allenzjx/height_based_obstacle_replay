@@ -1,0 +1,52 @@
+MODIFIED
+command_model.py - direct-unit validation model; wheel generation/id/priority/timestamps.
+height_replay_ui.py - removed retired CLI controls; new formal output-root default.
+playback.py - direct recorded actuator planning; Raw/Fast command equality; unified safety stops.
+playback_progress.py - removed percentage progress fields.
+README.md - removed obsolete task instructions and documented the reference root.
+robot_ground_diagnostics.py - exact live mesh-point world bounds; removed rotated-AABB false penetration.
+sequence_model.py - legacy unknown metadata remains opaque and non-executable.
+sim_ipc_protocol.py - removed percentage message kind.
+sim_obstacle_scene.py - fixed front-face geometry and live scene baseline measurements.
+sim_process_client.py - preemptive safety send, generation tracking, pending-wheel eviction.
+sim_robot_adapter.py - single wheel actuator API, stale-generation rejection, split stop status.
+sim_transport.py - centralized direct-unit command and authoritative stop service.
+sim_ui_controller.py - UI removal, async recording finalize, stop callback cancellation, baseline gate/status.
+sim_worker.py - safety queue before ordinary queue; direct-unit metadata/status.
+sim_worker_process.py - high-priority batch drain, immediate zero target/write, live scene baseline.
+sim_worker_runtime.py - safety stop before height changes; baseline/status propagation.
+task_separation_gui_e2e.py - removed retired control assumptions.
+tests/controller_test_utils.py - updated direct-unit fakes/status.
+tests/test_anti_freeze_workflows.py - direct-unit and safety workflow assertions.
+tests/test_ipc_protocol.py - updated accepted message kinds.
+tests/test_live_collider_world_bounds.py - exact rotated mesh-point regression.
+tests/test_no_task_regression.py - updated tab/task contract.
+tests/test_play_selected_playback.py - direct playback API expectations.
+tests/test_respawn_quick_action.py - non-playback respawn releases operation state.
+tests/test_servo_wheel_staging.py - direct actuator staging semantics.
+tests/test_sim_process_client.py - generation/preemption assertions.
+tests/test_sim_time_playback_service.py - direct Raw/Fast scheduling assertions.
+tests/test_sim_ui_controller.py - removed retired controller fields.
+tests/test_task_separation_refactor.py - updated seven-tab layout.
+tests/test_workflow_regressions.py - recording stop acknowledgment and direct-unit flow.
+
+ADDED
+config/fsm_recording_baseline.yaml - single authoritative actuator/environment/reference configuration.
+recording_baseline.py - stable identity/hash and live recording gate.
+recording_baseline_gui_e2e.py - one-window/one-worker visible Isaac A-K evidence runner.
+tests/test_recording_baseline_lock.py - automated A-K lock tests.
+
+DELETED
+continuous_speed_semantics_e2e.py - percentage-only E2E runner.
+critical_fix_validation.py - obsolete percentage validation wrapper.
+generate_continuous_speed_report.py - percentage-only report generator.
+playback_speed_progress_e2e.py - percentage progress E2E.
+record_play_equivalence_e2e.py - retired scaled-equivalence runner.
+servo_speed_invariant_e2e.py - retired percentage servo runner.
+speed_scale.py - retired percentage models/wrappers.
+tests/test_continuous_steps_speed_semantics.py - percentage-only tests.
+tests/test_critical_knee_fast_ui_speed_fix.py - percentage-specific regression.
+tests/test_playback_speed_progress_fix.py - percentage progress regression.
+tests/test_playback_speed_scale.py - scale tests.
+tests/test_speed_scale_negative_servo.py - scale tests.
+tests/test_wheel_speed_scale.py - scale tests.

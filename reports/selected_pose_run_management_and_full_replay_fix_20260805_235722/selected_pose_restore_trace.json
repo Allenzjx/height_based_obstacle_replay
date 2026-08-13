@@ -1,0 +1,1763 @@
+{
+  "final_operation": "IDLE",
+  "formal_checkpoint_audit": [
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 1,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 1,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 2,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 2,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 3,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 3,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 4,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 4,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 5,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 5,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 6,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 6,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 7,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 7,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 8,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 8,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 9,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 9,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 10,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 10,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 11,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 11,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_before",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 12,
+      "valid": true
+    },
+    {
+      "classification": "FULL_VALID",
+      "field": "sim_state_after",
+      "reason": "full Isaac pose checkpoint is valid",
+      "step_index": 12,
+      "valid": true
+    }
+  ],
+  "formal_checkpoint_counts": {
+    "FULL_VALID": 24
+  },
+  "live_tk_trace": [
+    {
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "event": "physical_mouse_press",
+      "relative_ms": 0.008600065484642982,
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "x_root": 1490,
+      "y_root": 501
+    },
+    {
+      "allowed": true,
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "event": "immediate_visible_feedback",
+      "feedback_ms": 0.1330000814050436,
+      "provisional": true,
+      "relative_ms": 45.023499988019466,
+      "selected_index": 2,
+      "text": "Play Selected Fast request received: Step 2\nRestoring saved end state from Step 1..."
+    },
+    {
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "event": "tk_button_command_entered",
+      "relative_ms": 355.03800003789365,
+      "template": "play_step {index} fast"
+    },
+    {
+      "allowed": true,
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "event": "immediate_visible_feedback",
+      "feedback_ms": 0.1330000814050436,
+      "reason": "",
+      "relative_ms": 399.67780001461506,
+      "selected_index": 2,
+      "text": "Play Selected Fast request received: Step 2\nRestoring saved end state from Step 1..."
+    },
+    {
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "controller_selected_step_index": 2,
+      "event": "selected_index_resolved",
+      "relative_ms": 399.7025000862777,
+      "selected_index": 2,
+      "tree_indices": [
+        2
+      ],
+      "ui_selected_step_index": 2
+    },
+    {
+      "allowed": true,
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "event": "playback_readiness_evaluated",
+      "reason": "",
+      "relative_ms": 399.7152999509126
+    },
+    {
+      "click_id": "813bb2b6fee8440093373768884cd675",
+      "command": "play_step 2 fast",
+      "event": "generated_command",
+      "relative_ms": 399.718499975279
+    }
+  ],
+  "pause_resume": {
+    "completed_after_resume": true,
+    "final_stop_reason": "complete",
+    "pause_requested": true,
+    "pause_requested_at": 1785994376.604197,
+    "profile": "fast",
+    "resume_requested": true,
+    "resume_requested_at": 1785994376.903444,
+    "worker_pause_seen": true
+  },
+  "profiles": [
+    {
+      "actual_motion": {
+        "captured_after_completion": true,
+        "events_sent": 8,
+        "first_command_applied": true,
+        "max_servo_change_from_restored_checkpoint_deg": 5.20968239319762,
+        "per_joint_change_deg": {
+          "front_left_hip": 5.20968239319762,
+          "front_left_knee": 0.04596302097282026,
+          "front_right_hip": 0.9650098135897307,
+          "front_right_knee": 0.8353808005903958,
+          "rear_left_hip": 0.22584703509564175,
+          "rear_left_knee": 0.21936171711786168,
+          "rear_right_hip": 0.9463546659860416,
+          "rear_right_knee": 0.4309888052896392
+        }
+      },
+      "controller_trace": [
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1886235.8963089,
+          "selected_step_index": 2
+        },
+        {
+          "allowed": true,
+          "event": "playback_availability_evaluated",
+          "monotonic_s": 1886235.8963089
+        },
+        {
+          "event": "restore_source_resolved",
+          "fallback_used": false,
+          "monotonic_s": 1886235.8963089,
+          "source_field": "sim_state_after",
+          "source_step_index": 1
+        },
+        {
+          "candidate_validations": {
+            "previous.sim_state_after": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            },
+            "selected.sim_state_before": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            }
+          },
+          "classification": "FULL_VALID",
+          "event": "full_pose_validated",
+          "monotonic_s": 1886235.8963089
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1886235.8963089
+        },
+        {
+          "event": "stop_wheels_sent",
+          "monotonic_s": 1886235.8965151
+        },
+        {
+          "event": "restore_sent",
+          "monotonic_s": 1886235.897233,
+          "request_id": "7ede39fae78a49bd846e9385d0885c22"
+        },
+        {
+          "event": "restore_applied_by_worker",
+          "monotonic_s": 1886236.099722,
+          "request_id": "7ede39fae78a49bd846e9385d0885c22",
+          "worker_session_id": "caaf64e6c86a4fdd9b5354eca24ddbe5",
+          "worker_sim_step": 1018
+        },
+        {
+          "event": "post_restore_physics_boundary",
+          "monotonic_s": 1886236.0997362,
+          "sim_step": 1018,
+          "sim_time": 8.483333333333492
+        },
+        {
+          "event": "restore_acknowledged",
+          "monotonic_s": 1886236.099737,
+          "request_id": "7ede39fae78a49bd846e9385d0885c22",
+          "restore_count": 1
+        },
+        {
+          "event": "state_requested",
+          "monotonic_s": 1886236.1000352,
+          "request_id": "1f4e72d2595b4dd281cf55515de138b2"
+        },
+        {
+          "detail": "{\"classification\": \"FULL_VALID\", \"root_orientation_error_deg\": 0.016810159710285176, \"root_position_error_m\": 0.00026230937820892887, \"servo_joint_position_max_error_deg\": 0.043666680024360895, \"wheel_joint_position_max_error_rad\": 0.008032865822315216}",
+          "event": "state_verified",
+          "monotonic_s": 1886236.2278191
+        },
+        {
+          "actuator_motion_change_count": 1,
+          "event": "selected_only_plan_built",
+          "event_count": 8,
+          "monotonic_s": 1886236.2413074,
+          "segment_count": 1,
+          "source_steps": [
+            2
+          ]
+        },
+        {
+          "event": "playback_start_requested",
+          "monotonic_s": 1886236.2413141
+        },
+        {
+          "dispatched": true,
+          "event": "playback_request_dispatched",
+          "monotonic_s": 1886236.2426955,
+          "plan_id": "ac47aea4b07a-a07a2e72cc21",
+          "request_id": "8eb1164dda874034b89454d957e33b69"
+        }
+      ],
+      "physical_click": {
+        "attempt": 1,
+        "button": "Play Selected Step",
+        "clicked_at": 1785994373.1215162,
+        "cursor_after_set": [
+          1174,
+          501
+        ],
+        "cursor_set": true,
+        "dpi_scale": [
+          1.0,
+          1.0
+        ],
+        "foreground_before_click": 13111136,
+        "hit_verified": true,
+        "hit_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+        "logical_desktop": [
+          2560,
+          1600
+        ],
+        "physical_desktop": [
+          2560,
+          1600
+        ],
+        "physical_x": 1174,
+        "physical_y": 501,
+        "profile": "raw",
+        "release_hit_verified": true,
+        "release_physical_x": 1174,
+        "release_physical_y": 501,
+        "release_x": 1174,
+        "release_y": 501,
+        "reported_x": 1174,
+        "reported_y": 501,
+        "retry": 0,
+        "root_hwnd": 13111136,
+        "x": 1174,
+        "y": 501
+      },
+      "profile": "raw",
+      "restore_source": {
+        "classification": "FULL_VALID",
+        "fallback_used": false,
+        "field": "sim_state_after",
+        "step_index": 1
+      },
+      "selected_only_plan": {
+        "event_count": 8,
+        "represented_step_indices": [
+          2
+        ],
+        "selected_playback": true,
+        "source_steps": [
+          2
+        ]
+      },
+      "selected_play_request_id": "7ede39fae78a49bd846e9385d0885c22",
+      "selected_step_index": 2,
+      "verification": {
+        "expected_state_summary": {
+          "actual_joint_state": {
+            "servos": {
+              "front_left_hip": {
+                "applied_torque_nm": 0.1444101333618164,
+                "computed_torque_nm": 0.1444101333618164,
+                "deg": 4.9886540565614235,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.08706843852996826,
+                "velocity_deg_s": -3.307958799006494,
+                "velocity_rad_s": -0.05773477256298065
+              },
+              "front_left_knee": {
+                "applied_torque_nm": -0.01617516204714775,
+                "computed_torque_nm": -0.01617516204714775,
+                "deg": 0.028181844098201934,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0004918659687973559,
+                "velocity_deg_s": -0.012682575728862684,
+                "velocity_rad_s": -0.00022135270410217345
+              },
+              "front_right_hip": {
+                "applied_torque_nm": 0.8674745559692383,
+                "computed_torque_nm": 0.8674745559692383,
+                "deg": 0.33825991596172467,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.005903749261051416,
+                "velocity_deg_s": -4.549256034423455,
+                "velocity_rad_s": -0.07939949631690979
+              },
+              "front_right_knee": {
+                "applied_torque_nm": 1.3800621032714844,
+                "computed_torque_nm": 1.3800621032714844,
+                "deg": -0.4006800809715456,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.0069931866601109505,
+                "velocity_deg_s": 4.255270605280943,
+                "velocity_rad_s": 0.07426848262548447
+              },
+              "rear_left_hip": {
+                "applied_torque_nm": 1.5400314331054688,
+                "computed_torque_nm": 1.5400314331054688,
+                "deg": -0.969993583847592,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.01692958176136017,
+                "velocity_deg_s": 6.455854249247856,
+                "velocity_rad_s": 0.11267591267824173
+              },
+              "rear_left_knee": {
+                "applied_torque_nm": -0.35129261016845703,
+                "computed_torque_nm": -0.35129261016845703,
+                "deg": 0.8903926916304123,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.015540284104645252,
+                "velocity_deg_s": -6.948551652574017,
+                "velocity_rad_s": -0.12127510458230972
+              },
+              "rear_right_hip": {
+                "applied_torque_nm": -2.700000047683716,
+                "computed_torque_nm": -3.3664069175720215,
+                "deg": 0.1019658597366039,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.001779639977030456,
+                "velocity_deg_s": -0.8974004123579925,
+                "velocity_rad_s": -0.01566259190440178
+              },
+              "rear_right_knee": {
+                "applied_torque_nm": 0.14296960830688477,
+                "computed_torque_nm": 0.14296960830688477,
+                "deg": 0.14504210859383554,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.002531462348997593,
+                "velocity_deg_s": 0.5244794474729952,
+                "velocity_rad_s": 0.00915389321744442
+              }
+            },
+            "wheels": {
+              "front_left_ankle": {
+                "rad_s": 0.0002792302402667701
+              },
+              "front_right_ankle": {
+                "rad_s": 0.016440892592072487
+              },
+              "rear_left_ankle": {
+                "rad_s": 0.014043868519365788
+              },
+              "rear_right_ankle": {
+                "rad_s": -0.019013259559869766
+              }
+            }
+          },
+          "adapter_sim_steps": 362,
+          "adapter_sim_time": 3.0166666666666586,
+          "capture_source": "SimRobotAdapter",
+          "command_state": {
+            "servos": {
+              "front_left_hip": 5.0,
+              "front_left_knee": 0.0,
+              "front_right_hip": 0.0,
+              "front_right_knee": 0.0,
+              "rear_left_hip": 0.0,
+              "rear_left_knee": 0.0,
+              "rear_right_hip": 0.0,
+              "rear_right_knee": 0.0
+            },
+            "wheels": {
+              "front_left_ankle": 0.0,
+              "front_right_ankle": 0.0,
+              "rear_left_ankle": 0.0,
+              "rear_right_ankle": 0.0
+            }
+          },
+          "joint_names": [
+            "front_left_hip",
+            "front_right_hip",
+            "rear_left_hip",
+            "rear_right_hip",
+            "front_left_knee",
+            "front_right_knee",
+            "rear_left_knee",
+            "rear_right_knee",
+            "front_left_ankle",
+            "front_right_ankle",
+            "rear_left_ankle",
+            "rear_right_ankle"
+          ],
+          "joint_pos": [
+            [
+              0.08706843852996826,
+              0.005903749261051416,
+              -0.01692958176136017,
+              0.001779639977030456,
+              0.0004918659687973559,
+              -0.0069931866601109505,
+              0.015540284104645252,
+              0.002531462348997593,
+              -0.02460932359099388,
+              0.02851637452840805,
+              0.09696096181869507,
+              -0.07363346219062805
+            ]
+          ],
+          "joint_vel": [
+            [
+              -0.05773477256298065,
+              -0.07939949631690979,
+              0.11267591267824173,
+              -0.01566259190440178,
+              -0.00022135270410217345,
+              0.07426848262548447,
+              -0.12127510458230972,
+              0.00915389321744442,
+              -0.0002792302402667701,
+              0.016440892592072487,
+              -0.014043868519365788,
+              -0.019013259559869766
+            ]
+          ],
+          "root_pose": [
+            [
+              -0.004775902256369591,
+              -0.00036041438579559326,
+              0.09694822132587433,
+              0.9999863505363464,
+              -0.0033046992029994726,
+              -0.003736601211130619,
+              0.0015546750510111451
+            ]
+          ],
+          "root_velocity": [
+            [
+              -0.0023828253615647554,
+              -0.007971285842359066,
+              0.014279757626354694,
+              0.04996839538216591,
+              -0.028177781030535698,
+              -0.0032314248383045197
+            ]
+          ]
+        },
+        "expected_validation": {
+          "classification": "FULL_VALID",
+          "invalid_fields": [],
+          "joint_count": 12,
+          "joint_reorder_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "missing_fields": [],
+          "reason": "full Isaac pose checkpoint is valid",
+          "source": "SimRobotAdapter",
+          "valid": true
+        },
+        "measured_state_summary": {
+          "actual_joint_state": {
+            "servos": {
+              "front_left_hip": {
+                "applied_torque_nm": 0.0971727967262268,
+                "computed_torque_nm": 0.0971727967262268,
+                "deg": 5.010701053428578,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.08745323121547699,
+                "velocity_deg_s": 0.6894074917527642,
+                "velocity_rad_s": 0.012032430619001389
+              },
+              "front_left_knee": {
+                "applied_torque_nm": 0.004140464588999748,
+                "computed_torque_nm": 0.004140464588999748,
+                "deg": 0.02800313526681759,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0004887469112873077,
+                "velocity_deg_s": -0.027867085102266077,
+                "velocity_rad_s": -0.00048637238796800375
+              },
+              "front_right_hip": {
+                "applied_torque_nm": 0.9385645389556885,
+                "computed_torque_nm": 0.9385645389556885,
+                "deg": 0.3425408704261624,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.005978466011583805,
+                "velocity_deg_s": -4.662797257204339,
+                "velocity_rad_s": -0.0813811644911766
+              },
+              "front_right_knee": {
+                "applied_torque_nm": 1.2514562606811523,
+                "computed_torque_nm": 1.2514562606811523,
+                "deg": -0.39851168267305165,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.006955340970307589,
+                "velocity_deg_s": 4.332757820754269,
+                "velocity_rad_s": 0.07562088966369629
+              },
+              "rear_left_hip": {
+                "applied_torque_nm": 1.410405158996582,
+                "computed_torque_nm": 1.410405158996582,
+                "deg": -0.9753195305746153,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.01702253706753254,
+                "velocity_deg_s": 6.6062315359962644,
+                "velocity_rad_s": 0.1153004914522171
+              },
+              "rear_left_knee": {
+                "applied_torque_nm": -0.048510074615478516,
+                "computed_torque_nm": -0.048510074615478516,
+                "deg": 0.8897733322109097,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.01552947424352169,
+                "velocity_deg_s": -7.233040557449273,
+                "velocity_rad_s": -0.12624037265777588
+              },
+              "rear_right_hip": {
+                "applied_torque_nm": -2.700000047683716,
+                "computed_torque_nm": -3.695214033126831,
+                "deg": 0.11009848060397345,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.001921580987982452,
+                "velocity_deg_s": -0.6650931922462824,
+                "velocity_rad_s": -0.011608066037297249
+              },
+              "rear_right_knee": {
+                "applied_torque_nm": -0.8180064558982849,
+                "computed_torque_nm": -0.8180064558982849,
+                "deg": 0.14773960642916745,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0025785425677895546,
+                "velocity_deg_s": 1.3497606394367636,
+                "velocity_rad_s": 0.023557767271995544
+              }
+            },
+            "wheels": {
+              "front_left_ankle": {
+                "rad_s": 0.00027231156127527356
+              },
+              "front_right_ankle": {
+                "rad_s": 0.015905551612377167
+              },
+              "rear_left_ankle": {
+                "rad_s": 0.011307883076369762
+              },
+              "rear_right_ankle": {
+                "rad_s": -0.03495672345161438
+              }
+            }
+          },
+          "adapter_sim_steps": 1018,
+          "adapter_sim_time": 8.483333333333492,
+          "capture_source": "SimRobotAdapter",
+          "command_state": {
+            "servos": {
+              "front_left_hip": 5.0,
+              "front_left_knee": 0.0,
+              "front_right_hip": 0.0,
+              "front_right_knee": 0.0,
+              "rear_left_hip": 0.0,
+              "rear_left_knee": 0.0,
+              "rear_right_hip": 0.0,
+              "rear_right_knee": 0.0
+            },
+            "wheels": {
+              "front_left_ankle": 0.0,
+              "front_right_ankle": 0.0,
+              "rear_left_ankle": 0.0,
+              "rear_right_ankle": 0.0
+            }
+          },
+          "joint_names": [
+            "front_left_hip",
+            "front_right_hip",
+            "rear_left_hip",
+            "rear_right_hip",
+            "front_left_knee",
+            "front_right_knee",
+            "rear_left_knee",
+            "rear_right_knee",
+            "front_left_ankle",
+            "front_right_ankle",
+            "rear_left_ankle",
+            "rear_right_ankle"
+          ],
+          "joint_pos": [
+            [
+              0.08745323121547699,
+              0.005978466011583805,
+              -0.01702253706753254,
+              0.001921580987982452,
+              0.0004887469112873077,
+              -0.006955340970307589,
+              0.01552947424352169,
+              0.0025785425677895546,
+              -0.024609655141830444,
+              0.027319466695189476,
+              0.09905821830034256,
+              -0.07436466217041016
+            ]
+          ],
+          "joint_vel": [
+            [
+              0.012032430619001389,
+              -0.0813811644911766,
+              0.1153004914522171,
+              -0.011608066037297249,
+              -0.00048637238796800375,
+              0.07562088966369629,
+              -0.12624037265777588,
+              0.023557767271995544,
+              -0.00027231156127527356,
+              0.015905551612377167,
+              -0.011307883076369762,
+              -0.03495672345161438
+            ]
+          ],
+          "root_pose": [
+            [
+              -0.004851417616009712,
+              -0.0003552064299583435,
+              0.09692312777042389,
+              0.9999863505363464,
+              -0.0033392873592674732,
+              -0.0036987420171499252,
+              0.0015569092938676476
+            ]
+          ],
+          "root_velocity": [
+            [
+              -0.0022794483229517937,
+              -0.008024738170206547,
+              0.014550687745213509,
+              0.05081754922866821,
+              -0.02872362919151783,
+              -0.0036593799013644457
+            ]
+          ]
+        },
+        "measured_validation": {
+          "classification": "FULL_VALID",
+          "invalid_fields": [],
+          "joint_count": 12,
+          "joint_reorder_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "missing_fields": [],
+          "reason": "full Isaac pose checkpoint is valid",
+          "source": "SimRobotAdapter",
+          "valid": true
+        },
+        "reason": "pose verified",
+        "request_id": "7ede39fae78a49bd846e9385d0885c22",
+        "restore_trace": [
+          {
+            "event": "articulation_reset_before_write",
+            "sim_step": 1010
+          },
+          {
+            "event": "root_pose_written",
+            "sim_step": 1010
+          },
+          {
+            "event": "root_velocity_written",
+            "sim_step": 1010
+          },
+          {
+            "event": "joint_state_written",
+            "sim_step": 1010
+          },
+          {
+            "event": "command_targets_applied",
+            "sim_step": 1010
+          },
+          {
+            "event": "safe_wheel_boundary_applied",
+            "sim_step": 1010
+          },
+          {
+            "event": "physics_boundary_completed",
+            "sim_step": 1018,
+            "sim_time": 8.483333333333492
+          }
+        ],
+        "root_orientation_error_deg": 0.005881852064843128,
+        "root_orientation_tolerance_deg": 0.5,
+        "root_position_error_m": 7.974571380785244e-05,
+        "root_position_tolerance_m": 0.005,
+        "servo_joint_position_max_error_deg": 0.02204699686715491,
+        "servo_joint_position_tolerance_deg": 1.0,
+        "verified": true,
+        "wheel_joint_position_max_error_rad": 0.0020972564816474915,
+        "wheel_joint_position_tolerance_rad": 0.05,
+        "worker_session_id": "caaf64e6c86a4fdd9b5354eca24ddbe5",
+        "worker_sim_step": 1018,
+        "worker_sim_time": 8.483333333333492
+      },
+      "worker_acceptance_and_completion": {
+        "active": false,
+        "event_count": 8,
+        "events_sent": 8,
+        "first_command_applied": true,
+        "plan_id": "ac47aea4b07a-a07a2e72cc21",
+        "request_id": "8eb1164dda874034b89454d957e33b69",
+        "stop_reason": "complete"
+      },
+      "worker_restore_trace": [
+        {
+          "event": "articulation_reset_before_write",
+          "sim_step": 1010
+        },
+        {
+          "event": "root_pose_written",
+          "sim_step": 1010
+        },
+        {
+          "event": "root_velocity_written",
+          "sim_step": 1010
+        },
+        {
+          "event": "joint_state_written",
+          "sim_step": 1010
+        },
+        {
+          "event": "command_targets_applied",
+          "sim_step": 1010
+        },
+        {
+          "event": "safe_wheel_boundary_applied",
+          "sim_step": 1010
+        },
+        {
+          "event": "physics_boundary_completed",
+          "sim_step": 1018,
+          "sim_time": 8.483333333333492
+        }
+      ]
+    },
+    {
+      "actual_motion": {
+        "captured_after_completion": true,
+        "events_sent": 8,
+        "first_command_applied": true,
+        "max_servo_change_from_restored_checkpoint_deg": 4.758650851355829,
+        "per_joint_change_deg": {
+          "front_left_hip": 4.758650851355829,
+          "front_left_knee": 0.0357945368253241,
+          "front_right_hip": 0.8698107970206516,
+          "front_right_knee": 0.8945704728857858,
+          "rear_left_hip": 0.040154361965387575,
+          "rear_left_knee": 0.35483238280698215,
+          "rear_right_hip": 0.7622745578301453,
+          "rear_right_knee": 0.32386921430861026
+        }
+      },
+      "controller_trace": [
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1886239.2500756,
+          "selected_step_index": 2
+        },
+        {
+          "allowed": true,
+          "event": "playback_availability_evaluated",
+          "monotonic_s": 1886239.2500756
+        },
+        {
+          "event": "restore_source_resolved",
+          "fallback_used": false,
+          "monotonic_s": 1886239.2500756,
+          "source_field": "sim_state_after",
+          "source_step_index": 1
+        },
+        {
+          "candidate_validations": {
+            "previous.sim_state_after": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            },
+            "selected.sim_state_before": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            }
+          },
+          "classification": "FULL_VALID",
+          "event": "full_pose_validated",
+          "monotonic_s": 1886239.2500756
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1886239.2500756
+        },
+        {
+          "event": "stop_wheels_sent",
+          "monotonic_s": 1886239.2503041
+        },
+        {
+          "event": "restore_sent",
+          "monotonic_s": 1886239.2510152,
+          "request_id": "029c5f945e4b4c4d9099b31d47bf660f"
+        },
+        {
+          "event": "restore_applied_by_worker",
+          "monotonic_s": 1886239.4194391,
+          "request_id": "029c5f945e4b4c4d9099b31d47bf660f",
+          "worker_session_id": "caaf64e6c86a4fdd9b5354eca24ddbe5",
+          "worker_sim_step": 1546
+        },
+        {
+          "event": "post_restore_physics_boundary",
+          "monotonic_s": 1886239.4194529,
+          "sim_step": 1546,
+          "sim_time": 12.883333333333242
+        },
+        {
+          "event": "restore_acknowledged",
+          "monotonic_s": 1886239.4194537,
+          "request_id": "029c5f945e4b4c4d9099b31d47bf660f",
+          "restore_count": 2
+        },
+        {
+          "event": "state_requested",
+          "monotonic_s": 1886239.4199974,
+          "request_id": "5e288423c5f0413f9ac4580a7777b33c"
+        },
+        {
+          "detail": "{\"classification\": \"FULL_VALID\", \"root_orientation_error_deg\": 0.01326782596979143, \"root_position_error_m\": 0.00020271227360784552, \"servo_joint_position_max_error_deg\": 0.04045563734080865, \"wheel_joint_position_max_error_rad\": 0.00609327107667923}",
+          "event": "state_verified",
+          "monotonic_s": 1886239.5419299
+        },
+        {
+          "actuator_motion_change_count": 1,
+          "event": "selected_only_plan_built",
+          "event_count": 8,
+          "monotonic_s": 1886239.5488813,
+          "segment_count": 1,
+          "source_steps": [
+            2
+          ]
+        },
+        {
+          "event": "playback_start_requested",
+          "monotonic_s": 1886239.5488875
+        },
+        {
+          "dispatched": true,
+          "event": "playback_request_dispatched",
+          "monotonic_s": 1886239.549776,
+          "plan_id": "93a6ff757a8c-b25229b10c41",
+          "request_id": "047488a2e172433fafcee0e1b59bcbb7"
+        }
+      ],
+      "physical_click": {
+        "attempt": 2,
+        "button": "Play Selected Fast",
+        "clicked_at": 1785994376.3772247,
+        "cursor_after_set": [
+          1490,
+          501
+        ],
+        "cursor_set": true,
+        "dpi_scale": [
+          1.0,
+          1.0
+        ],
+        "foreground_before_click": 13111136,
+        "hit_verified": true,
+        "hit_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+        "logical_desktop": [
+          2560,
+          1600
+        ],
+        "physical_desktop": [
+          2560,
+          1600
+        ],
+        "physical_x": 1490,
+        "physical_y": 501,
+        "profile": "fast",
+        "release_hit_verified": true,
+        "release_physical_x": 1490,
+        "release_physical_y": 501,
+        "release_x": 1490,
+        "release_y": 501,
+        "reported_x": 1490,
+        "reported_y": 501,
+        "retry": 0,
+        "root_hwnd": 13111136,
+        "x": 1490,
+        "y": 501
+      },
+      "profile": "fast",
+      "restore_source": {
+        "classification": "FULL_VALID",
+        "fallback_used": false,
+        "field": "sim_state_after",
+        "step_index": 1
+      },
+      "selected_only_plan": {
+        "event_count": 8,
+        "represented_step_indices": [
+          2
+        ],
+        "selected_playback": true,
+        "source_steps": [
+          2
+        ]
+      },
+      "selected_play_request_id": "029c5f945e4b4c4d9099b31d47bf660f",
+      "selected_step_index": 2,
+      "verification": {
+        "expected_state_summary": {
+          "actual_joint_state": {
+            "servos": {
+              "front_left_hip": {
+                "applied_torque_nm": 0.1444101333618164,
+                "computed_torque_nm": 0.1444101333618164,
+                "deg": 4.9886540565614235,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.08706843852996826,
+                "velocity_deg_s": -3.307958799006494,
+                "velocity_rad_s": -0.05773477256298065
+              },
+              "front_left_knee": {
+                "applied_torque_nm": -0.01617516204714775,
+                "computed_torque_nm": -0.01617516204714775,
+                "deg": 0.028181844098201934,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0004918659687973559,
+                "velocity_deg_s": -0.012682575728862684,
+                "velocity_rad_s": -0.00022135270410217345
+              },
+              "front_right_hip": {
+                "applied_torque_nm": 0.8674745559692383,
+                "computed_torque_nm": 0.8674745559692383,
+                "deg": 0.33825991596172467,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.005903749261051416,
+                "velocity_deg_s": -4.549256034423455,
+                "velocity_rad_s": -0.07939949631690979
+              },
+              "front_right_knee": {
+                "applied_torque_nm": 1.3800621032714844,
+                "computed_torque_nm": 1.3800621032714844,
+                "deg": -0.4006800809715456,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.0069931866601109505,
+                "velocity_deg_s": 4.255270605280943,
+                "velocity_rad_s": 0.07426848262548447
+              },
+              "rear_left_hip": {
+                "applied_torque_nm": 1.5400314331054688,
+                "computed_torque_nm": 1.5400314331054688,
+                "deg": -0.969993583847592,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.01692958176136017,
+                "velocity_deg_s": 6.455854249247856,
+                "velocity_rad_s": 0.11267591267824173
+              },
+              "rear_left_knee": {
+                "applied_torque_nm": -0.35129261016845703,
+                "computed_torque_nm": -0.35129261016845703,
+                "deg": 0.8903926916304123,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.015540284104645252,
+                "velocity_deg_s": -6.948551652574017,
+                "velocity_rad_s": -0.12127510458230972
+              },
+              "rear_right_hip": {
+                "applied_torque_nm": -2.700000047683716,
+                "computed_torque_nm": -3.3664069175720215,
+                "deg": 0.1019658597366039,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.001779639977030456,
+                "velocity_deg_s": -0.8974004123579925,
+                "velocity_rad_s": -0.01566259190440178
+              },
+              "rear_right_knee": {
+                "applied_torque_nm": 0.14296960830688477,
+                "computed_torque_nm": 0.14296960830688477,
+                "deg": 0.14504210859383554,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.002531462348997593,
+                "velocity_deg_s": 0.5244794474729952,
+                "velocity_rad_s": 0.00915389321744442
+              }
+            },
+            "wheels": {
+              "front_left_ankle": {
+                "rad_s": 0.0002792302402667701
+              },
+              "front_right_ankle": {
+                "rad_s": 0.016440892592072487
+              },
+              "rear_left_ankle": {
+                "rad_s": 0.014043868519365788
+              },
+              "rear_right_ankle": {
+                "rad_s": -0.019013259559869766
+              }
+            }
+          },
+          "adapter_sim_steps": 362,
+          "adapter_sim_time": 3.0166666666666586,
+          "capture_source": "SimRobotAdapter",
+          "command_state": {
+            "servos": {
+              "front_left_hip": 5.0,
+              "front_left_knee": 0.0,
+              "front_right_hip": 0.0,
+              "front_right_knee": 0.0,
+              "rear_left_hip": 0.0,
+              "rear_left_knee": 0.0,
+              "rear_right_hip": 0.0,
+              "rear_right_knee": 0.0
+            },
+            "wheels": {
+              "front_left_ankle": 0.0,
+              "front_right_ankle": 0.0,
+              "rear_left_ankle": 0.0,
+              "rear_right_ankle": 0.0
+            }
+          },
+          "joint_names": [
+            "front_left_hip",
+            "front_right_hip",
+            "rear_left_hip",
+            "rear_right_hip",
+            "front_left_knee",
+            "front_right_knee",
+            "rear_left_knee",
+            "rear_right_knee",
+            "front_left_ankle",
+            "front_right_ankle",
+            "rear_left_ankle",
+            "rear_right_ankle"
+          ],
+          "joint_pos": [
+            [
+              0.08706843852996826,
+              0.005903749261051416,
+              -0.01692958176136017,
+              0.001779639977030456,
+              0.0004918659687973559,
+              -0.0069931866601109505,
+              0.015540284104645252,
+              0.002531462348997593,
+              -0.02460932359099388,
+              0.02851637452840805,
+              0.09696096181869507,
+              -0.07363346219062805
+            ]
+          ],
+          "joint_vel": [
+            [
+              -0.05773477256298065,
+              -0.07939949631690979,
+              0.11267591267824173,
+              -0.01566259190440178,
+              -0.00022135270410217345,
+              0.07426848262548447,
+              -0.12127510458230972,
+              0.00915389321744442,
+              -0.0002792302402667701,
+              0.016440892592072487,
+              -0.014043868519365788,
+              -0.019013259559869766
+            ]
+          ],
+          "root_pose": [
+            [
+              -0.004775902256369591,
+              -0.00036041438579559326,
+              0.09694822132587433,
+              0.9999863505363464,
+              -0.0033046992029994726,
+              -0.003736601211130619,
+              0.0015546750510111451
+            ]
+          ],
+          "root_velocity": [
+            [
+              -0.0023828253615647554,
+              -0.007971285842359066,
+              0.014279757626354694,
+              0.04996839538216591,
+              -0.028177781030535698,
+              -0.0032314248383045197
+            ]
+          ]
+        },
+        "expected_validation": {
+          "classification": "FULL_VALID",
+          "invalid_fields": [],
+          "joint_count": 12,
+          "joint_reorder_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "missing_fields": [],
+          "reason": "full Isaac pose checkpoint is valid",
+          "source": "SimRobotAdapter",
+          "valid": true
+        },
+        "measured_state_summary": {
+          "actual_joint_state": {
+            "servos": {
+              "front_left_hip": {
+                "applied_torque_nm": 0.0971727967262268,
+                "computed_torque_nm": 0.0971727967262268,
+                "deg": 5.010701053428578,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.08745323121547699,
+                "velocity_deg_s": 0.6894074917527642,
+                "velocity_rad_s": 0.012032430619001389
+              },
+              "front_left_knee": {
+                "applied_torque_nm": 0.004140464588999748,
+                "computed_torque_nm": 0.004140464588999748,
+                "deg": 0.02800313526681759,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0004887469112873077,
+                "velocity_deg_s": -0.027867085102266077,
+                "velocity_rad_s": -0.00048637238796800375
+              },
+              "front_right_hip": {
+                "applied_torque_nm": 0.9385645389556885,
+                "computed_torque_nm": 0.9385645389556885,
+                "deg": 0.3425408704261624,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.005978466011583805,
+                "velocity_deg_s": -4.662797257204339,
+                "velocity_rad_s": -0.0813811644911766
+              },
+              "front_right_knee": {
+                "applied_torque_nm": 1.2514562606811523,
+                "computed_torque_nm": 1.2514562606811523,
+                "deg": -0.39851168267305165,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.006955340970307589,
+                "velocity_deg_s": 4.332757820754269,
+                "velocity_rad_s": 0.07562088966369629
+              },
+              "rear_left_hip": {
+                "applied_torque_nm": 1.410405158996582,
+                "computed_torque_nm": 1.410405158996582,
+                "deg": -0.9753195305746153,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": -0.01702253706753254,
+                "velocity_deg_s": 6.6062315359962644,
+                "velocity_rad_s": 0.1153004914522171
+              },
+              "rear_left_knee": {
+                "applied_torque_nm": -0.048510074615478516,
+                "computed_torque_nm": -0.048510074615478516,
+                "deg": 0.8897733322109097,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.01552947424352169,
+                "velocity_deg_s": -7.233040557449273,
+                "velocity_rad_s": -0.12624037265777588
+              },
+              "rear_right_hip": {
+                "applied_torque_nm": -2.700000047683716,
+                "computed_torque_nm": -3.695214033126831,
+                "deg": 0.11009848060397345,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.001921580987982452,
+                "velocity_deg_s": -0.6650931922462824,
+                "velocity_rad_s": -0.011608066037297249
+              },
+              "rear_right_knee": {
+                "applied_torque_nm": -0.8180064558982849,
+                "computed_torque_nm": -0.8180064558982849,
+                "deg": 0.14773960642916745,
+                "effort_limit_nm": 2.700000047683716,
+                "rad": 0.0025785425677895546,
+                "velocity_deg_s": 1.3497606394367636,
+                "velocity_rad_s": 0.023557767271995544
+              }
+            },
+            "wheels": {
+              "front_left_ankle": {
+                "rad_s": 0.00027231156127527356
+              },
+              "front_right_ankle": {
+                "rad_s": 0.015905551612377167
+              },
+              "rear_left_ankle": {
+                "rad_s": 0.011307883076369762
+              },
+              "rear_right_ankle": {
+                "rad_s": -0.03495672345161438
+              }
+            }
+          },
+          "adapter_sim_steps": 1546,
+          "adapter_sim_time": 12.883333333333242,
+          "capture_source": "SimRobotAdapter",
+          "command_state": {
+            "servos": {
+              "front_left_hip": 5.0,
+              "front_left_knee": 0.0,
+              "front_right_hip": 0.0,
+              "front_right_knee": 0.0,
+              "rear_left_hip": 0.0,
+              "rear_left_knee": 0.0,
+              "rear_right_hip": 0.0,
+              "rear_right_knee": 0.0
+            },
+            "wheels": {
+              "front_left_ankle": 0.0,
+              "front_right_ankle": 0.0,
+              "rear_left_ankle": 0.0,
+              "rear_right_ankle": 0.0
+            }
+          },
+          "joint_names": [
+            "front_left_hip",
+            "front_right_hip",
+            "rear_left_hip",
+            "rear_right_hip",
+            "front_left_knee",
+            "front_right_knee",
+            "rear_left_knee",
+            "rear_right_knee",
+            "front_left_ankle",
+            "front_right_ankle",
+            "rear_left_ankle",
+            "rear_right_ankle"
+          ],
+          "joint_pos": [
+            [
+              0.08745323121547699,
+              0.005978466011583805,
+              -0.01702253706753254,
+              0.001921580987982452,
+              0.0004887469112873077,
+              -0.006955340970307589,
+              0.01552947424352169,
+              0.0025785425677895546,
+              -0.024609655141830444,
+              0.027319466695189476,
+              0.09905821830034256,
+              -0.07436466217041016
+            ]
+          ],
+          "joint_vel": [
+            [
+              0.012032430619001389,
+              -0.0813811644911766,
+              0.1153004914522171,
+              -0.011608066037297249,
+              -0.00048637238796800375,
+              0.07562088966369629,
+              -0.12624037265777588,
+              0.023557767271995544,
+              -0.00027231156127527356,
+              0.015905551612377167,
+              -0.011307883076369762,
+              -0.03495672345161438
+            ]
+          ],
+          "root_pose": [
+            [
+              -0.004851417616009712,
+              -0.0003552064299583435,
+              0.09692312777042389,
+              0.9999863505363464,
+              -0.0033392873592674732,
+              -0.0036987420171499252,
+              0.0015569092938676476
+            ]
+          ],
+          "root_velocity": [
+            [
+              -0.0022794483229517937,
+              -0.008024738170206547,
+              0.014550687745213509,
+              0.05081754922866821,
+              -0.02872362919151783,
+              -0.0036593799013644457
+            ]
+          ]
+        },
+        "measured_validation": {
+          "classification": "FULL_VALID",
+          "invalid_fields": [],
+          "joint_count": 12,
+          "joint_reorder_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "missing_fields": [],
+          "reason": "full Isaac pose checkpoint is valid",
+          "source": "SimRobotAdapter",
+          "valid": true
+        },
+        "reason": "pose verified",
+        "request_id": "029c5f945e4b4c4d9099b31d47bf660f",
+        "restore_trace": [
+          {
+            "event": "articulation_reset_before_write",
+            "sim_step": 1538
+          },
+          {
+            "event": "root_pose_written",
+            "sim_step": 1538
+          },
+          {
+            "event": "root_velocity_written",
+            "sim_step": 1538
+          },
+          {
+            "event": "joint_state_written",
+            "sim_step": 1538
+          },
+          {
+            "event": "command_targets_applied",
+            "sim_step": 1538
+          },
+          {
+            "event": "safe_wheel_boundary_applied",
+            "sim_step": 1538
+          },
+          {
+            "event": "physics_boundary_completed",
+            "sim_step": 1546,
+            "sim_time": 12.883333333333242
+          }
+        ],
+        "root_orientation_error_deg": 0.005881852064843128,
+        "root_orientation_tolerance_deg": 0.5,
+        "root_position_error_m": 7.974571380785244e-05,
+        "root_position_tolerance_m": 0.005,
+        "servo_joint_position_max_error_deg": 0.02204699686715491,
+        "servo_joint_position_tolerance_deg": 1.0,
+        "verified": true,
+        "wheel_joint_position_max_error_rad": 0.0020972564816474915,
+        "wheel_joint_position_tolerance_rad": 0.05,
+        "worker_session_id": "caaf64e6c86a4fdd9b5354eca24ddbe5",
+        "worker_sim_step": 1546,
+        "worker_sim_time": 12.883333333333242
+      },
+      "worker_acceptance_and_completion": {
+        "active": false,
+        "event_count": 8,
+        "events_sent": 8,
+        "first_command_applied": true,
+        "plan_id": "93a6ff757a8c-b25229b10c41",
+        "request_id": "047488a2e172433fafcee0e1b59bcbb7",
+        "stop_reason": "complete"
+      },
+      "worker_restore_trace": [
+        {
+          "event": "articulation_reset_before_write",
+          "sim_step": 1538
+        },
+        {
+          "event": "root_pose_written",
+          "sim_step": 1538
+        },
+        {
+          "event": "root_velocity_written",
+          "sim_step": 1538
+        },
+        {
+          "event": "joint_state_written",
+          "sim_step": 1538
+        },
+        {
+          "event": "command_targets_applied",
+          "sim_step": 1538
+        },
+        {
+          "event": "safe_wheel_boundary_applied",
+          "sim_step": 1538
+        },
+        {
+          "event": "physics_boundary_completed",
+          "sim_step": 1546,
+          "sim_time": 12.883333333333242
+        }
+      ]
+    }
+  ],
+  "result": "PASS",
+  "stop_during_restore": {
+    "cancelled": true,
+    "operation": "IDLE",
+    "pending_cleared": true,
+    "request_id": "2e0a9484b27e4949a834860a61fe9e4e",
+    "result": {
+      "cancelled": true,
+      "request_id": "2e0a9484b27e4949a834860a61fe9e4e",
+      "restore_source_field": "sim_state_after",
+      "restore_source_step_index": 1,
+      "selected_step_index": 2,
+      "started": false,
+      "trace": [
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1886240.5313124,
+          "selected_step_index": 2
+        },
+        {
+          "allowed": true,
+          "event": "playback_availability_evaluated",
+          "monotonic_s": 1886240.5313124
+        },
+        {
+          "event": "restore_source_resolved",
+          "fallback_used": false,
+          "monotonic_s": 1886240.5313124,
+          "source_field": "sim_state_after",
+          "source_step_index": 1
+        },
+        {
+          "candidate_validations": {
+            "previous.sim_state_after": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            },
+            "selected.sim_state_before": {
+              "classification": "FULL_VALID",
+              "invalid_fields": [],
+              "joint_count": 12,
+              "joint_reorder_indices": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11
+              ],
+              "missing_fields": [],
+              "reason": "full Isaac pose checkpoint is valid",
+              "source": "SimRobotAdapter",
+              "valid": true
+            }
+          },
+          "classification": "FULL_VALID",
+          "event": "full_pose_validated",
+          "monotonic_s": 1886240.5313124
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1886240.5313124
+        },
+        {
+          "event": "stop_wheels_sent",
+          "monotonic_s": 1886240.5315008
+        },
+        {
+          "event": "restore_sent",
+          "monotonic_s": 1886240.5322431,
+          "request_id": "2e0a9484b27e4949a834860a61fe9e4e"
+        },
+        {
+          "event": "restore_cancelled",
+          "monotonic_s": 1886240.5925758,
+          "reason": "Stop Play clicked during restore"
+        }
+      ]
+    },
+    "worker_active": false
+  },
+  "worker_reference_cleared": true
+}

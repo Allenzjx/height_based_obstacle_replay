@@ -1,0 +1,586 @@
+[
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_05cm\\accepted_steps.jsonl",
+    "before_sha256": "66BE488058660467810260CB42D86357736BEE2FF408D0741956C31DB30426F8",
+    "after_sha256": "66BE488058660467810260CB42D86357736BEE2FF408D0741956C31DB30426F8",
+    "before_length": 374808,
+    "after_length": 374808,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_10cm\\accepted_steps.jsonl",
+    "before_sha256": "1132B160E4E6E937E060285344D1AE3608B2F749FC28DCE24AAE26DEF5F005F5",
+    "after_sha256": "1132B160E4E6E937E060285344D1AE3608B2F749FC28DCE24AAE26DEF5F005F5",
+    "before_length": 181390,
+    "after_length": 181390,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_15cm\\accepted_steps.jsonl",
+    "before_sha256": "2D473E494900B824F117561584E4858E6445AE6B4EA020BD0DB17D0915A767C7",
+    "after_sha256": "2D473E494900B824F117561584E4858E6445AE6B4EA020BD0DB17D0915A767C7",
+    "before_length": 261992,
+    "after_length": 261992,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_20cm\\accepted_steps.jsonl",
+    "before_sha256": "504D6DED365F23D10BD3FE3FB4782CF7A7AFFB74B2CFF08F951CB27E49E80DCE",
+    "after_sha256": "504D6DED365F23D10BD3FE3FB4782CF7A7AFFB74B2CFF08F951CB27E49E80DCE",
+    "before_length": 146836,
+    "after_length": 146836,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_25cm\\accepted_steps.jsonl",
+    "before_sha256": "A403A42790D9DC253EA78832D4E02E211748DAF1E429874F934AB432E4F01894",
+    "after_sha256": "A403A42790D9DC253EA78832D4E02E211748DAF1E429874F934AB432E4F01894",
+    "before_length": 127424,
+    "after_length": 127424,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_25cm\\accepted_steps.jsonl.backup_20260803_161658_486389",
+    "before_sha256": "673D08730D82E07275401188AA240F6B588EEFA7AD1F4520644CF4D6025B7EFE",
+    "after_sha256": "673D08730D82E07275401188AA240F6B588EEFA7AD1F4520644CF4D6025B7EFE",
+    "before_length": 140645,
+    "after_length": 140645,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_30cm\\accepted_steps.jsonl",
+    "before_sha256": "94C3999FFAE8FB2C7364F7AF330F656B1A8ACBD06291A0E04871B3C43702D7D8",
+    "after_sha256": "94C3999FFAE8FB2C7364F7AF330F656B1A8ACBD06291A0E04871B3C43702D7D8",
+    "before_length": 139335,
+    "after_length": 139335,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_35cm\\accepted_steps.jsonl",
+    "before_sha256": "B485501817F7C5DCB1CEB2F15EAEBD6A699FFA5ADD1B2FEB08D0052ABD1F94C4",
+    "after_sha256": "B485501817F7C5DCB1CEB2F15EAEBD6A699FFA5ADD1B2FEB08D0052ABD1F94C4",
+    "before_length": 155162,
+    "after_length": 155162,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\height_40cm\\accepted_steps.jsonl",
+    "before_sha256": "B2778BE704913A73D78DC2C5BAE0F9433DE204A3112E7D668CA48CB8AE22519B",
+    "after_sha256": "B2778BE704913A73D78DC2C5BAE0F9433DE204A3112E7D668CA48CB8AE22519B",
+    "before_length": 176648,
+    "after_length": 176648,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\manifest.json",
+    "before_sha256": "0E23860E3E67C276D8E05B780E0A43E51F53CC774864371176ED1DC76D0D8F21",
+    "after_sha256": "0E23860E3E67C276D8E05B780E0A43E51F53CC774864371176ED1DC76D0D8F21",
+    "before_length": 3318,
+    "after_length": 3318,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233324_rev0001_00cm_conf0.85.json",
+    "before_sha256": "8475599A5454690037D64C648CC27F3A65AC23C687AB63C5A91660A407E0B1E1",
+    "after_sha256": "8475599A5454690037D64C648CC27F3A65AC23C687AB63C5A91660A407E0B1E1",
+    "before_length": 308,
+    "after_length": 308,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233324_rev0001_00cm_conf0.85.ppm",
+    "before_sha256": "A34934128CC6E3075FA402A0C5389CD07772055AF4CAA99755E54BD960F5F698",
+    "after_sha256": "A34934128CC6E3075FA402A0C5389CD07772055AF4CAA99755E54BD960F5F698",
+    "before_length": 610575,
+    "after_length": 610575,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233344_rev0002_05cm_conf0.98.json",
+    "before_sha256": "16DEC281D9E6000E35105AF2165EFEA4BCFF702DED12C92ECA3AE0BA3383D027",
+    "after_sha256": "16DEC281D9E6000E35105AF2165EFEA4BCFF702DED12C92ECA3AE0BA3383D027",
+    "before_length": 374,
+    "after_length": 374,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260713_233344_rev0002_05cm_conf0.98.ppm",
+    "before_sha256": "A27D306A954E7B507651843986173E13D97092254CAE1F1D047E3424D6AA4837",
+    "after_sha256": "A27D306A954E7B507651843986173E13D97092254CAE1F1D047E3424D6AA4837",
+    "before_length": 610575,
+    "after_length": 610575,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_depth.pgm",
+    "before_sha256": "E01B78626F37EC436E4991AB0FEC908E771472A4B9CECC17431D14039534826D",
+    "after_sha256": "E01B78626F37EC436E4991AB0FEC908E771472A4B9CECC17431D14039534826D",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_diagnostic.ppm",
+    "before_sha256": "EE1BAF6E735E1A582C7AF06DD75C113BEF22C928EE1053EA62057E80BC8BA00D",
+    "after_sha256": "EE1BAF6E735E1A582C7AF06DD75C113BEF22C928EE1053EA62057E80BC8BA00D",
+    "before_length": 915856,
+    "after_length": 915856,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_obstacle_mask.pgm",
+    "before_sha256": "1DA4FD261339E9A3833526CC387434A34A875DB8F3F2516A8FCD82323F9C3551",
+    "after_sha256": "1DA4FD261339E9A3833526CC387434A34A875DB8F3F2516A8FCD82323F9C3551",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_rgb.ppm",
+    "before_sha256": "4E21DA3FBBF7DB51B758B189BA735194C6CDD6E64C1B06AA7F02CB9390AA70E6",
+    "after_sha256": "4E21DA3FBBF7DB51B758B189BA735194C6CDD6E64C1B06AA7F02CB9390AA70E6",
+    "before_length": 305295,
+    "after_length": 305295,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_roi_mask.pgm",
+    "before_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "after_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.98_top_plane_mask.pgm",
+    "before_sha256": "7CEDDCB9C5A5DBA0EE033A5A31249D362584DB47A3F56E03530DE5C92E21A7C0",
+    "after_sha256": "7CEDDCB9C5A5DBA0EE033A5A31249D362584DB47A3F56E03530DE5C92E21A7C0",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260714_005021_frame00378_05cm_conf0.json",
+    "before_sha256": "1A2FFE50AE10159058A5BD67BFA806D344AC5EC84F4ED369AE7661337C396B2C",
+    "after_sha256": "1A2FFE50AE10159058A5BD67BFA806D344AC5EC84F4ED369AE7661337C396B2C",
+    "before_length": 4369,
+    "after_length": 4369,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_depth.pgm",
+    "before_sha256": "DB0D25DF8B56129586D985A0A62B4667E7671B26EAEDFC32E09128D7553DB61C",
+    "after_sha256": "DB0D25DF8B56129586D985A0A62B4667E7671B26EAEDFC32E09128D7553DB61C",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_diagnostic.ppm",
+    "before_sha256": "6D19951A6F23612B073C607FD13C17A1A5ACB57C38290C8EC406E7E1D32FFC5E",
+    "after_sha256": "6D19951A6F23612B073C607FD13C17A1A5ACB57C38290C8EC406E7E1D32FFC5E",
+    "before_length": 915856,
+    "after_length": 915856,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_obstacle_mask.pgm",
+    "before_sha256": "D2F6B3A452B7946276ECE2030D8BA889F8A85B2ABFB37F04870C03B5BA3882DE",
+    "after_sha256": "D2F6B3A452B7946276ECE2030D8BA889F8A85B2ABFB37F04870C03B5BA3882DE",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_rgb.ppm",
+    "before_sha256": "0AF3E8AC30BA37FF90A3D55E7C7559C107B66194EA60435B849783FFD1EAFD79",
+    "after_sha256": "0AF3E8AC30BA37FF90A3D55E7C7559C107B66194EA60435B849783FFD1EAFD79",
+    "before_length": 305295,
+    "after_length": 305295,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_roi_mask.pgm",
+    "before_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "after_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_top_plane_mask.pgm",
+    "before_sha256": "695DB47445A76AF5C1A475E844403F1783695D877844E4058852AED5E832ED35",
+    "after_sha256": "695DB47445A76AF5C1A475E844403F1783695D877844E4058852AED5E832ED35",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.json",
+    "before_sha256": "6A3D9F17E12B1B9F57C9FB0EE4230782D71C1D21841497E20D9BBF37488A99C9",
+    "after_sha256": "6A3D9F17E12B1B9F57C9FB0EE4230782D71C1D21841497E20D9BBF37488A99C9",
+    "before_length": 8347,
+    "after_length": 8347,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_depth.pgm",
+    "before_sha256": "D64E6D9F9AEDD837A7D1F242C93D3D5EC90D2EA167A8A3E4CFDF450FE4C0BDDE",
+    "after_sha256": "D64E6D9F9AEDD837A7D1F242C93D3D5EC90D2EA167A8A3E4CFDF450FE4C0BDDE",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_diagnostic.ppm",
+    "before_sha256": "41A7D2E098E876EC300905BE3C6C3D78923981EE3397621B891467DD33C7848A",
+    "after_sha256": "41A7D2E098E876EC300905BE3C6C3D78923981EE3397621B891467DD33C7848A",
+    "before_length": 915856,
+    "after_length": 915856,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_obstacle_mask.pgm",
+    "before_sha256": "D2F6B3A452B7946276ECE2030D8BA889F8A85B2ABFB37F04870C03B5BA3882DE",
+    "after_sha256": "D2F6B3A452B7946276ECE2030D8BA889F8A85B2ABFB37F04870C03B5BA3882DE",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_rgb.ppm",
+    "before_sha256": "BBC13576777BA6226377683B5933BE4F3D8731304BCC517A427FD65962ECB638",
+    "after_sha256": "BBC13576777BA6226377683B5933BE4F3D8731304BCC517A427FD65962ECB638",
+    "before_length": 305295,
+    "after_length": 305295,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_roi_mask.pgm",
+    "before_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "after_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.98_top_plane_mask.pgm",
+    "before_sha256": "AEBF2D269F64E31D2F938A6BDB64A13C7BD8272C03AF00B2E3BF2CCC23570C27",
+    "after_sha256": "AEBF2D269F64E31D2F938A6BDB64A13C7BD8272C03AF00B2E3BF2CCC23570C27",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_023319_frame00071_05cm_conf0.json",
+    "before_sha256": "FBBB601DFF4B9731FCCE089691BD15FB9AF98DE5B8F3CCDFE426BD38EFA5DDF6",
+    "after_sha256": "FBBB601DFF4B9731FCCE089691BD15FB9AF98DE5B8F3CCDFE426BD38EFA5DDF6",
+    "before_length": 8371,
+    "after_length": 8371,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_depth.pgm",
+    "before_sha256": "27B7E191C2F0581AB4545E1A4A077A5BCD0F9EE9837487B1293BEBAD9B9852A4",
+    "after_sha256": "27B7E191C2F0581AB4545E1A4A077A5BCD0F9EE9837487B1293BEBAD9B9852A4",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_diagnostic.ppm",
+    "before_sha256": "62F4ED9A5B3AF68C2F7C2250A82E1F7B865D77CF940515566F9CE946972576D6",
+    "after_sha256": "62F4ED9A5B3AF68C2F7C2250A82E1F7B865D77CF940515566F9CE946972576D6",
+    "before_length": 915856,
+    "after_length": 915856,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_obstacle_mask.pgm",
+    "before_sha256": "ED0740013EAC29D03C0774FDD2423B7CBEF4BBCE016B675B5474BB5CF8221FD2",
+    "after_sha256": "ED0740013EAC29D03C0774FDD2423B7CBEF4BBCE016B675B5474BB5CF8221FD2",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_rgb.ppm",
+    "before_sha256": "5978F62BF82B0A4CD053237EEA693D83F2E8F9561EC0BE6150D50EB5087A851E",
+    "after_sha256": "5978F62BF82B0A4CD053237EEA693D83F2E8F9561EC0BE6150D50EB5087A851E",
+    "before_length": 305295,
+    "after_length": 305295,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_roi_mask.pgm",
+    "before_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "after_sha256": "D5BA9C6000FB0AF37793181B9ECD6FA58BA45D0DDBB719EDDCFFB1A54506896F",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_top_plane_mask.pgm",
+    "before_sha256": "0AB4FCC3D7155D765A73E1C00202BFDA82DCA7B9C1191201A90916775B44932F",
+    "after_sha256": "0AB4FCC3D7155D765A73E1C00202BFDA82DCA7B9C1191201A90916775B44932F",
+    "before_length": 101775,
+    "after_length": 101775,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.json",
+    "before_sha256": "AEE887FE9C50E3AC8A0BA15AF929D91A1E66C3BD047EB6A967B24C161ED8A742",
+    "after_sha256": "AEE887FE9C50E3AC8A0BA15AF929D91A1E66C3BD047EB6A967B24C161ED8A742",
+    "before_length": 8209,
+    "after_length": 8209,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\baseline_real_gui_20260716_004600.json",
+    "before_sha256": "7861810A523F7526DF7D96DB3385FE3432A36FC438883C927A47B53209389386",
+    "after_sha256": "7861810A523F7526DF7D96DB3385FE3432A36FC438883C927A47B53209389386",
+    "before_length": 23823,
+    "after_length": 23823,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\camera_counterfactual_after.json",
+    "before_sha256": "945A8CAC1EAD14A01866CDB53393A34EB378AFEF8ADC6D2901234E64A07C2E5C",
+    "after_sha256": "945A8CAC1EAD14A01866CDB53393A34EB378AFEF8ADC6D2901234E64A07C2E5C",
+    "before_length": 6561,
+    "after_length": 6561,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after.json",
+    "before_sha256": "7950EBC0A66B83D322BB640B7F60DAA743B8594DDF7FF017D9F7ED04E80EDCDE",
+    "after_sha256": "7950EBC0A66B83D322BB640B7F60DAA743B8594DDF7FF017D9F7ED04E80EDCDE",
+    "before_length": 22043906,
+    "after_length": 22043906,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry.json",
+    "before_sha256": "1AA398874FF7919FC05CBD66147C03CC4C30AEC506292FD6E19C01B476EB7FBB",
+    "after_sha256": "1AA398874FF7919FC05CBD66147C03CC4C30AEC506292FD6E19C01B476EB7FBB",
+    "before_length": 45767595,
+    "after_length": 45767595,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry2.json",
+    "before_sha256": "09E1447328DED8697D5BC8D7E5EA6DCBAF764ACFE7E4A4C5E810514FE8C3A03F",
+    "after_sha256": "09E1447328DED8697D5BC8D7E5EA6DCBAF764ACFE7E4A4C5E810514FE8C3A03F",
+    "before_length": 104443882,
+    "after_length": 104443882,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry3.json",
+    "before_sha256": "A0A91303A00D09E5B2A4D53E482A50CC1CBF6122DF196ED81A062B789A613428",
+    "after_sha256": "A0A91303A00D09E5B2A4D53E482A50CC1CBF6122DF196ED81A062B789A613428",
+    "before_length": 75101393,
+    "after_length": 75101393,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_5cm_after_retry4.json",
+    "before_sha256": "56BAD4B211B8F6CEC6FAF53014654D8395F056B3EEA466BE23ABD9BDD4E42897",
+    "after_sha256": "56BAD4B211B8F6CEC6FAF53014654D8395F056B3EEA466BE23ABD9BDD4E42897",
+    "before_length": 110146752,
+    "after_length": 110146752,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after.json",
+    "before_sha256": "548F22C7CCA69DCE0652A1ABEA20F3E641643E153C20C1D688E5570CF5C441FC",
+    "after_sha256": "548F22C7CCA69DCE0652A1ABEA20F3E641643E153C20C1D688E5570CF5C441FC",
+    "before_length": 115408468,
+    "after_length": 115408468,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_correction.json",
+    "before_sha256": "EE49E5E97905E71AA7F4B3D1F4443807551DC966F9E055DC6E444102A8DED488",
+    "after_sha256": "EE49E5E97905E71AA7F4B3D1F4443807551DC966F9E055DC6E444102A8DED488",
+    "before_length": 115547421,
+    "after_length": 115547421,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_final.json",
+    "before_sha256": "FD2B8F65A6EFB2ECD4D20B88D3F7A9E39A217FEE2D2729D0BC3F2892427FF938",
+    "after_sha256": "FD2B8F65A6EFB2ECD4D20B88D3F7A9E39A217FEE2D2729D0BC3F2892427FF938",
+    "before_length": 130706946,
+    "after_length": 130706946,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_after_safeplacement.json",
+    "before_sha256": "63FFD4D67ABAB7E33EC00FF128EDBE37BED28CADA0C11C15B6527EC21C3B60C3",
+    "after_sha256": "63FFD4D67ABAB7E33EC00FF128EDBE37BED28CADA0C11C15B6527EC21C3B60C3",
+    "before_length": 132693434,
+    "after_length": 132693434,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\e2e_before.json",
+    "before_sha256": "834383621B8AC75ECCC9AC05EA5A094E7F4CD160CF5B3F92CF3B83ADDBEBE820",
+    "after_sha256": "834383621B8AC75ECCC9AC05EA5A094E7F4CD160CF5B3F92CF3B83ADDBEBE820",
+    "before_length": 96443485,
+    "after_length": 96443485,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\worker_ground_structure_retry4.json",
+    "before_sha256": "DEC3556E88296BD165C52B5F4165DBE80531FBBC8457D7DD0439FABF8B7BFB68",
+    "after_sha256": "DEC3556E88296BD165C52B5F4165DBE80531FBBC8457D7DD0439FABF8B7BFB68",
+    "before_length": 1081219,
+    "after_length": 1081219,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v1\\manifest.json",
+    "before_sha256": "D73B4E8484BDDE99C925F2F3660EF52077FC71B59A6771F9649CCDEE664C1B61",
+    "after_sha256": "D73B4E8484BDDE99C925F2F3660EF52077FC71B59A6771F9649CCDEE664C1B61",
+    "before_length": 3271,
+    "after_length": 3271,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\active_version.json",
+    "before_sha256": "6D29B7826AFCCB0BCB47C853CF0824B5326413CCDC8AF8BDDB1ED6754C32D109",
+    "after_sha256": "6D29B7826AFCCB0BCB47C853CF0824B5326413CCDC8AF8BDDB1ED6754C32D109",
+    "before_length": 121,
+    "after_length": 121,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\active_version.json.backup_20260805_162057_863926",
+    "before_sha256": "243CF02ED591A9DA0CF560BE84ED16A60E6731809A32EB53875497D23AC8A918",
+    "after_sha256": "243CF02ED591A9DA0CF560BE84ED16A60E6731809A32EB53875497D23AC8A918",
+    "before_length": 121,
+    "after_length": 121,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\active_version.json.backup_20260805_170655_684486",
+    "before_sha256": "243CF02ED591A9DA0CF560BE84ED16A60E6731809A32EB53875497D23AC8A918",
+    "after_sha256": "243CF02ED591A9DA0CF560BE84ED16A60E6731809A32EB53875497D23AC8A918",
+    "before_length": 121,
+    "after_length": 121,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual\\accepted_steps.jsonl",
+    "before_sha256": "E48143E0C9528640510404EBABA5AB47E9CDB1FA62C4193B1AEFFA234C1058EA",
+    "after_sha256": "E48143E0C9528640510404EBABA5AB47E9CDB1FA62C4193B1AEFFA234C1058EA",
+    "before_length": 242670,
+    "after_length": 242670,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v001_20260805_162057_740045_manual\\metadata.json",
+    "before_sha256": "915646B42726FE40DC67D89FBC434441D86A45BD22D9E074674ED647AC66607B",
+    "after_sha256": "915646B42726FE40DC67D89FBC434441D86A45BD22D9E074674ED647AC66607B",
+    "before_length": 1028,
+    "after_length": 1028,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\active_version.json",
+    "before_sha256": "2FB2A4F4341962E939A7BEA42731F4F0F3E16827285FEC05584790CD6683F2F1",
+    "after_sha256": "2FB2A4F4341962E939A7BEA42731F4F0F3E16827285FEC05584790CD6683F2F1",
+    "before_length": 122,
+    "after_length": 122,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\active_version.json.backup_20260804_213750_330082",
+    "before_sha256": "2FB2A4F4341962E939A7BEA42731F4F0F3E16827285FEC05584790CD6683F2F1",
+    "after_sha256": "2FB2A4F4341962E939A7BEA42731F4F0F3E16827285FEC05584790CD6683F2F1",
+    "before_length": 122,
+    "after_length": 122,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\versions\\v001_20260804_213750_249911_manual\\accepted_steps.jsonl",
+    "before_sha256": "3F201B776FBAD7430858A441659247045AD69D8E97C801B5393EE733C6A6D214",
+    "after_sha256": "3F201B776FBAD7430858A441659247045AD69D8E97C801B5393EE733C6A6D214",
+    "before_length": 27927,
+    "after_length": 27927,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_100mm\\versions\\v001_20260804_213750_249911_manual\\metadata.json",
+    "before_sha256": "3B4D54B3EE188B4D463A9E30EC40A642345731E24745840D8C23CFE389E684B3",
+    "after_sha256": "3B4D54B3EE188B4D463A9E30EC40A642345731E24745840D8C23CFE389E684B3",
+    "before_length": 1019,
+    "after_length": 1019,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json",
+    "before_sha256": "68486120575F40BD6BC5E11A3463FD3F08E2E3C1A79F2E44707A26C82C2323F5",
+    "after_sha256": "68486120575F40BD6BC5E11A3463FD3F08E2E3C1A79F2E44707A26C82C2323F5",
+    "before_length": 2548,
+    "after_length": 2548,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260804_213750_280963",
+    "before_sha256": "ABF9564BBB532E9428038FA6CB7AE6B5FBD704E81135C0399A85BD77602E0EEB",
+    "after_sha256": "ABF9564BBB532E9428038FA6CB7AE6B5FBD704E81135C0399A85BD77602E0EEB",
+    "before_length": 756,
+    "after_length": 756,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260804_213750_314528",
+    "before_sha256": "97AA2863F965357F3BBFF66689B06FE1EE50435DDA3EFB1F56B6D856EF2E01C0",
+    "after_sha256": "97AA2863F965357F3BBFF66689B06FE1EE50435DDA3EFB1F56B6D856EF2E01C0",
+    "before_length": 1617,
+    "after_length": 1617,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260804_213750_343347",
+    "before_sha256": "69440DE545CA7725FCAAEDB166E9E71132EC7797EBAF997E48CED7199412B425",
+    "after_sha256": "69440DE545CA7725FCAAEDB166E9E71132EC7797EBAF997E48CED7199412B425",
+    "before_length": 1651,
+    "after_length": 1651,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260805_162057_807127",
+    "before_sha256": "69440DE545CA7725FCAAEDB166E9E71132EC7797EBAF997E48CED7199412B425",
+    "after_sha256": "69440DE545CA7725FCAAEDB166E9E71132EC7797EBAF997E48CED7199412B425",
+    "before_length": 1651,
+    "after_length": 1651,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260805_162057_839404",
+    "before_sha256": "1D999947C3900BE96465F94DC69595BE6B44C6208BFEA6F58F8D32194E23E1E2",
+    "after_sha256": "1D999947C3900BE96465F94DC69595BE6B44C6208BFEA6F58F8D32194E23E1E2",
+    "before_length": 2514,
+    "after_length": 2514,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260805_162057_877963",
+    "before_sha256": "9AAD850034A53817617F52A4DA56A0091AAB652A33D780C1691493EB7569E028",
+    "after_sha256": "9AAD850034A53817617F52A4DA56A0091AAB652A33D780C1691493EB7569E028",
+    "before_length": 2548,
+    "after_length": 2548,
+    "unchanged": true
+  },
+  {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\manifest.json.backup_20260805_170655_702000",
+    "before_sha256": "9AAD850034A53817617F52A4DA56A0091AAB652A33D780C1691493EB7569E028",
+    "after_sha256": "9AAD850034A53817617F52A4DA56A0091AAB652A33D780C1691493EB7569E028",
+    "before_length": 2548,
+    "after_length": 2548,
+    "unchanged": true
+  }
+]

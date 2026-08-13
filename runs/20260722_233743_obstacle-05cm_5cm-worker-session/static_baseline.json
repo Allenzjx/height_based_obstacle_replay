@@ -1,0 +1,10 @@
+{
+  "com_jitter_xy_m": 0.00011950783029678405,
+  "com_z_range_m": 4.3628521320809854e-05,
+  "duration_s": 0.4499999999999984,
+  "sample_count": 19,
+  "static_margin_mean_m": 0.1983995361318584,
+  "static_margin_std_m": 3.6112203986540666e-07,
+  "support_area_mean_m2": 0.2223080361969151,
+  "support_area_std_m2": 3.079769425864938e-05
+}

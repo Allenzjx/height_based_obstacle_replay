@@ -1,0 +1,47 @@
+Continuous steps and Speed Semantics v2 - final verification
+Generated: 2026-08-03 America/New_York
+
+1. Syntax / import compilation
+Command: python -m py_compile speed_scale.py command_model.py sim_transport.py sim_process_client.py sim_worker_process.py sim_ui_controller.py height_replay_ui.py sim_robot_adapter.py sequence_model.py playback.py continuous_speed_semantics_e2e.py generate_continuous_speed_report.py
+Result: PASS (exit 0)
+
+2. Full automated regression
+Command: python -m unittest discover -s tests -p 'test_*.py' -v
+Result: PASS; Ran 214 tests; 0 failures; 0 errors. The full suite was rerun after the final CLI-default and visible UI-copy corrections (exit 0; explicit runner summary: Ran 214 tests in 5.092s, OK).
+Coverage note: tests/test_continuous_steps_speed_semantics.py contains A-J plus real-target tracking lifecycle, load-deflection closure, and non-improving actuator-limit termination.
+
+3. Visible real Isaac GUI, formal 5 cm Raw
+Result source: real_raw_final/continuous_speed_semantics_real_result.json
+Worker result: PASS; PID 94444; 248/248 events; 159/159 segments; 35/35 steps; stop_reason=complete; active=false; scheduled=false.
+Timing: planned 291.274333s; actual final segment end 295.175000s; median/max step gap 3300.000000/15533.333333ms.
+Servo: maximum actual endpoint error 0.997217 degrees.
+Harness note: the top-level result was overwritten to success=false by a second tick after the successful completion screenshot scheduled the Tk window to close. The formal worker payload above was already complete. The terminal-tick race is fixed in continuous_speed_semantics_e2e.py.
+
+4. Visible real Isaac GUI, formal 5 cm Fast
+Result source: real_fast_final_retry/continuous_speed_semantics_real_result.json
+Worker result: PASS; PID 164384; 248/248 events; 159/159 segments; 35/35 steps; stop_reason=complete; active=false; scheduled=false.
+Timing: planned 129.739333s; actual final segment end 136.225000s; median/max step gap 0.000000/0.000000ms.
+Servo: maximum actual endpoint error 0.976407 degrees.
+Later exploratory 0.3-base wheel assertion intentionally failed because it assumed an unlimited physical range. Its measurements are retained as the required actuator/contact-limit evidence; it does not invalidate the already-complete formal Fast payload.
+
+5. Visible real Isaac GUI, speed validation
+Result source: real_validation_only/continuous_speed_semantics_real_result.json
+Servo 50/100/200/300%: PASS; target -30 degrees unchanged; requested velocity 15/30/60/90 deg/s; actual errors 0.577094/0.983845/0.786753/0.743156 degrees.
+Safe wheel 0.1-base, 50/100/200/300%: PASS; active duration 2.0s in every run; measured path ratios 0.452015/1.000000/2.040204/3.017558.
+Later recording setup failed at respawn; it occurred after all speed rows above were complete. Recording was rerun independently below.
+
+6. Visible real Isaac GUI, recording and same-speed playback
+Result source: real_record_final/continuous_speed_semantics_real_result.json
+Result: PASS (top-level success=true).
+100% endpoint difference 0.756583 degrees; 200% endpoint difference 0.727179 degrees.
+Wheel velocity difference 0; wheel duration difference 0; double_scaling=false at both speeds.
+At 200%, playback requested 0.6 rad/s, not 1.2 rad/s.
+Final state: active=false; scheduled=false; operation=IDLE; Play enabled.
+
+7. Process isolation
+All real-Isaac runs were sequential and non-overlapping. Each full formal sequence used one worker PID continuously. No second worker was launched during a formal sequence.
+Existing worker at each launch: none; reused_existing_isaac=false. A new worker was started only after the preceding owned worker had closed.
+
+8. Final post-run audit
+Active sim_worker_process.py / continuous_speed_semantics_e2e.py Python processes: 0.
+Final UI semantic copy: servo target invariant; wheel active duration invariant; wheel path scales with speed. No visible preserve-distance claim remains.

@@ -1,0 +1,276 @@
+{
+  "artifacts": {
+    "depth": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_depth.pgm",
+    "diagnostic": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_diagnostic.ppm",
+    "obstacle_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_obstacle_mask.pgm",
+    "rgb": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_rgb.ppm",
+    "roi_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_roi_mask.pgm",
+    "top_plane_mask": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260716_002344_frame00345_05cm_conf0.98_top_plane_mask.pgm"
+  },
+  "camera_backend_class": "Camera",
+  "camera_backend_module": "isaaclab.sensors.camera.camera",
+  "camera_coverage": {
+    "angular_error_deg": 0.33094976283494365,
+    "camera_position_w": [
+      0.3421103060245514,
+      0.00016487656102981418,
+      0.28199368715286255
+    ],
+    "camera_quaternion_ros": [
+      -0.4386684000492096,
+      0.5559133291244507,
+      -0.5541306138038635,
+      0.4375724792480469
+    ],
+    "camera_quaternion_world": [
+      -0.4386684000492096,
+      0.5559133291244507,
+      -0.5541306138038635,
+      0.4375724792480469
+    ],
+    "center_ray_direction_w": [
+      0.9726639206217198,
+      0.0027786082693861403,
+      -0.23220072535819103
+    ],
+    "checked": true,
+    "framing_state": "GROUND_NOT_VISIBLE",
+    "ground_intersection_distance_m": 1.2144393033995105,
+    "ground_intersection_w": [
+      1.5233516002262295,
+      0.0035393276521232375,
+      0.0
+    ],
+    "ground_point_fraction": 0.0,
+    "obstacle_point_fraction": 1.0,
+    "obstacle_search_x_m": 1.55,
+    "optical_forward_w": [
+      0.9726639206217198,
+      0.0027786082693861403,
+      -0.23220072535819103
+    ],
+    "optical_up_w": [
+      0.2321987483266918,
+      0.0010186017305624517,
+      0.9726678280512994
+    ],
+    "reasons": [
+      "ground point fraction below 5%"
+    ],
+    "target_direction_w": [
+      0.9738139415717646,
+      -0.0001329252948924527,
+      -0.2273464086616057
+    ],
+    "target_point_w": [
+      1.55,
+      0.0,
+      0.0
+    ],
+    "top_point_fraction": 0.25001356116083534,
+    "valid_depth_fraction": 0.7621757075471698
+  },
+  "camera_geometry": {
+    "angular_error_deg": 0.33094976283494365,
+    "camera_position_w": [
+      0.3421103060245514,
+      0.00016487656102981418,
+      0.28199368715286255
+    ],
+    "camera_quaternion_ros": [
+      -0.4386684000492096,
+      0.5559133291244507,
+      -0.5541306138038635,
+      0.4375724792480469
+    ],
+    "camera_quaternion_world": [
+      -0.4386684000492096,
+      0.5559133291244507,
+      -0.5541306138038635,
+      0.4375724792480469
+    ],
+    "center_ray_direction_w": [
+      0.9726639206217198,
+      0.0027786082693861403,
+      -0.23220072535819103
+    ],
+    "checked": true,
+    "framing_state": "GROUND_NOT_VISIBLE",
+    "ground_intersection_distance_m": 1.2144393033995105,
+    "ground_intersection_w": [
+      1.5233516002262295,
+      0.0035393276521232375,
+      0.0
+    ],
+    "ground_point_fraction": 0.0,
+    "obstacle_point_fraction": 1.0,
+    "obstacle_search_x_m": 1.55,
+    "optical_forward_w": [
+      0.9726639206217198,
+      0.0027786082693861403,
+      -0.23220072535819103
+    ],
+    "optical_up_w": [
+      0.2321987483266918,
+      0.0010186017305624517,
+      0.9726678280512994
+    ],
+    "reasons": [
+      "ground point fraction below 5%"
+    ],
+    "target_direction_w": [
+      0.9738139415717646,
+      -0.0001329252948924527,
+      -0.2273464086616057
+    ],
+    "target_point_w": [
+      1.55,
+      0.0,
+      0.0
+    ],
+    "top_point_fraction": 0.25001356116083534,
+    "valid_depth_fraction": 0.7621757075471698
+  },
+  "camera_health": {
+    "backend_class": "Camera",
+    "backend_module": "isaaclab.sensors.camera.camera",
+    "camera_pose_available": true,
+    "camera_prim_path": "/World/WLRRobot/base_link/onboard_rgbd_camera",
+    "camera_prim_type": "Camera",
+    "camera_prim_valid": true,
+    "checked": true,
+    "depth_available": true,
+    "depth_dtype": "float32",
+    "depth_fingerprint": "1ba3c7767748062c",
+    "depth_finite_ratio": 0.7621757075471698,
+    "depth_max_m": 2.5902557373046875,
+    "depth_median_m": 0.8019225597381592,
+    "depth_min_m": 0.49181830883026123,
+    "depth_positive_ratio": 0.7621757075471698,
+    "depth_shape": [
+      240,
+      424
+    ],
+    "depth_std_m": 0.4835068971261435,
+    "frame_age_s": 0.0,
+    "frame_revision": 288,
+    "frames_advanced_during_check": 2,
+    "intrinsics_available": true,
+    "intrinsics_valid": true,
+    "is_isaaclab_camera": true,
+    "ok": true,
+    "parent_has_rigid_body_api": true,
+    "parent_prim_path": "/World/WLRRobot/base_link",
+    "parent_prim_valid": true,
+    "reasons": [
+      "depth fingerprint unchanged during check; static scene may be okay, but verify if robot or scene moved"
+    ],
+    "rgb_available": true,
+    "rgb_dtype": "uint8",
+    "rgb_shape": [
+      240,
+      424,
+      3
+    ],
+    "stale_frame": false
+  },
+  "camera_prim_path": "/World/WLRRobot/base_link/onboard_rgbd_camera",
+  "camera_world_pose": {
+    "pos_w": [
+      0.3421103060245514,
+      0.00016487656102981418,
+      0.28199368715286255
+    ],
+    "quat_w": [
+      -0.4386684000492096,
+      0.5559133291244507,
+      -0.5541306138038635,
+      0.4375724792480469
+    ]
+  },
+  "candidate_height_cm": 5,
+  "confidence": 0.980496373601096,
+  "depth_finite_ratio": 0.7621757075471698,
+  "depth_shape": [
+    240,
+    424
+  ],
+  "detection_revision": 3,
+  "expected_height_cm": 5,
+  "failure_reasons": [],
+  "frame_revision": 345,
+  "height_provenance": {
+    "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+    "camera_world_pose_used": true,
+    "depth_data_type": "distance_to_image_plane",
+    "depth_frame_revision": 345,
+    "detector_input_audit_passed": true,
+    "expected_height_used_by_detector": false,
+    "forbidden_input_reason": "",
+    "generated_height_used_by_detector": false,
+    "ground_reference_source": "configured_world_ground_z",
+    "ground_z_m": 0.0,
+    "height_source": "isaac_rgbd_depth_geometry",
+    "intrinsics_used": true,
+    "obstacle_x_prior_m": 1.55,
+    "obstacle_x_prior_used": true,
+    "roi_source": "generated_scene_x_prior",
+    "scene_obstacle_height_used_by_detector": false,
+    "usd_geometry_height_used_by_detector": false
+  },
+  "height_validation": {
+    "absolute_error_cm": 0.1424818466385025,
+    "absolute_error_mm": 1.424818466385025,
+    "candidate_height_cm": 5,
+    "checked": true,
+    "confidence": 0.9804976466054229,
+    "detected_height_cm": 5,
+    "detection_revision": 3,
+    "expected_height_cm": 5,
+    "frame_revision": 288,
+    "passed": true,
+    "quantization_error_cm": 0.1424818466385025,
+    "raw_height_cm": 5.1424818466385025,
+    "reasons": [],
+    "relative_error_percent": 2.84963693277005,
+    "stable": true,
+    "stable_count": 7,
+    "stable_required": 5,
+    "timestamp": 1784175794.8385532,
+    "top_plane_mad_m": 6.766034454774861e-05,
+    "valid_point_count": 18435
+  },
+  "intrinsics": [
+    [
+      485.6120300292969,
+      0.0,
+      212.0
+    ],
+    [
+      0.0,
+      485.6120300292969,
+      120.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "is_isaaclab_camera": true,
+  "parent_prim_path": "/World/WLRRobot/base_link",
+  "quantization_error_cm": 0.14247973280246296,
+  "raw_height_cm": 5.142479732802463,
+  "rgb_shape": [
+    240,
+    424,
+    3
+  ],
+  "roi_source": "generated_scene_x_prior",
+  "source_mode": "generated",
+  "stable_count": 7,
+  "stable_detected_height_cm": 5,
+  "top_plane_mad_m": 6.774719686442054e-05,
+  "valid_point_count": 18435,
+  "validation_pass": true
+}

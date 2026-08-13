@@ -1,0 +1,10 @@
+修改前正式 50 mm：
+stop_reason=actuator_limit
+step=26/35, segment=128, global_command=191/248
+last_command=wheel rl -1.11
+last_error=actuator_limit: servo target did not improve for 0.800s sim; segment=128 max_error_deg=1.315388
+证据结论：不是 planner/payload/worker 解码截断；worker 已持有 248 events/159 segments。也不是 5 秒 stall，实际阈值为 0.800 simulation seconds。失败发生在 step 26（UI 观察上已越过 24/25），由接触负载下约 1.315° 的合法录制残差被旧 completion policy 当作 actuator_limit。
+
+修改后 Raw：stop_reason=complete, step=35/35, event=248/248, segment=159/159, warnings=7。
+修改后 Fast：stop_reason=complete, step=35/35, event=248/248, segment=159/159, warnings=7。
+修复保留 target、不 teleport；仅在 planned duration + bounded grace 后，合法/稳定/未恶化且不超过 cap 的录制残差以 servo_residual_warning 继续。NaN、超限、状态不可读和真实不改善仍失败。

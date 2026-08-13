@@ -1,0 +1,31 @@
+FORMAL NORMAL UI PATH
+height_replay_ui.py (Tk entry)
+  -> sim_ui_controller.RealRobotStyleHeightReplayUi
+  -> sim_ui_controller.HeightReplayController
+  -> sim_transport.SimTransport [one instance]
+  -> sim_process_client.SimProcessClient [one instance]
+  -> sim_worker_process.py [one subprocess]
+  -> sim_worker_runtime.py
+  -> sim_robot_adapter.SimRobotAdapter [one authoritative actuator state]
+  -> sim_obstacle_scene.py [one SimulationContext and one obstacle prim]
+
+SHARED SERVICES
+  motion_speed.py [sole SpeedScale; worker applies scale once]
+  playback.py [sole scheduler/executor semantics]
+  height_version_store.py [sole version persistence service]
+  height_generate_panel.py [thin Tk controls]
+
+EXPLICIT-ONLY
+  detailed sim state / ground diagnostics / baseline validation / log refresh
+
+TEST-ONLY (not imported by formal startup)
+  ui_motion_speed_height_version_e2e.py, recording_baseline_gui_e2e.py,
+  task_separation_gui_e2e.py, knee_limit_real_e2e.py, tests/**, tools/**
+
+LEGACY READ-ONLY
+  saved_height_steps/height_05cm, saved_height_steps/height_10cm,
+  saved_height_steps_fsm_reference_v1
+
+DEAD/RETIRED
+  thread sim_worker.py, '* - Copy.py', MODE_SERVO_WHEEL staging,
+  Vision/Stability runtime paths, Preserve Wheel Distance.

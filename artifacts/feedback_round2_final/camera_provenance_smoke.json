@@ -1,0 +1,237 @@
+{
+  "detector_input_audit": {
+    "checks": {
+      "depth_none_invalid": true,
+      "external_auto_roi_accepts_moved_obstacle": true,
+      "generated_x_prior_rejects_moved_obstacle": true,
+      "metadata_5cm_pointcloud_10cm_outputs_10cm": true
+    },
+    "depth_none_reason": "depth image must be HxW",
+    "external_auto_detected_height_cm": 10,
+    "external_auto_raw_height_cm": 10.0,
+    "generated_prior_reason": "no points in obstacle search region",
+    "metadata_mismatch_detected_height_cm": 10,
+    "metadata_mismatch_raw_height_cm": 10.0,
+    "ok": true,
+    "scope": "pure detector audit; real Isaac camera row above proves live RGB-D source"
+  },
+  "mode": "camera_provenance_smoke",
+  "ok": true,
+  "real_camera_detection": {
+    "ok": true,
+    "rows": [
+      {
+        "absolute_error_cm": 0.14297990741917666,
+        "absolute_error_mm": 1.4297990741917666,
+        "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+        "camera_geometry": {
+          "angular_error_deg": 0.3041202135270719,
+          "camera_position_w": [
+            0.3404446244239807,
+            -0.0006480186129920185,
+            0.2822718322277069
+          ],
+          "camera_quaternion_ros": [
+            -0.43883806467056274,
+            0.5554462671279907,
+            -0.554563581943512,
+            0.4374470114707947
+          ],
+          "camera_quaternion_world": [
+            -0.43883806467056274,
+            0.5554462671279907,
+            -0.554563581943512,
+            0.4374470114707947
+          ],
+          "center_ray_direction_w": [
+            0.9726837818714495,
+            0.0023175664744688462,
+            -0.2321225740204751
+          ],
+          "checked": true,
+          "framing_state": "GROUND_NOT_VISIBLE",
+          "ground_intersection_distance_m": 1.216046450539568,
+          "ground_intersection_w": [
+            1.5232732848661603,
+            0.0021702498721753224,
+            0.0
+          ],
+          "ground_point_fraction": 0.0,
+          "obstacle_point_fraction": 1.0,
+          "obstacle_search_x_m": 1.55,
+          "optical_forward_w": [
+            0.9726837818714495,
+            0.0023175664744688462,
+            -0.2321225740204751
+          ],
+          "optical_up_w": [
+            0.23212372991627883,
+            -0.00023916989705763392,
+            0.9726862375954102
+          ],
+          "reasons": [
+            "ground point fraction below 5%"
+          ],
+          "target_direction_w": [
+            0.973833550337453,
+            0.0005217307775381862,
+            -0.22726184025072727
+          ],
+          "target_point_w": [
+            1.55,
+            0.0,
+            0.0
+          ],
+          "top_point_fraction": 0.2500135641039553,
+          "valid_depth_fraction": 0.762185534591195
+        },
+        "camera_health_ok": true,
+        "candidate_height_cm": 5,
+        "confidence": 0.980398211221542,
+        "debug_image_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_diagnostic.ppm",
+        "debug_sidecar_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.json",
+        "depth_available": true,
+        "detected_height_cm": 5,
+        "expected_height_cm": 5,
+        "failure_reasons": [],
+        "frames_advanced_during_check": 2,
+        "height_provenance": {
+          "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+          "camera_world_pose_used": true,
+          "depth_data_type": "distance_to_image_plane",
+          "depth_frame_revision": 6,
+          "detector_input_audit_passed": true,
+          "expected_height_used_by_detector": false,
+          "forbidden_input_reason": "",
+          "generated_height_used_by_detector": false,
+          "ground_reference_source": "configured_world_ground_z",
+          "ground_z_m": 0.0,
+          "height_source": "isaac_rgbd_depth_geometry",
+          "intrinsics_used": true,
+          "obstacle_x_prior_m": 1.55,
+          "obstacle_x_prior_used": true,
+          "roi_source": "generated_scene_x_prior",
+          "scene_obstacle_height_used_by_detector": false,
+          "usd_geometry_height_used_by_detector": false
+        },
+        "pass": true,
+        "provenance_pass": true,
+        "raw_height_cm": 5.142979907419177,
+        "rgb_available": true,
+        "roi_source": "generated_scene_x_prior",
+        "source_mode": "generated",
+        "stable_count": 5,
+        "target_cm": 5,
+        "top_plane_mad_m": 6.926795253403562e-05,
+        "valid_point_count": 18431
+      }
+    ]
+  },
+  "rows": [
+    {
+      "absolute_error_cm": 0.14297990741917666,
+      "absolute_error_mm": 1.4297990741917666,
+      "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+      "camera_geometry": {
+        "angular_error_deg": 0.3041202135270719,
+        "camera_position_w": [
+          0.3404446244239807,
+          -0.0006480186129920185,
+          0.2822718322277069
+        ],
+        "camera_quaternion_ros": [
+          -0.43883806467056274,
+          0.5554462671279907,
+          -0.554563581943512,
+          0.4374470114707947
+        ],
+        "camera_quaternion_world": [
+          -0.43883806467056274,
+          0.5554462671279907,
+          -0.554563581943512,
+          0.4374470114707947
+        ],
+        "center_ray_direction_w": [
+          0.9726837818714495,
+          0.0023175664744688462,
+          -0.2321225740204751
+        ],
+        "checked": true,
+        "framing_state": "GROUND_NOT_VISIBLE",
+        "ground_intersection_distance_m": 1.216046450539568,
+        "ground_intersection_w": [
+          1.5232732848661603,
+          0.0021702498721753224,
+          0.0
+        ],
+        "ground_point_fraction": 0.0,
+        "obstacle_point_fraction": 1.0,
+        "obstacle_search_x_m": 1.55,
+        "optical_forward_w": [
+          0.9726837818714495,
+          0.0023175664744688462,
+          -0.2321225740204751
+        ],
+        "optical_up_w": [
+          0.23212372991627883,
+          -0.00023916989705763392,
+          0.9726862375954102
+        ],
+        "reasons": [
+          "ground point fraction below 5%"
+        ],
+        "target_direction_w": [
+          0.973833550337453,
+          0.0005217307775381862,
+          -0.22726184025072727
+        ],
+        "target_point_w": [
+          1.55,
+          0.0,
+          0.0
+        ],
+        "top_point_fraction": 0.2500135641039553,
+        "valid_depth_fraction": 0.762185534591195
+      },
+      "camera_health_ok": true,
+      "candidate_height_cm": 5,
+      "confidence": 0.980398211221542,
+      "debug_image_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.98_diagnostic.ppm",
+      "debug_sidecar_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps\\vision_debug\\20260722_233751_frame00006_05cm_conf0.json",
+      "depth_available": true,
+      "detected_height_cm": 5,
+      "expected_height_cm": 5,
+      "failure_reasons": [],
+      "frames_advanced_during_check": 2,
+      "height_provenance": {
+        "camera_backend": "isaaclab.sensors.camera.camera.Camera",
+        "camera_world_pose_used": true,
+        "depth_data_type": "distance_to_image_plane",
+        "depth_frame_revision": 6,
+        "detector_input_audit_passed": true,
+        "expected_height_used_by_detector": false,
+        "forbidden_input_reason": "",
+        "generated_height_used_by_detector": false,
+        "ground_reference_source": "configured_world_ground_z",
+        "ground_z_m": 0.0,
+        "height_source": "isaac_rgbd_depth_geometry",
+        "intrinsics_used": true,
+        "obstacle_x_prior_m": 1.55,
+        "obstacle_x_prior_used": true,
+        "roi_source": "generated_scene_x_prior",
+        "scene_obstacle_height_used_by_detector": false,
+        "usd_geometry_height_used_by_detector": false
+      },
+      "pass": true,
+      "provenance_pass": true,
+      "raw_height_cm": 5.142979907419177,
+      "rgb_available": true,
+      "roi_source": "generated_scene_x_prior",
+      "source_mode": "generated",
+      "stable_count": 5,
+      "target_cm": 5,
+      "top_plane_mad_m": 6.926795253403562e-05,
+      "valid_point_count": 18431
+    }
+  ]
+}

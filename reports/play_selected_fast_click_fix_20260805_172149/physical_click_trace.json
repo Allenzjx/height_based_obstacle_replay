@@ -1,0 +1,1221 @@
+{
+  "success": true,
+  "formal_pre_fix_reproduction": {
+    "full_no_op_reproduced": false,
+    "observed": "The current formal pre-fix build entered the callback and completed playback, but had no synchronous visible Fast receipt/restore feedback.",
+    "first_missing_required_boundary": "immediate_visible_feedback",
+    "callback_entered_ms": 18.3994,
+    "visible_status_after_callback": "Stopping wheels...",
+    "visible_feedback_elapsed_ms": 137.3415,
+    "second_enter_playback_observed": true,
+    "second_enter_playback_accepted_by_current_coordinator": true
+  },
+  "repeat_count": 3,
+  "widget_geometry": [
+    {
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "raw_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+      "button_state": [
+        "active",
+        "hover"
+      ],
+      "raw_button_state": [],
+      "same_guard_state": true,
+      "button_rect": [
+        1316,
+        340,
+        354,
+        25
+      ],
+      "center": [
+        1493,
+        352
+      ],
+      "screen": [
+        1707,
+        1067
+      ],
+      "winfo_containing": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "target_matches": true
+    },
+    {
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "raw_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+      "button_state": [
+        "hover"
+      ],
+      "raw_button_state": [],
+      "same_guard_state": true,
+      "button_rect": [
+        1316,
+        340,
+        354,
+        25
+      ],
+      "center": [
+        1493,
+        352
+      ],
+      "screen": [
+        1707,
+        1067
+      ],
+      "winfo_containing": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "target_matches": true
+    },
+    {
+      "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "raw_widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button5",
+      "button_state": [
+        "hover"
+      ],
+      "raw_button_state": [],
+      "same_guard_state": true,
+      "button_rect": [
+        1316,
+        340,
+        354,
+        25
+      ],
+      "center": [
+        1493,
+        352
+      ],
+      "screen": [
+        1707,
+        1067
+      ],
+      "winfo_containing": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+      "target_matches": true
+    }
+  ],
+  "immediate_feedback": [
+    {
+      "click_id": "e48bb48373fc485593d4f2719736ef98",
+      "elapsed_ms": 102.96599986031651,
+      "visible_feedback_ms": 81.58329990692437,
+      "physical_feedback_render_ms": 81.58329990692437,
+      "press_to_release_ms": 46.24669998884201,
+      "visible_text": "Restoring saved end state from Step 4... | Selected Step 5 / 35\n-\nCommand 0 / 0 | Total command 0 / 0\nElapsed 0.000s | Remaining 0.000s\nProfile: Raw | direct recorded actuator commands",
+      "status": "Restoring saved end state from Step 4... Restore source: Step 4.sim_state_after; Selected target: Step 5.",
+      "playback_state": "RESTORING",
+      "pending": true
+    },
+    {
+      "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+      "elapsed_ms": 100.33589997328818,
+      "visible_feedback_ms": 76.6260998789221,
+      "physical_feedback_render_ms": 76.6260998789221,
+      "press_to_release_ms": 31.13920008763671,
+      "visible_text": "Restoring saved end state from Step 4... | Selected Step 5 / 35\n-\nCommand 0 / 0 | Total command 2 / 2\nElapsed 0.000s | Remaining 0.000s\nProfile: Motion-only | direct recorded actuator commands",
+      "status": "Restoring saved end state from Step 4... Restore source: Step 4.sim_state_after; Selected target: Step 5.",
+      "playback_state": "RESTORING",
+      "pending": true
+    },
+    {
+      "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+      "elapsed_ms": 95.63780017197132,
+      "visible_feedback_ms": 78.78419989719987,
+      "physical_feedback_render_ms": 78.78419989719987,
+      "press_to_release_ms": 31.12750011496246,
+      "visible_text": "Restoring saved end state from Step 4... | Selected Step 5 / 35\n-\nCommand 0 / 0 | Total command 2 / 2\nElapsed 0.000s | Remaining 0.000s\nProfile: Motion-only | direct recorded actuator commands",
+      "status": "Restoring saved end state from Step 4... Restore source: Step 4.sim_state_after; Selected target: Step 5.",
+      "playback_state": "RESTORING",
+      "pending": true
+    }
+  ],
+  "runs": [
+    {
+      "click_id": "e48bb48373fc485593d4f2719736ef98",
+      "trace": [
+        {
+          "event": "physical_mouse_press",
+          "monotonic_s": 1858626.1320901,
+          "relative_ms": 6.688700057566166,
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "x": 1493,
+          "y": 352,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "physical_driver_click_id": "09b7f4775cf143a1a1c02ed0efdfa46b"
+        },
+        {
+          "event": "tk_button_command_entered",
+          "monotonic_s": 1858626.1731496,
+          "relative_ms": 47.748199896886945,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1858626.1731929,
+          "relative_ms": 47.79149987734854,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "resolved_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "monotonic_s": 1858626.17323,
+          "relative_ms": 47.828600043430924,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "monotonic_s": 1858626.1732383,
+          "relative_ms": 47.8368999902159,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "controller_command_received",
+          "monotonic_s": 1858626.2219844,
+          "relative_ms": 96.58299991860986,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "profile_resolved",
+          "monotonic_s": 1858626.222266,
+          "relative_ms": 96.8645999673754,
+          "selected_index": 5,
+          "profile": "fast"
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1858626.2224395,
+          "relative_ms": 97.03810000792146,
+          "state_before": "IDLE",
+          "state_after": "PLAYBACK",
+          "acquired": true,
+          "begin_call_count": 1
+        },
+        {
+          "event": "restore_request_sent",
+          "monotonic_s": 1858626.2228086,
+          "relative_ms": 97.40719990804791,
+          "request_id": "55e22abe3dd848a68623f3ce00ab077b"
+        },
+        {
+          "event": "restore_acknowledged",
+          "monotonic_s": 1858626.3563569,
+          "relative_ms": 230.9554999228567,
+          "request_id": "55e22abe3dd848a68623f3ce00ab077b",
+          "detail": ""
+        },
+        {
+          "event": "detailed_state_requested",
+          "monotonic_s": 1858626.3564758,
+          "relative_ms": 231.0744000133127
+        },
+        {
+          "event": "restored_state_verified",
+          "monotonic_s": 1858626.5494363,
+          "relative_ms": 424.03490003198385,
+          "verification": "servo_command_state+root_pose+joint_pos"
+        },
+        {
+          "event": "fast_plan_built",
+          "monotonic_s": 1858626.5502954,
+          "relative_ms": 424.89399993792176,
+          "plan": {
+            "profile": "motion_only",
+            "event_count": 2,
+            "segment_count": 2,
+            "source_steps": [
+              5
+            ],
+            "command_signature": [
+              "wheel all 0.3",
+              "wheel stop"
+            ],
+            "servo_targets": [
+              [],
+              []
+            ],
+            "wheel_targets": [
+              [
+                0.3
+              ],
+              [
+                0.0
+              ]
+            ],
+            "wheel_durations": [
+              4.9850000001024455,
+              0.0
+            ],
+            "final_time_s": 4.9850000001024455,
+            "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+          }
+        },
+        {
+          "event": "worker_start_request_sent",
+          "monotonic_s": 1858626.5505783,
+          "relative_ms": 425.1768998801708,
+          "plan_id": "409bffca4424-c25fd7dfb420",
+          "request_id": "393db53fd9f6488385fde0e6733a31d1",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only"
+        },
+        {
+          "event": "worker_start_accepted",
+          "monotonic_s": 1858627.0109189,
+          "relative_ms": 885.5174998752773,
+          "request_id": "393db53fd9f6488385fde0e6733a31d1",
+          "plan_id": "409bffca4424-c25fd7dfb420",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only",
+          "active": true
+        },
+        {
+          "event": "first_command_applied",
+          "monotonic_s": 1858627.0109372,
+          "relative_ms": 885.5357998982072,
+          "sim_step": 370,
+          "sim_time_s": 3.083333333333325,
+          "events_sent": 1
+        },
+        {
+          "event": "actual_motion_observed",
+          "monotonic_s": 1858627.1372775,
+          "relative_ms": 1011.8760999757797,
+          "restore_measured_wheels": {
+            "front_left_ankle": -0.06897617876529694,
+            "front_right_ankle": 0.0004860591434407979,
+            "rear_left_ankle": 0.01871848851442337,
+            "rear_right_ankle": 0.03786344826221466
+          },
+          "motion_measured_wheels": {
+            "front_left_ankle": 0.21545128524303436,
+            "front_right_ankle": 0.3010542094707489,
+            "rear_left_ankle": 0.3914748430252075,
+            "rear_right_ankle": 0.3246017396450043
+          },
+          "maximum_abs_rad_s": 0.3914748430252075
+        },
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858631.0028352,
+          "relative_ms": 4877.4337999057025,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        },
+        {
+          "event": "completed",
+          "monotonic_s": 1858631.0597477,
+          "relative_ms": 4934.346300084144,
+          "stop_reason": "complete",
+          "events_sent": 2,
+          "operation": "IDLE",
+          "button_state": [
+            "focus",
+            "hover"
+          ]
+        }
+      ],
+      "ui_click_trace": [
+        {
+          "event": "physical_mouse_press",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 0.0055998098105192184,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "x_root": 1493,
+          "y_root": 352
+        },
+        {
+          "event": "tk_button_command_entered",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 32.97429997473955,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "immediate_visible_feedback",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 81.5928999800235,
+          "selected_index": 5,
+          "allowed": true,
+          "reason": "",
+          "text": "Play Selected Fast received: Step 5\nRestoring saved end state from Step 4...",
+          "feedback_ms": 81.58329990692437
+        },
+        {
+          "event": "selected_index_resolved",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 81.6168999299407,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "selected_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 81.62449998781085,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "click_id": "e48bb48373fc485593d4f2719736ef98",
+          "relative_ms": 81.62729977630079,
+          "command": "play_step 5 fast"
+        }
+      ],
+      "restore_result": {
+        "selected_step_index": 5,
+        "restore_source_step_index": 4,
+        "restore_source_field": "sim_state_after",
+        "fallback_used": false,
+        "continuity": "WARNING",
+        "continuity_warning": "Selected playback continuity warning: Step 4 saved end state differs from Step 5 saved start state. Restoring authoritative previous-step end state.",
+        "profile": "fast",
+        "selected_fast_click_id": "e48bb48373fc485593d4f2719736ef98",
+        "label": "50mm step 005",
+        "request_id": "55e22abe3dd848a68623f3ce00ab077b",
+        "restore_count_before": 0,
+        "requested_at": 1858626.2224462,
+        "deadline": 1858636.2224462,
+        "verification_requested": true,
+        "manager_revision": 1,
+        "height_mm": 50,
+        "version_id": "formal_50mm_physical_click_read_only",
+        "trace": [
+          {
+            "event": "operation_acquired",
+            "monotonic_s": 1858626.2224462
+          },
+          {
+            "event": "stop_wheels_sent",
+            "monotonic_s": 1858626.2226691
+          },
+          {
+            "event": "restore_sent",
+            "monotonic_s": 1858626.2228201,
+            "request_id": "55e22abe3dd848a68623f3ce00ab077b"
+          },
+          {
+            "event": "restore_acknowledged",
+            "monotonic_s": 1858626.3563569,
+            "request_id": "55e22abe3dd848a68623f3ce00ab077b",
+            "restore_count": 1
+          },
+          {
+            "event": "state_requested",
+            "monotonic_s": 1858626.3564882
+          },
+          {
+            "event": "state_verified",
+            "monotonic_s": 1858626.5494428,
+            "detail": "servo_command_state+root_pose+joint_pos"
+          },
+          {
+            "event": "playback_start_requested",
+            "monotonic_s": 1858626.5502706
+          }
+        ],
+        "started": true,
+        "plan_event_count": 2,
+        "plan_source_steps": [
+          5
+        ],
+        "plan_selected_playback": true
+      },
+      "final_worker": {
+        "active": false,
+        "paused": false,
+        "scheduled": false,
+        "started": true,
+        "plan_id": "409bffca4424-c25fd7dfb420",
+        "request_id": "393db53fd9f6488385fde0e6733a31d1",
+        "worker_session_id": "4e1d2c0d28e14f44bc9de4cb6ed24fc9",
+        "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+        "source_sha256": "",
+        "label": "50mm step 005",
+        "profile": "motion_only",
+        "path": "",
+        "index": 2,
+        "count": 2,
+        "event_count": 2,
+        "segment_count": 2,
+        "segment_index": 2,
+        "events_sent": 2,
+        "final_time_s": 4.9850000001024455,
+        "sim_elapsed_s": 4.9850000001024455,
+        "wall_elapsed_s": 4.34801173210144,
+        "progress": 1.0,
+        "last_event_command": "wheel stop",
+        "last_event_time": 1785966767.7870438,
+        "last_event_sim_time_s": 8.083333333333515,
+        "max_dispatch_jitter_s": 0.048333333231076914,
+        "dispatch_clock": "simulation_time",
+        "completed_at": 1785966767.7870438,
+        "completed_at_sim_time_s": 8.083333333333515,
+        "stop_reason": "complete",
+        "last_error": "",
+        "last_info": "worker playback complete",
+        "first_motion_planned_s": 0.0,
+        "first_command_applied": true,
+        "first_command_applied_sim_time_s": 3.083333333333325,
+        "first_command_applied_sim_step": 370,
+        "current_servo_errors": {},
+        "servo_residual_warning_count": 0,
+        "last_servo_residual_warning": {},
+        "progress_detail": {
+          "playback_state": "COMPLETED",
+          "status_text": "Completed",
+          "current_step_index": 5,
+          "total_steps": 35,
+          "global_command_index": 2,
+          "total_commands": 2,
+          "playback_profile": "motion_only",
+          "selected_playback": true,
+          "command_phase": "completed",
+          "last_error": ""
+        },
+        "timing": {}
+      },
+      "operation": "IDLE",
+      "button_state": [
+        "focus",
+        "hover"
+      ]
+    },
+    {
+      "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+      "trace": [
+        {
+          "event": "physical_mouse_press",
+          "monotonic_s": 1858631.6935802,
+          "relative_ms": 2.215699991211295,
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "x": 1493,
+          "y": 352,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "physical_driver_click_id": "47b2f25ff67645c0bea5c8dc861a40f0"
+        },
+        {
+          "event": "tk_button_command_entered",
+          "monotonic_s": 1858631.7238224,
+          "relative_ms": 32.45790000073612,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1858631.7238687,
+          "relative_ms": 32.504200004041195,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "resolved_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "monotonic_s": 1858631.7239224,
+          "relative_ms": 32.55790006369352,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "monotonic_s": 1858631.723932,
+          "relative_ms": 32.56750013679266,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "controller_command_received",
+          "monotonic_s": 1858631.7788508,
+          "relative_ms": 87.4862999189645,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "profile_resolved",
+          "monotonic_s": 1858631.7795908,
+          "relative_ms": 88.22629996575415,
+          "selected_index": 5,
+          "profile": "fast"
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1858631.7802169,
+          "relative_ms": 88.85239996016026,
+          "state_before": "IDLE",
+          "state_after": "PLAYBACK",
+          "acquired": true,
+          "begin_call_count": 1
+        },
+        {
+          "event": "restore_request_sent",
+          "monotonic_s": 1858631.7806883,
+          "relative_ms": 89.32380005717278,
+          "request_id": "21e15b26497a4d6ab234cd694a1757bd"
+        },
+        {
+          "event": "restore_acknowledged",
+          "monotonic_s": 1858631.8948381,
+          "relative_ms": 203.4736000932753,
+          "request_id": "21e15b26497a4d6ab234cd694a1757bd",
+          "detail": ""
+        },
+        {
+          "event": "detailed_state_requested",
+          "monotonic_s": 1858631.8956413,
+          "relative_ms": 204.276799922809
+        },
+        {
+          "event": "restored_state_verified",
+          "monotonic_s": 1858632.0399058,
+          "relative_ms": 348.54130004532635,
+          "verification": "servo_command_state+root_pose+joint_pos"
+        },
+        {
+          "event": "fast_plan_built",
+          "monotonic_s": 1858632.040757,
+          "relative_ms": 349.3925000075251,
+          "plan": {
+            "profile": "motion_only",
+            "event_count": 2,
+            "segment_count": 2,
+            "source_steps": [
+              5
+            ],
+            "command_signature": [
+              "wheel all 0.3",
+              "wheel stop"
+            ],
+            "servo_targets": [
+              [],
+              []
+            ],
+            "wheel_targets": [
+              [
+                0.3
+              ],
+              [
+                0.0
+              ]
+            ],
+            "wheel_durations": [
+              4.9850000001024455,
+              0.0
+            ],
+            "final_time_s": 4.9850000001024455,
+            "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+          }
+        },
+        {
+          "event": "worker_start_request_sent",
+          "monotonic_s": 1858632.0409949,
+          "relative_ms": 349.63040007278323,
+          "plan_id": "409bffca4424-5dba520302fa",
+          "request_id": "7e8128b53f8a4c67b791f194bdf0754c",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only"
+        },
+        {
+          "event": "worker_start_accepted",
+          "monotonic_s": 1858632.5470837,
+          "relative_ms": 855.7192001026124,
+          "request_id": "7e8128b53f8a4c67b791f194bdf0754c",
+          "plan_id": "409bffca4424-5dba520302fa",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only",
+          "active": true
+        },
+        {
+          "event": "first_command_applied",
+          "monotonic_s": 1858632.547108,
+          "relative_ms": 855.7434999383986,
+          "sim_step": 1186,
+          "sim_time_s": 9.883333333333413,
+          "events_sent": 1
+        },
+        {
+          "event": "actual_motion_observed",
+          "monotonic_s": 1858632.6728954,
+          "relative_ms": 981.5309001132846,
+          "restore_measured_wheels": {
+            "front_left_ankle": -0.069207563996315,
+            "front_right_ankle": 0.0004902569926343858,
+            "rear_left_ankle": 0.019786309450864792,
+            "rear_right_ankle": 0.03758947551250458
+          },
+          "motion_measured_wheels": {
+            "front_left_ankle": 0.2116120308637619,
+            "front_right_ankle": 0.30128711462020874,
+            "rear_left_ankle": 0.37886589765548706,
+            "rear_right_ankle": 0.32780903577804565
+          },
+          "maximum_abs_rad_s": 0.37886589765548706
+        },
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858636.4328131,
+          "relative_ms": 4741.448600078002,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        },
+        {
+          "event": "completed",
+          "monotonic_s": 1858636.4540622,
+          "relative_ms": 4762.69769994542,
+          "stop_reason": "complete",
+          "events_sent": 2,
+          "operation": "IDLE",
+          "button_state": [
+            "focus",
+            "hover"
+          ]
+        }
+      ],
+      "ui_click_trace": [
+        {
+          "event": "physical_mouse_press",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 0.007899943739175797,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "x_root": 1493,
+          "y_root": 352
+        },
+        {
+          "event": "tk_button_command_entered",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 21.971399895846844,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "immediate_visible_feedback",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 76.63589995354414,
+          "selected_index": 5,
+          "allowed": true,
+          "reason": "",
+          "text": "Play Selected Fast received: Step 5\nRestoring saved end state from Step 4...",
+          "feedback_ms": 76.6260998789221
+        },
+        {
+          "event": "selected_index_resolved",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 76.66329992935061,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "selected_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 76.69619983062148,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "click_id": "52adf09a4bf04c61aee52c91cd643f15",
+          "relative_ms": 76.69969997368753,
+          "command": "play_step 5 fast"
+        }
+      ],
+      "restore_result": {
+        "selected_step_index": 5,
+        "restore_source_step_index": 4,
+        "restore_source_field": "sim_state_after",
+        "fallback_used": false,
+        "continuity": "WARNING",
+        "continuity_warning": "Selected playback continuity warning: Step 4 saved end state differs from Step 5 saved start state. Restoring authoritative previous-step end state.",
+        "profile": "fast",
+        "selected_fast_click_id": "52adf09a4bf04c61aee52c91cd643f15",
+        "label": "50mm step 005",
+        "request_id": "21e15b26497a4d6ab234cd694a1757bd",
+        "restore_count_before": 1,
+        "requested_at": 1858631.7802237,
+        "deadline": 1858641.7802237,
+        "verification_requested": true,
+        "manager_revision": 1,
+        "height_mm": 50,
+        "version_id": "formal_50mm_physical_click_read_only",
+        "trace": [
+          {
+            "event": "operation_acquired",
+            "monotonic_s": 1858631.7802237
+          },
+          {
+            "event": "stop_wheels_sent",
+            "monotonic_s": 1858631.7805491
+          },
+          {
+            "event": "restore_sent",
+            "monotonic_s": 1858631.7806978,
+            "request_id": "21e15b26497a4d6ab234cd694a1757bd"
+          },
+          {
+            "event": "restore_acknowledged",
+            "monotonic_s": 1858631.8948381,
+            "request_id": "21e15b26497a4d6ab234cd694a1757bd",
+            "restore_count": 2
+          },
+          {
+            "event": "state_requested",
+            "monotonic_s": 1858631.895654
+          },
+          {
+            "event": "state_verified",
+            "monotonic_s": 1858632.0399125,
+            "detail": "servo_command_state+root_pose+joint_pos"
+          },
+          {
+            "event": "playback_start_requested",
+            "monotonic_s": 1858632.040733
+          }
+        ],
+        "started": true,
+        "plan_event_count": 2,
+        "plan_source_steps": [
+          5
+        ],
+        "plan_selected_playback": true
+      },
+      "final_worker": {
+        "active": false,
+        "paused": false,
+        "scheduled": false,
+        "started": true,
+        "plan_id": "409bffca4424-5dba520302fa",
+        "request_id": "7e8128b53f8a4c67b791f194bdf0754c",
+        "worker_session_id": "4e1d2c0d28e14f44bc9de4cb6ed24fc9",
+        "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+        "source_sha256": "",
+        "label": "50mm step 005",
+        "profile": "motion_only",
+        "path": "",
+        "index": 2,
+        "count": 2,
+        "event_count": 2,
+        "segment_count": 2,
+        "segment_index": 2,
+        "events_sent": 2,
+        "final_time_s": 4.9850000001024455,
+        "sim_elapsed_s": 4.9850000001024455,
+        "wall_elapsed_s": 4.352563142776489,
+        "progress": 1.0,
+        "last_event_command": "wheel stop",
+        "last_event_time": 1785966773.240681,
+        "last_event_sim_time_s": 14.883333333333129,
+        "max_dispatch_jitter_s": 0.048333333230583975,
+        "dispatch_clock": "simulation_time",
+        "completed_at": 1785966773.240681,
+        "completed_at_sim_time_s": 14.883333333333129,
+        "stop_reason": "complete",
+        "last_error": "",
+        "last_info": "worker playback complete",
+        "first_motion_planned_s": 0.0,
+        "first_command_applied": true,
+        "first_command_applied_sim_time_s": 9.883333333333413,
+        "first_command_applied_sim_step": 1186,
+        "current_servo_errors": {},
+        "servo_residual_warning_count": 0,
+        "last_servo_residual_warning": {},
+        "progress_detail": {
+          "playback_state": "COMPLETED",
+          "status_text": "Completed",
+          "current_step_index": 5,
+          "total_steps": 35,
+          "global_command_index": 2,
+          "total_commands": 2,
+          "playback_profile": "motion_only",
+          "selected_playback": true,
+          "command_phase": "completed",
+          "last_error": ""
+        },
+        "timing": {}
+      },
+      "operation": "IDLE",
+      "button_state": [
+        "focus",
+        "hover"
+      ]
+    },
+    {
+      "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+      "trace": [
+        {
+          "event": "physical_mouse_press",
+          "monotonic_s": 1858637.2109783,
+          "relative_ms": 2.6494001504033804,
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "x": 1493,
+          "y": 352,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "physical_driver_click_id": "f535c60ea6fb4376a1101a567d2687c0"
+        },
+        {
+          "event": "tk_button_command_entered",
+          "monotonic_s": 1858637.2411378,
+          "relative_ms": 32.80890011228621,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "selected_index_resolved",
+          "monotonic_s": 1858637.2411866,
+          "relative_ms": 32.8577000182122,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "resolved_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "monotonic_s": 1858637.2412231,
+          "relative_ms": 32.894200179725885,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "monotonic_s": 1858637.2412305,
+          "relative_ms": 32.90160000324249,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "controller_command_received",
+          "monotonic_s": 1858637.2969846,
+          "relative_ms": 88.6556999757886,
+          "command": "play_step 5 fast"
+        },
+        {
+          "event": "profile_resolved",
+          "monotonic_s": 1858637.2972114,
+          "relative_ms": 88.88250007294118,
+          "selected_index": 5,
+          "profile": "fast"
+        },
+        {
+          "event": "operation_acquired",
+          "monotonic_s": 1858637.2973314,
+          "relative_ms": 89.00250005535781,
+          "state_before": "IDLE",
+          "state_after": "PLAYBACK",
+          "acquired": true,
+          "begin_call_count": 1
+        },
+        {
+          "event": "restore_request_sent",
+          "monotonic_s": 1858637.2976132,
+          "relative_ms": 89.28430010564625,
+          "request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1"
+        },
+        {
+          "event": "restore_acknowledged",
+          "monotonic_s": 1858637.4238919,
+          "relative_ms": 215.5630001798272,
+          "request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1",
+          "detail": ""
+        },
+        {
+          "event": "detailed_state_requested",
+          "monotonic_s": 1858637.4242109,
+          "relative_ms": 215.88200004771352
+        },
+        {
+          "event": "restored_state_verified",
+          "monotonic_s": 1858637.5390421,
+          "relative_ms": 330.7132001500577,
+          "verification": "servo_command_state+root_pose+joint_pos"
+        },
+        {
+          "event": "fast_plan_built",
+          "monotonic_s": 1858637.5399279,
+          "relative_ms": 331.59900014288723,
+          "plan": {
+            "profile": "motion_only",
+            "event_count": 2,
+            "segment_count": 2,
+            "source_steps": [
+              5
+            ],
+            "command_signature": [
+              "wheel all 0.3",
+              "wheel stop"
+            ],
+            "servo_targets": [
+              [],
+              []
+            ],
+            "wheel_targets": [
+              [
+                0.3
+              ],
+              [
+                0.0
+              ]
+            ],
+            "wheel_durations": [
+              4.9850000001024455,
+              0.0
+            ],
+            "final_time_s": 4.9850000001024455,
+            "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3"
+          }
+        },
+        {
+          "event": "worker_start_request_sent",
+          "monotonic_s": 1858637.540184,
+          "relative_ms": 331.8551001138985,
+          "plan_id": "409bffca4424-5c5c0600fa68",
+          "request_id": "1fd97672dd36479797be046a5c235a81",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only"
+        },
+        {
+          "event": "worker_start_accepted",
+          "monotonic_s": 1858638.0283675,
+          "relative_ms": 820.0386001262814,
+          "request_id": "1fd97672dd36479797be046a5c235a81",
+          "plan_id": "409bffca4424-5c5c0600fa68",
+          "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+          "event_count": 2,
+          "segment_count": 2,
+          "profile": "motion_only",
+          "active": true
+        },
+        {
+          "event": "first_command_applied",
+          "monotonic_s": 1858638.0283869,
+          "relative_ms": 820.0580000411719,
+          "sim_step": 2010,
+          "sim_time_s": 16.74999999999969,
+          "events_sent": 1
+        },
+        {
+          "event": "actual_motion_observed",
+          "monotonic_s": 1858638.1342943,
+          "relative_ms": 925.9654001798481,
+          "restore_measured_wheels": {
+            "front_left_ankle": -0.069207563996315,
+            "front_right_ankle": 0.0004902569926343858,
+            "rear_left_ankle": 0.019786309450864792,
+            "rear_right_ankle": 0.03758947551250458
+          },
+          "motion_measured_wheels": {
+            "front_left_ankle": 0.2152257114648819,
+            "front_right_ankle": 0.30079329013824463,
+            "rear_left_ankle": 0.38592633605003357,
+            "rear_right_ankle": 0.3213592767715454
+          },
+          "maximum_abs_rad_s": 0.38592633605003357
+        },
+        {
+          "event": "operation_finished",
+          "monotonic_s": 1858642.0408577,
+          "relative_ms": 4832.528800005093,
+          "expected": "PLAYBACK",
+          "state_before": "PLAYBACK",
+          "state_after": "IDLE",
+          "accepted": true
+        },
+        {
+          "event": "completed",
+          "monotonic_s": 1858642.0969163,
+          "relative_ms": 4888.587400084361,
+          "stop_reason": "complete",
+          "events_sent": 2,
+          "operation": "IDLE",
+          "button_state": [
+            "focus",
+            "hover"
+          ]
+        }
+      ],
+      "ui_click_trace": [
+        {
+          "event": "physical_mouse_press",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 0.012799864634871483,
+          "widget": ".!frame.!panedwindow.!frame3.!notebook.!frame4.!canvas.!frame.!button6",
+          "x_root": 1493,
+          "y_root": 352
+        },
+        {
+          "event": "tk_button_command_entered",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 23.17539998330176,
+          "template": "play_step {index} fast"
+        },
+        {
+          "event": "immediate_visible_feedback",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 78.79299996420741,
+          "selected_index": 5,
+          "allowed": true,
+          "reason": "",
+          "text": "Play Selected Fast received: Step 5\nRestoring saved end state from Step 4...",
+          "feedback_ms": 78.78419989719987
+        },
+        {
+          "event": "selected_index_resolved",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 78.8189999293536,
+          "tree_indices": [
+            5
+          ],
+          "ui_selected_step_index": 5,
+          "controller_selected_step_index": 5,
+          "selected_index": 5
+        },
+        {
+          "event": "playback_readiness_evaluated",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 78.82849988527596,
+          "allowed": true,
+          "reason": ""
+        },
+        {
+          "event": "generated_command",
+          "click_id": "e6e14fbb66964613a67c27ddf3d64321",
+          "relative_ms": 78.83169990964234,
+          "command": "play_step 5 fast"
+        }
+      ],
+      "restore_result": {
+        "selected_step_index": 5,
+        "restore_source_step_index": 4,
+        "restore_source_field": "sim_state_after",
+        "fallback_used": false,
+        "continuity": "WARNING",
+        "continuity_warning": "Selected playback continuity warning: Step 4 saved end state differs from Step 5 saved start state. Restoring authoritative previous-step end state.",
+        "profile": "fast",
+        "selected_fast_click_id": "e6e14fbb66964613a67c27ddf3d64321",
+        "label": "50mm step 005",
+        "request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1",
+        "restore_count_before": 2,
+        "requested_at": 1858637.297336,
+        "deadline": 1858647.297336,
+        "verification_requested": true,
+        "manager_revision": 1,
+        "height_mm": 50,
+        "version_id": "formal_50mm_physical_click_read_only",
+        "trace": [
+          {
+            "event": "operation_acquired",
+            "monotonic_s": 1858637.297336
+          },
+          {
+            "event": "stop_wheels_sent",
+            "monotonic_s": 1858637.2975051
+          },
+          {
+            "event": "restore_sent",
+            "monotonic_s": 1858637.297618,
+            "request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1"
+          },
+          {
+            "event": "restore_acknowledged",
+            "monotonic_s": 1858637.4238919,
+            "request_id": "0a4c2c6143cb4f8b8b9af832f8a2d6c1",
+            "restore_count": 3
+          },
+          {
+            "event": "state_requested",
+            "monotonic_s": 1858637.4242219
+          },
+          {
+            "event": "state_verified",
+            "monotonic_s": 1858637.5390493,
+            "detail": "servo_command_state+root_pose+joint_pos"
+          },
+          {
+            "event": "playback_start_requested",
+            "monotonic_s": 1858637.5399036
+          }
+        ],
+        "started": true,
+        "plan_event_count": 2,
+        "plan_source_steps": [
+          5
+        ],
+        "plan_selected_playback": true
+      },
+      "final_worker": {
+        "active": false,
+        "paused": false,
+        "scheduled": false,
+        "started": true,
+        "plan_id": "409bffca4424-5c5c0600fa68",
+        "request_id": "1fd97672dd36479797be046a5c235a81",
+        "worker_session_id": "4e1d2c0d28e14f44bc9de4cb6ed24fc9",
+        "plan_sha256": "409bffca442488444a9b089f8f9dc27ef46a43655eb0c580b2c674225cee19c3",
+        "source_sha256": "",
+        "label": "50mm step 005",
+        "profile": "motion_only",
+        "path": "",
+        "index": 2,
+        "count": 2,
+        "event_count": 2,
+        "segment_count": 2,
+        "segment_index": 2,
+        "events_sent": 2,
+        "final_time_s": 4.9850000001024455,
+        "sim_elapsed_s": 4.9850000001024455,
+        "wall_elapsed_s": 4.399812698364258,
+        "progress": 1.0,
+        "last_event_command": "wheel stop",
+        "last_event_time": 1785966778.8334627,
+        "last_event_sim_time_s": 21.749999999999407,
+        "max_dispatch_jitter_s": 0.048333333230583975,
+        "dispatch_clock": "simulation_time",
+        "completed_at": 1785966778.8334627,
+        "completed_at_sim_time_s": 21.749999999999407,
+        "stop_reason": "complete",
+        "last_error": "",
+        "last_info": "worker playback complete",
+        "first_motion_planned_s": 0.0,
+        "first_command_applied": true,
+        "first_command_applied_sim_time_s": 16.74999999999969,
+        "first_command_applied_sim_step": 2010,
+        "current_servo_errors": {},
+        "servo_residual_warning_count": 0,
+        "last_servo_residual_warning": {},
+        "progress_detail": {
+          "playback_state": "COMPLETED",
+          "status_text": "Completed",
+          "current_step_index": 5,
+          "total_steps": 35,
+          "global_command_index": 2,
+          "total_commands": 2,
+          "playback_profile": "motion_only",
+          "selected_playback": true,
+          "command_phase": "completed",
+          "last_error": ""
+        },
+        "timing": {}
+      },
+      "operation": "IDLE",
+      "button_state": [
+        "focus",
+        "hover"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "contact_sensor_error": "",
+  "contact_sensor_type": "ContactSensor",
+  "created_utc": "2026-08-12T04:07:39.263557+00:00",
+  "live_obstacle_geometry": {
+    "bottom_z_m": 0.0,
+    "center_y_m": 0.0,
+    "collision_bounds": {
+      "max": [
+        2.5786877308590377,
+        1.0000000149011612,
+        0.05000000074505806
+      ],
+      "min": [
+        0.5213121737735307,
+        -1.0000000149011612,
+        0.0
+      ]
+    },
+    "collision_height_m": 0.05000000074505806,
+    "collision_prim_paths": [
+      "/World/Obstacle/geometry/mesh"
+    ],
+    "collision_valid": true,
+    "collision_width_m": 2.0000000298023224,
+    "front_face_x_m": 0.5213121737735307,
+    "height_m": 0.05000000074505806,
+    "length_m": 2.057375557085507,
+    "measured_bounds": {
+      "max": [
+        2.5786877308590377,
+        1.0000000149011612,
+        0.05000000074505806
+      ],
+      "min": [
+        0.5213121737735307,
+        -1.0000000149011612,
+        0.0
+      ]
+    },
+    "prim_path": "/World/Obstacle",
+    "prim_valid": true,
+    "top_z_m": 0.05000000074505806,
+    "visual_bounds": {
+      "max": [
+        2.5786877308590377,
+        1.0000000149011612,
+        0.05000000074505806
+      ],
+      "min": [
+        0.5213121737735307,
+        -1.0000000149011612,
+        0.0
+      ]
+    },
+    "visual_valid": true,
+    "width_m": 2.0000000298023224
+  },
+  "live_scene_baseline": {
+    "available": true,
+    "canonical_approach_distance": "root_to_obstacle_front_m",
+    "front_wheel_center_to_obstacle_front_m": 0.2685148347636752,
+    "ground_z_m": 0.0,
+    "height_m": 0.05,
+    "lateral_alignment_m": 0.0009929761290550232,
+    "obstacle_bottom_z_m": 0.0,
+    "obstacle_bounds_max_m": [
+      2.5786877308590377,
+      1.0000000149011612,
+      0.05000000074505806
+    ],
+    "obstacle_bounds_min_m": [
+      0.5213121737735307,
+      -1.0000000149011612,
+      0.0
+    ],
+    "obstacle_center_m": [
+      1.5499999523162842,
+      0.0,
+      0.02500000037252903
+    ],
+    "obstacle_front_face_x_m": 0.5213121737735307,
+    "obstacle_length_m": 2.057375557085507,
+    "obstacle_top_z_m": 0.05000000074505806,
+    "obstacle_width_m": 2.0000000298023224,
+    "robot_collision_bounds_max_m": [
+      0.3028188445056377,
+      0.09963325250531498,
+      0.2221059716817776
+    ],
+    "robot_collision_bounds_min_m": [
+      -0.3566539184125821,
+      -0.34345901040288923,
+      -0.0010487644014922637
+    ],
+    "robot_collision_front_to_obstacle_front_m": 0.218493329267893,
+    "robot_root_pose": [
+      -0.003959653899073601,
+      -0.0009929761290550232,
+      0.09901974350214005,
+      0.9999808073043823,
+      -1.026025438477518e-05,
+      -0.006009926088154316,
+      0.0015246823895722628
+    ],
+    "root_to_obstacle_front_m": 0.5252718276726043,
+    "wheel_collision_centers": [
+      {
+        "bounds_max_m": [
+          0.2992029813184188,
+          0.09963325250531498,
+          0.09895098217434375
+        ],
+        "bounds_min_m": [
+          0.19919218497524185,
+          0.0793362724249493,
+          -0.0010487644014922637
+        ],
+        "center_m": [
+          0.24919758314683033,
+          0.08948476246513214,
+          0.048951108886425745
+        ],
+        "prim_path": "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_",
+        "radius_m": 0.04998999834060672,
+        "radius_source": "live_body_mesh_points"
+      },
+      {
+        "bounds_max_m": [
+          0.3028188445056377,
+          -0.31865639865551054,
+          0.0991538799187884
+        ],
+        "bounds_min_m": [
+          0.2027758335140732,
+          -0.33895341335440665,
+          -0.0008364584588674423
+        ],
+        "center_m": [
+          0.25279733900985546,
+          -0.3288049060049586,
+          0.04915871072996048
+        ],
+        "prim_path": "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_",
+        "radius_m": 0.04998999834060669,
+        "radius_source": "live_body_mesh_points"
+      },
+      {
+        "bounds_max_m": [
+          -0.25401427513768016,
+          0.09314643474935477,
+          0.09986688560878365
+        ],
+        "bounds_min_m": [
+          -0.3540224912498938,
+          0.0728492040352787,
+          -0.00013026931141722764
+        ],
+        "center_m": [
+          -0.304018383193787,
+          0.08299781939231674,
+          0.04986830814868321
+        ],
+        "prim_path": "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_",
+        "radius_m": 0.04998999834060673,
+        "radius_source": "live_body_mesh_points"
+      },
+      {
+        "bounds_max_m": [
+          -0.25661994430111756,
+          -0.3231620677010255,
+          0.09980735946917951
+        ],
+        "bounds_min_m": [
+          -0.3566539184125821,
+          -0.34345901040288923,
+          -0.00017394820866490496
+        ],
+        "center_m": [
+          -0.30663693135684983,
+          -0.3333105390519574,
+          0.04981670563025731
+        ],
+        "prim_path": "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_",
+        "radius_m": 0.04998999834060669,
+        "radius_source": "live_body_mesh_points"
+      }
+    ],
+    "wheel_radius_m": 0.04998999834060672,
+    "yaw_alignment_error_deg": 0.17473233799706833
+  },
+  "locked_ground_seed_applied": false,
+  "physics_dt_s": 0.008333333333333333,
+  "runtime": {
+    "executable": "C:\\Users\\kskzz\\miniconda3\\envs\\env_isaaclab\\python.exe",
+    "packages": {
+      "isaaclab": "0.54.3",
+      "isaacsim": "5.1.0.0",
+      "matplotlib": "3.10.3",
+      "numpy": "1.26.0",
+      "torch": "2.7.0+cu128"
+    },
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.15 | packaged by Anaconda, Inc. | (main, Mar 11 2026, 17:12:15) [MSC v.1942 64 bit (AMD64)]"
+  },
+  "scene_config": {
+    "contact_sensor_factory": null,
+    "default_camera_eye": [
+      1.45,
+      -1.25,
+      0.8
+    ],
+    "default_camera_target": [
+      0.45,
+      0.0,
+      0.12
+    ],
+    "default_wheel_speed": 0.5235987755982988,
+    "defer_first_visible_render": true,
+    "device": "cuda:0",
+    "ground_z_m": 0.0,
+    "infer_obstacle_size": false,
+    "max_wheel_speed": 2.0943951023931953,
+    "obstacle_front_x": 0.5213121737735307,
+    "obstacle_height_m": 0.05,
+    "obstacle_length": 2.057375557085507,
+    "obstacle_width": 2.0,
+    "obstacle_x": 1.5499999523162842,
+    "physics_dt": 0.008333333333333333,
+    "render_interval": 8,
+    "robot_length": 0.55,
+    "robot_usd": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+    "robot_width": 0.8,
+    "save_scene": false,
+    "save_usd": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\usd\\wlr_robot_height_replay_env.usd",
+    "servo_damping": 60.0,
+    "servo_stiffness": 600.0,
+    "spawn_z": 0.04,
+    "telemetry_contact_sensors_enabled": true,
+    "wheel_damping": 20.0,
+    "wheel_direction": 1.0
+  },
+  "schema_version": "fsm50.grounding_runtime_readback.v1",
+  "trial_id": 1
+}

@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 *.pyo
 *.log
@@ -10,27 +10,53 @@
 
 logs/
 log/
-outputs/
-output/
-reports/
-recordings/
-videos/
-screenshots/
 cache/
 .cache/
 
 *.mp4
 *.avi
 *.mov
-*.pt
-*.pth
-*.ckpt
 
 *.tmp
 *.bak
 *.zip
 
 # Generated outputs
-artifacts/
-runs/
-saved_height_steps/vision_debug/
+
+# Keep 50mm FSM reports in Git
+!fsm_50mm_recording_derived_v3/reports/
+!fsm_50mm_recording_derived_v3/reports/**
+/artifacts/e2e/stability_after_clean.json
+/artifacts/e2e/stability_after_final.json
+/artifacts/e2e/stability_round2_final.json
+/artifacts/e2e/test_summary.json
+/artifacts/e2e/vision_after_full.json
+/artifacts/e2e/vision_after_full_clean.json
+/artifacts/e2e/vision_round2_final.json
+/artifacts/e2e_simtime_physical/10cm_closed/summary.json
+/artifacts/e2e_simtime_physical/10cm_closed_rerun2/summary.json
+/artifacts/e2e_simtime_physical/10cm_open_rerun3/summary.json
+/artifacts/e2e_simtime_physical/5cm_closed/summary.json
+/artifacts/e2e_simtime_physical/5cm_closed_rerun3/summary.json
+/artifacts/e2e_simtime_physical/5cm_open/summary.json
+/artifacts/e2e_simtime_physical/5cm_open_rerun3/summary.json
+/artifacts/feedback_baseline/stability_baseline.json
+/artifacts/feedback_baseline/vision_baseline.json
+/saved_height_steps/vision_debug/e2e_5cm_after.json
+/saved_height_steps/vision_debug/e2e_5cm_after_retry.json
+/saved_height_steps/vision_debug/e2e_5cm_after_retry2.json
+/saved_height_steps/vision_debug/e2e_5cm_after_retry3.json
+/saved_height_steps/vision_debug/e2e_5cm_after_retry4.json
+/saved_height_steps/vision_debug/e2e_after.json
+/saved_height_steps/vision_debug/e2e_after_correction.json
+/saved_height_steps/vision_debug/e2e_after_final.json
+/saved_height_steps/vision_debug/e2e_after_safeplacement.json
+/saved_height_steps/vision_debug/e2e_before.json
+*.mkv
+*.webm
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx

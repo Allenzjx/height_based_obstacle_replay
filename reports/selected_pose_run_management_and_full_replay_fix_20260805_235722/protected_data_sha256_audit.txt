@@ -1,0 +1,16 @@
+Protected data SHA-256 audit
+baseline_count=1021
+after_count=1021
+changed_count=0
+missing_count=0
+added_count=0
+changed=[]
+missing=[]
+added=[]
+formal_run_id=v006_20260805_233948_654778_manual
+formal_accepted_steps_path=C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps_fsm_reference_v2\height_050mm\versions\v006_20260805_233948_654778_manual\accepted_steps.jsonl
+formal_sha256_baseline=2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f
+formal_sha256_after_raw=2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f
+formal_sha256_after_fast=2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f
+formal_sha256_current=2f7800916e26d20b4c098883f812220152c00e8480bf93a966ec544b073dba0f
+result=PASS

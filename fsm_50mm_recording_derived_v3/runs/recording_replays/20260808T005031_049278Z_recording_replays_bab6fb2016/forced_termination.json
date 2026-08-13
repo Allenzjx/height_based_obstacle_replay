@@ -1,0 +1,7 @@
+{
+  "reason": "SimulationApp close remained busy for more than five minutes after batch_failure.json had been written",
+  "owned_process_pid": 97752,
+  "recording_commands_started": false,
+  "termination_scope": "this runner-owned failed Isaac process only",
+  "timestamp_local": "2026-08-07T20:56:30-04:00"
+}

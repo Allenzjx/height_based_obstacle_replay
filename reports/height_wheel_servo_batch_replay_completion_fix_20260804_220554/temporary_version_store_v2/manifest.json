@@ -1,0 +1,63 @@
+{
+  "created_at": "2026-08-04T22:05:55-04:00",
+  "heights": {
+    "100": {
+      "active_version_id": "",
+      "folder": "height_100mm",
+      "height_mm": 100,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "50": {
+      "active_version_id": "v002_20260804_220635_732778_manual",
+      "folder": "height_050mm",
+      "height_mm": 50,
+      "last_saved_at": "2026-08-04T22:06:35-04:00",
+      "version_count": 2,
+      "versions": [
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_220632_754046_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "2d083c2f59acb872bd8b73f71fd923daaef12a70667ba3cf538845f380386816",
+          "command_count": 2,
+          "created_at": "2026-08-04T22:06:32-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_220632_754046_manual",
+          "read_only": false,
+          "step_count": 1,
+          "updated_at": "2026-08-04T22:06:32-04:00",
+          "version_id": "v001_20260804_220632_754046_manual",
+          "version_name": "manual"
+        },
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_220635_732778_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "9eee3c20ee3cd728ea75182c0abcd59e36fe2340ef8328b48d6e2071bba5154e",
+          "command_count": 4,
+          "created_at": "2026-08-04T22:06:35-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\height_wheel_servo_batch_replay_completion_fix_20260804_220554\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_220635_732778_manual",
+          "read_only": false,
+          "step_count": 2,
+          "updated_at": "2026-08-04T22:06:35-04:00",
+          "version_id": "v002_20260804_220635_732778_manual",
+          "version_name": "manual"
+        }
+      ]
+    },
+    "75": {
+      "active_version_id": "",
+      "folder": "height_075mm",
+      "height_mm": 75,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    }
+  },
+  "schema_version": "height-steps-versions.v2",
+  "supported_heights_mm": [
+    50,
+    75,
+    100
+  ],
+  "updated_at": "2026-08-04T22:06:37-04:00"
+}

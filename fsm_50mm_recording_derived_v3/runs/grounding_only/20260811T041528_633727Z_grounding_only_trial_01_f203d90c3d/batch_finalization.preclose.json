@@ -1,0 +1,16 @@
+{
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\grounding_only\\20260811T041528_633727Z_grounding_only_trial_01_f203d90c3d",
+  "batch_error": "",
+  "close_error": "",
+  "command": "grounding-only",
+  "created_utc": "2026-08-11T04:19:06.108205+00:00",
+  "diagnostic_artifact_valid": false,
+  "failed": true,
+  "finalization_errors": [],
+  "finalized": false,
+  "phase": "PRECLOSE_FINALIZED",
+  "physical_result": "FAIL",
+  "schema_version": "fsm50.batch_finalization.v1",
+  "strict_success": false,
+  "trial_id": 1
+}

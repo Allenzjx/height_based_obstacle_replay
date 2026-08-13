@@ -1,0 +1,153 @@
+{
+  "schema": "height_replay_physical_success.v1",
+  "ok": false,
+  "verdict": "FAIL",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session",
+  "expected": {
+    "height_cm": 5,
+    "event_count": 269,
+    "final_time_s": 278.8720000004396
+  },
+  "scene": {
+    "obstacle_x_m": 1.55,
+    "obstacle_length_m": 2.0573755975573045,
+    "robot_length_m": 0.55,
+    "required_clearance_m": 0.1375,
+    "clear_x_m": 2.7161877987786527
+  },
+  "metrics": {
+    "sample_count": 1,
+    "duration_s": 0.0,
+    "initial_base_x_m": -0.007054109126329422,
+    "final_base_x_m": -0.007054109126329422,
+    "max_base_x_m": -0.007054109126329422,
+    "forward_progress_m": 0.0,
+    "first_clearance_time_s": null,
+    "min_base_z_m": 0.11660995334386826,
+    "final_base_z_m": 0.11660995334386826,
+    "max_base_z_m": 0.11660995334386826,
+    "max_abs_roll_rad": 0.00011798754188277519,
+    "max_abs_pitch_rad": 0.009870245662565093,
+    "max_abs_roll_pitch_rad": 0.009870245662565093,
+    "min_static_margin_m": null,
+    "finite_static_margin_count": 0,
+    "min_active_contacts": 0.0,
+    "final_active_contacts": 0.0,
+    "last_replay_state": "idle",
+    "last_sequence_success": null
+  },
+  "replay": {
+    "started": false,
+    "finished": false,
+    "finished_success": false,
+    "finish_message": "",
+    "command_event_count": 0,
+    "max_event_index": 0
+  },
+  "data_quality": {
+    "overall_verdict": "INSUFFICIENT",
+    "warnings": [
+      "not enough telemetry samples",
+      "static stability margin unavailable",
+      "dynamic stability margin unavailable",
+      "equilibrium stability margin unavailable",
+      "contact normal forces unavailable"
+    ],
+    "path": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session\\data_quality.json"
+  },
+  "checks": [
+    {
+      "name": "telemetry_samples_present",
+      "passed": false,
+      "actual": 1,
+      "expected": ">= 20"
+    },
+    {
+      "name": "data_quality_not_insufficient",
+      "passed": false,
+      "actual": "INSUFFICIENT",
+      "expected": "PASS or WARN"
+    },
+    {
+      "name": "replay_started",
+      "passed": false,
+      "actual": false,
+      "expected": true
+    },
+    {
+      "name": "replay_finished_success",
+      "passed": false,
+      "actual": "",
+      "expected": "Replay complete"
+    },
+    {
+      "name": "all_events_dispatched",
+      "passed": false,
+      "actual": 0,
+      "expected": ">= 268"
+    },
+    {
+      "name": "sim_duration_covers_plan",
+      "passed": false,
+      "actual": 0.0,
+      "expected": ">= 278.372s"
+    },
+    {
+      "name": "base_crossed_obstacle_clearance",
+      "passed": false,
+      "actual": -0.007054109126329422,
+      "expected": ">= 2.716m"
+    },
+    {
+      "name": "ended_past_obstacle",
+      "passed": false,
+      "actual": -0.007054109126329422,
+      "expected": ">= 2.616m"
+    },
+    {
+      "name": "not_flipped_roll_pitch",
+      "passed": true,
+      "actual": 0.009870245662565093,
+      "expected": "<= 0.85rad"
+    },
+    {
+      "name": "base_height_reasonable",
+      "passed": true,
+      "actual": {
+        "min": 0.11660995334386826,
+        "final": 0.11660995334386826
+      },
+      "expected": "no floor penetration/collapse"
+    },
+    {
+      "name": "final_contacts_present",
+      "passed": false,
+      "actual": 0.0,
+      "expected": ">= 2"
+    },
+    {
+      "name": "static_margin_finite",
+      "passed": false,
+      "actual": 0,
+      "expected": "> 0"
+    }
+  ],
+  "failure_reasons": [
+    "telemetry_samples_present: actual=1 expected=>= 20",
+    "data_quality_not_insufficient: actual=INSUFFICIENT expected=PASS or WARN",
+    "replay_started: actual=False expected=True",
+    "replay_finished_success: actual= expected=Replay complete",
+    "all_events_dispatched: actual=0 expected=>= 268",
+    "sim_duration_covers_plan: actual=0.0 expected=>= 278.372s",
+    "base_crossed_obstacle_clearance: actual=-0.007054109126329422 expected=>= 2.716m",
+    "ended_past_obstacle: actual=-0.007054109126329422 expected=>= 2.616m",
+    "final_contacts_present: actual=0.0 expected=>= 2",
+    "static_margin_finite: actual=0 expected=> 0"
+  ],
+  "sources": {
+    "telemetry_samples": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session\\telemetry_samples.csv",
+    "events": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session\\events.jsonl",
+    "metadata": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session\\metadata.json",
+    "stability_summary": "C:\\robotics_sim\\wlr_robot\\runs\\20260723_014934_obstacle-05cm_5cm-worker-session\\stability_summary.json"
+  }
+}

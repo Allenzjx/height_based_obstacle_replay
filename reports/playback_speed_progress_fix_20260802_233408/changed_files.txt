@@ -1,0 +1,49 @@
+MODIFIED speed_scale.py
+  Replaced independent multipliers with the authoritative SpeedPercentModel; preserved legacy 1.0/3.0 migration; made wheel-distance preservation mandatory; manual servo targets are invariant.
+
+ADDED playback_progress.py
+  Defines PlaybackState and the shared PlaybackProgress model.
+
+MODIFIED playback.py
+  Rebuilt Raw/Motion-only planning, speed/duration/distance math, event metadata and serialization; added worker simulation-time progress, pause/resume, boundary speed updates, timing trace, and wheel dispatch snapshots.
+
+MODIFIED sim_worker.py
+  Passes the adapter into pause for wheel-safe hold and handles playback speed requests.
+
+MODIFIED sim_worker_process.py
+  Handles pause with adapter and set_playback_speed_percent in the real subprocess worker.
+
+MODIFIED sim_transport.py
+  Exposes the single playback speed-percent IPC operation.
+
+MODIFIED sim_process_client.py
+  Sends the playback speed-percent IPC message.
+
+MODIFIED sim_ipc_protocol.py
+  Adds set_playback_speed_percent to the validated IPC protocol whitelist.
+
+MODIFIED sim_ui_controller.py
+  Uses one speed model, builds derived plans, implements 0% behavior, simplified Speed/Playback UI, worker-derived progress, current-row highlighting and 10 Hz status refresh.
+
+MODIFIED height_replay_ui.py
+  Adds --speed-percent and legacy compatibility while forcing wheel-distance preservation.
+
+MODIFIED tests/test_playback_speed_scale.py
+  Verifies legacy preserve=False cannot disable the invariant.
+
+MODIFIED tests/test_speed_scale_negative_servo.py
+  Verifies manual servo targets never scale.
+
+MODIFIED tests/test_wheel_speed_scale.py
+  Verifies one shared speed authority.
+
+MODIFIED tests/test_ipc_protocol.py
+  Adds speed-percent IPC round-trip regression coverage.
+
+ADDED tests/test_playback_speed_progress_fix.py
+  Adds acceptance tests A-I for endpoint, distance, limits, combined commands, profiles, selected playback, progress, 0%, and single application.
+
+ADDED playback_speed_progress_e2e.py
+  Visible Tk + real Isaac validation harness for the formal 5 cm sequence, screenshots, actual joint travel, limit comparison and completion state.
+
+No saved_height_steps, accepted_steps.jsonl, accepted_commands.txt, history_commands.log, saved_sequences, USD, URDF, joint mapping, calibration, physics parameter, or obstacle geometry file was modified.

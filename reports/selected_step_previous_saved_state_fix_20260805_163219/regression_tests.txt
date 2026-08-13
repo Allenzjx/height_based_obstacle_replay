@@ -1,0 +1,16 @@
+PASS — python -m unittest discover -s tests -v
+Ran 226 tests in 7.452s; OK.
+
+PASS — other Playback entry semantics
+- Play All: unchanged full-sequence start_playback path.
+- Play All Fast: unchanged path/profile semantics.
+- Play To Selected From Start: unchanged Step 1..N path; no previous-step policy injected.
+- Respawn And Play Selected / Fast: unchanged respawn_first=True path.
+- Respawn And Play To Selected: unchanged respawn_first=True Step 1..N path.
+- Pause / Resume / Stop: existing PlaybackManager paths unchanged; Stop only gains pending-restore cancellation before plan creation.
+
+PASS — protected behavior/static scope
+- playback.py unchanged.
+- No Servo/Wheel speed, timing, completion, obstacle, height, respawn, recording, save/combine, vision or learning code changed.
+- Raw/Fast selected plans preserve the existing planner's command signature; only the restore source/ack gate changed.
+- git diff --check: PASS (line-ending notices only).

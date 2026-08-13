@@ -1,0 +1,8 @@
+HEAD=74e5a3b2c11fa260bfee7496e08aa8682a3b1a6e
+origin/main=74e5a3b2c11fa260bfee7496e08aa8682a3b1a6e
+ahead_behind=0	0
+status_short_at_start:
+?? capture_selected_run_baseline.py
+remotes:
+origin	https://github.com/Allenzjx/height_based_obstacle_replay.git (fetch)
+origin	https://github.com/Allenzjx/height_based_obstacle_replay.git (push)

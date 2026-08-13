@@ -1,0 +1,20 @@
+[git_status_short]
+ M saved_height_steps_fsm_reference_v2/height_050mm/active_version.json
+ M saved_height_steps_fsm_reference_v2/manifest.json
+?? saved_height_steps_fsm_reference_v2/height_050mm/active_version.json.backup_20260805_190520_065168
+?? saved_height_steps_fsm_reference_v2/height_050mm/active_version.json.backup_20260805_190522_649861
+?? saved_height_steps_fsm_reference_v2/height_050mm/active_version.json.backup_20260805_190525_952568
+?? saved_height_steps_fsm_reference_v2/height_050mm/active_version.json.backup_20260805_190527_112530
+?? saved_height_steps_fsm_reference_v2/height_050mm/active_version.json.backup_20260805_190528_189096
+?? saved_height_steps_fsm_reference_v2/manifest.json.backup_20260805_190520_084721
+?? saved_height_steps_fsm_reference_v2/manifest.json.backup_20260805_190522_669387
+?? saved_height_steps_fsm_reference_v2/manifest.json.backup_20260805_190525_972589
+?? saved_height_steps_fsm_reference_v2/manifest.json.backup_20260805_190527_132093
+?? saved_height_steps_fsm_reference_v2/manifest.json.backup_20260805_190528_212622
+[git_head]
+249604b02192f73f096ab4e41fa253ae15b8cf11
+[git_origin_main]
+249604b02192f73f096ab4e41fa253ae15b8cf11
+[git_remote]
+origin	https://github.com/Allenzjx/height_based_obstacle_replay.git (fetch)
+origin	https://github.com/Allenzjx/height_based_obstacle_replay.git (push)

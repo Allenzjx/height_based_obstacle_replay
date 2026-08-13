@@ -1,0 +1,10 @@
+{
+  "dynamic_margin_mean_m": 0.048580742330802715,
+  "dynamic_margin_std_m": 0.07900269231082938,
+  "equilibrium_margin_mean_m": 0.05096552739556331,
+  "equilibrium_margin_std_m": 0.06860645377512174,
+  "finite_contact_rows": 0,
+  "finite_torque_rows": 6600,
+  "max_contact_normal_force_n": null,
+  "max_torque_utilization": 1.0
+}

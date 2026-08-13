@@ -1,0 +1,50 @@
+{
+  "created_at": "2026-08-04T17:52:48-04:00",
+  "heights": {
+    "100": {
+      "active_version_id": "",
+      "folder": "height_100mm",
+      "height_mm": 100,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "50": {
+      "active_version_id": "",
+      "folder": "height_050mm",
+      "height_mm": 50,
+      "last_saved_at": "",
+      "version_count": 0,
+      "versions": []
+    },
+    "75": {
+      "active_version_id": "v001_20260804_175341_615776_manual",
+      "folder": "height_075mm",
+      "height_mm": 75,
+      "last_saved_at": "2026-08-04T17:53:41-04:00",
+      "version_count": 1,
+      "versions": [
+        {
+          "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_175248\\real_isaac\\temporary_version_store_v2\\height_075mm\\versions\\v001_20260804_175341_615776_manual\\accepted_steps.jsonl",
+          "accepted_steps_sha256": "eed5e3b01baa6df0a10898f3fd299300bd59b1fec3da7d62e49224209818a236",
+          "command_count": 2,
+          "created_at": "2026-08-04T17:53:41-04:00",
+          "legacy": false,
+          "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_175248\\real_isaac\\temporary_version_store_v2\\height_075mm\\versions\\v001_20260804_175341_615776_manual",
+          "read_only": false,
+          "step_count": 1,
+          "updated_at": "2026-08-04T17:53:41-04:00",
+          "version_id": "v001_20260804_175341_615776_manual",
+          "version_name": "manual"
+        }
+      ]
+    }
+  },
+  "schema_version": "height-steps-versions.v2",
+  "supported_heights_mm": [
+    50,
+    75,
+    100
+  ],
+  "updated_at": "2026-08-04T17:53:41-04:00"
+}

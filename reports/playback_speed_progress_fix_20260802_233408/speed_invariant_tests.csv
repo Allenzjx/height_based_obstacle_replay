@@ -1,0 +1,8 @@
+case,requested_percent,effective_percent,servo_target_command_deg,servo_target_actual_deg,servo_actual_sample_deg,base_duration_s,effective_duration_s,base_wheel_velocity_rad_s,effective_wheel_velocity_rad_s,planned_wheel_angle_rad,measured_wheel_angle_rad,logic_angle_error_percent,real_cross_speed_error_percent,result
+normal_50,50,50,18.7,-18.879426,-18.467810,3.0,6.0,0.6,0.3,1.8,3.537529,0.0,0.828598,PASS
+normal_100,100,100,18.7,-18.879426,-18.560009,3.0,3.0,0.6,0.6,1.8,3.561738,0.0,0.149916,PASS
+normal_200,200,200,18.7,-18.879426,-17.202453,3.0,1.5,0.6,1.2,1.8,3.572433,0.0,0.149916,PASS
+normal_300,300,300,18.7,-18.879426,-17.675080,3.0,1.0,0.6,1.8,1.8,3.578064,0.0,0.307765,PASS
+limit_baseline_100,100,100,NA,NA,NA,3.0,3.0,1.0,1.0,3.0,5.766751,0.0,0.0,PASS
+limit_clamped_300,300,209.439510,NA,NA,NA,3.0,1.432394,1.0,2.094395,3.0,5.866205,0.0,1.724613,PASS
+combined_logic_300,300,200,30.0,NA,NA,3.0,1.5,1.0,2.0,3.0,NA,0.0,NA,PASS

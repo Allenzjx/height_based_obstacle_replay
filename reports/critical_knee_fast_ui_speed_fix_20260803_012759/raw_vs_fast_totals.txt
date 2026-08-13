@@ -1,0 +1,4 @@
+raw_total_s=278.872000
+fast_total_s=123.249000
+reduction_s=155.623000
+fixed_step_gap_s=0.000000

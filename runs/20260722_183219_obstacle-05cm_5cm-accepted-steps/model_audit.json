@@ -1,0 +1,308 @@
+{
+  "body_count": 13,
+  "body_names": [
+    "base_link",
+    "front_left_upper",
+    "front_right_upper",
+    "rear_left_upper",
+    "rear_right_upper",
+    "front_left_bot",
+    "front_right_bot",
+    "rear_left_bot",
+    "rear_right_bot",
+    "front_left_wheel",
+    "front_right_wheel",
+    "rear_left_wheel",
+    "rear_right_wheel"
+  ],
+  "contact_sensor": {
+    "available": true,
+    "body_names": [
+      "base_link",
+      "front_left_upper",
+      "front_left_bot",
+      "front_left_wheel",
+      "front_right_upper",
+      "front_right_bot",
+      "front_right_wheel",
+      "rear_left_upper",
+      "rear_left_bot",
+      "rear_left_wheel",
+      "rear_right_upper",
+      "rear_right_bot",
+      "rear_right_wheel"
+    ],
+    "error": "",
+    "requested": true
+  },
+  "friction_sources": {
+    "ground_dynamic_friction": 1.05,
+    "ground_static_friction": 1.25,
+    "obstacle_dynamic_friction": 1.0,
+    "obstacle_static_friction": 1.2,
+    "telemetry_default_mu": 1.05
+  },
+  "isaac_lab_version": "2.3.2",
+  "joint_count": 12,
+  "joint_names": [
+    "front_left_hip",
+    "front_right_hip",
+    "rear_left_hip",
+    "rear_right_hip",
+    "front_left_knee",
+    "front_right_knee",
+    "rear_left_knee",
+    "rear_right_knee",
+    "front_left_ankle",
+    "front_right_ankle",
+    "rear_left_ankle",
+    "rear_right_ankle"
+  ],
+  "joints": [
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 0,
+      "joint_name": "front_left_hip",
+      "position_limit_lower_rad": -2.3508050441741943,
+      "position_limit_upper_rad": 2.361583948135376,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 1,
+      "joint_name": "front_right_hip",
+      "position_limit_lower_rad": -2.351142406463623,
+      "position_limit_upper_rad": 2.3612465858459473,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 2,
+      "joint_name": "rear_left_hip",
+      "position_limit_lower_rad": -2.357414484024048,
+      "position_limit_upper_rad": 2.3549745082855225,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 3,
+      "joint_name": "rear_right_hip",
+      "position_limit_lower_rad": -2.3581693172454834,
+      "position_limit_upper_rad": 2.354219675064087,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 4,
+      "joint_name": "front_left_knee",
+      "position_limit_lower_rad": -1.046698808670044,
+      "position_limit_upper_rad": 3.6656901836395264,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 5,
+      "joint_name": "front_right_knee",
+      "position_limit_lower_rad": -1.045703411102295,
+      "position_limit_upper_rad": 3.6666855812072754,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 6,
+      "joint_name": "rear_left_knee",
+      "position_limit_lower_rad": -3.6654956340789795,
+      "position_limit_upper_rad": 1.0468933582305908,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 2.700000047683716,
+      "joint_index": 7,
+      "joint_name": "rear_right_knee",
+      "position_limit_lower_rad": -3.665914297103882,
+      "position_limit_upper_rad": 1.0464746952056885,
+      "velocity_limit_rad_s": 4.999999523162842
+    },
+    {
+      "effort_limit_nm": 1.0,
+      "joint_index": 8,
+      "joint_name": "front_left_ankle",
+      "position_limit_lower_rad": -Infinity,
+      "position_limit_upper_rad": Infinity,
+      "velocity_limit_rad_s": 2.094395160675049
+    },
+    {
+      "effort_limit_nm": 1.0,
+      "joint_index": 9,
+      "joint_name": "front_right_ankle",
+      "position_limit_lower_rad": -Infinity,
+      "position_limit_upper_rad": Infinity,
+      "velocity_limit_rad_s": 2.094395160675049
+    },
+    {
+      "effort_limit_nm": 1.0,
+      "joint_index": 10,
+      "joint_name": "rear_left_ankle",
+      "position_limit_lower_rad": -Infinity,
+      "position_limit_upper_rad": Infinity,
+      "velocity_limit_rad_s": 2.094395160675049
+    },
+    {
+      "effort_limit_nm": 1.0,
+      "joint_index": 11,
+      "joint_name": "rear_right_ankle",
+      "position_limit_lower_rad": -Infinity,
+      "position_limit_upper_rad": Infinity,
+      "velocity_limit_rad_s": 2.094395160675049
+    }
+  ],
+  "masses": [
+    {
+      "body_index": 0,
+      "body_name": "base_link",
+      "local_com_xyz_m": [
+        -0.022930532693862915,
+        -0.12091396003961563,
+        0.0841316282749176
+      ],
+      "mass_kg": 1.3484421968460083
+    },
+    {
+      "body_index": 1,
+      "body_name": "front_left_upper",
+      "local_com_xyz_m": [
+        0.08638686686754227,
+        -3.0228571631596424e-05,
+        -0.028460122644901276
+      ],
+      "mass_kg": 0.12063051015138626
+    },
+    {
+      "body_index": 2,
+      "body_name": "front_right_upper",
+      "local_com_xyz_m": [
+        0.08610597252845764,
+        5.057207204117731e-07,
+        0.02879924885928631
+      ],
+      "mass_kg": 0.12198812514543533
+    },
+    {
+      "body_index": 3,
+      "body_name": "rear_left_upper",
+      "local_com_xyz_m": [
+        0.08610597252845764,
+        -7.533327561759506e-07,
+        -0.028447534888982773
+      ],
+      "mass_kg": 0.12198812514543533
+    },
+    {
+      "body_index": 4,
+      "body_name": "rear_right_upper",
+      "local_com_xyz_m": [
+        0.08610597252845764,
+        -7.533327561759506e-07,
+        0.028460558503866196
+      ],
+      "mass_kg": 0.12198812514543533
+    },
+    {
+      "body_index": 5,
+      "body_name": "front_left_bot",
+      "local_com_xyz_m": [
+        0.09594029933214188,
+        -0.014183025807142258,
+        -0.03410063311457634
+      ],
+      "mass_kg": 0.2142179161310196
+    },
+    {
+      "body_index": 6,
+      "body_name": "front_right_bot",
+      "local_com_xyz_m": [
+        0.09585117548704147,
+        -0.014166736043989658,
+        0.03295695781707764
+      ],
+      "mass_kg": 0.2146543711423874
+    },
+    {
+      "body_index": 7,
+      "body_name": "rear_left_bot",
+      "local_com_xyz_m": [
+        0.0958542749285698,
+        0.014164568856358528,
+        -0.03207741677761078
+      ],
+      "mass_kg": 0.2146543711423874
+    },
+    {
+      "body_index": 8,
+      "body_name": "rear_right_bot",
+      "local_com_xyz_m": [
+        0.09593648463487625,
+        0.014179621823132038,
+        0.03410063311457634
+      ],
+      "mass_kg": 0.2142179161310196
+    },
+    {
+      "body_index": 9,
+      "body_name": "front_left_wheel",
+      "local_com_xyz_m": [
+        -6.603134705684965e-11,
+        -2.2632883067696952e-10,
+        -0.011175424791872501
+      ],
+      "mass_kg": 0.059519216418266296
+    },
+    {
+      "body_index": 10,
+      "body_name": "front_right_wheel",
+      "local_com_xyz_m": [
+        -6.37971619976696e-11,
+        -2.321802472504686e-10,
+        -0.011175424791872501
+      ],
+      "mass_kg": 0.059519216418266296
+    },
+    {
+      "body_index": 11,
+      "body_name": "rear_left_wheel",
+      "local_com_xyz_m": [
+        -6.379435868453243e-11,
+        -2.321809550176468e-10,
+        -0.011175424791872501
+      ],
+      "mass_kg": 0.059519216418266296
+    },
+    {
+      "body_index": 12,
+      "body_name": "rear_right_wheel",
+      "local_com_xyz_m": [
+        -6.37950248183472e-11,
+        -2.3218146849579568e-10,
+        -0.011175424791872501
+      ],
+      "mass_kg": 0.059519216418266296
+    }
+  ],
+  "robot_prim_path": "/World/WLRRobot",
+  "robot_usd": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+  "schema_version": "height_replay_model_audit.v1",
+  "usd": {
+    "collision_prim_count_under_robot": 0,
+    "joint_prim_count_under_robot": 12,
+    "mass_api_prim_count_under_robot": 13,
+    "stage_available": true,
+    "warnings": []
+  },
+  "warnings": [],
+  "wheel_joint_names": [
+    "front_left_ankle",
+    "front_right_ankle",
+    "rear_left_ankle",
+    "rear_right_ankle"
+  ]
+}

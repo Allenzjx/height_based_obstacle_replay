@@ -1,0 +1,1021 @@
+{
+  "mode": "no_sim_existing_code_tab_switch_baseline",
+  "tabs": [
+    "Sim Connection",
+    "Run Manager",
+    "Record / Servo+Wheel",
+    "Speed Scale",
+    "Playback",
+    "Height Task",
+    "Combine",
+    "Vision Auto Replay",
+    "Stability Replay",
+    "Sim State"
+  ],
+  "count": 200,
+  "p50_ms": 0.01409999094903469,
+  "p95_ms": 0.1254999078810215,
+  "max_ms": 1.1291000992059708,
+  "measurements": [
+    {
+      "round": 0,
+      "tab": "Sim Connection",
+      "duration_ms": 0.2911000046879053
+    },
+    {
+      "round": 0,
+      "tab": "Run Manager",
+      "duration_ms": 0.025699962861835957
+    },
+    {
+      "round": 0,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01659989356994629
+    },
+    {
+      "round": 0,
+      "tab": "Speed Scale",
+      "duration_ms": 0.015900004655122757
+    },
+    {
+      "round": 0,
+      "tab": "Playback",
+      "duration_ms": 0.016300007700920105
+    },
+    {
+      "round": 0,
+      "tab": "Height Task",
+      "duration_ms": 0.015900004655122757
+    },
+    {
+      "round": 0,
+      "tab": "Combine",
+      "duration_ms": 0.016000005416572094
+    },
+    {
+      "round": 0,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.015199999324977398
+    },
+    {
+      "round": 0,
+      "tab": "Stability Replay",
+      "duration_ms": 0.015500001609325409
+    },
+    {
+      "round": 0,
+      "tab": "Sim State",
+      "duration_ms": 0.015199999324977398
+    },
+    {
+      "round": 1,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014599994756281376
+    },
+    {
+      "round": 1,
+      "tab": "Run Manager",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 1,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 1,
+      "tab": "Speed Scale",
+      "duration_ms": 0.014100107364356518
+    },
+    {
+      "round": 1,
+      "tab": "Playback",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 1,
+      "tab": "Height Task",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 1,
+      "tab": "Combine",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 1,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 1,
+      "tab": "Stability Replay",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 1,
+      "tab": "Sim State",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 2,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 2,
+      "tab": "Run Manager",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 2,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 2,
+      "tab": "Speed Scale",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 2,
+      "tab": "Playback",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 2,
+      "tab": "Height Task",
+      "duration_ms": 0.014200108125805855
+    },
+    {
+      "round": 2,
+      "tab": "Combine",
+      "duration_ms": 0.01650000922381878
+    },
+    {
+      "round": 2,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 2,
+      "tab": "Stability Replay",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 2,
+      "tab": "Sim State",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 3,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 3,
+      "tab": "Run Manager",
+      "duration_ms": 0.014599994756281376
+    },
+    {
+      "round": 3,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 3,
+      "tab": "Speed Scale",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 3,
+      "tab": "Playback",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 3,
+      "tab": "Height Task",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 3,
+      "tab": "Combine",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 3,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 3,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 3,
+      "tab": "Sim State",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 4,
+      "tab": "Sim Connection",
+      "duration_ms": 0.1254999078810215
+    },
+    {
+      "round": 4,
+      "tab": "Run Manager",
+      "duration_ms": 0.02159993164241314
+    },
+    {
+      "round": 4,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.015900004655122757
+    },
+    {
+      "round": 4,
+      "tab": "Speed Scale",
+      "duration_ms": 0.015300000086426735
+    },
+    {
+      "round": 4,
+      "tab": "Playback",
+      "duration_ms": 0.014999997802078724
+    },
+    {
+      "round": 4,
+      "tab": "Height Task",
+      "duration_ms": 0.015199999324977398
+    },
+    {
+      "round": 4,
+      "tab": "Combine",
+      "duration_ms": 0.015300000086426735
+    },
+    {
+      "round": 4,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.014699995517730713
+    },
+    {
+      "round": 4,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01479999627918005
+    },
+    {
+      "round": 4,
+      "tab": "Sim State",
+      "duration_ms": 0.014699995517730713
+    },
+    {
+      "round": 5,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014699995517730713
+    },
+    {
+      "round": 5,
+      "tab": "Run Manager",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 5,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 5,
+      "tab": "Speed Scale",
+      "duration_ms": 0.1729000359773636
+    },
+    {
+      "round": 5,
+      "tab": "Playback",
+      "duration_ms": 0.08639995940029621
+    },
+    {
+      "round": 5,
+      "tab": "Height Task",
+      "duration_ms": 0.018600025214254856
+    },
+    {
+      "round": 5,
+      "tab": "Combine",
+      "duration_ms": 0.014699995517730713
+    },
+    {
+      "round": 5,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.014599994756281376
+    },
+    {
+      "round": 5,
+      "tab": "Stability Replay",
+      "duration_ms": 0.014499993994832039
+    },
+    {
+      "round": 5,
+      "tab": "Sim State",
+      "duration_ms": 0.03250001464039087
+    },
+    {
+      "round": 6,
+      "tab": "Sim Connection",
+      "duration_ms": 0.13840000610798597
+    },
+    {
+      "round": 6,
+      "tab": "Run Manager",
+      "duration_ms": 0.28060004115104675
+    },
+    {
+      "round": 6,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.09390001650899649
+    },
+    {
+      "round": 6,
+      "tab": "Speed Scale",
+      "duration_ms": 0.016600009985268116
+    },
+    {
+      "round": 6,
+      "tab": "Playback",
+      "duration_ms": 0.014499993994832039
+    },
+    {
+      "round": 6,
+      "tab": "Height Task",
+      "duration_ms": 0.04329998046159744
+    },
+    {
+      "round": 6,
+      "tab": "Combine",
+      "duration_ms": 0.05929998587816954
+    },
+    {
+      "round": 6,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.03200001083314419
+    },
+    {
+      "round": 6,
+      "tab": "Stability Replay",
+      "duration_ms": 0.015900004655122757
+    },
+    {
+      "round": 6,
+      "tab": "Sim State",
+      "duration_ms": 0.14190003275871277
+    },
+    {
+      "round": 7,
+      "tab": "Sim Connection",
+      "duration_ms": 0.03220001235604286
+    },
+    {
+      "round": 7,
+      "tab": "Run Manager",
+      "duration_ms": 0.014999997802078724
+    },
+    {
+      "round": 7,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 7,
+      "tab": "Speed Scale",
+      "duration_ms": 0.014300108887255192
+    },
+    {
+      "round": 7,
+      "tab": "Playback",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 7,
+      "tab": "Height Task",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 7,
+      "tab": "Combine",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 7,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013999990187585354
+    },
+    {
+      "round": 7,
+      "tab": "Stability Replay",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 7,
+      "tab": "Sim State",
+      "duration_ms": 0.014399993233382702
+    },
+    {
+      "round": 8,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 8,
+      "tab": "Run Manager",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 8,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 8,
+      "tab": "Speed Scale",
+      "duration_ms": 0.014100107364356518
+    },
+    {
+      "round": 8,
+      "tab": "Playback",
+      "duration_ms": 0.01370010431855917
+    },
+    {
+      "round": 8,
+      "tab": "Height Task",
+      "duration_ms": 0.013999990187585354
+    },
+    {
+      "round": 8,
+      "tab": "Combine",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 8,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 8,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 8,
+      "tab": "Sim State",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 9,
+      "tab": "Sim Connection",
+      "duration_ms": 0.030700000934302807
+    },
+    {
+      "round": 9,
+      "tab": "Run Manager",
+      "duration_ms": 0.018700025975704193
+    },
+    {
+      "round": 9,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.13560010120272636
+    },
+    {
+      "round": 9,
+      "tab": "Speed Scale",
+      "duration_ms": 0.14260003808885813
+    },
+    {
+      "round": 9,
+      "tab": "Playback",
+      "duration_ms": 0.06400002166628838
+    },
+    {
+      "round": 9,
+      "tab": "Height Task",
+      "duration_ms": 0.17989997286349535
+    },
+    {
+      "round": 9,
+      "tab": "Combine",
+      "duration_ms": 1.1291000992059708
+    },
+    {
+      "round": 9,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.27900002896785736
+    },
+    {
+      "round": 9,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01989991869777441
+    },
+    {
+      "round": 9,
+      "tab": "Sim State",
+      "duration_ms": 0.014899997040629387
+    },
+    {
+      "round": 10,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014899997040629387
+    },
+    {
+      "round": 10,
+      "tab": "Run Manager",
+      "duration_ms": 0.014199991710484028
+    },
+    {
+      "round": 10,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.014899997040629387
+    },
+    {
+      "round": 10,
+      "tab": "Speed Scale",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 10,
+      "tab": "Playback",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 10,
+      "tab": "Height Task",
+      "duration_ms": 0.014499993994832039
+    },
+    {
+      "round": 10,
+      "tab": "Combine",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 10,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 10,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 10,
+      "tab": "Sim State",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 11,
+      "tab": "Sim Connection",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 11,
+      "tab": "Run Manager",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 11,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 11,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 11,
+      "tab": "Playback",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 11,
+      "tab": "Height Task",
+      "duration_ms": 0.013999990187585354
+    },
+    {
+      "round": 11,
+      "tab": "Combine",
+      "duration_ms": 0.014299992471933365
+    },
+    {
+      "round": 11,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 11,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 11,
+      "tab": "Sim State",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 12,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014599994756281376
+    },
+    {
+      "round": 12,
+      "tab": "Run Manager",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 12,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.013999990187585354
+    },
+    {
+      "round": 12,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 12,
+      "tab": "Playback",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 12,
+      "tab": "Height Task",
+      "duration_ms": 0.013900105841457844
+    },
+    {
+      "round": 12,
+      "tab": "Combine",
+      "duration_ms": 0.01400010660290718
+    },
+    {
+      "round": 12,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013900105841457844
+    },
+    {
+      "round": 12,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 12,
+      "tab": "Sim State",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 13,
+      "tab": "Sim Connection",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 13,
+      "tab": "Run Manager",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 13,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 13,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 13,
+      "tab": "Playback",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 13,
+      "tab": "Height Task",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 13,
+      "tab": "Combine",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 13,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 13,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 13,
+      "tab": "Sim State",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 14,
+      "tab": "Sim Connection",
+      "duration_ms": 0.014100107364356518
+    },
+    {
+      "round": 14,
+      "tab": "Run Manager",
+      "duration_ms": 0.01370010431855917
+    },
+    {
+      "round": 14,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01370010431855917
+    },
+    {
+      "round": 14,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013900105841457844
+    },
+    {
+      "round": 14,
+      "tab": "Playback",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 14,
+      "tab": "Height Task",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 14,
+      "tab": "Combine",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 14,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 14,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 14,
+      "tab": "Sim State",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 15,
+      "tab": "Sim Connection",
+      "duration_ms": 0.013999990187585354
+    },
+    {
+      "round": 15,
+      "tab": "Run Manager",
+      "duration_ms": 0.013899989426136017
+    },
+    {
+      "round": 15,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.016900012269616127
+    },
+    {
+      "round": 15,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 15,
+      "tab": "Playback",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 15,
+      "tab": "Height Task",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 15,
+      "tab": "Combine",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 15,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 15,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 15,
+      "tab": "Sim State",
+      "duration_ms": 0.013299984857439995
+    },
+    {
+      "round": 16,
+      "tab": "Sim Connection",
+      "duration_ms": 0.018400023691356182
+    },
+    {
+      "round": 16,
+      "tab": "Run Manager",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 16,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 16,
+      "tab": "Speed Scale",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 16,
+      "tab": "Playback",
+      "duration_ms": 0.01409999094903469
+    },
+    {
+      "round": 16,
+      "tab": "Height Task",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 16,
+      "tab": "Combine",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 16,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 16,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 16,
+      "tab": "Sim State",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 17,
+      "tab": "Sim Connection",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 17,
+      "tab": "Run Manager",
+      "duration_ms": 0.013399985618889332
+    },
+    {
+      "round": 17,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.013399985618889332
+    },
+    {
+      "round": 17,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 17,
+      "tab": "Playback",
+      "duration_ms": 0.015700003132224083
+    },
+    {
+      "round": 17,
+      "tab": "Height Task",
+      "duration_ms": 0.01370010431855917
+    },
+    {
+      "round": 17,
+      "tab": "Combine",
+      "duration_ms": 0.013400102034211159
+    },
+    {
+      "round": 17,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.01370010431855917
+    },
+    {
+      "round": 17,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013600103557109833
+    },
+    {
+      "round": 17,
+      "tab": "Sim State",
+      "duration_ms": 0.013500102795660496
+    },
+    {
+      "round": 18,
+      "tab": "Sim Connection",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 18,
+      "tab": "Run Manager",
+      "duration_ms": 0.013399985618889332
+    },
+    {
+      "round": 18,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 18,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 18,
+      "tab": "Playback",
+      "duration_ms": 0.013399985618889332
+    },
+    {
+      "round": 18,
+      "tab": "Height Task",
+      "duration_ms": 0.013299984857439995
+    },
+    {
+      "round": 18,
+      "tab": "Combine",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 18,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 18,
+      "tab": "Stability Replay",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 18,
+      "tab": "Sim State",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 19,
+      "tab": "Sim Connection",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 19,
+      "tab": "Run Manager",
+      "duration_ms": 0.013599987141788006
+    },
+    {
+      "round": 19,
+      "tab": "Record / Servo+Wheel",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 19,
+      "tab": "Speed Scale",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 19,
+      "tab": "Playback",
+      "duration_ms": 0.013699987903237343
+    },
+    {
+      "round": 19,
+      "tab": "Height Task",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 19,
+      "tab": "Combine",
+      "duration_ms": 0.013499986380338669
+    },
+    {
+      "round": 19,
+      "tab": "Vision Auto Replay",
+      "duration_ms": 0.013399985618889332
+    },
+    {
+      "round": 19,
+      "tab": "Stability Replay",
+      "duration_ms": 0.01379998866468668
+    },
+    {
+      "round": 19,
+      "tab": "Sim State",
+      "duration_ms": 0.013499986380338669
+    }
+  ]
+}

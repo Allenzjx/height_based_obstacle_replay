@@ -1,0 +1,55 @@
+REMOVED VISION / STABILITY DEPENDENCIES
+======================================
+
+Runtime removal
+---------------
+- Vision Auto Replay and Stability Replay tabs, panels, task controllers,
+  state machines, schedulers, task-local sequence/state authorities, and UI
+  status/help text.
+- Task-specific Tk after loops, polling, callbacks, event bindings,
+  shutdown/cancel hooks, and automatic tab/dashboard/report opening.
+- Onboard camera validation, obstacle-height detection, camera viewport task
+  manager, freshness/validation gates, and their startup objects.
+- Vision/stability IPC message, worker handler, service status, CLI/config/env
+  propagation, smoke branches, and restart-without-camera path.
+- Automatic telemetry report generation on playback/episode finish. The
+  offline report tool is manual and does not create a task or scheduler.
+- Task-specific tests, GUI E2E scripts, README/help sections, dead imports,
+  enums/constants, wrappers, and cached bytecode.
+
+Playback separation
+-------------------
+- Playback availability contains no Vision/Stability/camera/dashboard/report
+  or selected-tab condition.
+- Height Generate loads only the permanent shared current sequence.
+- Combine publishes only to that sequence and never previews through Playback.
+- Only PlaybackManager creates/schedules/advances/stops a replay plan.
+- The controller has one construction site each for SequenceManager,
+  PlaybackManager, and SimProcessClient.
+
+Generic components intentionally retained
+-----------------------------------------
+- HeightManifest and HeightSequenceStore: common height-to-bucket resolution.
+- Robot ground diagnostics and the shared respawn path: required by Sim State
+  and Playback Respawn+Play, with no task-camera wrapper.
+- Bottom-layer telemetry collector, support/stability metrics, exporters,
+  generic Isaac live overlay, and manual offline report generator: useful to
+  generic Playback Debug/Sim State/engineering analysis. They create no
+  Stability task, tab, queue, state machine, scheduler, or automatic report.
+- Isaac SimulationContext.set_camera_view default eye/target: the generic GUI
+  scene view, not an onboard sensor, detector, or replay gate.
+
+Compatibility
+-------------
+Old unknown worker-config keys are filtered/ignored safely. Removed task fields
+therefore do not make the simplified worker fail to start.
+
+Cleanup evidence
+----------------
+Targeted runtime/source scan excluded historical artifacts, reports, runs, and
+recordings and searched the requested names/variants. Result:
+
+  TARGETED_RUNTIME_SOURCE_PATTERN_GROUPS_WITH_HITS=0
+
+No runtime construction, import, IPC command, task callback, task timer, or tab
+creation remains for either removed task.

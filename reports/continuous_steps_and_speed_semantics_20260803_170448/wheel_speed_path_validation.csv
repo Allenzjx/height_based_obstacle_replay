@@ -1,0 +1,9 @@
+﻿scenario,speed_percent,base_velocity_rad_s,requested_velocity_rad_s,effective_velocity_rad_s,active_duration_s,measured_displacement_rad,measured_path_joint_rad,ratio_to_100,source,interpretation
+safe_0.1_base,50,0.100000,0.050000,0.050000,2.000000,0.695956,0.695956,0.452015,articulation_joint_state,unlimited proportional range
+safe_0.1_base,100,0.100000,0.100000,0.100000,2.000000,1.539674,1.539674,1.000000,articulation_joint_state,unlimited proportional range
+safe_0.1_base,200,0.100000,0.200000,0.200000,2.000000,3.141249,3.141249,2.040204,articulation_joint_state,unlimited proportional range
+safe_0.1_base,300,0.100000,0.300000,0.300000,2.000000,4.646057,4.646057,3.017558,articulation_joint_state,unlimited proportional range
+formal_0.3_base_limit,50,0.300000,0.150000,0.150000,2.000000,2.335177,2.335177,0.502615,articulation_joint_state,actuator/contact limited; duration unchanged
+formal_0.3_base_limit,100,0.300000,0.300000,0.300000,2.000000,4.646057,4.646057,1.000000,articulation_joint_state,actuator/contact limited; duration unchanged
+formal_0.3_base_limit,200,0.300000,0.600000,0.600000,2.000000,3.392575,3.392575,0.730205,articulation_joint_state,actuator/contact limited; duration unchanged
+formal_0.3_base_limit,300,0.300000,0.900000,0.900000,2.000000,1.536543,1.536543,0.330720,articulation_joint_state,actuator/contact limited; duration unchanged

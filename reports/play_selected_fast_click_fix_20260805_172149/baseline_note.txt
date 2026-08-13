@@ -1,0 +1,5 @@
+Git repository: yes
+Branch: main
+Attachment source comparison: unavailable; attachment directory contains only pasted-text.txt.
+Formal project source is authoritative.
+Protected files hashed: 73

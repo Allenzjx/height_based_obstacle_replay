@@ -1,0 +1,3909 @@
+{
+  "success": false,
+  "started_at": 1785881050.9655173,
+  "visible_gui_requested": true,
+  "one_worker_requested": true,
+  "reused_existing_process": false,
+  "temporary_version_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2",
+  "stages": [
+    {
+      "stage": "WAIT_READY",
+      "completed_at": 1785881071.546567,
+      "details": {}
+    },
+    {
+      "stage": "PROFILE_UI",
+      "completed_at": 1785881072.3354573,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881072.4133968,
+      "details": {
+        "height_mm": 50,
+        "request_id": "1d5422f8dd1f447485b6b212b5c38881"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881072.587431,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881072.649695,
+      "details": {
+        "height_mm": 75,
+        "request_id": "5d0ec0d7a2344945ad0d42344b072b70"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881072.8861184,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881072.9443688,
+      "details": {
+        "height_mm": 100,
+        "request_id": "f749013917ea4ff19f0241e1be82293b"
+      }
+    },
+    {
+      "stage": "GENERATE_WAIT",
+      "completed_at": 1785881073.3492894,
+      "details": {}
+    },
+    {
+      "stage": "GENERATE_START",
+      "completed_at": 1785881073.4089158,
+      "details": {}
+    },
+    {
+      "stage": "RESPAWN_START",
+      "completed_at": 1785881073.4706838,
+      "details": {
+        "request_id": "4d738f4ba2fe4ea4a5710a1f1112639b"
+      }
+    },
+    {
+      "stage": "RESPAWN_WAIT",
+      "completed_at": 1785881075.549516,
+      "details": {}
+    },
+    {
+      "stage": "ATOMIC_START",
+      "completed_at": 1785881075.6094017,
+      "details": {
+        "batch_id": "09da057b98d24ad59ba2b63daed37b70"
+      }
+    },
+    {
+      "stage": "ATOMIC_WAIT",
+      "completed_at": 1785881076.168989,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881076.229977,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "completed_at": 1785881076.607625,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RUN",
+      "completed_at": 1785881077.9138508,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881077.968999,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_WAIT_RESET",
+      "completed_at": 1785881078.5634425,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RUN",
+      "completed_at": 1785881081.3196976,
+      "details": {}
+    },
+    {
+      "stage": "SERVO_RESET",
+      "completed_at": 1785881081.381799,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881081.444259,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BOUNDARY",
+      "completed_at": 1785881081.6046677,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BEFORE",
+      "completed_at": 1785881081.7148414,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_APPLY",
+      "completed_at": 1785881081.8222418,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_RUN",
+      "completed_at": 1785881083.0548632,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_STOP",
+      "completed_at": 1785881083.1744704,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_AFTER",
+      "completed_at": 1785881083.2345393,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881083.288008,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BOUNDARY",
+      "completed_at": 1785881083.342703,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_BEFORE",
+      "completed_at": 1785881083.4517293,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_APPLY",
+      "completed_at": 1785881083.5627685,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_RUN",
+      "completed_at": 1785881084.6852465,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_STOP",
+      "completed_at": 1785881084.800884,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_WAIT_AFTER",
+      "completed_at": 1785881085.0430992,
+      "details": {}
+    },
+    {
+      "stage": "WHEEL_BEFORE",
+      "completed_at": 1785881085.0934155,
+      "details": {}
+    },
+    {
+      "stage": "KNEE_START",
+      "completed_at": 1785881085.1517432,
+      "details": {}
+    },
+    {
+      "stage": "KNEE_WAIT",
+      "completed_at": 1785881085.4322236,
+      "details": {}
+    },
+    {
+      "stage": "VERSION_HEIGHT_START",
+      "completed_at": 1785881085.493361,
+      "details": {}
+    },
+    {
+      "stage": "VERSION_HEIGHT_WAIT",
+      "completed_at": 1785881085.656355,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881085.7111273,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_RUN",
+      "completed_at": 1785881086.3302596,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PENDING",
+      "completed_at": 1785881086.4583204,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_SAVE",
+      "completed_at": 1785881086.633354,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "completed_at": 1785881087.7328646,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881087.8499947,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_RUN",
+      "completed_at": 1785881088.628785,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PENDING",
+      "completed_at": 1785881088.7538123,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_SAVE",
+      "completed_at": 1785881088.93361,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_WAIT_PLAY",
+      "completed_at": 1785881090.319977,
+      "details": {}
+    },
+    {
+      "stage": "RECORD_START",
+      "completed_at": 1785881090.3704422,
+      "details": {}
+    },
+    {
+      "stage": "LOAD_VERSIONS",
+      "completed_at": 1785881090.8098972,
+      "details": {}
+    }
+  ],
+  "screenshots": {
+    "main_ui": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\main_ui.png",
+    "speed_scale": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\speed_scale.png",
+    "height_and_versions": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\height_and_versions.png",
+    "wider_obstacle": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\wider_obstacle.png",
+    "generate_control_ready": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\generate_control_ready.png",
+    "servo_wheel_simultaneous": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\servo_wheel_simultaneous.png",
+    "four_knees_minus_60": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\four_knees_minus_60.png",
+    "two_immutable_versions": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\two_immutable_versions.png",
+    "failure": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\screenshots\\failure.png"
+  },
+  "callback_rows": [
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.152499932795763
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 27.67789992503822
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 33.7563999928534
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.398400196805596
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 39.28080014884472
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 9.051800007000566
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 36.452800035476685
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 16.841200180351734
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.7233999464660883
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.899500101804733
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.84439979866147
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.226800054311752
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.140900077298284
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.813999963924289
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.621900014579296
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.182000041007996
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.2321001421660185
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.532399984076619
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.5992999114096165
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.560899920761585
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.735399968922138
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.929800052195787
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.718699958175421
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.665299948304892
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.621700081974268
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.669900052249432
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.348100163042545
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.3893001060932875
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.046100053936243
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.157300038263202
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.319799995049834
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.046999875456095
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.667800014838576
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.9953000377863646
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.523399984464049
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.7450998574495316
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 3.916699904948473
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.526800010353327
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.965800024569035
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.9633000530302525
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.470100117847323
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.670400034636259
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.549299996346235
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.5644999742507935
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.49990001693368
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.384700208902359
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.054900052025914
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.254300009459257
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.541899871081114
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.2860998548567295
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.731200100854039
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.797000162303448
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.8373999781906605
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 10.546100093051791
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.805900018662214
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.604100180789828
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.478199968114495
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.965899977833033
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.20769995637238
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.403100047260523
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.936900015920401
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.838399916887283
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.145500112324953
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.136599997058511
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.919699953868985
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.320900119841099
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.240300040692091
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.666000070050359
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.61529996432364
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.787099944427609
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.606399849057198
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.9038000870496035
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.24189998395741
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.478399969637394
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.687099976465106
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.22730003669858
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.8171000350266695
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.982199985533953
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.35999983549118
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.208300029858947
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.635900190100074
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.496300058439374
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.260300124064088
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.873999860137701
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.099099827930331
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.585499901324511
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.2986998818814754
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.290700122714043
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.900599855929613
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.71439990401268
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.211700055748224
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.602599889039993
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.8055000845342875
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.5207000114023685
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 6.022199988365173
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 4.629099974408746
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.737500032410026
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 8.904000045731664
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 5.995400017127395
+    },
+    {
+      "name": "tab_switch",
+      "elapsed_ms": 7.449599914252758
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.1262999139726162
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04409998655319214
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.024899840354919434
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.021200161427259445
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.020399922505021095
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02610008232295513
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.026800204068422318
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.019399914890527725
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01819990575313568
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018799910321831703
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018300022929906845
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018300022929906845
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018600141629576683
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01840014010667801
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.022700056433677673
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.024799956008791924
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.026999972760677338
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02859998494386673
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02450007013976574
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02410006709396839
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0241999514400959
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.024700071662664413
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.023399945348501205
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.023899832740426064
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.07950002327561378
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05139992572367191
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.024499837309122086
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.02010003663599491
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018899794667959213
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01910002902150154
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01850002445280552
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.08529983460903168
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.10719988495111465
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.058900099247694016
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05200016312301159
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04969979636371136
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.048999907448887825
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04850002005696297
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04870002157986164
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04930002614855766
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04819990135729313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04770001396536827
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.06949994713068008
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05850009620189667
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.048900023102760315
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04740012809634209
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04719989374279976
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04759989678859711
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0475000124424696
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04850002005696297
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.06859982386231422
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05519995465874672
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.047800131142139435
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0796997919678688
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0567000824958086
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.07449998520314693
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.30419998802244663
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.07049995474517345
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.17710006795823574
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.12820004485547543
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0724999699741602
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.09099999442696571
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.054099829867482185
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05200016312301159
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.1137999352067709
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.11990009807050228
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.061400001868605614
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.049999915063381195
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04829978570342064
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05050003528594971
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.04910002462565899
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.05010003224015236
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.08490006439387798
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.09400001727044582
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.03160000778734684
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.021700048819184303
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.019399914890527725
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018900027498602867
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01859990879893303
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01850002445280552
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018900027498602867
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01800013706088066
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017999904230237007
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018300022929906845
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01850002445280552
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017799902707338333
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017800135537981987
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017700018361210823
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017799902707338333
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01750001683831215
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.01759990118443966
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017899787053465843
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017900019884109497
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.017600134015083313
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.018999911844730377
+    },
+    {
+      "name": "speed_slider_debounce",
+      "elapsed_ms": 0.0171000137925148
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.28389994986355305,
+      "height_mm": 50
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.18110009841620922,
+      "height_mm": 75
+    },
+    {
+      "name": "generate_height",
+      "elapsed_ms": 0.18179998733103275,
+      "height_mm": 100
+    },
+    {
+      "name": "generate_height_respawn",
+      "elapsed_ms": 0.15520001761615276,
+      "height_mm": 75
+    },
+    {
+      "name": "apply_servo_wheel_together",
+      "elapsed_ms": 0.5493001081049442
+    },
+    {
+      "name": "save_new_version_icon",
+      "elapsed_ms": 0.6568999961018562,
+      "speed_percent": 100.0
+    },
+    {
+      "name": "save_new_version_icon",
+      "elapsed_ms": 0.6660998333245516,
+      "speed_percent": 200.0
+    }
+  ],
+  "height_rows": [
+    {
+      "height_mm": 50,
+      "request_id": "1d5422f8dd1f447485b6b212b5c38881",
+      "requested_wall": 1772935.4968105,
+      "callback_ms": 0.28389994986355305,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 71.55389990657568,
+      "obstacle_update_ms": 1.5782997943460941,
+      "ack_wall_ms": 174.022400053218,
+      "control_ready_ms": 174.022400053218,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 1,
+      "error": ""
+    },
+    {
+      "height_mm": 75,
+      "request_id": "5d0ec0d7a2344945ad0d42344b072b70",
+      "requested_wall": 1772935.7331103,
+      "callback_ms": 0.18110009841620922,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 71.37299980968237,
+      "obstacle_update_ms": 1.2689998839050531,
+      "ack_wall_ms": 236.4175000693649,
+      "control_ready_ms": 236.4175000693649,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 2,
+      "error": ""
+    },
+    {
+      "height_mm": 100,
+      "request_id": "f749013917ea4ff19f0241e1be82293b",
+      "requested_wall": 1772936.0277848,
+      "callback_ms": 0.18179998733103275,
+      "respawn_count_before": 0,
+      "worker_operation_ms": 71.62549998611212,
+      "obstacle_update_ms": 1.4820999931544065,
+      "ack_wall_ms": 163.2835001219064,
+      "control_ready_ms": 163.2835001219064,
+      "control_ready": true,
+      "respawned": false,
+      "respawn_count_after": 0,
+      "baseline_scan_ran": false,
+      "revision": 3,
+      "error": ""
+    }
+  ],
+  "atomic_rows": [
+    {
+      "batch_id": "09da057b98d24ad59ba2b63daed37b70",
+      "callback_ms": 0.5493001081049442,
+      "servo_apply_tick": 633,
+      "wheel_apply_tick": 633,
+      "ack_servo_start_sim_time": 5.275000000000001,
+      "ack_wheel_start_sim_time": 5.275000000000001,
+      "ack_start_difference_s": 0.0,
+      "observed_servo_start_sim_time": 5.4,
+      "observed_wheel_start_sim_time": 5.133333333333335,
+      "observed_start_difference_s": 0.2666666666666657,
+      "physics_dt_s": 0.008333333333333333,
+      "servo_applied": true,
+      "wheel_applied": true,
+      "pass": true
+    }
+  ],
+  "servo_rows": [
+    {
+      "speed_percent": 100.0,
+      "target_deg": 60.0,
+      "start_actual_deg": -1.64482011582626,
+      "final_actual_deg": 61.33410836928485,
+      "target_error_deg": 1.3341083692848485,
+      "elapsed_sim_s": 1.1999999999999957,
+      "actual_average_velocity_deg_s": 52.48244040425945,
+      "actual_peak_velocity_deg_s": 146.10932351721644,
+      "requested_velocity_deg_s": 150.0,
+      "effective_velocity_deg_s": 150.0,
+      "actuator_limit": null
+    },
+    {
+      "speed_percent": 200.0,
+      "target_deg": 60.0,
+      "start_actual_deg": -0.5166281983829184,
+      "final_actual_deg": 52.05279311749172,
+      "target_error_deg": -7.947206882508283,
+      "elapsed_sim_s": 2.5333333333333243,
+      "actual_average_velocity_deg_s": 20.751087361529535,
+      "actual_peak_velocity_deg_s": 210.31322231086403,
+      "requested_velocity_deg_s": 300.0,
+      "effective_velocity_deg_s": 300.0,
+      "actuator_limit": null
+    }
+  ],
+  "wheel_rows": [
+    {
+      "speed_percent": 100.0,
+      "canonical_velocity_rad_s": 0.3,
+      "commanded_effective_velocity_rad_s": 0.3,
+      "measured_velocity_rad_s": 0.27979275513262974,
+      "active_duration_s": 1.2666666666666622,
+      "signed_joint_displacement_rad": {
+        "front_left_ankle": -0.35841421131044626,
+        "front_right_ankle": 0.36114585399627686,
+        "rear_left_ankle": -0.33435031212866306,
+        "rear_right_ankle": 0.38237521797418594
+      },
+      "mean_abs_joint_displacement_rad": 0.35907139885239303,
+      "theoretical_joint_displacement_rad": 0.3799999999999986,
+      "theoretical_rolling_path_m": null,
+      "robot_body_displacement_m": 0.015564300965751997,
+      "slip_ratio": null,
+      "slip_status": "UNVERIFIED: wheel radius/transmission unavailable"
+    },
+    {
+      "speed_percent": 200.0,
+      "canonical_velocity_rad_s": 0.3,
+      "commanded_effective_velocity_rad_s": 0.6,
+      "measured_velocity_rad_s": 0.5914784325960729,
+      "active_duration_s": 1.1333333333333293,
+      "signed_joint_displacement_rad": {
+        "front_left_ankle": -0.6682311296463013,
+        "front_right_ankle": 0.6783944964408875,
+        "rear_left_ankle": -0.659211277961731,
+        "rear_right_ankle": 0.6822382807731628
+      },
+      "mean_abs_joint_displacement_rad": 0.6720187962055206,
+      "theoretical_joint_displacement_rad": 0.6799999999999976,
+      "theoretical_rolling_path_m": null,
+      "robot_body_displacement_m": 0.0331991844588911,
+      "slip_ratio": null,
+      "slip_status": "UNVERIFIED: wheel radius/transmission unavailable"
+    }
+  ],
+  "record_play_rows": [
+    {
+      "speed_percent": 100.0,
+      "version_id": "v001_20260804_180446_458140_manual",
+      "recorded_batch_id": "62a1a5500cef4a908a3b3904ea63ed6d",
+      "recorded_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "recorded_effective_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "playback_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "playback_executor_speed_percent": 100.0,
+      "playback_elapsed_sim_s": 1.0666666666666647,
+      "double_scaled": false,
+      "canonical_match": true
+    },
+    {
+      "speed_percent": 200.0,
+      "version_id": "v002_20260804_180448_753567_manual",
+      "recorded_batch_id": "3a1b956ea07e4496b9f71d142e81e70e",
+      "recorded_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "recorded_effective_wheel_rad_s": {
+        "front_left_ankle": 0.5,
+        "front_right_ankle": 0.5,
+        "rear_left_ankle": 0.5,
+        "rear_right_ankle": 0.5
+      },
+      "playback_canonical_wheel_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "playback_executor_speed_percent": 200.0,
+      "playback_elapsed_sim_s": 1.3333333333333286,
+      "double_scaled": false,
+      "canonical_match": true,
+      "ui_interaction_sim_advanced_s": 1.1333333333333293
+    }
+  ],
+  "version_rows": [
+    {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180446_458140_manual",
+      "backup_path": "",
+      "saved_at": "2026-08-04T18:04:46-04:00",
+      "step_count": 1,
+      "command_count": 2,
+      "atomic_replace": true,
+      "fsync": true,
+      "validated": true,
+      "version_id": "v001_20260804_180446_458140_manual",
+      "version_name": "manual",
+      "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180446_458140_manual\\accepted_steps.jsonl",
+      "accepted_steps_sha256": "19607a9e5e675e73479683e0f23d7efc97e32c40d2c2bcd05a4ac176bd6d9469"
+    },
+    {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180448_753567_manual",
+      "backup_path": "",
+      "saved_at": "2026-08-04T18:04:48-04:00",
+      "step_count": 2,
+      "command_count": 4,
+      "atomic_replace": true,
+      "fsync": true,
+      "validated": true,
+      "version_id": "v002_20260804_180448_753567_manual",
+      "version_name": "manual",
+      "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180448_753567_manual\\accepted_steps.jsonl",
+      "accepted_steps_sha256": "08fb8731deb326303d5130e21d1780f57da9d75ed2948020b59fe934d68cfa54"
+    }
+  ],
+  "ui_after_probe_ms": [
+    0.4632000345736742,
+    17.958899959921837,
+    15.896599972620606,
+    15.447100158780813,
+    739.7747999057174,
+    76.82009995914996,
+    32.005200162529945,
+    20.170699805021286,
+    14.026300050318241,
+    15.575200086459517,
+    15.46799996867776,
+    15.25459997355938,
+    15.413800021633506,
+    18.21470004506409,
+    13.8928999658674,
+    14.538099989295006,
+    15.810699900612235,
+    15.121400123462081,
+    15.756099950522184,
+    15.58650005608797,
+    20.577399991452694,
+    14.157499885186553,
+    10.681100189685822,
+    15.647999942302704,
+    15.365100000053644,
+    15.426700003445148,
+    16.09589997678995,
+    15.742500079795718,
+    43.757799779996276,
+    18.018600065261126,
+    15.492400154471397,
+    15.545999864116311,
+    15.594399999827147,
+    14.734900090843439,
+    16.280299983918667,
+    15.680199954658747,
+    15.857300022616982,
+    14.738299883902073,
+    15.571200056001544,
+    15.4103001113981,
+    18.72859988361597,
+    10.181300109252334,
+    17.672899877652526,
+    15.42380009777844,
+    15.524900052696466,
+    15.33869979903102,
+    15.579200116917491,
+    0.5628999788314104,
+    11.01549994200468,
+    21.21039992198348,
+    11.6072001401335,
+    15.64989984035492,
+    14.968600124120712,
+    15.518799889832735,
+    15.161999966949224,
+    18.203100189566612,
+    10.143999941647053,
+    18.096999963745475,
+    15.272399876266718,
+    15.724900178611279,
+    15.498899854719639,
+    15.105600003153086,
+    18.87989998795092,
+    15.564700122922659,
+    12.019499903544784,
+    15.469999983906746,
+    15.489500015974045,
+    15.158000169321895,
+    15.571799827739596,
+    16.05480001308024,
+    12.858500005677342,
+    17.833600053563714,
+    15.286900103092194,
+    15.549100004136562,
+    15.582599909976125,
+    15.626800013706088,
+    15.44139999896288,
+    19.418400013819337,
+    12.17569992877543,
+    15.698299976065755,
+    15.29050013050437,
+    15.559999970719218,
+    15.649199951440096,
+    15.778200002387166,
+    10.027500102296472,
+    20.336599787697196,
+    15.336600132286549,
+    15.330899972468615,
+    15.702599892392755,
+    15.016900142654777,
+    20.144599955528975,
+    20.146300084888935,
+    21.895699901506305,
+    15.58950007893145,
+    15.503499889746308,
+    15.821699984371662,
+    15.063000144436955,
+    15.979399904608727,
+    14.97739995829761,
+    16.390400007367134,
+    15.047400025650859,
+    15.64559992402792,
+    15.479000052437186,
+    19.057200057432055,
+    10.050900047644973,
+    17.57639995776117,
+    15.243399888277054,
+    15.676500042900443,
+    15.771100064739585,
+    15.571699943393469,
+    15.460300026461482,
+    11.528100119903684,
+    18.90369993634522,
+    15.329299960285425,
+    15.423400094732642,
+    15.48399985767901,
+    15.342199942097068,
+    15.272200107574463,
+    11.367599945515394,
+    19.704800099134445,
+    15.436099842190742,
+    15.524900052696466,
+    15.46510006301105,
+    15.57020004838705,
+    18.213900038972497,
+    12.462700018659234,
+    15.697399852797389,
+    15.377999981865287,
+    15.49010002054274,
+    15.99099999293685,
+    15.742999967187643,
+    19.17780004441738,
+    10.01979992724955,
+    17.63420016504824,
+    15.026699984446168,
+    15.736700035631657,
+    15.123100019991398,
+    15.50599979236722,
+    15.597200021147728,
+    11.617399984970689,
+    19.9647000990808,
+    15.139600029215217,
+    15.185199910774827,
+    15.295200049877167,
+    15.351800015196204,
+    18.49070005118847,
+    11.847799876704812,
+    16.328100115060806,
+    15.189799945801497,
+    15.62960003502667,
+    16.598300077021122,
+    14.693799894303083,
+    17.49340002425015,
+    13.569500064477324,
+    15.575399855151772,
+    15.393099980428815,
+    15.624100109562278,
+    15.460100024938583,
+    15.658699907362461,
+    19.371600123122334,
+    11.366399936378002,
+    16.386899864301085,
+    15.44420002028346,
+    15.513300197198987,
+    15.421299962326884,
+    15.620699850842357,
+    15.702800126746297,
+    17.389999935403466,
+    13.899400131776929,
+    15.458199894055724,
+    15.670499997213483,
+    15.492300037294626,
+    15.596299897879362,
+    21.322299959138036,
+    11.013300158083439,
+    13.462899951264262,
+    15.143200056627393,
+    15.689800027757883,
+    15.322400024160743,
+    15.620699850842357,
+    15.145099954679608,
+    12.912900187075138,
+    17.7970000077039,
+    15.685299877077341,
+    15.247599920257926,
+    15.03880019299686,
+    15.534000005573034,
+    15.53289988078177,
+    19.040700048208237,
+    12.055000057443976,
+    16.067999880760908,
+    15.419600065797567,
+    16.342399874702096,
+    14.932699967175722,
+    17.414400121197104,
+    13.649800093844533,
+    15.576999867334962,
+    15.368500025942922,
+    15.299299964681268,
+    15.975600108504295,
+    16.70919987373054,
+    18.503500148653984,
+    13.956799870356917,
+    14.274100074544549,
+    19.71410005353391,
+    10.053199948742986,
+    14.710299903526902,
+    15.705200145021081,
+    15.41729993186891,
+    15.552999917417765,
+    15.715100103989244,
+    1.0581999085843563,
+    15.993600012734532,
+    13.067000079900026,
+    15.600499929860234,
+    16.235100105404854,
+    14.908300014212728,
+    15.769199933856726,
+    15.57879988104105,
+    13.138500042259693,
+    18.362800125032663,
+    15.942499972879887,
+    15.439099865034223,
+    15.578299993649125,
+    15.535700134932995,
+    20.09660005569458,
+    10.023099835962057,
+    15.987300081178546,
+    15.60600008815527,
+    15.623699873685837,
+    15.369199914857745,
+    15.54690022021532,
+    15.631299931555986,
+    10.064800037071109,
+    21.028799936175346,
+    15.701299998909235,
+    15.302600106224418,
+    15.570899937301874,
+    15.726899961009622,
+    19.502599956467748,
+    15.974599868059158,
+    23.17140018567443,
+    15.385899925604463,
+    15.60440007597208,
+    16.01409981958568,
+    14.896100154146552,
+    10.02139993943274,
+    20.807099994271994,
+    15.642799902707338,
+    15.510300174355507,
+    15.619999961927533,
+    15.177400084212422,
+    19.453899934887886,
+    10.835099965333939,
+    16.46810001693666,
+    15.439599985256791,
+    15.581599902361631,
+    15.265600057318807,
+    15.497999964281917,
+    15.492100035771728,
+    10.03469992429018,
+    21.41570020467043,
+    15.359999844804406,
+    15.528799965977669,
+    15.48000006005168,
+    15.979000134393573,
+    22.066199919208884,
+    17.783999908715487,
+    22.475900128483772,
+    15.424499986693263,
+    15.426700003445148,
+    15.65019995905459,
+    15.295099932700396,
+    12.925600167363882,
+    18.0547998752445,
+    15.509800054132938,
+    15.585399931296706,
+    15.904400032013655,
+    15.329400077462196,
+    19.99139995314181,
+    15.524599933996797,
+    15.610500006005168,
+    15.767200151458383,
+    15.09279990568757,
+    13.137999922037125,
+    17.958200071007013,
+    15.498599968850613,
+    15.843699919059873,
+    14.951199991628528,
+    15.416300157085061,
+    15.676699811592698,
+    15.520800137892365,
+    15.593199990689754,
+    15.123399905860424,
+    25.738999946042895,
+    11.179400142282248,
+    10.079900035634637,
+    15.13900002464652,
+    15.660099918022752,
+    15.664499951526523,
+    19.667600048705935,
+    11.207799892872572,
+    15.486400108784437,
+    15.6099998857826,
+    15.472800005227327,
+    15.59680001810193,
+    15.228500124067068,
+    15.089599881321192,
+    11.551700066775084,
+    19.579000072553754,
+    15.499699860811234,
+    15.38820005953312,
+    15.760200098156929,
+    15.49439993686974,
+    19.32439999654889,
+    11.343099875375628,
+    15.53190010599792,
+    15.191900078207254,
+    15.615599928423762,
+    15.429300023242831,
+    15.458700014278293,
+    15.654499875381589,
+    13.733900152146816,
+    17.11539993993938,
+    15.42919990606606,
+    15.564600005745888,
+    15.651799971237779,
+    15.818500192835927,
+    19.920499995350838,
+    10.781499790027738,
+    31.04549995623529,
+    32.33320009894669,
+    18.919399939477444,
+    22.74890011176467,
+    27.476599905639887,
+    10.094099910929799,
+    10.491300141438842,
+    14.38489998690784,
+    16.098699998110533,
+    15.48839989118278,
+    15.515200095251203,
+    10.067099938169122,
+    18.98110006004572,
+    24.083900032564998,
+    24.516699835658073,
+    15.464200172573328,
+    20.732400007545948,
+    14.13020002655685,
+    12.012999970465899,
+    15.506699914112687,
+    15.54380008019507,
+    15.658299904316664,
+    15.281599946320057,
+    15.23730019107461,
+    11.383999837562442,
+    19.568500109016895,
+    15.977799892425537,
+    15.380199998617172,
+    15.478000044822693,
+    15.688000014051795,
+    19.88589996472001,
+    14.288000063970685,
+    11.623400030657649,
+    15.608199872076511,
+    15.598900150507689,
+    15.391499968245625,
+    15.564000001177192,
+    15.517499996349216,
+    10.44059987179935,
+    20.56360011920333,
+    15.610199887305498,
+    15.480499947443604,
+    15.616000164300203,
+    15.12239989824593,
+    19.986500032246113,
+    16.384300077334046,
+    10.748599888756871,
+    15.561300097033381,
+    15.558299841359258,
+    15.329800080507994,
+    15.6914999242872,
+    15.481500187888741,
+    10.70729992352426,
+    20.305000012740493,
+    15.473400009796023,
+    16.055299900472164,
+    15.501100104302168,
+    15.627099899575114,
+    24.927600054070354,
+    22.89070002734661,
+    14.064199989661574,
+    15.590599970892072,
+    15.423299977555871,
+    16.01080014370382,
+    15.450799837708473,
+    18.71740003116429,
+    15.427800128236413,
+    15.566400019451976,
+    15.588499838486314,
+    15.666099963709712,
+    16.781800193712115,
+    14.995799865573645,
+    14.7643000818789,
+    15.536600025370717,
+    15.546399867162108,
+    15.390200074762106,
+    21.90260007046163,
+    10.339499916881323,
+    14.759100042283535,
+    15.212700003758073,
+    15.677999937906861,
+    15.331299975514412,
+    15.572299947962165,
+    16.205700114369392,
+    14.06800001859665,
+    16.549000050872564,
+    15.636799857020378,
+    15.651799971237779,
+    15.43090003542602,
+    15.415200032293797,
+    15.750400023534894,
+    15.077800024300814,
+    16.030499944463372,
+    15.28880000114441,
+    15.693899942561984,
+    15.636000083759427,
+    15.46370005235076,
+    15.134399989619851,
+    13.490699930116534,
+    16.88760006800294,
+    15.621599974110723,
+    15.504200011491776,
+    15.480499947443604,
+    15.439500100910664,
+    19.81660001911223,
+    12.0749999769032,
+    14.64720000512898,
+    15.538799809291959,
+    15.565200010314584,
+    15.641700010746717,
+    15.58400015346706,
+    15.04849991761148,
+    11.242399923503399,
+    20.49830020405352,
+    36.783199990168214,
+    12.501699849963188,
+    17.956500174477696,
+    14.246399980038404,
+    11.751499958336353,
+    15.491999918594956,
+    290.9868999850005,
+    10.090600000694394,
+    79.75809997878969,
+    18.214300042018294,
+    52.10520001128316,
+    48.05340012535453,
+    17.118899850174785,
+    18.653300125151873,
+    10.059099877253175,
+    15.36269998177886,
+    15.617300057783723,
+    15.177400084212422,
+    15.549300005659461,
+    17.805999843403697,
+    11.077700182795525,
+    17.711799824610353,
+    15.496399952098727,
+    15.670200111344457,
+    15.373199945315719,
+    15.516600105911493,
+    19.79589997790754,
+    13.082500081509352,
+    13.565299799665809,
+    15.330600086599588,
+    15.692099928855896,
+    15.569600043818355,
+    15.985399950295687,
+    15.433100052177906,
+    16.254000132903457,
+    14.716099947690964,
+    15.543899964541197,
+    15.574099961668253,
+    15.513499965891242,
+    15.577099984511733,
+    16.022700117900968,
+    17.972700065001845,
+    13.203399954363704,
+    15.576899982988834,
+    15.718299895524979,
+    15.460900031030178,
+    15.375599963590503,
+    15.532900113612413,
+    10.276699904352427,
+    20.808400120586157,
+    15.668299980461597,
+    15.489100012928247,
+    15.4577000066638,
+    15.553899807855487,
+    19.487000070512295,
+    13.55080003850162,
+    13.75230005942285,
+    15.266499947756529,
+    15.737599926069379,
+    15.558900078758597,
+    15.32849995419383,
+    15.465700067579746
+  ],
+  "rtf_samples": [
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906314,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264771291331,
+    0.9456264771291331,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9456264786906282,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9456264786906282,
+    0.9456264786906282,
+    0.9523809514939752,
+    0.9523809514939752,
+    0.9456264786906282
+  ],
+  "worker_loop_hz_samples": [
+    98.00264484854783,
+    306.83140972938463,
+    390.78591932261077,
+    258.8703541628064,
+    314.0278192289481,
+    288.69975047320844,
+    106.2182133186868,
+    258.90470358491746,
+    2331.5529671785634,
+    319.0104285033903,
+    257.6045665870253,
+    98.13611912250987,
+    266.74891410880025,
+    282.7374644693668,
+    315.04559384912255,
+    281.774970375987,
+    244.15031096182489,
+    319.64327806464235,
+    257.5879784664256,
+    258.53989601575626,
+    313.51525052531997,
+    278.5762665150679,
+    307.9997145333645,
+    299.77254687761615,
+    283.95024446434536,
+    318.6533714305073,
+    298.94304963645214,
+    269.8113166512448,
+    317.53087853510914,
+    158.27543089236474,
+    147.5957572803998,
+    279.5160179740744,
+    230.87723253927993,
+    258.5373894130533,
+    257.47688764274255,
+    317.0319469002138,
+    263.8243980956202,
+    255.10651526509318,
+    257.49056119981805,
+    270.3839962239753,
+    255.51187021370558,
+    257.8785943589746,
+    257.6240619766936,
+    256.9265803750192,
+    310.1827177710729,
+    262.1158980128721,
+    319.2281054689194,
+    259.6530064655942,
+    257.62655090058973,
+    257.07353865280845,
+    309.956179683597,
+    308.9262299089935,
+    304.1686306732109,
+    310.32409446642635,
+    259.4879329753576,
+    310.16046916767976,
+    256.57308121889076,
+    255.26605866969518,
+    306.3414602154165,
+    268.13874790643774,
+    255.37932564197192,
+    278.54910729864247,
+    264.5415164808541,
+    146.97209940578975,
+    147.70966941296828,
+    277.657266174064,
+    258.17403160848886,
+    256.9096654922456,
+    260.1342617809835,
+    271.6302564827355,
+    316.3055521828161,
+    314.26960866358274,
+    266.08615534944363,
+    257.3576131517483,
+    150.1662147158006,
+    128.86286583924877,
+    257.35098997766426,
+    317.6613773271681,
+    129.7342883651962,
+    85.71055114613948,
+    278.6432160664242,
+    333.9799554966701,
+    129.24133725976722,
+    259.23567602585,
+    265.431085095096,
+    257.7564560053846,
+    250.00195355895315,
+    258.455533776516,
+    231.8239184077767,
+    267.0066543717041,
+    256.4386125992235,
+    312.9431315474895,
+    280.95461359525524,
+    315.8042244485875,
+    285.5796561510813,
+    240.69235197485392,
+    270.9150664667699,
+    128.61240116042057,
+    128.0996105384281,
+    316.234906949448,
+    309.7053933676031,
+    267.59701288587945,
+    256.6006510760868,
+    264.938824442526,
+    230.768676050178,
+    327.78466779739244,
+    68.74592535586216,
+    227.53484467065894,
+    315.1939228681207,
+    257.29760260646555,
+    313.4347934289574,
+    304.7079282476182,
+    282.3592525213246,
+    275.48304291345323,
+    310.57347415597525,
+    107.75581454588439,
+    62.45255069396522
+  ],
+  "status_payload_bytes": [
+    7329.0,
+    7328.0,
+    7328.0,
+    7328.0,
+    7328.0,
+    7328.0,
+    7348.0,
+    7348.0,
+    7353.0,
+    7346.0,
+    7346.0,
+    7346.0,
+    7346.0,
+    7353.0,
+    7348.0,
+    7348.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7330.0,
+    7129.0,
+    7129.0,
+    7129.0,
+    7129.0,
+    8282.0,
+    8282.0,
+    8257.0,
+    8279.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8327.0,
+    8327.0,
+    8317.0,
+    8317.0,
+    8323.0,
+    8323.0,
+    8323.0,
+    8323.0,
+    8349.0,
+    8349.0,
+    8347.0,
+    8347.0,
+    8362.0,
+    8362.0,
+    8346.0,
+    8346.0,
+    8346.0,
+    8347.0,
+    8347.0,
+    8321.0,
+    8321.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8350.0,
+    8350.0,
+    8345.0,
+    8345.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8351.0,
+    8351.0,
+    8344.0,
+    8344.0,
+    8350.0,
+    8350.0,
+    8326.0,
+    8326.0,
+    8335.0,
+    8335.0,
+    8338.0,
+    8338.0,
+    8350.0,
+    8350.0,
+    8340.0,
+    8340.0,
+    8340.0,
+    8340.0,
+    8340.0,
+    8345.0,
+    8345.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8337.0,
+    8344.0,
+    8344.0,
+    8332.0,
+    8339.0,
+    8339.0,
+    8339.0,
+    8339.0,
+    8337.0,
+    8337.0,
+    8335.0,
+    8335.0,
+    8328.0,
+    8328.0,
+    8349.0,
+    8349.0,
+    8349.0,
+    8335.0,
+    8335.0,
+    8327.0,
+    8327.0,
+    8345.0,
+    8345.0,
+    8345.0,
+    8345.0,
+    8337.0,
+    8337.0,
+    8347.0,
+    8347.0,
+    8344.0,
+    8344.0,
+    8344.0,
+    8317.0,
+    8317.0,
+    8310.0,
+    8310.0,
+    8260.0,
+    8260.0,
+    8260.0,
+    8260.0,
+    8297.0,
+    8297.0,
+    8293.0,
+    8293.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8295.0,
+    8296.0,
+    8296.0,
+    8296.0,
+    8292.0,
+    8292.0,
+    8300.0,
+    8300.0,
+    8300.0,
+    8300.0,
+    8287.0,
+    8287.0,
+    8331.0,
+    8345.0,
+    8345.0,
+    8337.0,
+    8337.0,
+    8372.0,
+    8372.0,
+    8309.0,
+    8309.0,
+    8262.0,
+    8262.0,
+    8262.0,
+    8262.0,
+    8253.0,
+    8253.0,
+    8255.0,
+    8265.0,
+    8265.0,
+    8265.0,
+    8265.0,
+    8265.0,
+    8265.0,
+    8252.0,
+    8252.0,
+    8263.0,
+    8263.0,
+    8262.0,
+    8262.0,
+    8304.0,
+    8304.0,
+    8302.0,
+    8302.0,
+    8306.0,
+    8344.0,
+    8344.0,
+    8356.0,
+    8356.0,
+    8349.0,
+    8349.0,
+    8349.0,
+    8349.0,
+    8346.0,
+    8346.0,
+    8332.0,
+    8332.0,
+    8345.0,
+    8345.0,
+    8345.0,
+    8332.0,
+    8332.0,
+    8327.0,
+    8327.0,
+    8324.0,
+    8324.0,
+    8414.0,
+    8414.0,
+    8414.0,
+    8625.0,
+    8625.0,
+    8796.0,
+    8796.0,
+    8798.0,
+    8798.0,
+    8798.0,
+    8789.0,
+    8789.0,
+    8792.0,
+    8792.0,
+    8762.0,
+    8762.0,
+    8762.0,
+    8762.0,
+    8721.0,
+    8721.0,
+    8935.0,
+    8935.0,
+    8945.0,
+    8945.0,
+    8956.0,
+    8956.0,
+    8922.0,
+    8918.0,
+    8918.0,
+    8849.0,
+    8849.0,
+    8857.0,
+    8857.0,
+    8857.0,
+    8857.0,
+    8859.0,
+    8859.0,
+    8861.0,
+    8876.0,
+    8876.0,
+    8876.0,
+    8876.0,
+    8661.0,
+    8638.0,
+    8647.0,
+    8647.0,
+    8645.0,
+    8645.0,
+    8649.0,
+    8649.0,
+    8649.0,
+    8613.0,
+    8613.0,
+    8633.0,
+    8633.0,
+    8629.0,
+    8629.0,
+    8629.0,
+    8629.0,
+    8829.0,
+    8829.0,
+    8827.0,
+    8818.0,
+    8859.0
+  ],
+  "isaac_pid": 106380,
+  "tabs": [
+    "Sim Connection",
+    "Run Manager",
+    "Record / Servo+Wheel",
+    "Speed Scale",
+    "Playback",
+    "Height Generate",
+    "Combine",
+    "Sim State"
+  ],
+  "runtime_ready": true,
+  "control_ready": true,
+  "requested_launch_mode": "explicit-python",
+  "isaac_window_title": "Isaac Sim 5.1.0",
+  "speed_slider_pending_after_100_drags": 1,
+  "height_respawn": {
+    "height_mm": 75,
+    "request_id": "4d738f4ba2fe4ea4a5710a1f1112639b",
+    "requested_wall": 1772936.554099,
+    "callback_ms": 0.15520001761615276,
+    "ack_wall_ms": 2078.8209999445826,
+    "respawned": true,
+    "control_ready": true,
+    "error": ""
+  },
+  "knee_batch_id": "b7937102b4f042c18ae43732b4375d5f",
+  "knee_minus_60": {
+    "targets_deg": {
+      "front_left_knee": -60.0,
+      "front_right_knee": -60.0,
+      "rear_left_knee": -60.0,
+      "rear_right_knee": -60.0
+    },
+    "all_four_applied": true
+  },
+  "version_load_validation": [
+    {
+      "version_id": "v001_20260804_180446_458140_manual",
+      "count": 1,
+      "sha256": "19607a9e5e675e73479683e0f23d7efc97e32c40d2c2bcd05a4ac176bd6d9469",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180446_458140_manual"
+    },
+    {
+      "version_id": "v002_20260804_180448_753567_manual",
+      "count": 2,
+      "sha256": "08fb8731deb326303d5130e21d1780f57da9d75ed2948020b59fe934d68cfa54",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180448_753567_manual"
+    }
+  ],
+  "performance_summary": {
+    "ordinary_callback_count": 207,
+    "ordinary_callback_average_ms": 3.487546858490233,
+    "ordinary_callback_p95_ms": 7.9260099679231635,
+    "ordinary_callback_max_ms": 39.28080014884472,
+    "ui_after_probe_average_ms": 18.153767786154397,
+    "ui_after_probe_p95_ms": 21.164999925531447,
+    "ui_after_probe_max_ms": 739.7747999057174,
+    "real_time_factor_average": 0.9479061128128279,
+    "real_time_factor_p50": 0.9456264786906282,
+    "worker_loop_hz_average": 253.22615046740057,
+    "status_payload_bytes_average": 8677.1625,
+    "status_payload_bytes_max": 8956.0,
+    "outbound_backlog": 0,
+    "status_replaced": 0,
+    "frames_sent": 227,
+    "bytes_sent": 3221437,
+    "status_enqueued": 162,
+    "status_send_hz": 7.77627511595321,
+    "socket_send_blocking_ms": 0.0,
+    "send_call_average_ms": 0.23991806280803313,
+    "send_call_max_ms": 3.165900008752942
+  },
+  "acceptance_criteria": {
+    "callback_p95_under_30ms": true,
+    "callback_max_under_100ms": true,
+    "no_ui_probe_over_200ms": false,
+    "status_under_16kb": true,
+    "rtf_at_least_0_9": true,
+    "all_generate_under_1_5s": true,
+    "atomic_batch_pass": true,
+    "two_versions": true,
+    "four_knees": true
+  },
+  "error": "AssertionError: acceptance criteria failed: {'callback_p95_under_30ms': True, 'callback_max_under_100ms': True, 'no_ui_probe_over_200ms': False, 'status_under_16kb': True, 'rtf_at_least_0_9': True, 'all_generate_under_1_5s': True, 'atomic_batch_pass': True, 'two_versions': True, 'four_knees': True}",
+  "failed_stage": "FINALIZE",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 182, in _tick\n    getattr(self, f\"_stage_{self.stage.lower()}\")()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py\", line 815, in _stage_finalize\n    raise AssertionError(f\"acceptance criteria failed: {criteria}\")\nAssertionError: acceptance criteria failed: {'callback_p95_under_30ms': True, 'callback_max_under_100ms': True, 'no_ui_probe_over_200ms': False, 'status_under_16kb': True, 'rtf_at_least_0_9': True, 'all_generate_under_1_5s': True, 'atomic_batch_pass': True, 'two_versions': True, 'four_knees': True}\n",
+  "latest_sim_status": {
+    "last_operation_ack": {
+      "type": "stop_ack",
+      "command_id": "b120a773ec994e99969bb9d54dd82fd6",
+      "received_wall_time": 1785881090.9279697,
+      "target_applied_wall_time": 1785881090.928469,
+      "target_applied_sim_time": 19.533333333333285,
+      "zero_target_applied": true,
+      "error": ""
+    },
+    "operation_ack_history": [
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "09da057b98d24ad59ba2b63daed37b70",
+        "source": "real_e2e",
+        "batch_received_wall_time": 1785881075.6683357,
+        "batch_applied_wall_time": 1785881075.6703348,
+        "batch_applied_sim_time": 5.2666666666666675,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 633,
+        "servo_motion_start_sim_time": 5.275000000000001,
+        "wheel_motion_start_sim_time": 5.275000000000001,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": -20.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "9119ff5f29164f349256f6e07bc933aa",
+        "received_wall_time": 1785881076.1701715,
+        "target_applied_wall_time": 1785881076.17067,
+        "target_applied_sim_time": 5.7333333333333325,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "6ee4867aa68b4638a796bd4492b33cf1",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881076.2445946,
+        "updated_sim_time": 5.799999999999999,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "fdb435ded3ec4e018f87bb1f3777f537",
+        "source": "servo_reset",
+        "batch_received_wall_time": 1785881076.2465937,
+        "batch_applied_wall_time": 1785881076.2481203,
+        "batch_applied_sim_time": 5.799999999999999,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 697,
+        "servo_motion_start_sim_time": 5.808333333333333,
+        "wheel_motion_start_sim_time": 5.808333333333333,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "753884c6f2294d75bfac808a0dc62bc1",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881076.6744156,
+        "updated_sim_time": 6.1999999999999975,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "a4c5008a13354df38a2148d15a412dc2",
+        "source": "servo_100",
+        "batch_received_wall_time": 1785881076.6784353,
+        "batch_applied_wall_time": 1785881076.6809385,
+        "batch_applied_sim_time": 6.1999999999999975,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 745,
+        "servo_motion_start_sim_time": 6.208333333333331,
+        "wheel_motion_start_sim_time": 6.208333333333331,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "1cfad1ed9de7416dac871a1e4eeb6225",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881078.024054,
+        "updated_sim_time": 7.46666666666666,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "83a4c6cd57de47e89b2afbb318e89460",
+        "source": "servo_reset",
+        "batch_received_wall_time": 1785881078.0255558,
+        "batch_applied_wall_time": 1785881078.0265675,
+        "batch_applied_sim_time": 7.46666666666666,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 897,
+        "servo_motion_start_sim_time": 7.474999999999993,
+        "wheel_motion_start_sim_time": 7.474999999999993,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "ec28287bf9d149e59c030043e6a4812b",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881078.592215,
+        "updated_sim_time": 7.999999999999991,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "d5ece937c5044006b1c2f3ac17a743fa",
+        "source": "servo_200",
+        "batch_received_wall_time": 1785881078.594214,
+        "batch_applied_wall_time": 1785881078.5962136,
+        "batch_applied_sim_time": 7.999999999999991,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 961,
+        "servo_motion_start_sim_time": 8.008333333333324,
+        "wheel_motion_start_sim_time": 8.008333333333324,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "b0ea6c6b63bd4d809844b39c12a1dd90",
+        "received_wall_time": 1785881081.4994235,
+        "target_applied_wall_time": 1785881081.4999237,
+        "target_applied_sim_time": 10.733333333333315,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "3df3b66a28f44b77877fd7c14c48d5db",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881081.501935,
+        "updated_sim_time": 10.733333333333315,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "95b14b495f6943bea5be148714240874",
+        "source": "wheel_100",
+        "batch_received_wall_time": 1785881081.7228506,
+        "batch_applied_wall_time": 1785881081.725352,
+        "batch_applied_sim_time": 10.933333333333314,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1313,
+        "servo_motion_start_sim_time": 10.941666666666647,
+        "wheel_motion_start_sim_time": 10.941666666666647,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "20a9f95abe3d4aa18edd91466f68c51f",
+        "received_wall_time": 1785881083.0662105,
+        "target_applied_wall_time": 1785881083.0672169,
+        "target_applied_sim_time": 12.199999999999976,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "e42850b2f7ab4fd2a265559c16f7fa22",
+        "received_wall_time": 1785881083.2897372,
+        "target_applied_wall_time": 1785881083.2902367,
+        "target_applied_sim_time": 12.399999999999975,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "fd180c23a2ce4e6dad040a5497d27dc9",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881083.2922373,
+        "updated_sim_time": 12.399999999999975,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "148f48e2923148ad9e1272e604a94d91",
+        "source": "wheel_200",
+        "batch_received_wall_time": 1785881083.5164702,
+        "batch_applied_wall_time": 1785881083.5184789,
+        "batch_applied_sim_time": 12.599999999999975,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1513,
+        "servo_motion_start_sim_time": 12.608333333333308,
+        "wheel_motion_start_sim_time": 12.608333333333308,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.3,
+          "front_right_ankle": 0.3,
+          "rear_left_ankle": 0.3,
+          "rear_right_ankle": 0.3
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.6,
+          "front_right_ankle": 0.6,
+          "rear_left_ankle": 0.6,
+          "rear_right_ankle": 0.6
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "485e677d4d384782924e781ac6221d7a",
+        "received_wall_time": 1785881084.7167475,
+        "target_applied_wall_time": 1785881084.7172427,
+        "target_applied_sim_time": 13.733333333333304,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "c3e1d27a12674a7ea7403a62407dbe12",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881085.155493,
+        "updated_sim_time": 14.133333333333303,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "b7937102b4f042c18ae43732b4375d5f",
+        "source": "knee_minus_60_real_e2e",
+        "batch_received_wall_time": 1785881085.1564856,
+        "batch_applied_wall_time": 1785881085.1584907,
+        "batch_applied_sim_time": 14.133333333333303,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1697,
+        "servo_motion_start_sim_time": 14.141666666666636,
+        "wheel_motion_start_sim_time": 14.141666666666636,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 60.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "recording_metadata": {
+          "recording_active": false,
+          "height_mm": 75,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_height",
+        "request_id": "853db88d61454fa8ab23647ef61f7c78",
+        "updated": true,
+        "height_mm": 50,
+        "revision": 5,
+        "control_ready": true,
+        "respawned": false,
+        "obstacle_update_s": 0.001235799863934517,
+        "worker_operation_s": 0.07193819992244244,
+        "request_enqueued_wall_time": 1785881085.493229,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "9e507f49a83b4134ac994e420136cd89",
+        "speed_percent": 100.0,
+        "speed_scale": 1.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "requested_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "effective_reference_wheel_velocity_rad_s": 0.5235987755982988,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881085.7262776,
+        "updated_sim_time": 14.666666666666634,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "62a1a5500cef4a908a3b3904ea63ed6d",
+        "source": "real_recording",
+        "batch_received_wall_time": 1785881085.7292845,
+        "batch_applied_wall_time": 1785881085.7312837,
+        "batch_applied_sim_time": 14.666666666666634,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 1761,
+        "servo_motion_start_sim_time": 14.674999999999967,
+        "wheel_motion_start_sim_time": 14.674999999999967,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 100.0,
+        "executor_speed_percent": 100.0,
+        "requested_servo_velocity_deg_s": 150.0,
+        "effective_servo_velocity_deg_s": 150.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 15.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "recording_metadata": {
+          "recording_active": true,
+          "height_mm": 50,
+          "version_id": "",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "50424d2237934a16a58034376538e9d2",
+        "received_wall_time": 1785881086.3661048,
+        "target_applied_wall_time": 1785881086.367058,
+        "target_applied_sim_time": 15.266666666666632,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "27649c1ed9384b4a98e8e5767e3fa90d",
+        "received_wall_time": 1785881086.6553793,
+        "target_applied_wall_time": 1785881086.6553793,
+        "target_applied_sim_time": 15.533333333333298,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "e19183f2dd194b04bb351cacfbf612eb",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881087.8616178,
+        "updated_sim_time": 16.66666666666663,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "apply_motion_batch",
+        "batch_id": "3a1b956ea07e4496b9f71d142e81e70e",
+        "source": "real_recording",
+        "batch_received_wall_time": 1785881087.8641086,
+        "batch_applied_wall_time": 1785881087.8661165,
+        "batch_applied_sim_time": 16.66666666666663,
+        "servo_applied": true,
+        "wheel_applied": true,
+        "first_physics_step": 2001,
+        "servo_motion_start_sim_time": 16.67499999999996,
+        "wheel_motion_start_sim_time": 16.67499999999996,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "speed_percent_snapshot": 200.0,
+        "executor_speed_percent": 200.0,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "canonical_servo_targets_deg": {
+          "front_left_hip": 30.0,
+          "front_left_knee": -60.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": -60.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": -60.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": -60.0
+        },
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.25,
+          "front_right_ankle": 0.25,
+          "rear_left_ankle": 0.25,
+          "rear_right_ankle": 0.25
+        },
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.5,
+          "front_right_ankle": 0.5,
+          "rear_left_ankle": 0.5,
+          "rear_right_ankle": 0.5
+        },
+        "recording_metadata": {
+          "recording_active": true,
+          "height_mm": 50,
+          "version_id": "v001_20260804_180446_458140_manual",
+          "speed_semantics_version": "worker-motion-executor-v1"
+        },
+        "high_priority": false,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "b861904b178149ff9b0e74c336c8cbbc",
+        "received_wall_time": 1785881088.643359,
+        "target_applied_wall_time": 1785881088.643359,
+        "target_applied_sim_time": 17.39999999999996,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "7f2dba06f55f401681c101cad6ebaa15",
+        "received_wall_time": 1785881088.9993556,
+        "target_applied_wall_time": 1785881089.0003548,
+        "target_applied_sim_time": 17.73333333333329,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "operation_ack",
+        "operation": "set_speed_scale",
+        "request_id": "adda928452f94c7da88b291fba407a2f",
+        "speed_percent": 200.0,
+        "speed_scale": 2.0,
+        "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+        "reference_verified": false,
+        "requested_servo_velocity_deg_s": 300.0,
+        "effective_servo_velocity_deg_s": 300.0,
+        "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+        "semantics_version": "worker-motion-executor-v1",
+        "updated_wall_time": 1785881089.3647687,
+        "updated_sim_time": 18.066666666666624,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "e899a4d25fed46d0a6111bce9e847479",
+        "received_wall_time": 1785881090.9254634,
+        "target_applied_wall_time": 1785881090.9259634,
+        "target_applied_sim_time": 19.533333333333285,
+        "zero_target_applied": true,
+        "error": ""
+      },
+      {
+        "type": "stop_ack",
+        "command_id": "b120a773ec994e99969bb9d54dd82fd6",
+        "received_wall_time": 1785881090.9279697,
+        "target_applied_wall_time": 1785881090.928469,
+        "target_applied_sim_time": 19.533333333333285,
+        "zero_target_applied": true,
+        "error": ""
+      }
+    ],
+    "requested_launch_mode": "explicit-python",
+    "type": "status",
+    "ready": true,
+    "runtime_ready": true,
+    "starting": false,
+    "phase": "running",
+    "phase_elapsed_s": 20.766000000061467,
+    "height_mm": 50,
+    "height_cm": 5.0,
+    "scene_height_mm": 50,
+    "obstacle_revision": 5,
+    "last_set_height_source": "ui",
+    "last_set_height_request_id": "853db88d61454fa8ab23647ef61f7c78",
+    "obstacle_updated": true,
+    "scene_ready": true,
+    "respawned": false,
+    "error": "",
+    "traceback": "",
+    "pid": 106380,
+    "sim_time": 19.533333333333285,
+    "sim_steps": 2344,
+    "real_time_factor": 0.9456264786906282,
+    "respawn_count": 1,
+    "last_respawn_at": 1785881075.4528377,
+    "restore_count": 0,
+    "last_restore_result": "",
+    "last_restore_error": "",
+    "perf": {
+      "outbound_backlog": 0,
+      "status_replaced": 0,
+      "frames_sent": 227,
+      "bytes_sent": 3221437,
+      "status_enqueued": 162,
+      "status_send_hz": 7.77627511595321,
+      "socket_send_blocking_ms": 0.0,
+      "send_call_average_ms": 0.23991806280803313,
+      "send_call_max_ms": 3.165900008752942
+    },
+    "command_state": {
+      "servos": {
+        "front_left_hip": 30.0,
+        "front_left_knee": -60.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": -60.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": -60.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": -60.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "servo_target_deg": [
+      30.0,
+      -60.0,
+      0.0,
+      -60.0,
+      0.0,
+      -60.0,
+      0.0,
+      -60.0
+    ],
+    "servo_actual_deg": [
+      21.396803839304713,
+      -59.93205494778883,
+      7.40416923955665,
+      -59.889045246585255,
+      9.463306496001767,
+      60.16822239872035,
+      -8.686743869448938,
+      60.10323997895686
+    ],
+    "wheel_canonical_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_effective_rad_s": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wheel_measured_rad_s": [
+      0.0014614829560741782,
+      0.2834339439868927,
+      -0.3987765908241272,
+      0.011593426577746868
+    ],
+    "target_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "command_deg": 30.0,
+          "applied_command_deg": 20.0,
+          "tracking_compensation_deg": -10.0,
+          "target_actual_deg": 30.07935156363205,
+          "target_actual_rad": 0.524983721650284
+        },
+        "front_left_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -60.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": -59.97315599919516,
+          "target_actual_rad": -1.0467290349981453
+        },
+        "front_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 10.0,
+          "tracking_compensation_deg": 10.0,
+          "target_actual_deg": -0.006745560524854715,
+          "target_actual_rad": -0.00011773224105127156
+        },
+        "front_right_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -59.964978935079046,
+          "tracking_compensation_deg": 0.03502106492095436,
+          "target_actual_deg": -59.874811650497804,
+          "target_actual_rad": -1.045012602312647
+        },
+        "rear_left_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": -10.0,
+          "tracking_compensation_deg": -10.0,
+          "target_actual_deg": -0.1794263347525243,
+          "target_actual_rad": -0.0031315803062170744
+        },
+        "rear_left_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -59.9350075313925,
+          "tracking_compensation_deg": 0.06499246860749963,
+          "target_actual_deg": 60.16301483092001,
+          "target_actual_rad": 1.0500426967257337
+        },
+        "rear_right_hip": {
+          "command_deg": 0.0,
+          "applied_command_deg": 10.0,
+          "tracking_compensation_deg": 10.0,
+          "target_actual_deg": -0.3229814231186408,
+          "target_actual_rad": -0.005637089256197214
+        },
+        "rear_right_knee": {
+          "command_deg": -60.0,
+          "applied_command_deg": -60.0,
+          "tracking_compensation_deg": 0.0,
+          "target_actual_deg": 60.21524399350242,
+          "target_actual_rad": 1.0509542675783563
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "front_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_left_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        },
+        "rear_right_ankle": {
+          "canonical_rad_s": 0.0,
+          "requested_rad_s": 0.0,
+          "target_rad_s": 0.0
+        }
+      }
+    },
+    "actual_joint_state": {
+      "servos": {
+        "front_left_hip": {
+          "rad": 0.37344467639923096,
+          "deg": 21.396803839304713
+        },
+        "front_left_knee": {
+          "rad": -1.0460116863250732,
+          "deg": -59.93205494778883
+        },
+        "front_right_hip": {
+          "rad": 0.12922713160514832,
+          "deg": 7.40416923955665
+        },
+        "front_right_knee": {
+          "rad": -1.045261025428772,
+          "deg": -59.889045246585255
+        },
+        "rear_left_hip": {
+          "rad": 0.16516585648059845,
+          "deg": 9.463306496001767
+        },
+        "rear_left_knee": {
+          "rad": 1.0501335859298706,
+          "deg": 60.16822239872035
+        },
+        "rear_right_hip": {
+          "rad": -0.1516122817993164,
+          "deg": -8.686743869448938
+        },
+        "rear_right_knee": {
+          "rad": 1.0489994287490845,
+          "deg": 60.10323997895686
+        }
+      },
+      "wheels": {
+        "front_left_ankle": {
+          "rad_s": 0.0014614829560741782
+        },
+        "front_right_ankle": {
+          "rad_s": 0.2834339439868927
+        },
+        "rear_left_ankle": {
+          "rad_s": -0.3987765908241272
+        },
+        "rear_right_ankle": {
+          "rad_s": 0.011593426577746868
+        }
+      }
+    },
+    "robot_ground": {
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "checked": true,
+      "physical_ground_safe": true,
+      "maximum_collision_penetration_m": 0.001091660052353255,
+      "root_z_m": 0.09874513000249863,
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "respawn_ready": true
+    },
+    "grounded_reference_valid": true,
+    "grounded_reference_stable": true,
+    "motion_ready": true,
+    "motion_block_reason": "",
+    "respawn_ready": true,
+    "respawn_block_reason": "",
+    "control_ready": true,
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "wheel_command": {
+      "generation": 11,
+      "command_id": "b120a773ec994e99969bb9d54dd82fd6",
+      "state": "zero_target_applied",
+      "stop_command_received": true,
+      "zero_target_applied": true,
+      "physically_stopped": false,
+      "stale_command_rejected": false,
+      "requested_wall_time": 1785881090.8687143,
+      "enqueued_wall_time": 1785881090.8687255,
+      "received_wall_time": 1785881090.9279697,
+      "target_applied_wall_time": 1785881090.928469,
+      "measured_stop_wall_time": 0.0,
+      "target_applied_sim_time": 19.533333333333285,
+      "measured_stop_sim_time": 0.0,
+      "stop_tolerance_rad_s": 0.1,
+      "applied_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "measured_velocity_rad_s": {
+        "front_left_ankle": 0.0014614829560741782,
+        "front_right_ankle": 0.2834339439868927,
+        "rear_left_ankle": -0.3987765908241272,
+        "rear_right_ankle": 0.011593426577746868
+      },
+      "canonical_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "effective_target_rad_s": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "speed_percent": 200.0
+    },
+    "speed": {
+      "speed_percent": 200.0,
+      "speed_scale": 2.0,
+      "reference_profile_id": "real-robot-ui-controller-20260626-v1",
+      "reference_verified": false,
+      "requested_servo_velocity_deg_s": 300.0,
+      "effective_servo_velocity_deg_s": 300.0,
+      "requested_reference_wheel_velocity_rad_s": 1.0471975511965976,
+      "effective_reference_wheel_velocity_rad_s": 1.0471975511965976,
+      "semantics_version": "worker-motion-executor-v1"
+    },
+    "motion_batch": {
+      "batch_id": "playback-eb23c226-31b799e9cabe48e3-0-29403229",
+      "source": "playback",
+      "batch_received_wall_time": 1785881089.0073755,
+      "batch_applied_wall_time": 1785881089.010383,
+      "batch_applied_sim_time": 17.73333333333329,
+      "servo_applied": true,
+      "wheel_applied": true,
+      "first_physics_step": 2129,
+      "servo_motion_start_sim_time": 17.741666666666625,
+      "wheel_motion_start_sim_time": 17.741666666666625,
+      "motion_start_skew_s": 0.0,
+      "physics_dt_s": 0.008333333333333333,
+      "speed_percent_snapshot": 200.0,
+      "executor_speed_percent": 200.0,
+      "requested_servo_velocity_deg_s": 300.0,
+      "effective_servo_velocity_deg_s": 300.0,
+      "canonical_servo_targets_deg": {
+        "front_left_hip": 30.0,
+        "front_left_knee": -60.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": -60.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": -60.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": -60.0
+      },
+      "canonical_wheel_velocity_rad_s": {
+        "front_left_ankle": 0.25,
+        "front_right_ankle": 0.25,
+        "rear_left_ankle": 0.25,
+        "rear_right_ankle": 0.25
+      },
+      "effective_wheel_velocity_rad_s": {
+        "front_left_ankle": 0.5,
+        "front_right_ankle": 0.5,
+        "rear_left_ankle": 0.5,
+        "rear_right_ankle": 0.5
+      },
+      "recording_metadata": {
+        "plan_id": "eb23c226-31b799e9cabe48e3",
+        "source_step": 2,
+        "source_step_id": "step_002_recorded_height_050mm_dur_0.67s"
+      },
+      "high_priority": false,
+      "error": ""
+    },
+    "physics_dt": 0.008333333333333333,
+    "sim_step_hz": 120.0,
+    "ready_source": "runtime",
+    "last_ready_change_reason": "runtime status",
+    "last_ready_change_message_type": "status",
+    "real_time_factor_lifetime": 0.9021156377385069,
+    "real_time_factor_window_samples": 24,
+    "worker_playback": {
+      "active": false,
+      "paused": false,
+      "scheduled": false,
+      "started": true,
+      "plan_id": "eb23c226-31b799e9cabe48e3",
+      "plan_sha256": "eb23c22640f100534726f1aa5fb37ba20357b94e6dc4ec166a1df8375fd73f0f",
+      "source_sha256": "",
+      "label": "recorded-200",
+      "path": "",
+      "index": 12,
+      "count": 13,
+      "events_sent": 12,
+      "final_time_s": 0.6666666666666643,
+      "sim_elapsed_s": 0.6666666666666643,
+      "wall_elapsed_s": 1.9261155128479004,
+      "progress": 1.0,
+      "last_event_command": "wheel rr 0.25",
+      "last_event_time": 1785881089.0063622,
+      "last_event_sim_time_s": 17.73333333333329,
+      "max_dispatch_jitter_s": 0.0,
+      "dispatch_clock": "simulation_time",
+      "completed_at": 1785881090.1443748,
+      "completed_at_sim_time_s": 18.799999999999955,
+      "stop_reason": "actuator_limit",
+      "last_error": "actuator_limit: servo target did not improve for 0.800s sim; segment=0 max_error_deg=2.633400",
+      "last_info": "worker playback stopped: actuator_limit",
+      "progress_detail": {
+        "playback_state": "IDLE",
+        "status_text": "Stopped",
+        "current_step_index": 2,
+        "total_steps": 2,
+        "global_command_index": 12,
+        "total_commands": 13,
+        "command_phase": "stopped",
+        "last_error": "actuator_limit: servo target did not improve for 0.800s sim; segment=0 max_error_deg=2.633400"
+      },
+      "timing": {}
+    },
+    "status_payload_bytes": 8859,
+    "worker_pid": 106380,
+    "worker_returncode": null,
+    "worker": true,
+    "startup_elapsed_s": 39.494571999879554,
+    "connected": true,
+    "ipc_connected": true,
+    "stdout_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785881051555_stdout.log",
+    "stderr_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\height_replay_worker_logs\\worker_1785881051555_stderr.log",
+    "stdout_tail": [],
+    "stderr_tail": [],
+    "last_meaningful_stdout": "",
+    "last_meaningful_stderr": "",
+    "last_log_activity_at": 1785881091.056812,
+    "startup_progress_message": "Worker logs are still changing.",
+    "pending_message_count": 0,
+    "pending_send_bytes": 0,
+    "dropped_or_replaced_messages": 0,
+    "error_category": "unknown",
+    "startup_diagnosis": "Worker is ready. If the viewport is black, check viewport camera, renderer warmup, GPU/driver logs, and livestream/headless settings."
+  },
+  "controller_status_log_tail": [
+    "[INFO] Starting Isaac Sim subprocess worker...",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Generate / Update requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 0.233s; control ready.",
+    "[INFO] Generate / Update requested for 100 mm.",
+    "[INFO] Obstacle update completed at 100 mm in 0.155s; control ready.",
+    "[INFO] Generate + Respawn requested for 75 mm.",
+    "[INFO] Obstacle update completed at 75 mm in 2.060s; control ready.",
+    "[INFO] Generate / Update requested for 50 mm.",
+    "[INFO] Obstacle update completed at 50 mm in 0.156s; control ready.",
+    "[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.",
+    "[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.",
+    "[INFO] Zero target applied; finalizing recording.",
+    "[INFO] Step recording stopped; pending step has 2 events.",
+    "[INFO] Accepted recorded step 001: step_001_recorded_height_050mm_dur_0.67s",
+    "[PERF] Accept recorded step took 0.8ms manager=add_step 0.4ms",
+    "[INFO] Saved 1 steps / 2 commands at 2026-08-04T18:04:46-04:00: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v001_20260804_180446_458140_manual",
+    "[PERF] Save New Version took 153.3ms",
+    "[PLAYBACK DEBUG] plan label=recorded-100 events=13 final_time=0.667s profile=raw first_commands=['servo front_left_hip 15', 'servo front_left_knee -60', 'servo front_right_hip 0', 'servo front_right_knee -60', 'servo rear_left_hip 0']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: recorded-100",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=13 last_info=worker playback scheduled: recorded-100 (13 events)",
+    "[INFO] Step recording started. mode=RECORDING_STEP; MotionBatch events retain canonical targets and one speed snapshot.",
+    "[INFO] Stopping wheels... recording finalize waits for zero-target acknowledgment.",
+    "[INFO] Zero target applied; finalizing recording.",
+    "[INFO] Step recording stopped; pending step has 2 events.",
+    "[INFO] Accepted recorded step 002: step_002_recorded_height_050mm_dur_0.67s",
+    "[PERF] Accept recorded step took 0.9ms manager=add_step 0.6ms",
+    "[INFO] Saved 2 steps / 4 commands at 2026-08-04T18:04:48-04:00: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\reports\\ui_motion_speed_height_version_refactor_20260804_180409\\temporary_version_store_v2\\height_050mm\\versions\\v002_20260804_180448_753567_manual",
+    "[PERF] Save New Version took 148.9ms",
+    "[PLAYBACK DEBUG] plan label=recorded-200 events=13 final_time=0.667s profile=raw first_commands=['servo front_left_hip 30', 'servo front_left_knee -60', 'servo front_right_hip 0', 'servo front_right_knee -60', 'servo rear_left_hip 0']",
+    "[PLAYBACK DEBUG] stop_wheels sent before playback restore/start.",
+    "[INFO] Playback started: recorded-200",
+    "[PLAYBACK DEBUG] manager active=True scheduled=False index=0 count=13 last_info=worker playback scheduled: recorded-200 (13 events)",
+    "[INFO] Loaded 1 steps from v001_20260804_180446_458140_manual at 50 mm.",
+    "[PERF] Load steps for current height took 59.2ms manager=adopt_steps 3.0ms",
+    "[INFO] Loaded 2 steps from v002_20260804_180448_753567_manual at 50 mm.",
+    "[PERF] Load steps for current height took 66.3ms manager=adopt_steps 4.9ms"
+  ],
+  "ui_closed": true,
+  "worker_reference_cleared": true,
+  "finished_at": 1785881097.8288689
+}

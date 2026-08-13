@@ -1,0 +1,22 @@
+ README.md                                          |  48 +-
+ config/environment_reference.yaml                  |   6 +-
+ height_generate_panel.py                           |   4 +-
+ height_version_store.py                            |   2 -
+ motion_speed.py                                    |  56 +-
+ playback.py                                        | 522 +++++++++++++++++--
+ playback_progress.py                               |   1 +
+ sim_ipc_protocol.py                                |   1 -
+ sim_obstacle_scene.py                              | 108 +++-
+ sim_process_client.py                              |  16 +-
+ sim_robot_adapter.py                               |  86 ++--
+ sim_transport.py                                   |  22 +-
+ sim_ui_controller.py                               | 564 +++++++++++++--------
+ sim_worker_process.py                              | 196 ++++---
+ sim_worker_runtime.py                              |  71 ++-
+ tests/test_recording_baseline_lock.py              |   6 +-
+ tests/test_servo_wheel_staging.py                  |  48 +-
+ tests/test_sim_time_playback_service.py            |  93 +++-
+ tests/test_task_separation_refactor.py             |   1 -
+ ...test_ui_motion_speed_height_version_refactor.py |  82 +--
+ tests/test_workflow_regressions.py                 |  13 +-
+ 21 files changed, 1411 insertions(+), 535 deletions(-)

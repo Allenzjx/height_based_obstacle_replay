@@ -1,0 +1,19 @@
+修改/新增文件（无删除）：
+修改	eight_generate_panel.py	本轮验证支持文件
+修改	height_version_store.py	只读 inspect、同 ID 原子 Update、备份/验证/回滚、唯一时间戳
+修改	latest_50mm_manual_v2_e2e.py	正式 50 mm Raw/Fast、selection independence 与 stale reconciliation 真实验证
+修改	operation_coordinator.py	增加 RUN_MANAGEMENT 协调状态
+修改	playback.py	bounded contact residual completion、hard safety 保留、Selected resume 修复
+修改	playback_availability.py	仅真实冲突阻止 Playback，并提供精确原因
+修改	pose_checkpoint_selected_fast_e2e.py	Selected Raw/Fast 真实鼠标、pose 恢复、运动、Pause/Resume/Stop 验证
+修改	sim_ui_controller.py	严格 FULL_VALID Selected pipeline、即时反馈、stale reconciliation、Run 控制器
+修改	tests/test_height_wheel_servo_batch_replay_completion_fix.py	按新安全语义更新既有 completion 断言
+修改	tests/test_play_selected_fast_click_fix.py	按 Raw/Fast 统一即时反馈更新断言
+修改	tests/test_play_selected_playback.py	按 strict FULL_VALID Selected 语义更新覆盖
+修改	tests/test_selected_step_previous_saved_state.py	按 previous-step 完整 pose 语义更新覆盖
+修改	tests/test_ui_motion_speed_height_version_refactor.py	按 Run Management 标签更新 UI 断言
+新增	capture_selected_run_baseline.py	修改前 Git 与 1021 个受保护文件 SHA-256 基线
+新增	generate_selected_pose_run_management_report.py	生成本轮证据报告及保护审计
+新增	run_management_gui_e2e.py	临时 store 上的 Run UI 真实 GUI 验证
+新增	tests/test_selected_pose_run_management_and_reconciliation.py	本轮专项回归与冲突矩阵测试
+删除	无

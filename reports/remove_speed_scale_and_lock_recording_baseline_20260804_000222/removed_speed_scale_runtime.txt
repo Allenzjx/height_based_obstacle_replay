@@ -1,0 +1,19 @@
+REMOVAL SCOPE
+- UI tab, slider, reset control, widget state, Tk after callback, polling timer.
+- Controller percentage models, requested/effective/pending fields, setters, status and snapshots.
+- Command model and IPC percentage fields/messages.
+- Recording snapshots and percentage metadata generation.
+- Playback multiplier, percentage planner math, duration/path scaling and preserve-distance compatibility runtime.
+- Worker percentage setter/message path and progress fields.
+- Percentage-only E2E runners, report generator, unit tests and README instructions.
+
+PREVIOUS LAYER COUNT
+Eight integration layers carried percentage concerns: UI/timer, controller model, command fields, recording metadata, playback planner, progress/status, IPC/worker, and percentage-specific tests/reports. The prior intended mathematical multiplication point was the planner, but the distributed state/callback/queue surface still enabled stale wheel work.
+
+FINAL STATIC SEARCH
+Scope: project runtime/source/config/docs/tests, excluding reports, historical saved data, artifacts, runs and __pycache__.
+Patterns: retired task label; retired module/model identifiers; requested/effective/pending percentage fields; multiplier; preserve-distance; application-count/semantics/canonical/recorded percentage metadata; old reset/range labels.
+Result: NO_MATCHES (0).
+
+LEGACY DATA
+Old files are never rewritten. sequence_model.normalize_event copies unknown old metadata as opaque values for round-trip compatibility. Playback derives commands only from event command values, direct command states and timestamps; unknown metadata is never read by the planner, IPC, worker, adapter, progress, or recording gate.

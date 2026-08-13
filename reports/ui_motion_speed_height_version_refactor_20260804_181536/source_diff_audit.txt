@@ -1,0 +1,5 @@
+The supplied attachment is pasted-text.txt containing requirements only; it contains no source tree or source SHA manifest.
+Therefore a formal-project-versus-attachment source SHA comparison is not possible. The formal project was authoritative.
+The project is not a Git repository, so no git status/diff exists. A final source SHA-256 map is stored in evidence_manifest.json.
+No reset, clean, checkout, package install, Isaac upgrade, or write outside the formal project was performed.
+Earlier failed report directories were preserved as required; the successful evidence root is this directory.
