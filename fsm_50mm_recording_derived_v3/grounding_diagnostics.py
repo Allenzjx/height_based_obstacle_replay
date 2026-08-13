@@ -189,6 +189,56 @@ def _contact_snapshot(
                     "source": "isaaclab.ContactSensor.net_forces_w",
                 }
             )
+    filtered_nonwheel = getattr(sensor, "nonwheel_obstacle_observations", None)
+    if callable(filtered_nonwheel):
+        try:
+            observation_rows = list(
+                filtered_nonwheel(
+                    env_id=0,
+                    force_threshold_n=float(active_force_threshold_n),
+                )
+                or []
+            )
+        except Exception as exc:
+            errors.append(
+                "non-wheel obstacle contact read failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            observation_rows = []
+        if not observation_rows:
+            errors.append("non-wheel obstacle contact layout is empty")
+        for raw in observation_rows:
+            if isinstance(raw, Mapping):
+                row = dict(raw)
+            elif callable(getattr(raw, "as_dict", None)):
+                row = dict(raw.as_dict())
+            else:
+                errors.append("non-wheel obstacle contact row is not serializable")
+                continue
+            name = str(row.get("body_name", "") or "")
+            if not name or row.get("force_valid") is not True:
+                errors.append(f"{name or '<unnamed>'}: non-wheel force is invalid")
+                continue
+            vector, vector_error = _finite_vector(
+                list(row.get("total_force_w", []) or []), 3
+            )
+            if vector_error:
+                errors.append(f"{name}: {vector_error}")
+                continue
+            nonwheel_vectors[name] = vector
+            if row.get("active") is True:
+                nonwheel_contacts.append(
+                    {
+                        **row,
+                        "body_name": name,
+                        "net_force_w": vector,
+                        "total_force_n": float(
+                            math.sqrt(sum(component * component for component in vector))
+                        ),
+                        "active": True,
+                        "source": "filtered non-wheel obstacle ContactSensor",
+                    }
+                )
     return {
         "valid": not errors and len(wheel_forces) == 4,
         "error": "; ".join(errors),
@@ -200,7 +250,9 @@ def _contact_snapshot(
     }
 
 
-def _penetration_snapshot(adapter: Any) -> dict[str, Any]:
+def penetration_snapshot(adapter: Any) -> dict[str, Any]:
+    """Read fail-closed live wheel/ground penetration without mutating state."""
+
     try:
         diagnostics = dict(adapter.validate_robot_ground_contact(apply_correction=False) or {})
     except Exception as exc:
@@ -327,7 +379,7 @@ def enrich_grounding_tick(
     )
     dt = float(enriched.get("physics_dt_s", 0.0) or 0.0)
     contact = _contact_snapshot(scene_handle, dt=dt)
-    penetration = _penetration_snapshot(adapter)
+    penetration = penetration_snapshot(adapter)
     errors = [
         error
         for error in (

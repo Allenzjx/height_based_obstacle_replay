@@ -133,7 +133,9 @@ def _fake_viewport_modules(
 
 class RecordingViewportVideoContractTests(unittest.TestCase):
     def test_replay_defaults_to_gui_viewport_capture(self) -> None:
-        args = build_parser().parse_args(["replay-recordings"])
+        args = build_parser().parse_args(
+            ["replay-recordings", "--trial-id", "1"]
+        )
         self.assertFalse(args.headless)
         self.assertFalse(args.no_video)
         self.assertEqual(15.0, args.video_fps)
@@ -142,7 +144,7 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
         for switch in ("--headless", "--no-video"):
             with self.subTest(switch=switch):
                 diagnostic = build_parser().parse_args(
-                    ["replay-recordings", switch]
+                    ["replay-recordings", "--trial-id", "1", switch]
                 )
                 self.assertFalse(_recording_video_capture_requested(diagnostic))
 
@@ -234,7 +236,7 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory) / "run"
             args = build_parser().parse_args(
-                ["replay-recordings", "--no-video"]
+                ["replay-recordings", "--trial-id", "1", "--no-video"]
             )
             recorder = _DisabledRecorder(run_dir)
             capture = _RecordingReplayViewportCapture(
@@ -280,7 +282,9 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
     def test_each_version_restores_and_removes_movie_capture_graph(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            args = build_parser().parse_args(["replay-recordings"])
+            args = build_parser().parse_args(
+                ["replay-recordings", "--trial-id", "1"]
+            )
             viewport = SimpleNamespace(
                 render_product_path="/Render/Product/ActiveViewport"
             )

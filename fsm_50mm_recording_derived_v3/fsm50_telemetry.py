@@ -16,6 +16,7 @@ from telemetry.com_metrics import to_numpy
 from telemetry.exporters import write_csv, write_json, write_jsonl
 
 from .filtered_wheel_contact import FILTERED_SURFACES, filtered_contact_rows
+from .grounding_diagnostics import penetration_snapshot
 from .nonwheel_obstacle_contact import (
     NONWHEEL_FORCE_SOURCE,
     nonwheel_obstacle_contact_rows,
@@ -137,6 +138,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
         final_angular_velocity_rad_s: float = 0.15,
         final_stable_dwell_s: float = 0.25,
         dangerous_nonwheel_contact_force_n: float = 5.0,
+        maximum_penetration_m: float = 0.003,
     ) -> None:
         super().__init__(config, args=args, scene_handle=scene_handle)
         self.obstacle = obstacle
@@ -159,6 +161,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
         self.dangerous_nonwheel_contact_force_n = float(
             dangerous_nonwheel_contact_force_n
         )
+        self.maximum_penetration_m = float(maximum_penetration_m)
         requested_signs = dict(wheel_forward_sign or {})
         self.wheel_forward_sign = {
             leg: _wheel_sign(
@@ -188,6 +191,14 @@ class FSM50TelemetryCollector(TelemetryCollector):
         self.previous_wheel_angle: dict[str, float] = {}
         self.integrated_wheel_rotation: dict[str, float] = {leg: 0.0 for leg in LEGS}
         self.integrated_wheel_travel: dict[str, float] = {leg: 0.0 for leg in LEGS}
+        self.integrated_wheel_force_impulse_w: dict[str, list[float]] = {
+            leg: [0.0, 0.0, 0.0] for leg in LEGS
+        }
+        self.integrated_wheel_upward_impulse_n_s: dict[str, float] = {
+            leg: 0.0 for leg in LEGS
+        }
+        self.initial_com_position_w: tuple[float, float, float] | None = None
+        self.previous_sample_time_s: float | None = None
         self.maximum_contact_drift_m = 0.0
         self.minimum_corridor_margin_m = float("inf")
         self.dangerous_collision_rows: list[dict[str, Any]] = []
@@ -208,7 +219,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             return
         base_row = self.rows[-1]
         contacts = self.contact_rows[before_contacts:]
-        extended = self._extend_row(adapter, base_row, contacts)
+        extended = self._extend_row(adapter, base_row, contacts, dt_s=float(dt_s))
         filtered_rows = list(extended.get("wheel_filtered_contacts", []) or [])
         filtered_evidence = self._install_filtered_contact_sample(
             base_row=base_row,
@@ -441,6 +452,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 leg: {
                     "upward_force_n": float("nan"),
                     "total_force_n": float("nan"),
+                    "vector_w": [float("nan")] * 3,
                     "source": COMMON_WHEEL_FORCE_SOURCE,
                 }
                 for leg in LEGS
@@ -527,6 +539,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             leg: {
                 "upward_force_n": max(0.0, float(vector[2])),
                 "total_force_n": float(np.linalg.norm(vector)),
+                "vector_w": [float(value) for value in vector],
                 "source": COMMON_WHEEL_FORCE_SOURCE,
             }
             for leg, vector in wheel_vectors.items()
@@ -806,10 +819,26 @@ class FSM50TelemetryCollector(TelemetryCollector):
         adapter: Any,
         base_row: dict[str, Any],
         raw_contacts: list[dict[str, Any]],
+        *,
+        dt_s: float | None = None,
     ) -> dict[str, Any]:
         time_s = float(base_row.get("time_s", 0.0) or 0.0)
         body_positions = self._body_positions(adapter)
         joint_pos, joint_vel = self._joint_vectors(adapter)
+        drive_evidence: dict[str, Any] = {}
+        drive_evidence_error = ""
+        try:
+            capture = getattr(adapter, "capture_joint_drive_evidence")
+            drive_evidence = dict(capture() or {})
+            drive_evidence_error = str(drive_evidence.get("error", "") or "")
+        except Exception as exc:
+            drive_evidence_error = (
+                "joint/PhysX drive evidence unavailable: "
+                f"{type(exc).__name__}: {exc}"
+            )
+        if drive_evidence:
+            joint_pos = dict(drive_evidence.get("joint_position_by_name", {}) or {})
+            joint_vel = dict(drive_evidence.get("joint_velocity_by_name", {}) or {})
         filtered_contacts, filtered_contact_error = self._filtered_contacts()
         (
             nonwheel_contacts,
@@ -820,6 +849,10 @@ class FSM50TelemetryCollector(TelemetryCollector):
         forces, common_force_evidence = self._common_wheel_net_force_by_leg(
             getattr(self.scene_handle, "contact_sensor", None)
         )
+        wheel_net_forces_w = {
+            leg: list(forces[leg].get("vector_w", [float("nan")] * 3))
+            for leg in LEGS
+        }
         for contact in filtered_contacts:
             self.filtered_surface_rows.append(
                 {
@@ -929,35 +962,168 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 self.integrated_wheel_travel[leg] += delta * self.wheel_radius_m
             if math.isfinite(canonical):
                 self.previous_wheel_angle[leg] = canonical
+
+        sample_dt = _safe_float(dt_s)
+        if self.previous_sample_time_s is not None and math.isfinite(time_s):
+            observed_dt = float(time_s) - float(self.previous_sample_time_s)
+            if observed_dt > 0.0 and math.isfinite(observed_dt):
+                sample_dt = observed_dt
+        impulse_evidence_valid = bool(
+            common_force_evidence.get("wheel_net_force_valid") is True
+            and math.isfinite(sample_dt)
+            and sample_dt > 0.0
+            and all(
+                len(wheel_net_forces_w[leg]) == 3
+                and all(
+                    math.isfinite(_safe_float(value))
+                    for value in wheel_net_forces_w[leg]
+                )
+                for leg in LEGS
+            )
+        )
+        if impulse_evidence_valid:
+            for leg in LEGS:
+                vector = wheel_net_forces_w[leg]
+                for axis in range(3):
+                    self.integrated_wheel_force_impulse_w[leg][axis] += (
+                        float(vector[axis]) * sample_dt
+                    )
+                self.integrated_wheel_upward_impulse_n_s[leg] += (
+                    max(0.0, float(vector[2])) * sample_dt
+                )
+        self.previous_sample_time_s = float(time_s) if math.isfinite(time_s) else None
+
+        com_position_w = [
+            _safe_float(base_row.get("com_x_m")),
+            _safe_float(base_row.get("com_y_m")),
+            _safe_float(base_row.get("com_z_m")),
+        ]
+        if self.initial_com_position_w is None and all(
+            math.isfinite(value) for value in com_position_w
+        ):
+            self.initial_com_position_w = tuple(com_position_w)
+        com_displacement_w = (
+            [
+                float(com_position_w[index] - self.initial_com_position_w[index])
+                for index in range(3)
+            ]
+            if self.initial_com_position_w is not None
+            and all(math.isfinite(value) for value in com_position_w)
+            else [float("nan")] * 3
+        )
         self.traversal.update(time_s, classified, canonical_angles)
 
         command_deg = {
             name: _safe_float(dict(getattr(adapter, "joint_command_deg", {}) or {}).get(name))
             for name in SERVO_JOINT_NAMES
         }
-        actual_target_rad = _as_row(
-            getattr(getattr(getattr(adapter, "robot", None), "data", None), "joint_pos_target", None)
-        ).reshape(-1)
-        joint_names = [
-            str(name) for name in (getattr(getattr(adapter, "robot", None), "joint_names", []) or [])
-        ]
-        actual_target = {
-            name: float(actual_target_rad[index])
-            for index, name in enumerate(joint_names[: actual_target_rad.size])
-        }
+        actual_target = dict(
+            drive_evidence.get("joint_position_target_by_name", {}) or {}
+        )
+        buffered_position_target = dict(
+            drive_evidence.get("joint_position_target_buffer_by_name", {}) or {}
+        )
+        physx_velocity_target = dict(
+            drive_evidence.get("joint_velocity_target_by_name", {}) or {}
+        )
+        buffered_velocity_target = dict(
+            drive_evidence.get("joint_velocity_target_buffer_by_name", {}) or {}
+        )
+        servo_command_target_rad = dict(
+            drive_evidence.get("servo_command_target_by_name", {}) or {}
+        )
+        servo_command_to_physx_error = dict(
+            drive_evidence.get("servo_command_to_readback_error_by_name", {}) or {}
+        )
+        target_minus_position = dict(
+            drive_evidence.get("joint_target_minus_position_by_name", {}) or {}
+        )
+        drive_evidence_valid = bool(drive_evidence.get("valid", False))
         joint_safety = self._joint_safety_evidence(
             adapter, joint_pos, actual_target
         )
         wheel_command = dict(getattr(adapter, "wheel_speeds", {}) or {})
         segment = self._segment_context()
+        try:
+            penetration = penetration_snapshot(adapter)
+        except Exception as exc:
+            penetration = {
+                "valid": False,
+                "error": f"penetration capture failed: {type(exc).__name__}: {exc}",
+                "maximum_collision_penetration_m": float("nan"),
+                "wheel_penetration_m": {},
+            }
+        root_pose_w = [
+            _safe_float(base_row.get(key))
+            for key in (
+                "base_x_m",
+                "base_y_m",
+                "base_z_m",
+                "base_qw",
+                "base_qx",
+                "base_qy",
+                "base_qz",
+            )
+        ]
+        root_velocity_w = [
+            _safe_float(base_row.get(key))
+            for key in (
+                "base_vx_m_s",
+                "base_vy_m_s",
+                "base_vz_m_s",
+                "base_wx_rad_s",
+                "base_wy_rad_s",
+                "base_wz_rad_s",
+            )
+        ]
         row: dict[str, Any] = {
             **dict(base_row),
             "source_version": self.source_version,
             "fsm_state": str(self.runtime_context.get("fsm_state", "")),
             "scheduler_phase": str(self.runtime_context.get("scheduler_phase", "")),
+            "macro_state_cursor": str(
+                self.runtime_context.get("macro_state_cursor", "RECORDING_FAST_REPLAY")
+            ),
+            "command_cursor": self.runtime_context.get("command_cursor"),
+            "segment_cursor": self.runtime_context.get("segment_cursor"),
+            "source_command": str(self.runtime_context.get("source_command", "")),
+            "source_event_index": self.runtime_context.get("source_event_index"),
+            "planned_dispatch_time_s": self.runtime_context.get(
+                "planned_dispatch_time_s"
+            ),
+            "actual_dispatch_time_s": self.runtime_context.get(
+                "actual_dispatch_time_s"
+            ),
+            "atomic_batch_id": str(self.runtime_context.get("atomic_batch_id", "")),
+            "dispatch_kind": str(self.runtime_context.get("dispatch_kind", "")),
+            "motion_start_readiness_token": str(
+                self.runtime_context.get("motion_start_readiness_token", "")
+            ),
             **segment,
+            "physics_dt_s": sample_dt,
+            "root_pose_w": root_pose_w,
+            "root_position_w": root_pose_w[:3],
+            "root_orientation_wxyz": root_pose_w[3:7],
+            "root_linear_velocity_w": root_velocity_w[:3],
+            "root_angular_velocity_w": root_velocity_w[3:6],
+            "com_position_w": com_position_w,
+            "com_velocity_w": [
+                _safe_float(base_row.get("com_vx_m_s")),
+                _safe_float(base_row.get("com_vy_m_s")),
+                _safe_float(base_row.get("com_vz_m_s")),
+            ],
+            "com_displacement_w": com_displacement_w,
             "command_space_servo_target_deg": command_deg,
+            "servo_command_target_rad": servo_command_target_rad,
             "actual_joint_target_rad": actual_target,
+            "physx_joint_position_target_rad": actual_target,
+            "joint_position_target_buffer_rad": buffered_position_target,
+            "physx_joint_velocity_target_rad_s": physx_velocity_target,
+            "joint_velocity_target_buffer_rad_s": buffered_velocity_target,
+            "joint_target_minus_position_rad": target_minus_position,
+            "servo_command_to_physx_target_error_rad": servo_command_to_physx_error,
+            "physx_drive_target_evidence_valid": drive_evidence_valid,
+            "physx_drive_target_evidence_error": drive_evidence_error,
             "measured_joint_position_rad": joint_pos,
             "measured_joint_velocity_rad_s": joint_vel,
             "wheel_command_velocity_rad_s": wheel_command,
@@ -970,6 +1136,15 @@ class FSM50TelemetryCollector(TelemetryCollector):
             ),
             "wheel_integrated_rotation_rad": dict(self.integrated_wheel_rotation),
             "wheel_integrated_travel_m": dict(self.integrated_wheel_travel),
+            "wheel_net_forces_w": wheel_net_forces_w,
+            "wheel_force_impulse_w_n_s": {
+                leg: list(values)
+                for leg, values in self.integrated_wheel_force_impulse_w.items()
+            },
+            "wheel_upward_force_impulse_n_s": dict(
+                self.integrated_wheel_upward_impulse_n_s
+            ),
+            "force_impulse_evidence_valid": impulse_evidence_valid,
             "wheel_contact_classes": {
                 leg: classified[leg].contact_class.value for leg in LEGS
             },
@@ -1029,6 +1204,12 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "collision_evidence_error": collision_evidence_error,
             "dangerous_collision": (
                 dangerous_collision if collision_evidence_valid else None
+            ),
+            "penetration": penetration,
+            "penetration_evidence_valid": penetration.get("valid") is True,
+            "penetration_evidence_error": str(penetration.get("error", "") or ""),
+            "maximum_collision_penetration_m": penetration.get(
+                "maximum_collision_penetration_m"
             ),
         }
         return row
@@ -1174,11 +1355,49 @@ class FSM50TelemetryCollector(TelemetryCollector):
             collision_valid
             and not any(bool(row.get("dangerous_collision", False)) for row in self.fsm50_rows)
         )
+        drive_target_evidence_valid = bool(
+            self.fsm50_rows
+            and all(
+                row.get("physx_drive_target_evidence_valid") is True
+                for row in self.fsm50_rows
+            )
+        )
+        penetration_evidence_valid = bool(
+            self.fsm50_rows
+            and all(
+                row.get("penetration_evidence_valid") is True
+                for row in self.fsm50_rows
+            )
+        )
+        penetration_values = [
+            _safe_float(row.get("maximum_collision_penetration_m"))
+            for row in self.fsm50_rows
+        ]
+        maximum_penetration = max(
+            (value for value in penetration_values if math.isfinite(value)),
+            default=float("nan"),
+        )
+        penetration_safe = bool(
+            penetration_evidence_valid
+            and len(penetration_values) == len(self.fsm50_rows)
+            and all(math.isfinite(value) for value in penetration_values)
+            and maximum_penetration <= self.maximum_penetration_m
+        )
+        force_impulse_evidence_valid = bool(
+            self.fsm50_rows
+            and all(
+                row.get("force_impulse_evidence_valid") is True
+                for row in self.fsm50_rows
+            )
+        )
         evidence_complete = bool(
             filtered_contact_valid
             and attitude_evidence_valid
             and joint_limit_evidence_valid
             and collision_valid
+            and drive_target_evidence_valid
+            and penetration_evidence_valid
+            and force_impulse_evidence_valid
         )
         not_evaluable_reasons: list[str] = []
         if not filtered_contact_valid:
@@ -1189,6 +1408,12 @@ class FSM50TelemetryCollector(TelemetryCollector):
             not_evaluable_reasons.append("per-servo joint-limit evidence incomplete")
         if not collision_valid:
             not_evaluable_reasons.append("non-wheel link/chassis obstacle-collision evidence unavailable")
+        if not drive_target_evidence_valid:
+            not_evaluable_reasons.append("independent PhysX drive-target evidence incomplete")
+        if not penetration_evidence_valid:
+            not_evaluable_reasons.append("per-tick penetration evidence incomplete")
+        if not force_impulse_evidence_valid:
+            not_evaluable_reasons.append("per-wheel force impulse evidence incomplete")
         criteria = {
             "contact_evidence_valid": filtered_contact_valid,
             "all_legs_linkage_lift_valid": bool(traversal["all_legs_valid"]),
@@ -1196,6 +1421,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "attitude_safe": attitude_safe,
             "joint_limits_safe": joint_limit_safe,
             "collision_safe": collision_safe,
+            "penetration_safe": penetration_safe,
             "contact_drift_safe": bool(
                 self.maximum_contact_drift_m <= self.maximum_allowed_contact_drift_m
             ),
@@ -1224,6 +1450,18 @@ class FSM50TelemetryCollector(TelemetryCollector):
             else self.minimum_corridor_margin_m,
             "dangerous_collision_count": len(self.dangerous_collision_rows),
             "collision_evidence_valid": collision_valid,
+            "physx_drive_target_evidence_valid": drive_target_evidence_valid,
+            "penetration_evidence_valid": penetration_evidence_valid,
+            "maximum_collision_penetration_m": maximum_penetration,
+            "maximum_allowed_penetration_m": self.maximum_penetration_m,
+            "force_impulse_evidence_valid": force_impulse_evidence_valid,
+            "final_wheel_force_impulse_w_n_s": {
+                leg: list(values)
+                for leg, values in self.integrated_wheel_force_impulse_w.items()
+            },
+            "final_wheel_upward_force_impulse_n_s": dict(
+                self.integrated_wheel_upward_impulse_n_s
+            ),
             "joint_limit_evidence_valid": joint_limit_evidence_valid,
             "joint_limit_violation_count": len(self.joint_limit_violation_rows),
             "maximum_abs_roll_rad": maximum_abs_roll,

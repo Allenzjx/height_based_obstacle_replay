@@ -133,7 +133,20 @@ def plan_from_steps(
     per_step_seen: dict[int, int] = {}
     global_index = 0
     cursor = 0.0
-    state = clone_command_state(normalized_steps[0].get("command_state_before") if normalized_steps else None)
+    initial_command_state = clone_command_state(
+        normalized_steps[0].get("command_state_before")
+        if normalized_steps
+        else None
+    )
+    initial_command_state_sha256 = hashlib.sha256(
+        json.dumps(
+            initial_command_state,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    state = clone_command_state(initial_command_state)
     previous_raw_time = 0.0
     previous_recorded_motion_duration = 0.0
 
@@ -300,6 +313,15 @@ def plan_from_steps(
             "fixed_step_gap_s": 0.0,
             "scheduler_model": "continuous_worker_completion_aware_v2",
             "actuator_command_semantics": "direct_recorded_values_v1",
+            "source_initial_command_state": copy.deepcopy(initial_command_state),
+            "source_initial_command_state_sha256": initial_command_state_sha256,
+            # The compiler records the source-state evidence for every caller.
+            # Production worker/runner entry points opt into the mandatory
+            # live readiness binding immediately before scheduling; keeping
+            # this false here preserves direct/offline scheduler use without
+            # silently pretending that those paths collected live evidence.
+            "requires_motion_start_readiness_token": False,
+            "requires_verified_motion_batch_ack": False,
             "wheel_duration_source": "recorded_simulation_time",
             "servo_reference_velocity_deg_s": servo_reference_velocity_deg_s,
             "plan_integrity": {
@@ -777,6 +799,10 @@ class SimTimePlaybackService:
         self.segment_last_servo_worsening_elapsed_s = 0.0
         self.segment_contact_within_tolerance_since_s: float | None = None
         self.segment_contact_error_history: list[tuple[float, float]] = []
+        self.last_motion_batch_ack: dict[str, Any] = {}
+        self.last_motion_batch_attempt_step: int | None = None
+        self.motion_start_readiness_token = ""
+        self.motion_start_readiness_bound_sim_step: int | None = None
         # A genuinely stalled actuator now fails quickly instead of making a
         # short command look like a multi-second UI/playback hang.
         self.servo_stall_window_s = 0.75
@@ -852,6 +878,10 @@ class SimTimePlaybackService:
         self.segment_last_servo_worsening_elapsed_s = 0.0
         self.segment_contact_within_tolerance_since_s = None
         self.segment_contact_error_history = []
+        self.last_motion_batch_ack = {}
+        self.last_motion_batch_attempt_step = None
+        self.motion_start_readiness_token = ""
+        self.motion_start_readiness_bound_sim_step = None
         first = self.plan.events[0] if self.plan.events else None
         selected_step_index = int(first.source_step or 0) if first is not None else 0
         total_steps = int(self.plan.total_steps or len({event.source_step for event in self.plan.events if event.source_step is not None}))
@@ -876,6 +906,33 @@ class SimTimePlaybackService:
             selected_playback=bool(self.plan.selected_playback),
         )
         return self.active
+
+    def bind_motion_start_readiness(
+        self,
+        token: str,
+        *,
+        current_sim_step: int,
+    ) -> bool:
+        """Bind immutable pre-first evidence to every source motion batch."""
+
+        normalized = str(token or "").strip().lower()
+        if (
+            not self.active
+            or self.first_command_applied
+            or not re.fullmatch(r"[0-9a-f]{64}", normalized)
+        ):
+            self.last_error = (
+                "motion_start_readiness_binding_invalid: active pre-first "
+                "plan and one SHA-256 token are required"
+            )
+            return False
+        self.motion_start_readiness_token = normalized
+        self.motion_start_readiness_bound_sim_step = int(current_sim_step)
+        self.timing_trace["motion_start_readiness_token"] = normalized
+        self.timing_trace["motion_start_readiness_bound_sim_step"] = int(
+            current_sim_step
+        )
+        return True
 
     def update(self, adapter: Any, *, current_sim_time_s: float, current_sim_step: int, current_wall_time_s: float) -> None:
         if not self.active or self.paused or self.plan is None:
@@ -905,16 +962,25 @@ class SimTimePlaybackService:
                 if self.plan.selected_playback
                 else "Playing..."
             )
+        resume_batch_applied = False
         if self.resume_wheel_command_pending and self.paused_wheel_state:
             if hasattr(adapter, "apply_motion_batch"):
-                adapter.apply_motion_batch(
-                    {
-                        "batch_id": f"playback-resume-{self.plan_id}-{uuid.uuid4().hex[:8]}",
-                        "source": "playback",
-                        "servo_targets_deg": {},
-                        "wheel_targets_rad_s": dict(self.paused_wheel_state),
-                    }
-                )
+                if not self._runtime_wheel_batch(
+                    adapter,
+                    dispatch_kind="pause_resume",
+                    wheel_targets_rad_s=dict(self.paused_wheel_state),
+                    sim_time=sim_time,
+                    current_sim_step=int(current_sim_step),
+                ):
+                    self._finish(
+                        adapter,
+                        success=False,
+                        reason="atomic_dispatch_invalid",
+                        current_sim_time_s=sim_time,
+                        current_wall_time_s=current_wall_time_s,
+                    )
+                    return
+                resume_batch_applied = True
             else:
                 for name, value in self.paused_wheel_state.items():
                     adapter.handle_command(CommandMessage(text=f"wheel {name} {value:.9g}", source="playback", log_history=False, quiet=True))
@@ -924,6 +990,10 @@ class SimTimePlaybackService:
             if hasattr(adapter, "servo_motion_enabled"):
                 adapter.servo_motion_enabled = True
             self.resume_servo_motion_pending = False
+        # A resumed wheel command owns this physics-tick dispatch slot.  Do not
+        # immediately start a source segment in the same scheduler update.
+        if resume_batch_applied:
+            return
         elapsed = max(0.0, sim_time - self.start_sim_time_s - self.paused_sim_accum_s)
         if self.plan.segments:
             self._update_segments(
@@ -1023,6 +1093,8 @@ class SimTimePlaybackService:
                     current_sim_step=current_sim_step,
                     wall_time=wall_time,
                 )
+                if not self.active:
+                    return
 
             segment_elapsed = max(0.0, elapsed - self.segment_start_elapsed_s)
             servo_planned_done = segment_elapsed + 1.0e-9 >= float(segment.servo_duration_s)
@@ -1129,9 +1201,40 @@ class SimTimePlaybackService:
             segment_done = servo_done and wheel_done and hold_done
 
             if wheel_done and segment.wheel_active_duration_s > 0.0 and not segment_done and not self.segment_wheel_stopped:
-                adapter.stop_wheels()
-                if hasattr(adapter, "apply_commands_to_robot"):
-                    adapter.apply_commands_to_robot()
+                stop_ok = self._apply_motion_batch_recorded(
+                    adapter,
+                    {
+                        "batch_id": (
+                            f"playback-wheel-stop-{self.plan_id}-"
+                            f"{segment.segment_index}-{uuid.uuid4().hex[:8]}"
+                        ),
+                        "source": "playback",
+                        "servo_targets_deg": {},
+                        "wheel_targets_rad_s": {
+                            name: 0.0 for name in WHEEL_JOINT_NAMES
+                        },
+                        "recording_metadata": {
+                            "plan_id": self.plan_id,
+                            "source_step": int(segment.source_step),
+                            "source_step_id": segment.source_step_id,
+                            "dispatch_kind": "wheel_channel_completion_stop",
+                        },
+                    },
+                    dispatch_kind="wheel_channel_completion_stop",
+                    segment=segment,
+                    segment_events=[],
+                    sim_time=sim_time,
+                    current_sim_step=current_sim_step,
+                )
+                if not stop_ok:
+                    self._finish(
+                        adapter,
+                        success=False,
+                        reason="atomic_dispatch_invalid",
+                        current_sim_time_s=sim_time,
+                        current_wall_time_s=wall_time,
+                    )
+                    return
                 self.segment_wheel_stopped = True
                 self.wheel_stopped_for_channel_completion = True
                 self.active_wheel_command = ""
@@ -1272,20 +1375,338 @@ class SimTimePlaybackService:
                     self.next_segment_start_elapsed_s = elapsed + final_idle
                     self.plan.timing["final_implicit_idle_s"] = 0.0
                     return
-                self._finish(adapter, success=True, reason="complete", current_sim_time_s=sim_time, current_wall_time_s=wall_time)
+                # A zero-duration final segment may have just consumed this
+                # tick's sole motion-batch slot.  Defer only in that case;
+                # otherwise use the still-free slot for the independently
+                # recorded final safety stop now.
+                if self.last_motion_batch_attempt_step == int(current_sim_step):
+                    self.next_segment_start_elapsed_s = float(elapsed)
+                    return
+                self._finish(
+                    adapter,
+                    success=True,
+                    reason="complete",
+                    current_sim_time_s=sim_time,
+                    current_wall_time_s=wall_time,
+                )
                 return
 
             next_segment = self.plan.segments[self.segment_index]
             self.next_segment_start_elapsed_s = elapsed + float(next_segment.implicit_idle_before_s)
             if next_segment.implicit_idle_before_s > 0.0:
                 if any(abs(value) > 1.0e-9 for value in segment.wheel_applied_target_rad_s.values()):
-                    adapter.stop_wheels()
-                    if hasattr(adapter, "apply_commands_to_robot"):
-                        adapter.apply_commands_to_robot()
+                    if hasattr(adapter, "apply_motion_batch"):
+                        if not self._runtime_wheel_batch(
+                            adapter,
+                            dispatch_kind="implicit_idle_wheel_stop",
+                            wheel_targets_rad_s={
+                                name: 0.0 for name in WHEEL_JOINT_NAMES
+                            },
+                            sim_time=sim_time,
+                            current_sim_step=int(getattr(adapter, "sim_steps", 0)),
+                        ):
+                            self._finish(
+                                adapter,
+                                success=False,
+                                reason="atomic_dispatch_invalid",
+                                current_sim_time_s=sim_time,
+                                current_wall_time_s=wall_time,
+                            )
+                            return
+                    else:
+                        adapter.stop_wheels()
+                        if hasattr(adapter, "apply_commands_to_robot"):
+                            adapter.apply_commands_to_robot()
                     self.active_wheel_command = ""
+                return
+            if self.last_motion_batch_attempt_step == int(current_sim_step):
+                # The just-completed (typically zero-duration wheel-stop)
+                # segment already applied a complete batch on this physics
+                # tick.  Keep the next source cursor pending until the next
+                # update instead of dispatching two batches at one sim step.
                 return
             # No UI/IPC/progress barrier: loop and start the next segment in
             # this same scheduler cycle (zero simulation ticks of fixed pad).
+
+    def _apply_motion_batch_recorded(
+        self,
+        adapter: Any,
+        payload: dict[str, Any],
+        *,
+        dispatch_kind: str,
+        segment: PlaybackSegment | None,
+        segment_events: list[PlaybackEvent],
+        sim_time: float,
+        current_sim_step: int,
+    ) -> bool:
+        """Apply one production batch and retain its independent adapter ACK."""
+
+        requested_batch_id = str(payload.get("batch_id", "") or "")
+        if self.last_motion_batch_attempt_step == int(current_sim_step):
+            error = (
+                "motion-batch slot already consumed at physics step "
+                f"{int(current_sim_step)}"
+            )
+            self.last_error = "atomic_dispatch_invalid: " + error
+            self.timing_trace.setdefault("motion_batches", []).append(
+                {
+                    "dispatch_kind": str(dispatch_kind),
+                    "batch_id": requested_batch_id,
+                    "segment_index": (
+                        None if segment is None else int(segment.segment_index)
+                    ),
+                    "source_step_index": (
+                        None if segment is None else int(segment.source_step)
+                    ),
+                    "source_step_id": (
+                        None if segment is None else segment.source_step_id
+                    ),
+                    "plan_event_indices": [],
+                    "global_command_indices": [],
+                    "servo_targets_deg": dict(
+                        payload.get("servo_targets_deg", {}) or {}
+                    ),
+                    "wheel_targets_rad_s": dict(
+                        payload.get("wheel_targets_rad_s", {}) or {}
+                    ),
+                    "atomic_servo_wheel": False,
+                    "scheduler_sim_time_s": float(sim_time),
+                    "scheduler_sim_step": int(current_sim_step),
+                    "ack": {},
+                    "ack_present": False,
+                    "ack_valid": False,
+                    "ack_error": error,
+                    "adapter_exception": "",
+                    "adapter_called": False,
+                    "applied_sim_step": None,
+                    "first_physics_step": None,
+                    "motion_start_skew_s": None,
+                }
+            )
+            return False
+        if not hasattr(adapter, "apply_motion_batch"):
+            self.last_error = "atomic_dispatch_invalid: adapter has no apply_motion_batch"
+            self.last_motion_batch_ack = {}
+            return False
+        apply_error = ""
+        try:
+            raw_ack = adapter.apply_motion_batch(payload)
+            ack = dict(raw_ack or {}) if isinstance(raw_ack, dict) else {}
+        except Exception as exc:
+            ack = {}
+            apply_error = f"{type(exc).__name__}: {exc}"
+        self.last_motion_batch_ack = ack
+        self.last_motion_batch_attempt_step = int(current_sim_step)
+        applied_step = ack.get("applied_sim_step")
+        first_step = ack.get("first_physics_step")
+        skew = ack.get("motion_start_skew_s")
+        errors: list[str] = []
+        if not ack:
+            errors.append("adapter returned no mapping ACK")
+        if apply_error:
+            errors.append("adapter apply_motion_batch raised: " + apply_error)
+        if str(ack.get("batch_id", "") or "") != requested_batch_id:
+            errors.append("ACK batch_id mismatch")
+        if str(ack.get("error", "") or ""):
+            errors.append(str(ack.get("error")))
+        try:
+            if int(applied_step) != int(current_sim_step):
+                errors.append(
+                    f"ACK applied_sim_step={applied_step} != {current_sim_step}"
+                )
+        except (TypeError, ValueError):
+            errors.append("ACK applied_sim_step unavailable")
+        try:
+            if int(first_step) != int(current_sim_step) + 1:
+                errors.append(
+                    f"ACK first_physics_step={first_step} != {int(current_sim_step) + 1}"
+                )
+        except (TypeError, ValueError):
+            errors.append("ACK first_physics_step unavailable")
+        try:
+            parsed_skew = float(skew)
+            if not math.isfinite(parsed_skew) or abs(parsed_skew) > 1.0e-12:
+                errors.append(f"ACK motion_start_skew_s={skew} is not zero")
+        except (TypeError, ValueError):
+            errors.append("ACK motion_start_skew_s unavailable")
+        requested_servos = {
+            str(name): float(value)
+            for name, value in dict(payload.get("servo_targets_deg", {}) or {}).items()
+        }
+        requested_wheels = {
+            str(name): float(value)
+            for name, value in dict(payload.get("wheel_targets_rad_s", {}) or {}).items()
+        }
+        requested_metadata = copy.deepcopy(
+            dict(payload.get("recording_metadata", {}) or {})
+        )
+        try:
+            applied_servos = {
+                str(name): float(value)
+                for name, value in dict(
+                    ack.get("servo_targets_applied", {}) or {}
+                ).items()
+            }
+        except (TypeError, ValueError):
+            applied_servos = {}
+            errors.append("ACK servo_targets_applied is invalid")
+        try:
+            applied_wheels = {
+                str(name): float(value)
+                for name, value in dict(
+                    ack.get("wheel_targets_applied", {}) or {}
+                ).items()
+            }
+        except (TypeError, ValueError):
+            applied_wheels = {}
+            errors.append("ACK wheel_targets_applied is invalid")
+        if set(applied_servos) != set(requested_servos) or any(
+            not math.isfinite(value)
+            or not math.isclose(
+                value,
+                requested_servos[name],
+                rel_tol=0.0,
+                abs_tol=1.0e-9,
+            )
+            for name, value in applied_servos.items()
+            if name in requested_servos
+        ):
+            errors.append("ACK servo targets do not match requested targets")
+        if set(applied_wheels) != set(requested_wheels) or any(
+            not math.isfinite(value)
+            or not math.isclose(
+                value,
+                requested_wheels[name],
+                rel_tol=0.0,
+                abs_tol=1.0e-9,
+            )
+            for name, value in applied_wheels.items()
+            if name in requested_wheels
+        ):
+            errors.append("ACK wheel targets do not match requested targets")
+        if bool(ack.get("servo_applied", False)) != bool(requested_servos):
+            errors.append("ACK servo_applied does not match requested channel")
+        if requested_wheels and ack.get("wheel_applied") is not True:
+            errors.append("ACK wheel_applied is not true")
+        ack_metadata = copy.deepcopy(
+            dict(ack.get("recording_metadata", {}) or {})
+        )
+        if ack_metadata != requested_metadata:
+            errors.append("ACK recording_metadata does not match requested metadata")
+        record = {
+            "dispatch_kind": str(dispatch_kind),
+            "batch_id": str(ack.get("batch_id", requested_batch_id) or requested_batch_id),
+            "segment_index": (
+                None if segment is None else int(segment.segment_index)
+            ),
+            "source_step_index": (
+                None if segment is None else int(segment.source_step)
+            ),
+            "source_step_id": None if segment is None else segment.source_step_id,
+            "plan_event_indices": [
+                int(segment.event_start_index + offset)
+                for offset, _event in enumerate(segment_events)
+            ],
+            "global_command_indices": [
+                int(event.global_command_index) for event in segment_events
+            ],
+            "servo_targets_deg": dict(payload.get("servo_targets_deg", {}) or {}),
+            "wheel_targets_rad_s": dict(payload.get("wheel_targets_rad_s", {}) or {}),
+            "recording_metadata": requested_metadata,
+            "atomic_servo_wheel": bool(
+                requested_servos
+                and any(abs(value) > 1.0e-12 for value in requested_wheels.values())
+            ),
+            "scheduler_sim_time_s": float(sim_time),
+            "scheduler_sim_step": int(current_sim_step),
+            "ack": copy.deepcopy(ack),
+            "ack_present": bool(ack),
+            "ack_valid": not errors,
+            "ack_error": "; ".join(errors),
+            "adapter_exception": apply_error,
+            "adapter_called": True,
+            "applied_sim_step": applied_step,
+            "first_physics_step": first_step,
+            "motion_start_skew_s": skew,
+        }
+        self.timing_trace.setdefault("motion_batches", []).append(record)
+        strict_ack_required = bool(
+            self.plan is not None
+            and self.plan.timing.get("requires_verified_motion_batch_ack") is True
+        )
+        legacy_unverified = bool(
+            not ack and not apply_error and not strict_ack_required
+        )
+        if errors and not legacy_unverified:
+            self.last_error = "atomic_dispatch_invalid: " + "; ".join(errors)
+            return False
+        if legacy_unverified:
+            self.timing_trace["unverified_legacy_motion_batch_count"] = int(
+                self.timing_trace.get("unverified_legacy_motion_batch_count", 0)
+                or 0
+            ) + 1
+        return True
+
+    def _runtime_wheel_batch(
+        self,
+        adapter: Any,
+        *,
+        dispatch_kind: str,
+        wheel_targets_rad_s: dict[str, float],
+        sim_time: float,
+        current_sim_step: int,
+    ) -> bool:
+        """Record one scheduler-generated wheel boundary as a full ACKed batch."""
+
+        segment = None
+        if self.plan is not None and self.plan.segments:
+            segment = self.plan.segments[
+                min(max(int(self.segment_index), 0), len(self.plan.segments) - 1)
+            ]
+        return self._apply_motion_batch_recorded(
+            adapter,
+            {
+                "batch_id": (
+                    f"playback-{dispatch_kind}-{self.plan_id}-"
+                    f"{uuid.uuid4().hex[:8]}"
+                ),
+                "source": "playback",
+                "servo_targets_deg": {},
+                "wheel_targets_rad_s": {
+                    name: float(wheel_targets_rad_s.get(name, 0.0))
+                    for name in WHEEL_JOINT_NAMES
+                },
+                "recording_metadata": {
+                    "plan_id": self.plan_id,
+                    "dispatch_kind": str(dispatch_kind),
+                },
+            },
+            dispatch_kind=dispatch_kind,
+            segment=segment,
+            segment_events=[],
+            sim_time=float(sim_time),
+            current_sim_step=int(current_sim_step),
+        )
+
+    def apply_playback_start_boundary(
+        self,
+        adapter: Any,
+        *,
+        current_sim_time_s: float,
+        current_sim_step: int,
+    ) -> bool:
+        """Apply and retain the production UI's pre-playback zero-wheel boundary."""
+
+        if not self.active or self.plan is None:
+            self.last_error = "playback_start_boundary requires an active plan"
+            return False
+        return self._runtime_wheel_batch(
+            adapter,
+            dispatch_kind="playback_start_boundary",
+            wheel_targets_rad_s={name: 0.0 for name in WHEEL_JOINT_NAMES},
+            sim_time=float(current_sim_time_s),
+            current_sim_step=int(current_sim_step),
+        )
 
     def _start_segment(
         self,
@@ -1298,6 +1719,22 @@ class SimTimePlaybackService:
         wall_time: float,
     ) -> None:
         if self.plan is None:
+            return
+        if (
+            self.plan.timing.get("requires_motion_start_readiness_token") is True
+            and not self.motion_start_readiness_token
+        ):
+            self.last_error = (
+                "motion_start_readiness_unbound: production source segment "
+                "cannot dispatch without current pre-first evidence"
+            )
+            self._finish(
+                adapter,
+                success=False,
+                reason="motion_start_readiness_unbound",
+                current_sim_time_s=sim_time,
+                current_wall_time_s=wall_time,
+            )
             return
         if segment.servo_targets:
             current_commands = dict(getattr(adapter, "joint_command_deg", {}) or {})
@@ -1326,20 +1763,55 @@ class SimTimePlaybackService:
         segment_events = self.plan.events[start:stop]
         dispatched_wheel = False
         atomic_motion_applied = False
+        self.last_motion_batch_ack = {}
         if hasattr(adapter, "apply_motion_batch") and (segment.servo_targets or segment.wheel_base_velocity):
-            adapter.apply_motion_batch(
-                {
-                    "batch_id": f"playback-{self.plan_id}-{segment.segment_index}-{uuid.uuid4().hex[:8]}",
-                    "source": "playback",
-                    "servo_targets_deg": dict(segment.servo_targets),
-                    "wheel_targets_rad_s": dict(segment.wheel_base_velocity),
-                    "recording_metadata": {
-                        "plan_id": self.plan_id,
-                        "source_step": int(segment.source_step),
-                        "source_step_id": segment.source_step_id,
-                    },
-                }
+            batch_id = (
+                f"playback-{self.plan_id}-{segment.segment_index}-{uuid.uuid4().hex[:8]}"
             )
+            batch_payload = {
+                "batch_id": batch_id,
+                "source": "playback",
+                "servo_targets_deg": dict(segment.servo_targets),
+                "wheel_targets_rad_s": {
+                    name: float(
+                        segment.wheel_base_velocity.get(
+                            name,
+                            dict(getattr(adapter, "wheel_speeds", {}) or {}).get(
+                                name, 0.0
+                            ),
+                        )
+                    )
+                    for name in WHEEL_JOINT_NAMES
+                },
+                "recording_metadata": {
+                    "plan_id": self.plan_id,
+                    "source_step": int(segment.source_step),
+                    "source_step_id": segment.source_step_id,
+                    "motion_start_readiness_token": (
+                        self.motion_start_readiness_token
+                    ),
+                    "motion_start_readiness_bound_sim_step": (
+                        self.motion_start_readiness_bound_sim_step
+                    ),
+                },
+            }
+            if not self._apply_motion_batch_recorded(
+                adapter,
+                batch_payload,
+                dispatch_kind="source_segment_start",
+                segment=segment,
+                segment_events=segment_events,
+                sim_time=sim_time,
+                current_sim_step=current_sim_step,
+            ):
+                self._finish(
+                    adapter,
+                    success=False,
+                    reason="atomic_dispatch_invalid",
+                    current_sim_time_s=sim_time,
+                    current_wall_time_s=wall_time,
+                )
+                return
             atomic_motion_applied = True
             dispatched_wheel = any(event.channel == "wheel" and event.dispatch_command for event in segment_events)
         for event in segment_events:
@@ -1385,19 +1857,37 @@ class SimTimePlaybackService:
         if segment.servo_targets and hasattr(adapter, "begin_servo_tracking"):
             adapter.begin_servo_tracking(segment.servo_targets)
 
-        if self.wheel_stopped_for_channel_completion and not dispatched_wheel:
+        if (
+            self.wheel_stopped_for_channel_completion
+            and not dispatched_wheel
+            and not atomic_motion_applied
+        ):
             active = {name: value for name, value in segment.wheel_applied_target_rad_s.items() if abs(value) > 1.0e-9}
             if active:
                 resume = "; ".join(f"wheel {name} {value:.9g}" for name, value in active.items())
                 if hasattr(adapter, "apply_motion_batch"):
-                    adapter.apply_motion_batch(
+                    if not self._apply_motion_batch_recorded(
+                        adapter,
                         {
                             "batch_id": f"playback-resume-{self.plan_id}-{segment.segment_index}",
                             "source": "playback",
                             "servo_targets_deg": {},
                             "wheel_targets_rad_s": dict(segment.wheel_base_velocity),
-                        }
-                    )
+                        },
+                        dispatch_kind="wheel_channel_resume",
+                        segment=segment,
+                        segment_events=[],
+                        sim_time=sim_time,
+                        current_sim_step=current_sim_step,
+                    ):
+                        self._finish(
+                            adapter,
+                            success=False,
+                            reason="atomic_dispatch_invalid",
+                            current_sim_time_s=sim_time,
+                            current_wall_time_s=wall_time,
+                        )
+                        return
                 else:
                     adapter.handle_command(CommandMessage(text=resume, source="playback", log_history=False, quiet=True))
                 self.active_wheel_command = resume
@@ -1583,9 +2073,27 @@ class SimTimePlaybackService:
                 self.paused_wheel_state = dict(adapter.capture_command_state().get("wheels", {}) or {})
             except Exception:
                 self.paused_wheel_state = {}
-            adapter.stop_wheels()
-            if hasattr(adapter, "apply_commands_to_robot"):
-                adapter.apply_commands_to_robot()
+            if hasattr(adapter, "apply_motion_batch"):
+                ok = self._runtime_wheel_batch(
+                    adapter,
+                    dispatch_kind="pause_stop",
+                    wheel_targets_rad_s={name: 0.0 for name in WHEEL_JOINT_NAMES},
+                    sim_time=float(current_sim_time_s),
+                    current_sim_step=int(getattr(adapter, "sim_steps", 0)),
+                )
+                if not ok:
+                    self._finish(
+                        adapter,
+                        success=False,
+                        reason="atomic_dispatch_invalid",
+                        current_sim_time_s=float(current_sim_time_s),
+                        current_wall_time_s=time.time(),
+                    )
+                    return
+            else:
+                adapter.stop_wheels()
+                if hasattr(adapter, "apply_commands_to_robot"):
+                    adapter.apply_commands_to_robot()
             self.wheel_was_stopped_for_pause = True
         if adapter is not None and hasattr(adapter, "servo_motion_enabled"):
             self.resume_servo_motion_pending = True
@@ -1617,10 +2125,6 @@ class SimTimePlaybackService:
         reason: str = "stopped",
         stop_wheels: bool = True,
     ) -> None:
-        if stop_wheels and adapter is not None:
-            adapter.stop_wheels()
-            if hasattr(adapter, "apply_commands_to_robot"):
-                adapter.apply_commands_to_robot()
         if self.active:
             self._finish(
                 adapter,
@@ -1630,6 +2134,10 @@ class SimTimePlaybackService:
                 current_wall_time_s=float(current_wall_time_s),
             )
         else:
+            if stop_wheels and adapter is not None:
+                adapter.stop_wheels()
+                if hasattr(adapter, "apply_commands_to_robot"):
+                    adapter.apply_commands_to_robot()
             self.stop_reason = str(reason or "stopped")
             self.last_info = "worker playback stopped"
             self.progress.playback_state = PlaybackState.IDLE.value
@@ -1716,9 +2224,29 @@ class SimTimePlaybackService:
 
     def _finish(self, adapter: Any, *, success: bool, reason: str, current_sim_time_s: float, current_wall_time_s: float) -> None:
         if adapter is not None:
-            adapter.stop_wheels()
-            if hasattr(adapter, "apply_commands_to_robot"):
-                adapter.apply_commands_to_robot()
+            current_step = int(getattr(adapter, "sim_steps", 0))
+            same_tick_attempt = self.last_motion_batch_attempt_step == current_step
+            if hasattr(adapter, "apply_motion_batch") and not same_tick_attempt:
+                stop_ok = self._runtime_wheel_batch(
+                    adapter,
+                    dispatch_kind="final_safety_stop",
+                    wheel_targets_rad_s={name: 0.0 for name in WHEEL_JOINT_NAMES},
+                    sim_time=float(current_sim_time_s),
+                    current_sim_step=current_step,
+                )
+                if not stop_ok:
+                    success = False
+                    reason = "atomic_dispatch_invalid"
+                    try:
+                        adapter.stop_wheels()
+                        if hasattr(adapter, "apply_commands_to_robot"):
+                            adapter.apply_commands_to_robot()
+                    except Exception:
+                        pass
+            else:
+                adapter.stop_wheels()
+                if hasattr(adapter, "apply_commands_to_robot"):
+                    adapter.apply_commands_to_robot()
         collector = getattr(adapter, "telemetry_collector", None) if adapter is not None else None
         if collector is not None:
             try:
@@ -1794,6 +2322,18 @@ class SimTimePlaybackService:
                 "wheel_active_duration": float(event.wheel_active_duration_s),
                 "wheel_displacement": list(event.wheel_displacement),
                 "dispatch_command": bool(event.dispatch_command),
+                "atomic_batch_id": str(
+                    self.last_motion_batch_ack.get("batch_id", "") or ""
+                ),
+                "atomic_batch_applied_sim_step": self.last_motion_batch_ack.get(
+                    "applied_sim_step"
+                ),
+                "atomic_batch_first_physics_step": self.last_motion_batch_ack.get(
+                    "first_physics_step"
+                ),
+                "atomic_batch_motion_start_skew_s": self.last_motion_batch_ack.get(
+                    "motion_start_skew_s"
+                ),
             }
         )
         if "first_command_start" not in self.timing_trace:

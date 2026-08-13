@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
 import socket
@@ -46,6 +47,7 @@ from sim_robot_adapter import SimRobotAdapter
 from sim_state_validation import validate_full_sim_pose_state, verify_restored_full_sim_pose
 from sim_worker_runtime import (
     build_common_worker_status,
+    capture_worker_motion_start_readiness,
     create_adapter_config_from_args,
     enrich_runtime_readiness,
     handle_respawn,
@@ -630,6 +632,7 @@ def run_worker(args: argparse.Namespace) -> int:
     smoke_deadline = started_wall + float(args.worker_smoke_test_s) if float(args.worker_smoke_test_s) > 0 else None
     playback_service = SimTimePlaybackService()
     worker_session_id = uuid.uuid4().hex
+    last_motion_start_readiness: dict[str, Any] = {}
 
     def publish_status(
         *,
@@ -695,6 +698,33 @@ def run_worker(args: argparse.Namespace) -> int:
             compact=not detailed,
         )
         status["worker_session_id"] = worker_session_id
+        if detailed:
+            status["motion_start_readiness"] = copy.deepcopy(
+                last_motion_start_readiness
+            )
+        else:
+            status["motion_start_readiness"] = {
+                key: copy.deepcopy(last_motion_start_readiness.get(key))
+                for key in (
+                    "schema_version",
+                    "motion_start_ready",
+                    "decision",
+                    "rejection_reason",
+                    "current_sim_step",
+                    "ground_state",
+                    "adapter_runtime_instance_id",
+                    "root_state_write_count",
+                    "scheduler_accepted",
+                    "scheduler_plan_id",
+                    "scheduler_request_id",
+                    "scheduler_worker_session_id",
+                    "playback_start_boundary",
+                )
+                if key in last_motion_start_readiness
+            }
+        status["motion_start_ready"] = bool(
+            last_motion_start_readiness.get("motion_start_ready", False)
+        )
         status["last_restore_verification"] = copy.deepcopy(last_restore_verification)
         if detailed:
             expected_names = list(getattr(getattr(adapter, "robot", None), "joint_names", []) or [])
@@ -888,7 +918,24 @@ def run_worker(args: argparse.Namespace) -> int:
                 if kind == "command":
                     adapter.handle_command(_command_message_from_ipc(message))
                 elif kind == "apply_motion_batch":
-                    ack = adapter.apply_motion_batch(message)
+                    if playback_service.active:
+                        ack = {
+                            "batch_id": str(message.get("batch_id", "") or ""),
+                            "source": str(message.get("source", "ui") or "ui"),
+                            "applied_sim_step": None,
+                            "first_physics_step": None,
+                            "servo_targets_applied": {},
+                            "wheel_targets_applied": {},
+                            "servo_applied": False,
+                            "wheel_applied": False,
+                            "motion_start_skew_s": None,
+                            "error": (
+                                "direct motion batch rejected while production "
+                                "playback owns the per-tick dispatch slot"
+                            ),
+                        }
+                    else:
+                        ack = adapter.apply_motion_batch(message)
                     ipc.send(make_message("operation_ack", operation="apply_motion_batch", **ack))
                     publish_status(ready=True, starting=False)
                 elif kind == "start_playback_plan":
@@ -912,21 +959,157 @@ def run_worker(args: argparse.Namespace) -> int:
                         rejection_reasons.append(
                             f"worker playback already active plan={playback_service.plan_id} request={playback_service.request_id}"
                         )
+                    current_motion_start_step = int(
+                        getattr(adapter, "sim_steps", sim_steps) or sim_steps
+                    )
+                    last_adapter_batch = dict(
+                        getattr(adapter, "motion_batch_status", {}) or {}
+                    )
+                    try:
+                        adapter_batch_owns_current_step = bool(
+                            last_adapter_batch
+                            and not str(last_adapter_batch.get("error", "") or "")
+                            and int(last_adapter_batch.get("applied_sim_step"))
+                            == current_motion_start_step
+                        )
+                    except (TypeError, ValueError):
+                        adapter_batch_owns_current_step = False
+                    if adapter_batch_owns_current_step:
+                        rejection_reasons.append(
+                            "current physics tick already contains a motion batch"
+                        )
+                    last_motion_start_readiness = capture_worker_motion_start_readiness(
+                        adapter,
+                        runtime_ready=bool(phase == "running"),
+                        current_sim_step=current_motion_start_step,
+                        worker_session_id=worker_session_id,
+                        request_identity={
+                            "request_id": request_id,
+                            "plan_id": requested_plan_id,
+                            "plan_sha256": requested_sha,
+                            "validated_plan_sha256": str(
+                                integrity.get("plan_sha256", "") or ""
+                            ),
+                            "event_count": message.get("event_count"),
+                            "validated_event_count": integrity.get("event_count"),
+                            "segment_count": message.get("segment_count"),
+                            "validated_segment_count": integrity.get("segment_count"),
+                            "integrity_ok": integrity.get("ok") is True,
+                            "requested_worker_session_id": str(
+                                message.get("worker_session_id", "") or ""
+                            ),
+                            "source_initial_command_state": copy.deepcopy(
+                                dict(
+                                    plan.timing.get(
+                                        "source_initial_command_state", {}
+                                    )
+                                    or {}
+                                )
+                            ),
+                            "source_initial_command_state_sha256": str(
+                                plan.timing.get(
+                                    "source_initial_command_state_sha256", ""
+                                )
+                                or ""
+                            ),
+                        },
+                    )
+                    if not bool(last_motion_start_readiness.get("motion_start_ready", False)):
+                        rejection_reasons.append(
+                            "MOTION_START_READY failed: "
+                            + str(
+                                last_motion_start_readiness.get(
+                                    "rejection_reason",
+                                    "missing readiness evidence",
+                                )
+                                or "missing readiness evidence"
+                            )
+                        )
                     ok = not rejection_reasons
                     if ok:
                         plan.plan_sha256 = str(integrity["plan_sha256"])
+                        # Only the production worker and the audited v003
+                        # runner can satisfy this live, pre-first-dispatch
+                        # contract.  The generic compiler remains usable by
+                        # offline/direct scheduler tests without claiming it.
+                        plan.timing[
+                            "requires_motion_start_readiness_token"
+                        ] = True
+                        plan.timing["requires_verified_motion_batch_ack"] = True
+                        requested_start_delay_s = float(
+                            message.get("start_delay_sim_s", 0.0) or 0.0
+                        )
+                        effective_start_delay_s = max(
+                            requested_start_delay_s,
+                            float(dt),
+                        )
                         ok = playback_service.start_plan(
                             plan,
                             current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),
                             current_wall_time_s=time.time(),
-                            start_delay_sim_s=float(message.get("start_delay_sim_s", 0.0) or 0.0),
+                            start_delay_sim_s=effective_start_delay_s,
                             plan_id=requested_plan_id,
                             request_id=request_id,
                             worker_session_id=worker_session_id,
                         )
                         if not ok:
                             rejection_reasons.append(playback_service.last_error or "scheduler rejected plan")
+                        else:
+                            boundary_ok = playback_service.apply_playback_start_boundary(
+                                adapter,
+                                current_sim_time_s=float(
+                                    getattr(adapter, "sim_time", sim_time)
+                                    or sim_time
+                                ),
+                                current_sim_step=current_motion_start_step,
+                            )
+                            last_motion_start_readiness = {
+                                **last_motion_start_readiness,
+                                "requested_start_delay_sim_s": requested_start_delay_s,
+                                "effective_start_delay_sim_s": effective_start_delay_s,
+                                "start_boundary_minimum_physics_ticks": 1,
+                                "playback_start_boundary": {
+                                    "applied": bool(boundary_ok),
+                                    "ack": copy.deepcopy(
+                                        playback_service.last_motion_batch_ack
+                                    ),
+                                    "sim_step": current_motion_start_step,
+                                    "error": ""
+                                    if boundary_ok
+                                    else str(
+                                        playback_service.last_error
+                                        or "playback zero-wheel start boundary failed"
+                                    ),
+                                },
+                            }
+                            if not boundary_ok:
+                                rejection_reasons.append(
+                                    "playback zero-wheel start boundary failed: "
+                                    + str(
+                                        playback_service.last_error
+                                        or "missing verified batch ACK"
+                                    )
+                                )
+                                playback_service.stop(
+                                    adapter,
+                                    current_sim_time_s=float(
+                                        getattr(adapter, "sim_time", sim_time)
+                                        or sim_time
+                                    ),
+                                    current_wall_time_s=time.time(),
+                                    reason="motion_start_boundary_failed",
+                                    stop_wheels=True,
+                                )
+                                ok = False
                     rejection_reason = "; ".join(rejection_reasons)
+                    last_motion_start_readiness = {
+                        **last_motion_start_readiness,
+                        "scheduler_accepted": bool(ok),
+                        "scheduler_rejection_reason": rejection_reason,
+                        "scheduler_plan_id": requested_plan_id,
+                        "scheduler_request_id": request_id,
+                        "scheduler_worker_session_id": worker_session_id,
+                    }
                     ipc.send(
                         make_message(
                             "operation_ack",
@@ -945,6 +1128,14 @@ def run_worker(args: argparse.Namespace) -> int:
                             missing_required_step_indices=list(integrity.get("missing_required_step_indices", []) or []),
                             worker_session_id=worker_session_id,
                             accepted_wall_time=time.time(),
+                            motion_start_ready=bool(
+                                last_motion_start_readiness.get(
+                                    "motion_start_ready", False
+                                )
+                            ),
+                            motion_start_readiness=copy.deepcopy(
+                                last_motion_start_readiness
+                            ),
                         )
                     )
                     if not ok:
@@ -1155,6 +1346,94 @@ def run_worker(args: argparse.Namespace) -> int:
             if shutdown_requested:
                 break
             if not bool(args.no_continuous_sim_step):
+                if (
+                    playback_service.active
+                    and not playback_service.started
+                    and not playback_service.motion_start_readiness_token
+                ):
+                    boundary = dict(
+                        last_motion_start_readiness.get(
+                            "playback_start_boundary", {}
+                        )
+                        or {}
+                    )
+                    boundary_ack = dict(boundary.get("ack", {}) or {})
+                    try:
+                        boundary_first_step = int(
+                            boundary_ack.get("first_physics_step")
+                        )
+                    except (TypeError, ValueError):
+                        boundary_first_step = -1
+                    current_pre_first_step = int(
+                        getattr(adapter, "sim_steps", sim_steps) or sim_steps
+                    )
+                    if (
+                        boundary.get("applied") is True
+                        and current_pre_first_step >= boundary_first_step >= 0
+                    ):
+                        identity = dict(
+                            last_motion_start_readiness.get("identity", {}) or {}
+                        )
+                        pre_first_readiness = capture_worker_motion_start_readiness(
+                            adapter,
+                            runtime_ready=bool(phase == "running"),
+                            current_sim_step=current_pre_first_step,
+                            worker_session_id=worker_session_id,
+                            request_identity=identity,
+                        )
+                        token_payload = {
+                            "schema_version": (
+                                "production.motion_start_readiness_token.v1"
+                            ),
+                            "worker_session_id": worker_session_id,
+                            "plan_id": playback_service.plan_id,
+                            "request_id": playback_service.request_id,
+                            "plan_sha256": str(
+                                playback_service.plan.plan_sha256
+                                if playback_service.plan is not None
+                                else ""
+                            ),
+                            "boundary_ack": boundary_ack,
+                            "pre_first_readiness": pre_first_readiness,
+                            "pre_first_dispatch_sim_step": current_pre_first_step,
+                        }
+                        readiness_token = hashlib.sha256(
+                            json.dumps(
+                                token_payload,
+                                ensure_ascii=False,
+                                sort_keys=True,
+                                separators=(",", ":"),
+                                default=str,
+                            ).encode("utf-8")
+                        ).hexdigest()
+                        token_bound = bool(
+                            pre_first_readiness.get("motion_start_ready", False)
+                            and playback_service.bind_motion_start_readiness(
+                                readiness_token,
+                                current_sim_step=current_pre_first_step,
+                            )
+                        )
+                        last_motion_start_readiness = {
+                            **pre_first_readiness,
+                            "playback_start_boundary": boundary,
+                            "pre_first_dispatch": True,
+                            "pre_first_dispatch_sim_step": current_pre_first_step,
+                            "readiness_token_sha256": (
+                                readiness_token if token_bound else ""
+                            ),
+                            "readiness_token_bound": token_bound,
+                        }
+                        if not token_bound:
+                            playback_service.stop(
+                                adapter,
+                                current_sim_time_s=float(
+                                    getattr(adapter, "sim_time", sim_time)
+                                    or sim_time
+                                ),
+                                current_wall_time_s=time.time(),
+                                reason="motion_start_pre_first_dispatch_failed",
+                                stop_wheels=True,
+                            )
                 playback_service.update(
                     adapter,
                     current_sim_time_s=float(getattr(adapter, "sim_time", sim_time) or sim_time),

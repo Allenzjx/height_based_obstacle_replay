@@ -48,7 +48,16 @@ from .recording_audit import (
     VersionFiles,
     sha256_file,
 )
-from .recording_fast_plan import fast_plan_rows, write_fast_plan
+from .recording_fast_plan import (
+    fast_plan_rows,
+    write_fast_plan,
+    write_source_dispatch_ledger,
+)
+from .motion_start_readiness import (
+    capture_live_motion_start_snapshot,
+    evaluate_motion_start_ready,
+    rest_qualification_summary,
+)
 from .shutdown_contract import SUCCESSFUL_SHUTDOWN_STATUSES
 from .support_classifier import ObstacleGeometry
 
@@ -709,6 +718,25 @@ def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
         raise RuntimeError(
             "preclose embedded finalization differs from immutable snapshot"
         )
+    marker_state = {
+        "finalized": (root / ".finalized").is_file(),
+        "failed": (root / ".failed").is_file(),
+        "partial": (root / ".partial").exists(),
+    }
+    expected_finalized = snapshot_finalization.get("finalized") is True
+    expected_failed = snapshot_finalization.get("failed") is True
+    if marker_state["partial"] or expected_finalized == expected_failed:
+        raise RuntimeError(
+            "preclose lifecycle state is ambiguous or still partial"
+        )
+    if (
+        marker_state["finalized"] != expected_finalized
+        or marker_state["failed"] != expected_failed
+        or marker_state["finalized"] == marker_state["failed"]
+    ):
+        raise RuntimeError(
+            "preclose lifecycle marker does not match batch finalization"
+        )
     source_integrity = evidence.get("source_integrity")
     if not isinstance(source_integrity, dict) or source_integrity.get("equal") is not True:
         raise RuntimeError("preclose source integrity is not equal=true")
@@ -1192,7 +1220,18 @@ def _batch_command_exit_code(batch_root: Path, *, fallback: int) -> int:
         return int(fallback)
     if not isinstance(finalization, dict):
         return int(fallback)
-    if str(finalization.get("phase", "") or "") != "SHUTDOWN_COMPLETE":
+    root = Path(batch_root).resolve()
+    if (
+        str(finalization.get("phase", "") or "") != "SHUTDOWN_COMPLETE"
+        or finalization.get("finalized") is not True
+        or finalization.get("failed") is not False
+        or bool(str(finalization.get("batch_error", "") or ""))
+        or bool(str(finalization.get("close_error", "") or ""))
+        or bool(list(finalization.get("finalization_errors", []) or []))
+        or not (root / ".finalized").is_file()
+        or (root / ".partial").exists()
+        or (root / ".failed").exists()
+    ):
         return 1
     return 0 if finalization.get("strict_success") is True else 1
 
@@ -1675,7 +1714,15 @@ def _apply_recording_artifact_policy(
     source_ok = bool(dict(result.get("source_integrity", {}) or {}).get("ok", False))
     visualization_ok = bool(visualization.get("ok", False))
     video_ok = bool(video.get("actual_viewport_video", False))
-    artifact_valid = bool(source_ok and visualization_ok and video_ok)
+    motion_start_ok = bool(result.get("motion_start_ready") is True)
+    dispatch_ok = bool(result.get("dispatch_complete") is True)
+    artifact_valid = bool(
+        source_ok
+        and visualization_ok
+        and video_ok
+        and motion_start_ok
+        and dispatch_ok
+    )
     if not artifact_valid and source_ok:
         result["classification_before_artifact_validation"] = result.get(
             "classification"
@@ -1684,6 +1731,10 @@ def _apply_recording_artifact_policy(
         result["first_failure_phase"] = (
             "VIEWPORT_VIDEO_MISSING_OR_INVALID"
             if not video_ok
+            else "MOTION_START_EVIDENCE_INVALID"
+            if not motion_start_ok
+            else "SOURCE_DISPATCH_LEDGER_INCOMPLETE"
+            if not dispatch_ok
             else "VISUALIZATION_FAILED"
         )
         result["strict_full_success"] = False
@@ -2011,9 +2062,22 @@ def _load_environment_lock(path: Path) -> dict[str, Any]:
 
 
 def _verify_locked_source_hashes(lock: dict[str, Any]) -> dict[str, Any]:
+    locked = {
+        str(Path(str(raw_path)).resolve()): str(expected).lower()
+        for raw_path, expected in dict(lock.get("source_sha256", {}) or {}).items()
+    }
+    robot_text = str(
+        dict(lock.get("selected_environment", {}) or {}).get("robot_usd", "")
+        or ""
+    )
+    required_paths = {
+        str(path.resolve())
+        for path in _source_files(Path(robot_text) if robot_text else None)
+    }
+    missing_from_lock = sorted(required_paths - set(locked))
     rows: list[dict[str, Any]] = []
-    for raw_path, expected in sorted(dict(lock.get("source_sha256", {}) or {}).items()):
-        path = Path(str(raw_path)).resolve()
+    for raw_path, expected in sorted(locked.items()):
+        path = Path(raw_path).resolve()
         actual = sha256_file(path) if path.is_file() else ""
         rows.append(
             {
@@ -2023,7 +2087,16 @@ def _verify_locked_source_hashes(lock: dict[str, Any]) -> dict[str, Any]:
                 "ok": bool(actual and actual.lower() == str(expected).lower()),
             }
         )
-    return {"ok": bool(rows) and all(row["ok"] for row in rows), "files": rows}
+    return {
+        "ok": bool(rows)
+        and not missing_from_lock
+        and all(row["ok"] for row in rows),
+        "files": rows,
+        "required_source_file_count": len(required_paths),
+        "locked_source_file_count": len(locked),
+        "missing_from_lock": missing_from_lock,
+        "source_closure_complete": not missing_from_lock,
+    }
 
 
 def _runtime_environment_equivalence(
@@ -2547,6 +2620,10 @@ def _result_payload(
     plan: Any,
     run_dir: Path,
     timed_out: bool,
+    motion_start_readiness: dict[str, Any],
+    pre_first_dispatch_readiness: dict[str, Any],
+    dispatch_ledger: dict[str, Any],
+    trial_id: int,
 ) -> dict[str, Any]:
     last_sim_time_s = float((collector.last_row or {}).get("time_s", 0.0) or 0.0)
     scheduler = service.status_dict(
@@ -2556,7 +2633,21 @@ def _result_payload(
     )
     physical = collector.physical_evidence()
     scheduler_complete = bool(service.stop_reason == "complete" and not timed_out)
-    strict_success = bool(scheduler_complete and physical.get("physical_success", False))
+    motion_start_ready = bool(
+        motion_start_readiness.get("ready") is True
+        and dict(
+            motion_start_readiness.get("shared_production_worker_gate", {}) or {}
+        ).get("motion_start_ready")
+        is True
+        and pre_first_dispatch_readiness.get("ready") is True
+    )
+    dispatch_complete = bool(dispatch_ledger.get("complete") is True)
+    strict_success = bool(
+        scheduler_complete
+        and motion_start_ready
+        and dispatch_complete
+        and physical.get("physical_success", False)
+    )
     valid_legs = [
         leg
         for leg, row in dict(physical.get("traversal", {}).get("legs", {}) or {}).items()
@@ -2586,6 +2677,7 @@ def _result_payload(
         "schema_version": "fsm50.recording_replay_result.v1",
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source_version": item.version_id,
+        "trial_id": int(trial_id),
         "accepted_steps_sha256": sha256_file(item.steps_path),
         "run_dir": str(run_dir),
         "requested_profile": "fast",
@@ -2595,6 +2687,14 @@ def _result_payload(
         "plan_segment_count": len(plan.segments),
         "plan_final_time_s": float(plan.final_time_s),
         "respawn": _jsonable(respawn),
+        "fresh_process_clean_reset": True,
+        "motion_start_readiness": _jsonable(motion_start_readiness),
+        "motion_start_pre_first_dispatch": _jsonable(
+            pre_first_dispatch_readiness
+        ),
+        "motion_start_ready": motion_start_ready,
+        "dispatch_ledger": _jsonable(dispatch_ledger),
+        "dispatch_complete": dispatch_complete,
         "scheduler_complete": scheduler_complete,
         "scheduler_stop_reason": str(service.stop_reason or ""),
         "scheduler_status": _jsonable(scheduler),
@@ -2619,7 +2719,12 @@ def _result_payload(
         "maximum_contact_drift_m": physical.get("maximum_contact_drift_m"),
         "minimum_two_leg_corridor_margin_m": physical.get("minimum_two_leg_corridor_margin_m"),
         "final_joint_target_error_rad": final_home_error,
-        "success_semantics": "scheduler completion and strict per-leg UNLOAD->AIR->CLEAR_FACE->TOP->LOAD evidence are independent; only their conjunction can be success",
+        "success_semantics": (
+            "MOTION_START_READY, complete source/semantic-noop dispatch ledger, "
+            "scheduler completion, and strict per-leg "
+            "UNLOAD->AIR->CLEAR_FACE->TOP->LOAD evidence are independent; "
+            "only their conjunction can be success"
+        ),
     }
 
 
@@ -2677,9 +2782,341 @@ def _copy_run_inputs(item: VersionFiles, run_dir: Path, steps: list[dict[str, An
 
 def _settle(adapter: Any, duration_s: float, collector: FSM50TelemetryCollector, label: str) -> None:
     target = float(adapter.sim_time) + max(0.0, float(duration_s))
-    collector.set_runtime_context(fsm_state=label, source_step=None, segment_index=None)
+    collector.set_runtime_context(
+        fsm_state=label,
+        macro_state_cursor=label,
+        source_step=None,
+        segment_index=None,
+        segment_cursor=None,
+        command_cursor=None,
+        source_command="",
+        source_event_index=None,
+        planned_dispatch_time_s=None,
+        actual_dispatch_time_s=None,
+        atomic_batch_id="",
+        dispatch_kind="",
+        scheduler_phase="post_settle",
+    )
     while float(adapter.sim_time) + 1.0e-9 < target:
         adapter.step()
+
+
+def _motion_start_plan_identity(
+    *,
+    item: VersionFiles,
+    plan: Any,
+    plan_id: str,
+    request_id: str,
+    worker_session_id: str,
+) -> dict[str, Any]:
+    initial_command_state = copy.deepcopy(
+        dict(plan.timing.get("source_initial_command_state", {}) or {})
+    )
+    initial_command_state_sha256 = str(
+        plan.timing.get("source_initial_command_state_sha256", "") or ""
+    )
+    return {
+        "source_version": str(item.version_id),
+        "source_sha256": sha256_file(item.steps_path),
+        "plan_sha256": str(plan.plan_sha256),
+        "plan_id": str(plan_id),
+        "request_id": str(request_id),
+        "worker_session_id": str(worker_session_id),
+        "event_count": len(plan.events),
+        "segment_count": len(plan.segments),
+        "validated_plan_sha256": str(plan.plan_sha256),
+        "validated_event_count": len(plan.events),
+        "validated_segment_count": len(plan.segments),
+        "integrity_ok": True,
+        "requested_worker_session_id": str(worker_session_id),
+        "source_initial_command_state": initial_command_state,
+        "source_initial_command_state_sha256": initial_command_state_sha256,
+    }
+
+
+def _build_motion_start_readiness_evidence(
+    *,
+    readiness: dict[str, Any],
+    source_version: str,
+    trial_id: int,
+    plan_identity: dict[str, Any],
+    adapter_runtime_instance_id: str,
+    root_state_write_count: int,
+    pre_first_dispatch_sim_step: int,
+) -> tuple[dict[str, Any], str]:
+    """Return a JSON-safe evidence document and its immutable binding token."""
+
+    def clone(value: Any) -> Any:
+        return json.loads(
+            json.dumps(
+                _jsonable(copy.deepcopy(value)),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                default=str,
+            )
+        )
+
+    snapshot = clone(readiness)
+    token_payload = {
+        "schema_version": "fsm50.motion_start_readiness_token.v1",
+        "source_version": str(source_version),
+        "trial_id": int(trial_id),
+        "plan_identity": clone(plan_identity),
+        "adapter_runtime_instance_id": str(adapter_runtime_instance_id),
+        "root_state_write_count": int(root_state_write_count),
+        "pre_first_dispatch_sim_step": int(pre_first_dispatch_sim_step),
+        "pre_first_dispatch_readiness": snapshot,
+    }
+    token = hashlib.sha256(
+        json.dumps(
+            token_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    evidence = {
+        **snapshot,
+        "readiness_token_sha256": token,
+        "token_payload": clone(token_payload),
+    }
+    # Exercise the same encoder used by artifact writers here so a future
+    # accidental self-reference fails before SimulationApp is launched.
+    json.dumps(evidence, ensure_ascii=False, sort_keys=True, default=str)
+    return evidence, token
+
+
+def _batch_owned_segment_cursor(
+    *,
+    scheduler_segment_index: int,
+    current_motion_batch: dict[str, Any],
+    plan: Any,
+) -> tuple[int | None, int | None]:
+    """Bind the next physics frame to its applied batch, not an advanced cursor."""
+
+    if current_motion_batch:
+        raw_segment_index = current_motion_batch.get("segment_index")
+        raw_source_step = current_motion_batch.get("source_step_index")
+        return (
+            None if raw_segment_index is None else int(raw_segment_index),
+            None if raw_source_step is None else int(raw_source_step),
+        )
+    segment_index = int(scheduler_segment_index)
+    if 0 <= segment_index < len(plan.segments):
+        return segment_index, int(plan.segments[segment_index].source_step)
+    if plan.segments and segment_index == len(plan.segments):
+        final_segment = plan.segments[-1]
+        return len(plan.segments) - 1, int(final_segment.source_step)
+    return segment_index, None
+
+
+def _batch_owned_command_context(
+    *,
+    current_motion_batch: dict[str, Any],
+    timing_commands: list[dict[str, Any]],
+    source_event_by_plan_index: dict[int, Any],
+) -> dict[str, Any]:
+    """Select command provenance for the batch owning the next physics frame."""
+
+    latest = dict(timing_commands[-1] if timing_commands else {})
+    if current_motion_batch:
+        global_indices = list(
+            current_motion_batch.get("global_command_indices", []) or []
+        )
+        plan_indices = list(
+            current_motion_batch.get("plan_event_indices", []) or []
+        )
+        # Scheduler-generated boundaries (including final_safety_stop) are real
+        # motion batches but are not source commands.  They must not inherit the
+        # last recording cursor merely because the service trace retains it.
+        if not global_indices or not plan_indices:
+            return {
+                "command_cursor": None,
+                "source_command": "",
+                "source_event_index": None,
+                "planned_dispatch_time_s": None,
+                "actual_dispatch_time_s": None,
+                "atomic_batch_id": str(
+                    current_motion_batch.get("batch_id", "") or ""
+                ),
+                "dispatch_kind": str(
+                    current_motion_batch.get("dispatch_kind", "") or ""
+                ),
+            }
+        command_cursor = int(global_indices[-1])
+        plan_event_index = int(plan_indices[-1])
+        command_row = next(
+            (
+                dict(row)
+                for row in reversed(timing_commands)
+                if int(row.get("global_command_index", -1)) == command_cursor
+            ),
+            {},
+        )
+        return {
+            "command_cursor": command_cursor,
+            "source_command": str(command_row.get("command", "") or ""),
+            "source_event_index": source_event_by_plan_index.get(
+                plan_event_index
+            ),
+            "planned_dispatch_time_s": command_row.get(
+                "planned_start_sim_time"
+            ),
+            "actual_dispatch_time_s": command_row.get(
+                "actual_start_sim_time"
+            ),
+            "atomic_batch_id": str(
+                current_motion_batch.get("batch_id", "") or ""
+            ),
+            "dispatch_kind": str(
+                current_motion_batch.get("dispatch_kind", "") or ""
+            ),
+        }
+
+    command_cursor = latest.get("global_command_index")
+    try:
+        plan_event_index = int(command_cursor) - 1
+    except (TypeError, ValueError):
+        plan_event_index = None
+    return {
+        "command_cursor": command_cursor,
+        "source_command": str(latest.get("command", "") or ""),
+        "source_event_index": (
+            None
+            if plan_event_index is None
+            else source_event_by_plan_index.get(plan_event_index)
+        ),
+        "planned_dispatch_time_s": latest.get("planned_start_sim_time"),
+        "actual_dispatch_time_s": latest.get("actual_start_sim_time"),
+        "atomic_batch_id": str(latest.get("atomic_batch_id", "") or ""),
+        "dispatch_kind": "",
+    }
+
+
+def _fresh_ground_evidence_for_motion_start(
+    startup_ground: dict[str, Any],
+    frame: dict[str, Any],
+) -> dict[str, Any]:
+    """Bind startup REST evidence to current contact/penetration observations."""
+
+    live = copy.deepcopy(dict(startup_ground or {}))
+    penetration = dict(frame.get("penetration", {}) or {})
+    forces = dict(frame.get("wheel_net_forces_w", {}) or {})
+    support_errors: list[str] = []
+    for leg in ("FL", "FR", "RL", "RR"):
+        vector = list(forces.get(leg, []) or [])
+        try:
+            parsed = [float(value) for value in vector]
+        except (TypeError, ValueError):
+            parsed = []
+        if (
+            len(parsed) != 3
+            or not all(math.isfinite(value) for value in parsed)
+            or parsed[2] <= 0.0
+        ):
+            support_errors.append(f"{leg} current upward support is unavailable")
+    classification = str(penetration.get("classification", "") or "")
+    penetration_safe = bool(
+        penetration.get("valid") is True
+        and penetration.get("physical_ground_safe") is True
+        and classification in {"OK", "VISUAL_ONLY_INTERSECTION"}
+    )
+    live["ground_contact_resolved"] = bool(
+        frame.get("wheel_force_evidence_valid") is True
+        and not support_errors
+        and penetration_safe
+    )
+    live["ground_support_clearance_evidence"] = {
+        "valid": penetration_safe,
+        "error": str(penetration.get("error", "") or ""),
+        "wheel_clearance_by_name": dict(
+            penetration.get("wheel_clearance_m", {}) or {}
+        ),
+        "source": "fresh pre-dispatch penetration_snapshot",
+    }
+    diagnostics = dict(live.get("grounded_reference_diagnostics", {}) or {})
+    diagnostics.update(
+        {
+            "checked": penetration.get("valid") is True,
+            "physical_ground_safe": penetration.get("physical_ground_safe") is True,
+            "classification": classification,
+            "fresh_motion_start_sim_step": frame.get("sim_step"),
+        }
+    )
+    live["grounded_reference_diagnostics"] = diagnostics
+    live["motion_start_support_errors"] = support_errors
+    return live
+
+
+def _evaluate_motion_start_window(
+    *,
+    adapter: Any,
+    startup_ground: dict[str, Any],
+    frames: list[dict[str, Any]],
+    plan_identity: dict[str, Any],
+    required_frames: int,
+) -> dict[str, Any]:
+    selected = list(frames[-max(1, int(required_frames)) :])
+    frame_results: list[dict[str, Any]] = []
+    expected_instance = str(getattr(adapter, "runtime_instance_id", "") or "")
+    for frame in selected:
+        frame_results.append(
+            evaluate_motion_start_ready(
+                ground_reference=_fresh_ground_evidence_for_motion_start(
+                    startup_ground, frame
+                ),
+                snapshot=frame,
+                production_runtime_ready=True,
+                expected_sim_step=int(frame.get("sim_step", -1)),
+                expected_adapter_runtime_instance_id=expected_instance,
+                plan_identity=plan_identity,
+                command_dispatch_idle=True,
+                root_seed_applied=False,
+                vertical_speed_limit_m_s=float(
+                    adapter.config.ground_vertical_speed_threshold_m_s
+                ),
+                wheel_speed_limit_rad_s=float(
+                    adapter.config.ground_wheel_speed_threshold_rad_s
+                ),
+                penetration_limit_m=float(
+                    adapter.config.ground_penetration_tolerance_m
+                ),
+            )
+        )
+    steps = [int(frame.get("sim_step", -1)) for frame in selected]
+    contiguous = bool(
+        steps
+        and steps == list(range(steps[0], steps[0] + len(steps)))
+    )
+    ready = bool(
+        len(selected) == int(required_frames)
+        and contiguous
+        and frame_results
+        and all(row.get("ready") is True for row in frame_results)
+    )
+    return {
+        "schema_version": "fsm50.motion_start_readiness_window.v1",
+        "gate": "MOTION_START_READY",
+        "ready": ready,
+        "status": "PASS" if ready else "FAIL",
+        "required_consecutive_frames": int(required_frames),
+        "observed_frame_count": len(selected),
+        "sim_steps": steps,
+        "contiguous_sim_steps": contiguous,
+        "plan_identity": dict(plan_identity),
+        "adapter_runtime_instance_id": expected_instance,
+        "root_state_write_count": int(
+            getattr(adapter, "root_state_write_count", 0) or 0
+        ),
+        "rest_qualification": rest_qualification_summary(startup_ground),
+        "frame_results": frame_results,
+        "frames": selected,
+        "final": frame_results[-1] if frame_results else {},
+        "strict_rest_is_required": False,
+        "envelope_status": "PENDING_THREE_SUCCESSFUL_V003_FAST_REPLAYS",
+        "writes_robot_state": False,
+    }
 
 
 def _run_recording_version(
@@ -2693,8 +3130,9 @@ def _run_recording_version(
     robot_usd: Path,
     expected_steps_sha256: str,
     environment_lock: dict[str, Any],
+    startup_ground: dict[str, Any],
+    trial_id: int,
 ) -> dict[str, Any]:
-    from sim_worker_runtime import handle_respawn
     from sim_obstacle_scene import measure_obstacle_geometry, measure_scene_baseline
 
     version_root = batch_root / item.version_id
@@ -2702,13 +3140,9 @@ def _run_recording_version(
     artifact_root = _new_directory(version_root, "clean_fast_replay")
     partial = artifact_root / ".partial"
     partial.write_text("running\n", encoding="utf-8")
-    source_freeze = _source_freeze(item, robot_usd=robot_usd)
-    write_json(artifact_root / "source_freeze_pre.json", source_freeze)
-    write_json(artifact_root / "source_freeze.json", source_freeze)
-    immediate_steps_sha256 = sha256_file(item.steps_path)
-    recording_changed_after_preflight = (
-        immediate_steps_sha256.lower() != str(expected_steps_sha256).lower()
-    )
+    source_freeze: dict[str, Any] = {}
+    immediate_steps_sha256 = ""
+    recording_changed_after_preflight = False
     steps: list[dict[str, Any]] = []
     motion: Any = None
     plan: Any = None
@@ -2727,7 +3161,18 @@ def _run_recording_version(
     timed_out = False
     app_stopped = False
     respawn: dict[str, Any] = {}
+    motion_start_readiness: dict[str, Any] = {}
+    pre_first_dispatch_readiness: dict[str, Any] = {}
+    dispatch_ledger: dict[str, Any] = {}
     try:
+        source_freeze = _source_freeze(item, robot_usd=robot_usd)
+        write_json(artifact_root / "source_freeze_pre.json", source_freeze)
+        write_json(artifact_root / "source_freeze.json", source_freeze)
+        immediate_steps_sha256 = sha256_file(item.steps_path)
+        recording_changed_after_preflight = (
+            immediate_steps_sha256.lower()
+            != str(expected_steps_sha256).lower()
+        )
         if recording_changed_after_preflight:
             raise RuntimeError(
                 f"accepted_steps changed after prelaunch audit for {item.version_id}: "
@@ -2740,16 +3185,29 @@ def _run_recording_version(
             steps=steps,
             max_wheel_speed=float(motion.wheel_velocity_limit_rad_s),
         )
+        plan.timing["requires_motion_start_readiness_token"] = True
+        plan.timing["requires_verified_motion_batch_ack"] = True
         config = _telemetry_config(artifact_root, args.telemetry_rate)
         collector_args = SimpleNamespace(
             headless=bool(args.headless), output_dir=str(artifact_root)
         )
-        # No collector is attached across a respawn.  The new episode begins
-        # only after both robot state and filtered-sensor history are clean.
+        # Gate-1 runs one selected version in one fresh supervised child.  Do
+        # not respawn here: respawn_robot writes the cached grounded root pose
+        # and would no longer be equivalent to ordinary production Play All
+        # Fast from the just-created articulation.
         adapter.attach_telemetry(None)
-        respawn = handle_respawn(adapter=adapter)
-        if not bool(respawn.get("ok", False)):
-            raise RuntimeError(str(respawn.get("error", "clean respawn failed")))
+        respawn = {
+            "ok": True,
+            "respawned": False,
+            "root_pose_written": False,
+            "reason": "fresh supervised child; per-version cached-root respawn forbidden",
+            "adapter_runtime_instance_id": str(
+                getattr(adapter, "runtime_instance_id", "") or ""
+            ),
+            "root_state_write_count": int(
+                getattr(adapter, "root_state_write_count", 0) or 0
+            ),
+        }
         filtered_sensor = getattr(scene_handle, "contact_sensor", None)
         if filtered_sensor is None or str(getattr(scene_handle, "contact_sensor_error", "") or ""):
             raise RuntimeError(
@@ -2822,26 +3280,218 @@ def _run_recording_version(
         adapter.attach_telemetry(collector)
         collector.record_event(
             float(adapter.sim_time),
-            "clean_respawn_complete",
+            "fresh_process_motion_start_evidence_begin",
             severity="info",
-            message=f"Clean respawn for {item.version_id}",
+            message=f"Fresh-process startup evidence for {item.version_id}",
             extra={"respawn": _jsonable(respawn)},
         )
+        plan_id = f"recording-{item.version_id}-trial-{int(trial_id):02d}"
+        request_id = uuid.uuid4().hex
+        worker_session_id = (
+            f"fsm50-{getattr(adapter, 'runtime_instance_id', uuid.uuid4().hex)[:12]}"
+        )
+        plan_identity = _motion_start_plan_identity(
+            item=item,
+            plan=plan,
+            plan_id=plan_id,
+            request_id=request_id,
+            worker_session_id=worker_session_id,
+        )
+        readiness_frames: list[dict[str, Any]] = []
+        required_readiness_frames = 10
+        while len(readiness_frames) < required_readiness_frames:
+            frame = capture_live_motion_start_snapshot(
+                adapter, scene_handle, version_live_obstacle
+            )
+            readiness_frames.append(frame)
+            collector.set_runtime_context(
+                fsm_state="MOTION_START_READY",
+                macro_state_cursor="MOTION_START_READY",
+                command_cursor=0,
+                segment_cursor=0,
+                source_command="",
+                source_event_index=None,
+                planned_dispatch_time_s=None,
+                actual_dispatch_time_s=None,
+                atomic_batch_id="",
+                dispatch_kind="",
+                segment_index=None,
+                source_step=None,
+                scheduler_phase="pre_dispatch_evidence",
+            )
+            adapter.step()
+        motion_start_readiness = _evaluate_motion_start_window(
+            adapter=adapter,
+            startup_ground=startup_ground,
+            frames=readiness_frames,
+            plan_identity=plan_identity,
+            required_frames=required_readiness_frames,
+        )
+        write_json(run_dir / "motion_start_readiness.json", motion_start_readiness)
+        if not motion_start_readiness.get("ready", False):
+            raise RuntimeError(
+                "MOTION_START_READY failed before production start boundary: "
+                + json.dumps(
+                    motion_start_readiness.get("final", {}).get(
+                        "failed_checks", []
+                    ),
+                    ensure_ascii=False,
+                )
+            )
+        from sim_worker_runtime import capture_worker_motion_start_readiness
+
+        shared_worker_readiness = capture_worker_motion_start_readiness(
+            adapter,
+            runtime_ready=True,
+            current_sim_step=int(adapter.sim_steps),
+            worker_session_id=worker_session_id,
+            request_identity=plan_identity,
+        )
+        motion_start_readiness["shared_production_worker_gate"] = (
+            shared_worker_readiness
+        )
+        write_json(run_dir / "motion_start_readiness.json", motion_start_readiness)
+        if not shared_worker_readiness.get("motion_start_ready", False):
+            raise RuntimeError(
+                "shared production worker MOTION_START_READY failed: "
+                + str(shared_worker_readiness.get("rejection_reason", "") or "")
+            )
+        one_tick_start_delay_s = float(scene_handle.sim.get_physics_dt())
         started = service.start_plan(
             plan,
             current_sim_time_s=float(adapter.sim_time),
             current_wall_time_s=time.time(),
-            start_delay_sim_s=float(args.post_respawn_settle_s),
-            plan_id=f"recording-{item.version_id}-{uuid.uuid4().hex[:8]}",
-            request_id=uuid.uuid4().hex,
-            worker_session_id=f"fsm50-{uuid.uuid4().hex[:12]}",
+            start_delay_sim_s=one_tick_start_delay_s,
+            plan_id=plan_id,
+            request_id=request_id,
+            worker_session_id=worker_session_id,
         )
         if not started:
             raise RuntimeError(service.last_error or "Fast replay plan did not start")
+        if not service.apply_playback_start_boundary(
+            adapter,
+            current_sim_time_s=float(adapter.sim_time),
+            current_sim_step=int(adapter.sim_steps),
+        ):
+            raise RuntimeError(
+                service.last_error or "production playback start boundary failed"
+            )
+        boundary_frame = capture_live_motion_start_snapshot(
+            adapter, scene_handle, version_live_obstacle
+        )
+        start_boundary_ack = copy.deepcopy(service.last_motion_batch_ack)
+        collector.set_runtime_context(
+            fsm_state="MOTION_START_READY",
+            macro_state_cursor="MOTION_START_READY",
+            command_cursor=0,
+            segment_cursor=0,
+            source_command="",
+            source_event_index=None,
+            planned_dispatch_time_s=None,
+            actual_dispatch_time_s=None,
+            atomic_batch_id=str(
+                service.last_motion_batch_ack.get("batch_id", "") or ""
+            ),
+            dispatch_kind="playback_start_boundary",
+            segment_index=None,
+            source_step=None,
+            scheduler_phase="verified_start_boundary",
+        )
+        # Let the zero-wheel start boundary own and cross its declared first
+        # physics step.  The authoritative pre-first snapshot is captured only
+        # afterwards, on the exact tick where the first source batch may be
+        # dispatched, matching the production worker loop.
+        adapter.step()
+        post_boundary_frame = capture_live_motion_start_snapshot(
+            adapter, scene_handle, version_live_obstacle
+        )
+        pre_first_dispatch_readiness = _evaluate_motion_start_window(
+            adapter=adapter,
+            startup_ground=startup_ground,
+            frames=[
+                *readiness_frames[2:],
+                boundary_frame,
+                post_boundary_frame,
+            ],
+            plan_identity=plan_identity,
+            required_frames=required_readiness_frames,
+        )
+        pre_first_shared_worker_readiness = capture_worker_motion_start_readiness(
+            adapter,
+            runtime_ready=True,
+            current_sim_step=int(adapter.sim_steps),
+            worker_session_id=worker_session_id,
+            request_identity=plan_identity,
+        )
+        pre_first_dispatch_readiness.update(
+            {
+                "start_boundary_ack": start_boundary_ack,
+                "start_boundary_applied_sim_step": start_boundary_ack.get(
+                    "applied_sim_step"
+                ),
+                "start_boundary_first_physics_step": start_boundary_ack.get(
+                    "first_physics_step"
+                ),
+                "pre_first_dispatch_sim_step": int(adapter.sim_steps),
+                "shared_production_worker_gate": (
+                    pre_first_shared_worker_readiness
+                ),
+                "source_command_dispatch_count": 0,
+                "boundary_batch_is_not_source_command": True,
+            }
+        )
+        if not pre_first_dispatch_readiness.get("ready", False) or not bool(
+            pre_first_shared_worker_readiness.get("motion_start_ready", False)
+        ):
+            raise RuntimeError(
+                "MOTION_START_READY became stale/invalid on the exact "
+                "pre-first-dispatch physics tick"
+            )
+        # Freeze the evidence before constructing the token envelope.  The
+        # helper deliberately produces two independent JSON trees so attaching
+        # the envelope cannot create a readiness -> payload -> readiness cycle.
+        pre_first_dispatch_readiness, readiness_token = (
+            _build_motion_start_readiness_evidence(
+                readiness=pre_first_dispatch_readiness,
+                source_version=item.version_id,
+                trial_id=int(trial_id),
+                plan_identity=plan_identity,
+                adapter_runtime_instance_id=str(
+                    getattr(adapter, "runtime_instance_id", "") or ""
+                ),
+                root_state_write_count=int(
+                    getattr(adapter, "root_state_write_count", 0) or 0
+                ),
+                pre_first_dispatch_sim_step=int(adapter.sim_steps),
+            )
+        )
+        if not service.bind_motion_start_readiness(
+            readiness_token,
+            current_sim_step=int(adapter.sim_steps),
+        ):
+            raise RuntimeError(
+                service.last_error
+                or "pre-first MOTION_START_READY token binding failed"
+            )
+        write_json(
+            run_dir / "motion_start_pre_first_dispatch.json",
+            pre_first_dispatch_readiness,
+        )
         run_start_sim = float(adapter.sim_time)
+        source_event_by_plan_index = {
+            int(provenance["plan_event_index"]): provenance.get(
+                "source_event_index"
+            )
+            for plan_row in _plan_rows
+            for provenance in list(
+                plan_row.get("command_provenance", []) or []
+            )
+            if provenance.get("plan_event_index") is not None
+        }
         deadline_sim = run_start_sim + max(
             float(args.timeout_s),
-            float(args.post_respawn_settle_s) + float(plan.final_time_s) * float(args.timeout_scale),
+            one_tick_start_delay_s
+            + float(plan.final_time_s) * float(args.timeout_scale),
         )
         while service.active:
             if not bool(scene_handle.app_is_running()):
@@ -2859,14 +3509,55 @@ def _run_recording_version(
                 current_sim_step=int(adapter.sim_steps),
                 current_wall_time_s=time.time(),
             )
-            segment_index = int(service.segment_index)
-            source_step = None
-            if 0 <= segment_index < len(plan.segments):
-                source_step = int(plan.segments[segment_index].source_step)
+            timing_commands = list(
+                service.timing_trace.get("commands", []) or []
+            )
+            current_step_batches = [
+                dict(row or {})
+                for row in list(
+                    service.timing_trace.get("motion_batches", []) or []
+                )
+                if row.get("scheduler_sim_step") is not None
+                and int(row.get("scheduler_sim_step")) == int(adapter.sim_steps)
+            ]
+            current_motion_batch = (
+                current_step_batches[-1] if current_step_batches else {}
+            )
+            scheduler_segment_index = int(service.segment_index)
+            # A zero-duration segment can complete in the same scheduler call
+            # in which its source batch is applied.  In that case the service
+            # cursor already points at N+1 while the command that will own the
+            # next physics frame is still segment N.  Bind telemetry to the
+            # applied batch whenever one exists; use the scheduler cursor only
+            # on ticks without a new batch.
+            segment_index, source_step = _batch_owned_segment_cursor(
+                scheduler_segment_index=scheduler_segment_index,
+                current_motion_batch=current_motion_batch,
+                plan=plan,
+            )
+            command_context = _batch_owned_command_context(
+                current_motion_batch=current_motion_batch,
+                timing_commands=timing_commands,
+                source_event_by_plan_index=source_event_by_plan_index,
+            )
             collector.set_runtime_context(
                 fsm_state="RECORDING_FAST_REPLAY",
+                macro_state_cursor="RECORDING_FAST_REPLAY",
                 segment_index=segment_index,
+                segment_cursor=segment_index,
                 source_step=source_step,
+                command_cursor=command_context["command_cursor"],
+                source_command=command_context["source_command"],
+                source_event_index=command_context["source_event_index"],
+                planned_dispatch_time_s=command_context[
+                    "planned_dispatch_time_s"
+                ],
+                actual_dispatch_time_s=command_context[
+                    "actual_dispatch_time_s"
+                ],
+                atomic_batch_id=command_context["atomic_batch_id"],
+                dispatch_kind=command_context["dispatch_kind"],
+                motion_start_readiness_token=readiness_token,
                 scheduler_phase=service.progress.command_phase,
             )
             adapter.step()
@@ -2891,6 +3582,18 @@ def _run_recording_version(
         video = video_capture.finalize()
         run_dir = collector.run_dir or artifact_root
         _copy_run_inputs(item, run_dir, steps, float(motion.wheel_velocity_limit_rad_s))
+        dispatch_ledger = write_source_dispatch_ledger(
+            csv_path=run_dir / "V003_DISPATCH_TRACE.csv",
+            json_path=run_dir / "V003_DISPATCH_TRACE.json",
+            source_version=item.version_id,
+            steps=steps,
+            plan=plan,
+            timing_trace=service.timing_trace,
+        )
+        write_json(
+            run_dir / "production_dispatch_timing.json",
+            service.timing_trace,
+        )
         write_json(
             run_dir / "runtime_environment.json",
             {
@@ -2929,6 +3632,10 @@ def _run_recording_version(
             plan=plan,
             run_dir=run_dir,
             timed_out=timed_out,
+            motion_start_readiness=motion_start_readiness,
+            pre_first_dispatch_readiness=pre_first_dispatch_readiness,
+            dispatch_ledger=dispatch_ledger,
+            trial_id=trial_id,
         )
         result["artifact_root"] = str(artifact_root)
         result["run_dir"] = str(run_dir)
@@ -2948,6 +3655,32 @@ def _run_recording_version(
         result["viewport_video_manifest_sha256"] = str(
             video.get("manifest_sha256", "") or ""
         )
+        result["required_evidence_paths"] = [
+            str((run_dir / name).resolve())
+            for name in (
+                "result.json",
+                "failure_diagnostics.json",
+                "physical_evidence.json",
+                "fsm50_telemetry.csv",
+                "fsm50_telemetry.jsonl",
+                "state_timeline.csv",
+                "motion_start_readiness.json",
+                "motion_start_pre_first_dispatch.json",
+                "V003_DISPATCH_TRACE.csv",
+                "V003_DISPATCH_TRACE.json",
+                "production_dispatch_timing.json",
+                "runtime_environment.json",
+                "visual_recording_manifest.json",
+                "viewport_video_manifest.json",
+                "checksums.sha256",
+            )
+        ]
+        if result.get("actual_viewport_video") is True and Path(
+            result["video_path"]
+        ).is_file():
+            result["required_evidence_paths"].append(
+                str(Path(result["video_path"]).resolve())
+            )
         post_source_freeze = _source_freeze(item, robot_usd=robot_usd)
         source_comparison = _compare_source_freezes(source_freeze, post_source_freeze)
         write_json(artifact_root / "source_freeze_post.json", post_source_freeze)
@@ -3041,18 +3774,101 @@ def _run_recording_version(
                 )
             )
         except Exception as video_exc:
-            video = {
-                "valid": False,
-                "artifact_valid": False,
-                "actual_viewport_video": False,
-                "not_camera_video": False,
-                "contact_mode": contact_mode,
-                "video_path": str(Path(run_dir) / "fsm50_viewport.mp4"),
-                "video_sha256": "",
-                "manifest_path": str(Path(run_dir) / "viewport_video_manifest.json"),
-                "manifest_sha256": "",
-                "error": f"video failure artifact write failed: {type(video_exc).__name__}: {video_exc}",
+            try:
+                video = _missing_recording_viewport_video(
+                    Path(run_dir),
+                    args,
+                    contact_mode=contact_mode,
+                    error=(
+                        "viewport finalize raised while preserving failure "
+                        f"artifact: {type(video_exc).__name__}: {video_exc}"
+                    ),
+                )
+            except Exception as manifest_exc:
+                video = {
+                    "valid": False,
+                    "artifact_valid": False,
+                    "actual_viewport_video": False,
+                    "not_camera_video": False,
+                    "contact_mode": contact_mode,
+                    "video_path": str(Path(run_dir) / "fsm50_viewport.mp4"),
+                    "video_sha256": "",
+                    "manifest_path": str(
+                        Path(run_dir) / "viewport_video_manifest.json"
+                    ),
+                    "manifest_sha256": "",
+                    "error": (
+                        "video failure artifact write failed: "
+                        f"{type(manifest_exc).__name__}: {manifest_exc}; "
+                        f"original={type(video_exc).__name__}: {video_exc}"
+                    ),
+                }
+        gate_failure = bool(
+            "MOTION_START_READY" in str(exc)
+            or "production worker MOTION_START_READY" in str(exc)
+        )
+        if not motion_start_readiness:
+            motion_start_readiness = {
+                "schema_version": "fsm50.motion_start_readiness_window.v1",
+                "gate": "MOTION_START_READY",
+                "ready": False,
+                "status": "FAIL",
+                "error": f"{type(exc).__name__}: {exc}",
+                "rest_qualification": rest_qualification_summary(startup_ground),
+                "envelope_status": (
+                    "PENDING_THREE_SUCCESSFUL_V003_FAST_REPLAYS"
+                ),
             }
+        if not pre_first_dispatch_readiness:
+            pre_first_dispatch_readiness = {
+                "schema_version": "fsm50.motion_start_readiness_window.v1",
+                "gate": "MOTION_START_READY_PRE_FIRST_DISPATCH",
+                "ready": False,
+                "status": "NOT_REACHED",
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        dispatch_error = ""
+        if steps and plan is not None:
+            try:
+                dispatch_ledger = write_source_dispatch_ledger(
+                    csv_path=Path(run_dir) / "V003_DISPATCH_TRACE.csv",
+                    json_path=Path(run_dir) / "V003_DISPATCH_TRACE.json",
+                    source_version=item.version_id,
+                    steps=steps,
+                    plan=plan,
+                    timing_trace=service.timing_trace,
+                )
+            except Exception as dispatch_exc:
+                dispatch_error = (
+                    f"{type(dispatch_exc).__name__}: {dispatch_exc}"
+                )
+        if not dispatch_ledger:
+            dispatch_ledger = {
+                "schema_version": "fsm50.source_dispatch_ledger.v1",
+                "source_version": item.version_id,
+                "complete": False,
+                "errors": [
+                    dispatch_error
+                    or "dispatch ledger unavailable before runner failure"
+                ],
+            }
+            write_csv(Path(run_dir) / "V003_DISPATCH_TRACE.csv", [])
+            write_json(
+                Path(run_dir) / "V003_DISPATCH_TRACE.json",
+                {**dispatch_ledger, "rows": [], "motion_batches": []},
+            )
+        write_json(
+            Path(run_dir) / "motion_start_readiness.json",
+            motion_start_readiness,
+        )
+        write_json(
+            Path(run_dir) / "motion_start_pre_first_dispatch.json",
+            pre_first_dispatch_readiness,
+        )
+        write_json(
+            Path(run_dir) / "production_dispatch_timing.json",
+            service.timing_trace,
+        )
         physical: dict[str, Any] = {}
         if collector is not None:
             try:
@@ -3065,11 +3881,16 @@ def _run_recording_version(
             "source_version": item.version_id,
             "accepted_steps_sha256": immediate_steps_sha256,
             "expected_preflight_steps_sha256": str(expected_steps_sha256),
-            "classification": "RUNNER_EXCEPTION",
+            "trial_id": int(trial_id),
+            "classification": (
+                "MOTION_START_BLOCKED" if gate_failure else "RUNNER_EXCEPTION"
+            ),
             "strict_full_success": False,
             "physical_success": False,
             "scheduler_complete": False,
-            "first_failure_phase": "RUNNER_EXCEPTION",
+            "first_failure_phase": (
+                "MOTION_START_READY" if gate_failure else "RUNNER_EXCEPTION"
+            ),
             "error": f"{type(exc).__name__}: {exc}",
             "telemetry_finish_error": finish_error,
             "artifact_root": str(artifact_root),
@@ -3088,6 +3909,15 @@ def _run_recording_version(
                 video.get("manifest_sha256", "") or ""
             ),
             "physical_evidence": physical,
+            "respawn": _jsonable(respawn),
+            "fresh_process_clean_reset": True,
+            "motion_start_readiness": _jsonable(motion_start_readiness),
+            "motion_start_pre_first_dispatch": _jsonable(
+                pre_first_dispatch_readiness
+            ),
+            "motion_start_ready": False,
+            "dispatch_ledger": _jsonable(dispatch_ledger),
+            "dispatch_complete": False,
             "visualization": {"ok": False, "error": "not generated"},
             "artifact_valid": False,
             "strict_success": False,
@@ -3139,6 +3969,38 @@ def _run_recording_version(
         except Exception as visual_exc:
             visualization = {"ok": False, "error": str(visual_exc)}
         failure["visualization"] = visualization
+        required_names = (
+            "result.json",
+            "failure_diagnostics.json",
+            "motion_start_readiness.json",
+            "motion_start_pre_first_dispatch.json",
+            "V003_DISPATCH_TRACE.csv",
+            "V003_DISPATCH_TRACE.json",
+            "production_dispatch_timing.json",
+            "runtime_environment.json",
+            "visual_recording_manifest.json",
+            "viewport_video_manifest.json",
+            "checksums.sha256",
+        )
+        optional_names = (
+            "physical_evidence.json",
+            "fsm50_telemetry.csv",
+            "fsm50_telemetry.jsonl",
+            "state_timeline.csv",
+        )
+        failure["required_evidence_paths"] = [
+            str((Path(run_dir) / name).resolve()) for name in required_names
+        ] + [
+            str((Path(run_dir) / name).resolve())
+            for name in optional_names
+            if (Path(run_dir) / name).is_file()
+        ]
+        if failure.get("actual_viewport_video") is True and Path(
+            failure["video_path"]
+        ).is_file():
+            failure["required_evidence_paths"].append(
+                str(Path(failure["video_path"]).resolve())
+            )
         runtime_environment = {
             "source_version": item.version_id,
             "contact_mode": contact_mode,
@@ -3930,6 +4792,14 @@ def _run_recording_replays_locked(
     selected = _select_versions(audit.enumerate_versions(), args.versions)
     if not selected:
         raise RuntimeError("no recording versions selected")
+    if len(selected) != 1:
+        raise RuntimeError(
+            "recording replay requires exactly one selected version per fresh "
+            "supervised SimulationApp process; invoke versions serially"
+        )
+    trial_id = int(getattr(args, "trial_id", 0) or 0)
+    if trial_id < 1:
+        raise RuntimeError("recording replay requires a positive --trial-id")
     preflight_audits = _fail_closed_recording_audits(audit, selected)
     expected_hashes = {
         str(row["version"]): str(row["accepted_steps_sha256"])
@@ -3979,6 +4849,7 @@ def _run_recording_replays_locked(
         {
             "created_utc": datetime.now(timezone.utc).isoformat(),
             "versions": [item.version_id for item in selected],
+            "trial_id": trial_id,
             "resume": bool(getattr(args, "resume", False)),
             "resume_skipped": _jsonable(
                 list(getattr(args, "resume_skipped", []) or [])
@@ -4106,8 +4977,8 @@ def _run_recording_replays_locked(
                 "ground_reference": _jsonable(ground),
             },
         )
-        if not ground_reference_result_is_valid(ground):
-            raise RuntimeError(f"ground reference validation failed: {ground}")
+        rest_qualification = rest_qualification_summary(ground)
+        write_json(batch_root / "rest_qualification.json", rest_qualification)
         finalize_scene_after_grounding(scene_handle)
         live_baseline = measure_scene_baseline(scene_handle, adapter)
         live_obstacle = measure_obstacle_geometry(scene_handle)
@@ -4128,6 +4999,8 @@ def _run_recording_replays_locked(
             "live_scene_baseline": _jsonable(live_baseline),
             "live_obstacle_geometry": _jsonable(live_obstacle),
             "ground_reference": _jsonable(ground),
+            "rest_qualification": rest_qualification,
+            "rest_qualification_required_for_motion_start": False,
             "runtime": _runtime_versions(),
             "contact_sensor_type": type(scene_handle.contact_sensor).__name__,
             "contact_sensor_error": str(scene_handle.contact_sensor_error or ""),
@@ -4144,7 +5017,9 @@ def _run_recording_replays_locked(
             raise RuntimeError(
                 "filtered contact sensor unavailable: " + str(scene_handle.contact_sensor_error)
             )
-        _append_runtime_lock(readback, path=environment_lock_path)
+        # The audited environment lock is immutable input for all three Gate-1
+        # trials.  Runtime readback belongs to this batch artifact and must not
+        # rewrite the shared qualification lock between clean processes.
         for item in selected:
             print(f"[FSM50] clean Fast replay starting: {item.version_id}", flush=True)
             result = _run_recording_version(
@@ -4157,6 +5032,8 @@ def _run_recording_replays_locked(
                 robot_usd=robot_usd,
                 expected_steps_sha256=expected_hashes[item.version_id],
                 environment_lock=environment_lock,
+                startup_ground=ground,
+                trial_id=trial_id,
             )
             results.append(result)
             write_json(batch_root / "batch_results.json", results)
@@ -4206,19 +5083,16 @@ def _run_recording_replays_locked(
             }
             exit_code = 1
         finalization_errors: list[str] = []
-        try:
-            _update_required_reports(results)
-        except Exception as exc:
-            finalization_errors.append(
-                f"required_reports: {type(exc).__name__}: {exc}"
-            )
-            exit_code = 1
         batch_valid = bool(
             not batch_error
             and batch_source_comparison.get("equal", False)
             and not finalization_errors
+            and results
             and all(
-                not bool(dict(result.get("lifecycle", {}) or {}).get("failed", False))
+                dict(result.get("lifecycle", {}) or {}).get("finalized") is True
+                and not bool(
+                    dict(result.get("lifecycle", {}) or {}).get("failed", False)
+                )
                 for result in results
             )
         )
@@ -4227,7 +5101,7 @@ def _run_recording_replays_locked(
             "finalized": batch_valid,
             "failed": not batch_valid,
             "strict_success": bool(
-                results
+                batch_valid
                 and all(bool(row.get("strict_full_success", False)) for row in results)
             ),
             "batch_error": batch_error,
@@ -4317,6 +5191,7 @@ def _run_recording_replays_locked(
                 results=results,
                 batch_source_comparison=batch_source_comparison,
                 batch_finalization=batch_finalization,
+                include_global_analysis_reports=False,
             )
         except Exception as exc:
             evidence_manifest = {
@@ -4730,11 +5605,24 @@ def build_parser() -> argparse.ArgumentParser:
         default="fast",
     )
 
-    replay = subparsers.add_parser("replay-recordings", help="Replay recording versions in one Isaac instance.")
+    replay = subparsers.add_parser(
+        "replay-recordings",
+        help="Replay one recording version in one fresh supervised Isaac process.",
+    )
     replay.add_argument("--versions", nargs="+", default=["all"])
+    replay.add_argument(
+        "--trial-id",
+        type=int,
+        required=True,
+        help="Positive clean-process trial identifier; one version per invocation.",
+    )
     replay.add_argument("--recording-root", type=Path, default=DEFAULT_RECORDING_ROOT)
     replay.add_argument("--report-root", type=Path, default=DEFAULT_REPORT_ROOT)
-    replay.add_argument("--output-root", type=Path, default=DEFAULT_RUN_ROOT / "recording_replays")
+    replay.add_argument(
+        "--output-root",
+        type=Path,
+        default=DEFAULT_RUN_ROOT / "v003_fast_replay_baseline",
+    )
     replay.add_argument("--robot-usd", type=str, default="")
     replay.add_argument("--device", type=str, default="cuda:0")
     replay.add_argument(
@@ -4754,7 +5642,15 @@ def build_parser() -> argparse.ArgumentParser:
             "uses only the filtered wheel/non-wheel telemetry factory."
         ),
     )
-    replay.add_argument("--post-respawn-settle-s", type=float, default=0.30)
+    replay.add_argument(
+        "--playback-pre-step-settle-s",
+        type=float,
+        default=0.30,
+        help=(
+            "Recorded for UI-path provenance only; Gate-1 dispatch begins on "
+            "the next physics tick after the verified start boundary."
+        ),
+    )
     replay.add_argument("--post-run-settle-s", type=float, default=0.50)
     replay.add_argument("--video-fps", type=float, default=15.0)
     replay.add_argument(

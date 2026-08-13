@@ -17,6 +17,9 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     ReplaySingletonLock,
     _atomic_write_json,
     _batch_command_exit_code,
+    _batch_owned_command_context,
+    _batch_owned_segment_cursor,
+    _build_motion_start_readiness_evidence,
     _compare_source_freezes,
     _close_simulation_with_explicit_policy,
     _deserialize_replay_args,
@@ -45,6 +48,120 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 
 
 class RunnerContractTests(unittest.TestCase):
+    def test_motion_start_token_evidence_is_json_safe_and_not_self_referential(self) -> None:
+        readiness = {
+            "ready": True,
+            "frames": [{"sim_step": 42, "joint": {"q": [0.0]}}],
+        }
+        evidence, token = _build_motion_start_readiness_evidence(
+            readiness=readiness,
+            source_version="v003_20260805_224517_157723_manual",
+            trial_id=1,
+            plan_identity={"plan_sha256": "a" * 64},
+            adapter_runtime_instance_id="adapter-1",
+            root_state_write_count=0,
+            pre_first_dispatch_sim_step=42,
+        )
+
+        encoded = json.dumps(evidence, sort_keys=True)
+        decoded = json.loads(encoded)
+        self.assertEqual(len(token), 64)
+        self.assertEqual(decoded["readiness_token_sha256"], token)
+        self.assertEqual(
+            decoded["token_payload"]["pre_first_dispatch_readiness"],
+            readiness,
+        )
+        self.assertNotIn(
+            "token_payload",
+            decoded["token_payload"]["pre_first_dispatch_readiness"],
+        )
+
+    def test_applied_batch_owns_zero_duration_segment_telemetry_cursor(self) -> None:
+        plan = SimpleNamespace(
+            segments=[
+                SimpleNamespace(source_step=3),
+                SimpleNamespace(source_step=4),
+            ]
+        )
+        self.assertEqual(
+            _batch_owned_segment_cursor(
+                scheduler_segment_index=1,
+                current_motion_batch={
+                    "segment_index": 0,
+                    "source_step_index": 3,
+                    "dispatch_kind": "source_segment_start",
+                },
+                plan=plan,
+            ),
+            (0, 3),
+        )
+        self.assertEqual(
+            _batch_owned_segment_cursor(
+                scheduler_segment_index=1,
+                current_motion_batch={},
+                plan=plan,
+            ),
+            (1, 4),
+        )
+        self.assertEqual(
+            _batch_owned_segment_cursor(
+                scheduler_segment_index=2,
+                current_motion_batch={},
+                plan=plan,
+            ),
+            (1, 4),
+        )
+
+    def test_applied_batch_owns_command_provenance_and_runtime_stop_clears_it(self) -> None:
+        timing_commands = [
+            {
+                "global_command_index": 7,
+                "command": "wheel front_left_ankle stop",
+                "planned_start_sim_time": 1.0,
+                "actual_start_sim_time": 1.008333333,
+                "atomic_batch_id": "source-7",
+            },
+            {
+                "global_command_index": 8,
+                "command": "servo front_left_hip 12",
+                "planned_start_sim_time": 1.1,
+                "actual_start_sim_time": 1.108333333,
+                "atomic_batch_id": "source-8",
+            },
+        ]
+        context = _batch_owned_command_context(
+            current_motion_batch={
+                "batch_id": "source-7",
+                "dispatch_kind": "source_segment_start",
+                "global_command_indices": [7],
+                "plan_event_indices": [6],
+            },
+            timing_commands=timing_commands,
+            source_event_by_plan_index={6: 23, 7: 24},
+        )
+        self.assertEqual(context["command_cursor"], 7)
+        self.assertEqual(context["source_event_index"], 23)
+        self.assertEqual(
+            context["source_command"], "wheel front_left_ankle stop"
+        )
+        self.assertEqual(context["atomic_batch_id"], "source-7")
+
+        final_stop = _batch_owned_command_context(
+            current_motion_batch={
+                "batch_id": "final-stop",
+                "dispatch_kind": "final_safety_stop",
+                "global_command_indices": [],
+                "plan_event_indices": [],
+            },
+            timing_commands=timing_commands,
+            source_event_by_plan_index={6: 23, 7: 24},
+        )
+        self.assertIsNone(final_stop["command_cursor"])
+        self.assertEqual(final_stop["source_command"], "")
+        self.assertIsNone(final_stop["source_event_index"])
+        self.assertEqual(final_stop["atomic_batch_id"], "final-stop")
+        self.assertEqual(final_stop["dispatch_kind"], "final_safety_stop")
+
     def test_atomic_replace_retries_transient_windows_access_denied(self) -> None:
         attempts = []
 
@@ -185,20 +302,55 @@ class RunnerContractTests(unittest.TestCase):
             root = Path(directory)
             _atomic_write_json(
                 root / "batch_finalization.json",
-                {"phase": "SHUTDOWN_COMPLETE", "strict_success": False},
+                {
+                    "phase": "SHUTDOWN_COMPLETE",
+                    "finalized": True,
+                    "failed": False,
+                    "strict_success": False,
+                    "batch_error": "",
+                    "close_error": "",
+                    "finalization_errors": [],
+                },
             )
+            (root / ".finalized").write_text("finalized\n", encoding="utf-8")
             self.assertEqual(
                 _batch_command_exit_code(root, fallback=0),
                 1,
             )
             _atomic_write_json(
                 root / "batch_finalization.json",
-                {"phase": "SHUTDOWN_COMPLETE", "strict_success": True},
+                {
+                    "phase": "SHUTDOWN_COMPLETE",
+                    "finalized": True,
+                    "failed": False,
+                    "strict_success": True,
+                    "batch_error": "",
+                    "close_error": "",
+                    "finalization_errors": [],
+                },
             )
             self.assertEqual(
                 _batch_command_exit_code(root, fallback=1),
                 0,
             )
+
+            for field, value in (
+                ("failed", True),
+                ("batch_error", "late artifact write failed"),
+                ("finalization_errors", ["checksum failed"]),
+            ):
+                payload = {
+                    "phase": "SHUTDOWN_COMPLETE",
+                    "finalized": True,
+                    "failed": False,
+                    "strict_success": True,
+                    "batch_error": "",
+                    "close_error": "",
+                    "finalization_errors": [],
+                }
+                payload[field] = value
+                _atomic_write_json(root / "batch_finalization.json", payload)
+                self.assertEqual(_batch_command_exit_code(root, fallback=0), 1)
 
     def test_short_version_selector_is_unambiguous(self) -> None:
         versions = RecordingAudit().enumerate_versions()
@@ -210,7 +362,16 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual(versions, _select_versions(versions, ["all"]))
 
     def test_scheduler_and_physical_fields_are_independent_cli_contract(self) -> None:
-        args = build_parser().parse_args(["replay-recordings", "--versions", "v012", "--headless"])
+        args = build_parser().parse_args(
+            [
+                "replay-recordings",
+                "--versions",
+                "v012",
+                "--trial-id",
+                "1",
+                "--headless",
+            ]
+        )
         self.assertEqual("replay-recordings", args.command)
         self.assertEqual(["v012"], args.versions)
         self.assertTrue(args.headless)
@@ -229,7 +390,14 @@ class RunnerContractTests(unittest.TestCase):
 
     def test_replay_resume_flag_and_version_directories_are_unique(self) -> None:
         args = build_parser().parse_args(
-            ["replay-recordings", "--versions", "v012", "--resume"]
+            [
+                "replay-recordings",
+                "--versions",
+                "v012",
+                "--trial-id",
+                "1",
+                "--resume",
+            ]
         )
         self.assertTrue(args.resume)
         with tempfile.TemporaryDirectory() as directory:
@@ -699,6 +867,15 @@ class RunnerContractTests(unittest.TestCase):
                 plan=plan,
                 run_dir=root,
                 timed_out=False,
+                motion_start_readiness={
+                    "ready": True,
+                    "shared_production_worker_gate": {
+                        "motion_start_ready": True
+                    },
+                },
+                pre_first_dispatch_readiness={"ready": True},
+                dispatch_ledger={"complete": True},
+                trial_id=1,
             )
             self.assertAlmostEqual(0.1, result["final_joint_target_error_rad"])
 
@@ -771,6 +948,10 @@ class RunnerContractTests(unittest.TestCase):
                 },
                 "source_sha256": {str(robot): digest},
             }
+            lock["source_sha256"] = {
+                str(path): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in run_fsm50_module._source_files(robot)
+            }
             config = SimpleNamespace(
                 render_interval=8,
                 servo_stiffness=600.0,
@@ -833,6 +1014,8 @@ class RunnerContractTests(unittest.TestCase):
                 "replay-recordings",
                 "--versions",
                 "v012",
+                "--trial-id",
+                "1",
                 "--recording-root",
                 "C:/recordings",
                 "--output-root",
@@ -887,6 +1070,9 @@ class RunnerContractTests(unittest.TestCase):
             results=[],
             batch_source_comparison=source_integrity,
             batch_finalization=finalization,
+        )
+        (batch_root / ".finalized").write_text(
+            "finalized\n", encoding="utf-8"
         )
         handshake = root / "handshake.json"
         extras = {"intended_returncode": intended_returncode}
@@ -969,6 +1155,28 @@ class RunnerContractTests(unittest.TestCase):
             self.assertTrue(outcome["preclose_verification"]["ok"])
             self.assertEqual(outcome["runtime_version"], "5.1.0.0")
             self.assertTrue(outcome["process_returned_normally"])
+
+    def test_preclose_closure_rejects_missing_or_conflicting_lifecycle_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _handshake, batch_root = self._write_supervisor_files(
+                root,
+                token="token",
+                parent_pid=123,
+                child_pid=43020,
+                preclose=True,
+                state="FAST_EXIT_REQUESTED",
+            )
+            (batch_root / ".finalized").unlink()
+            with self.assertRaisesRegex(RuntimeError, "lifecycle marker"):
+                _validate_preclose_closure(batch_root)
+
+            (batch_root / ".finalized").write_text(
+                "finalized\n", encoding="utf-8"
+            )
+            (batch_root / ".failed").write_text("failed\n", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "lifecycle marker"):
+                _validate_preclose_closure(batch_root)
 
     def test_graceful_exit_has_a_distinct_verified_state(self) -> None:
         class Child:

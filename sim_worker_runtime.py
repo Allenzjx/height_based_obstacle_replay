@@ -6,6 +6,9 @@ intentionally absent from the formal UI path.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import math
 import time
 from typing import Any
 
@@ -27,6 +30,449 @@ RESPAWN_GROUND_FAILURE_TEXT = (
     "grounded respawn reference is invalid; robot stopped. "
     "Use Respawn And Validate Ground after fixing the ground contact issue."
 )
+
+MOTION_START_READINESS_SCHEMA_VERSION = "MOTION_START_READY_V1"
+
+
+def capture_worker_motion_start_readiness(
+    adapter: Any,
+    *,
+    runtime_ready: bool,
+    current_sim_step: int,
+    worker_session_id: str,
+    request_identity: dict[str, Any],
+) -> dict[str, Any]:
+    """Capture the production worker's read-only pre-dispatch safety gate.
+
+    The gate deliberately uses ``motion_status_from_worker_status`` for the
+    live ground decision.  Grounded-reference qualification is retained only
+    as context: a failed strict-rest qualification does not block a motion
+    whose *current* physical ground diagnostics are safe.
+
+    This function does not apply commands, corrections, root poses, or saved
+    state.  Missing, inconsistent, or stale evidence is rejected.
+    """
+
+    reasons: list[str] = []
+    identity_evidence = _motion_start_identity_evidence(
+        request_identity,
+        worker_session_id=worker_session_id,
+    )
+    reasons.extend(identity_evidence["errors"])
+
+    requested_step = _strict_int(current_sim_step)
+    adapter_instance_before = str(
+        getattr(adapter, "runtime_instance_id", "") or ""
+    ) if adapter is not None else ""
+    root_write_count_before = _strict_int(
+        getattr(adapter, "root_state_write_count", None)
+    ) if adapter is not None else None
+    if not adapter_instance_before:
+        reasons.append("adapter runtime instance identity is missing")
+    if root_write_count_before is None or root_write_count_before < 0:
+        reasons.append("root-state write count evidence is missing or invalid")
+    adapter_step_before = _strict_int(getattr(adapter, "sim_steps", None)) if adapter is not None else None
+    if requested_step is None:
+        reasons.append("current sim_step evidence is missing or invalid")
+    if adapter_step_before is None:
+        reasons.append("adapter sim_step evidence is missing or invalid")
+    elif requested_step is not None and adapter_step_before != requested_step:
+        reasons.append(
+            "requested/current adapter sim_step mismatch: "
+            f"requested={requested_step} adapter={adapter_step_before}"
+        )
+
+    live_ground: dict[str, Any] = {}
+    ground_capture_error = ""
+    validator = getattr(adapter, "validate_robot_ground_contact", None) if adapter is not None else None
+    if not callable(validator):
+        ground_capture_error = "adapter does not provide live ground validation"
+        reasons.append(ground_capture_error)
+    else:
+        try:
+            captured = validator(apply_correction=False)
+            if not isinstance(captured, dict):
+                ground_capture_error = "live ground validation did not return a mapping"
+            else:
+                live_ground = dict(captured)
+        except Exception as exc:
+            ground_capture_error = (
+                "live ground validation failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+        if ground_capture_error:
+            reasons.append(ground_capture_error)
+
+    adapter_step_after_ground = _strict_int(getattr(adapter, "sim_steps", None)) if adapter is not None else None
+    ground_step = _strict_int(live_ground.get("sim_steps"))
+    if live_ground.get("checked") is not True:
+        reasons.append("live ground diagnostics are missing checked=true evidence")
+    if ground_step is None:
+        reasons.append("live ground diagnostics are missing sim_steps evidence")
+    elif requested_step is not None and ground_step != requested_step:
+        reasons.append(
+            "live ground diagnostics are stale: "
+            f"captured={ground_step} current={requested_step}"
+        )
+    if adapter_step_after_ground is None:
+        reasons.append("post-ground adapter sim_step evidence is missing")
+    elif requested_step is not None and adapter_step_after_ground != requested_step:
+        reasons.append(
+            "sim_step changed during live ground capture: "
+            f"before={requested_step} after={adapter_step_after_ground}"
+        )
+    if live_ground.get("correction_applied") is True:
+        reasons.append("live ground validation reports an unexpected correction")
+
+    ground_ready, ground_reason, ground_state = motion_status_from_worker_status(
+        {
+            "runtime_ready": bool(runtime_ready),
+            "robot_ground": live_ground,
+        }
+    )
+    if not ground_ready:
+        reasons.append(str(ground_reason or "live motion/ground status is not ready"))
+
+    base_evidence: dict[str, Any] = {}
+    base_capture_error = ""
+    base_capturer = getattr(adapter, "capture_motion_start_base_evidence", None) if adapter is not None else None
+    if not callable(base_capturer):
+        base_capture_error = "adapter does not provide motion-start base evidence"
+        reasons.append(base_capture_error)
+    else:
+        try:
+            captured = base_capturer()
+            if not isinstance(captured, dict):
+                base_capture_error = "motion-start base capture did not return a mapping"
+            else:
+                base_evidence = dict(captured)
+        except Exception as exc:
+            base_capture_error = (
+                "motion-start base capture failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+        if base_capture_error:
+            reasons.append(base_capture_error)
+
+    adapter_step_after_all = _strict_int(getattr(adapter, "sim_steps", None)) if adapter is not None else None
+    adapter_instance_after = str(
+        getattr(adapter, "runtime_instance_id", "") or ""
+    ) if adapter is not None else ""
+    root_write_count_after = _strict_int(
+        getattr(adapter, "root_state_write_count", None)
+    ) if adapter is not None else None
+    base_instance = str(base_evidence.get("adapter_runtime_instance_id", "") or "")
+    base_root_write_count = _strict_int(base_evidence.get("root_state_write_count"))
+    if (
+        not adapter_instance_after
+        or not base_instance
+        or adapter_instance_before != adapter_instance_after
+        or adapter_instance_after != base_instance
+    ):
+        reasons.append(
+            "adapter runtime instance identity is missing or changed during capture"
+        )
+    if (
+        root_write_count_before is None
+        or root_write_count_after is None
+        or base_root_write_count is None
+        or root_write_count_before != root_write_count_after
+        or root_write_count_after != base_root_write_count
+    ):
+        reasons.append(
+            "root-state write count changed or became unverifiable during readiness capture"
+        )
+    base_step = _strict_int(base_evidence.get("sim_step"))
+    if base_step is None:
+        reasons.append("motion-start base evidence is missing sim_step")
+    elif requested_step is not None and base_step != requested_step:
+        reasons.append(
+            "motion-start base evidence is stale: "
+            f"captured={base_step} current={requested_step}"
+        )
+    if adapter_step_after_all is None:
+        reasons.append("post-capture adapter sim_step evidence is missing")
+    elif requested_step is not None and adapter_step_after_all != requested_step:
+        reasons.append(
+            "sim_step changed during motion-start capture: "
+            f"before={requested_step} after={adapter_step_after_all}"
+        )
+
+    wheel_evidence = _motion_start_wheel_boundary_evidence(
+        adapter=adapter,
+        base_evidence=base_evidence,
+        live_ground=live_ground,
+        current_sim_step=requested_step,
+    )
+    reasons.extend(wheel_evidence["errors"])
+    expected_command_state = dict(
+        identity_evidence.get("source_initial_command_state", {}) or {}
+    )
+    live_command_state = dict(base_evidence.get("command_state", {}) or {})
+    expected_command_sha = hashlib.sha256(
+        json.dumps(
+            expected_command_state,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    live_command_sha = hashlib.sha256(
+        json.dumps(
+            live_command_state,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    declared_command_sha = str(
+        identity_evidence.get("source_initial_command_state_sha256", "") or ""
+    ).lower()
+    if not expected_command_state:
+        reasons.append("source initial command-state evidence is missing")
+    if declared_command_sha != expected_command_sha:
+        reasons.append("source initial command-state SHA is missing or invalid")
+    if live_command_sha != expected_command_sha:
+        reasons.append(
+            "live command state does not match the source initial command state"
+        )
+    unique_reasons = list(dict.fromkeys(str(reason) for reason in reasons if str(reason)))
+    ready = bool(
+        not unique_reasons
+        and identity_evidence["valid"]
+        and ground_ready
+        and wheel_evidence["valid"]
+        and requested_step is not None
+    )
+    return {
+        "schema_version": MOTION_START_READINESS_SCHEMA_VERSION,
+        "ready": ready,
+        "motion_start_ready": ready,
+        "decision": "PASS" if ready else "FAIL_CLOSED",
+        "rejection_reason": "; ".join(unique_reasons),
+        "rejection_reasons": unique_reasons,
+        "runtime_ready": bool(runtime_ready),
+        "decision_semantics": "robot_ground_diagnostics.motion_status_from_worker_status",
+        "ground_motion_ready": bool(ground_ready),
+        "ground_motion_reason": str(ground_reason or ""),
+        "ground_state": str(ground_state or ""),
+        "live_ground": live_ground,
+        "live_ground_capture_error": ground_capture_error,
+        "ground_validation_apply_correction": False,
+        "current_sim_step": requested_step,
+        "adapter_sim_step_before": adapter_step_before,
+        "adapter_sim_step_after_ground": adapter_step_after_ground,
+        "adapter_sim_step_after_all": adapter_step_after_all,
+        "ground_capture_sim_step": ground_step,
+        "base_capture_sim_step": base_step,
+        "identity": identity_evidence,
+        "source_initial_command_state": expected_command_state,
+        "source_initial_command_state_sha256": expected_command_sha,
+        "live_command_state": live_command_state,
+        "live_command_state_sha256": live_command_sha,
+        "wheel_stop_boundary": wheel_evidence,
+        "base_evidence": base_evidence,
+        "adapter_runtime_instance_id": base_instance,
+        "adapter_runtime_instance_id_before": adapter_instance_before,
+        "adapter_runtime_instance_id_after": adapter_instance_after,
+        "root_state_write_count": base_root_write_count,
+        "root_state_write_count_before": root_write_count_before,
+        "root_state_write_count_after": root_write_count_after,
+        "root_state_write_events": list(
+            base_evidence.get("root_state_write_events", []) or []
+        ),
+        "strict_rest_context": {
+            "grounded_reference_valid": bool(getattr(adapter, "grounded_reference_valid", False)),
+            "grounded_reference_stable": bool(getattr(adapter, "grounded_reference_stable", False)),
+            "last_ground_settle_stable": bool(
+                dict(getattr(adapter, "last_ground_settle_result", {}) or {}).get("stable", False)
+            ),
+            "required_for_motion_start": False,
+        },
+        "state_writes_performed": False,
+    }
+
+
+def _motion_start_identity_evidence(
+    request_identity: dict[str, Any],
+    *,
+    worker_session_id: str,
+) -> dict[str, Any]:
+    identity = dict(request_identity or {})
+    identity["worker_session_id"] = str(worker_session_id or "")
+    errors: list[str] = []
+    for key in ("request_id", "plan_id", "plan_sha256", "worker_session_id"):
+        if not str(identity.get(key, "") or ""):
+            errors.append(f"missing {key}")
+
+    validated_sha = str(identity.get("validated_plan_sha256", "") or "")
+    requested_sha = str(identity.get("plan_sha256", "") or "")
+    if not validated_sha:
+        errors.append("missing validated_plan_sha256")
+    elif requested_sha and validated_sha != requested_sha:
+        errors.append(
+            "plan identity sha mismatch: "
+            f"requested={requested_sha} validated={validated_sha}"
+        )
+
+    for requested_key, validated_key in (
+        ("event_count", "validated_event_count"),
+        ("segment_count", "validated_segment_count"),
+    ):
+        requested = _strict_int(identity.get(requested_key))
+        validated = _strict_int(identity.get(validated_key))
+        identity[requested_key] = requested
+        identity[validated_key] = validated
+        if requested is None or requested < 0:
+            errors.append(f"missing or invalid {requested_key}")
+        if validated is None or validated < 0:
+            errors.append(f"missing or invalid {validated_key}")
+        if requested is not None and validated is not None and requested != validated:
+            errors.append(
+                f"plan identity {requested_key} mismatch: "
+                f"requested={requested} validated={validated}"
+            )
+    if identity.get("integrity_ok") is not True:
+        errors.append("validated plan integrity is not ok")
+    requested_session = str(identity.get("requested_worker_session_id", "") or "")
+    if requested_session and requested_session != str(worker_session_id or ""):
+        errors.append(
+            "worker session identity mismatch: "
+            f"requested={requested_session} current={worker_session_id}"
+        )
+    errors = list(dict.fromkeys(errors))
+    identity["valid"] = not errors
+    identity["errors"] = errors
+    return identity
+
+
+def _motion_start_wheel_boundary_evidence(
+    *,
+    adapter: Any,
+    base_evidence: dict[str, Any],
+    live_ground: dict[str, Any],
+    current_sim_step: int | None,
+) -> dict[str, Any]:
+    status = dict(getattr(adapter, "wheel_command_status", {}) or {}) if adapter is not None else {}
+    errors: list[str] = []
+    tolerance = _finite_float(status.get("stop_tolerance_rad_s"))
+    if tolerance is None or tolerance < 0.0:
+        errors.append("wheel stop tolerance evidence is missing or invalid")
+    if status.get("zero_target_applied") is not True:
+        errors.append("wheel zero-target boundary is not applied")
+    if status.get("physically_stopped") is not True:
+        errors.append("wheel physical-stop boundary is not satisfied")
+    if not str(status.get("state", "") or ""):
+        errors.append("wheel stop state evidence is missing")
+    generation = _strict_int(status.get("generation"))
+    if generation is None or generation < 0:
+        errors.append("wheel generation evidence is missing or invalid")
+
+    zero_maps = {
+        "command_status_targets": status.get("applied_target_rad_s"),
+        "logical_targets": base_evidence.get("wheel_target_velocity_by_name"),
+        "physx_target_readback": base_evidence.get("wheel_target_readback_velocity_by_name"),
+        "ground_command_values": live_ground.get("wheel_command_values"),
+    }
+    normalized_zero_maps: dict[str, dict[str, float]] = {}
+    for label, value in zero_maps.items():
+        normalized, map_errors = _complete_wheel_map(value, label=label)
+        normalized_zero_maps[label] = normalized
+        errors.extend(map_errors)
+        for name, number in normalized.items():
+            if number != 0.0:
+                errors.append(f"{label} is nonzero for {name}: {number}")
+
+    measured_maps = {
+        "command_status_measured": status.get("measured_velocity_rad_s"),
+        "live_joint_velocity": base_evidence.get("joint_velocity_by_name"),
+    }
+    normalized_measured_maps: dict[str, dict[str, float]] = {}
+    for label, value in measured_maps.items():
+        normalized, map_errors = _complete_wheel_map(
+            value,
+            label=label,
+            allow_extra=label == "live_joint_velocity",
+        )
+        normalized_measured_maps[label] = normalized
+        errors.extend(map_errors)
+        if tolerance is not None and tolerance >= 0.0:
+            for name, number in normalized.items():
+                if abs(number) > tolerance:
+                    errors.append(
+                        f"{label} exceeds existing stop tolerance for {name}: "
+                        f"abs({number}) > {tolerance}"
+                    )
+    if base_evidence.get("joint_state_evidence_valid") is not True:
+        errors.append("live joint velocity evidence is invalid")
+    if base_evidence.get("wheel_target_evidence_valid") is not True:
+        errors.append("independent wheel target evidence is invalid")
+    base_step = _strict_int(base_evidence.get("sim_step"))
+    if current_sim_step is None or base_step != current_sim_step:
+        errors.append("wheel stop boundary evidence is not from the current sim_step")
+
+    errors = list(dict.fromkeys(errors))
+    return {
+        "valid": not errors,
+        "errors": errors,
+        "captured_sim_step": base_step,
+        "wheel_generation": generation,
+        "stop_tolerance_rad_s": tolerance,
+        "command_status": status,
+        "zero_target_maps": normalized_zero_maps,
+        "measured_velocity_maps": normalized_measured_maps,
+    }
+
+
+def _complete_wheel_map(
+    value: Any,
+    *,
+    label: str,
+    allow_extra: bool = False,
+) -> tuple[dict[str, float], list[str]]:
+    if not isinstance(value, dict):
+        return {}, [f"{label} wheel evidence is missing"]
+    keys = {str(key) for key in value}
+    expected = set(WHEEL_JOINT_NAMES)
+    errors: list[str] = []
+    if not expected.issubset(keys) or (not allow_extra and keys != expected):
+        errors.append(
+            f"{label} wheel key set is incomplete: "
+            f"missing={sorted(expected - keys)} extra={sorted(keys - expected)}"
+        )
+    normalized: dict[str, float] = {}
+    for name in WHEEL_JOINT_NAMES:
+        if name not in value:
+            continue
+        number = _finite_float(value.get(name))
+        if number is None:
+            errors.append(f"{label} has non-finite value for {name}")
+        else:
+            normalized[name] = number
+    return normalized, errors
+
+
+def _strict_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        converted = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    try:
+        if float(value) != float(converted):
+            return None
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return converted
+
+
+def _finite_float(value: Any) -> float | None:
+    try:
+        converted = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return converted if math.isfinite(converted) else None
 
 
 def create_adapter_config_from_args(args: Any) -> SimRobotAdapterConfig:

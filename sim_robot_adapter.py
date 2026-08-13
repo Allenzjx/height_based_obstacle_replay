@@ -160,6 +160,9 @@ class SimRobotAdapter:
         self.wheel_direction = 1.0 if float(self.config.wheel_direction) >= 0.0 else -1.0
         self.sim_time = 0.0
         self.sim_steps = 0
+        self.runtime_instance_id = uuid.uuid4().hex
+        self.root_state_write_count = 0
+        self.root_state_write_events: list[dict[str, Any]] = []
         self.command_state = empty_command_state()
         self.telemetry_collector: Any | None = None
         self.motion_reference: MotionReference = load_motion_reference()
@@ -241,6 +244,18 @@ class SimRobotAdapter:
 
     def attach_telemetry(self, collector: Any | None) -> None:
         self.telemetry_collector = collector
+
+    def _record_root_state_write(self, operation: str) -> None:
+        """Audit explicit adapter root-state writes without changing behavior."""
+
+        self.root_state_write_count += 1
+        self.root_state_write_events.append(
+            {
+                "operation": str(operation),
+                "sim_step": int(self.sim_steps),
+                "sim_time_s": float(self.sim_time),
+            }
+        )
 
     def capture_command_state(self) -> dict[str, dict[str, float]]:
         return {
@@ -383,6 +398,7 @@ class SimRobotAdapter:
         if reorder and reorder != list(range(len(reorder))):
             joint_pos = joint_pos[..., reorder]
             joint_vel = joint_vel[..., reorder]
+        self._record_root_state_write("restore_sim_state")
         self.robot.write_root_pose_to_sim(root_pose)
         trace.append({"event": "root_pose_written", "sim_step": int(self.sim_steps)})
         self.robot.write_root_velocity_to_sim(root_velocity)
@@ -1250,6 +1266,7 @@ class SimRobotAdapter:
                 }
         root_pose = self.grounded_respawn_root_pose
         joint_pos = self.grounded_respawn_joint_pos
+        self._record_root_state_write("respawn_robot")
         self.robot.write_root_pose_to_sim(root_pose)
         self.robot.write_root_velocity_to_sim(self.zero_root_velocity)
         self.robot.write_joint_state_to_sim(joint_pos, self.command_zero_joint_vel)
@@ -2244,6 +2261,89 @@ class SimRobotAdapter:
             "servo_command_to_readback_error_by_name": command_to_readback_error,
         }
 
+    def capture_joint_drive_evidence(self) -> dict[str, Any]:
+        """Return fail-closed live joint and PhysX drive-target evidence.
+
+        This is the public, read-only form of the evidence used by formal
+        grounding.  Recording replay, the production worker, and FSM runtimes
+        can therefore distinguish IsaacLab's local target buffers from targets
+        independently read back from the PhysX articulation view without
+        duplicating shape or finiteness checks.
+        """
+
+        return self._ground_joint_state_snapshot()
+
+    def capture_motion_start_base_evidence(self) -> dict[str, Any]:
+        """Capture one fresh, read-only pre-dispatch evidence frame.
+
+        Contact/penetration enrichment is kept outside the adapter so this
+        shared production object does not depend on a particular diagnostic
+        sensor layout.  No command, joint state, or root pose is written.
+        """
+
+        root_velocity = self._ground_root_velocity_snapshot()
+        joint_state = self.capture_joint_drive_evidence()
+        logical_wheels = self._wheel_velocity_target_by_name()
+        physx_velocity = dict(
+            joint_state.get("joint_velocity_target_by_name", {}) or {}
+        )
+        physx_wheels = {
+            name: physx_velocity[name]
+            for name in WHEEL_JOINT_NAMES
+            if name in physx_velocity
+        }
+        wheel_errors: dict[str, float] = {}
+        errors: list[str] = []
+        if set(logical_wheels) != set(WHEEL_JOINT_NAMES):
+            errors.append("logical wheel target key set is incomplete")
+        if set(physx_wheels) != set(WHEEL_JOINT_NAMES):
+            errors.append("PhysX wheel velocity target key set is incomplete")
+        for name in WHEEL_JOINT_NAMES:
+            if name not in logical_wheels or name not in physx_wheels:
+                continue
+            try:
+                logical = float(logical_wheels[name])
+                physx = float(physx_wheels[name])
+            except (TypeError, ValueError) as exc:
+                errors.append(
+                    f"{name} wheel target conversion failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
+                continue
+            if not math.isfinite(logical) or not math.isfinite(physx):
+                errors.append(f"{name} wheel target is non-finite")
+            wheel_errors[name] = float(physx - logical)
+            if math.isfinite(wheel_errors[name]) and abs(wheel_errors[name]) > 1.0e-6:
+                errors.append(
+                    f"{name} wheel command/PhysX mismatch "
+                    f"{wheel_errors[name]:.9g} rad/s"
+                )
+        frame = {
+            "adapter_runtime_instance_id": str(self.runtime_instance_id),
+            "root_state_write_count": int(self.root_state_write_count),
+            "root_state_write_events": list(self.root_state_write_events),
+            "sim_step": int(self.sim_steps),
+            "sim_time_s": float(self.sim_time),
+            "physics_dt_s": float(self.sim.get_physics_dt()),
+            "command_state": self.capture_command_state(),
+            "root_velocity": list(root_velocity.get("values", []) or []),
+            "root_velocity_evidence_valid": root_velocity.get("valid") is True,
+            "root_velocity_evidence_error": str(root_velocity.get("error", "") or ""),
+            **{
+                key: value
+                for key, value in joint_state.items()
+                if key not in {"valid", "error"}
+            },
+            "joint_state_evidence_valid": joint_state.get("valid") is True,
+            "joint_state_evidence_error": str(joint_state.get("error", "") or ""),
+            "wheel_target_velocity_by_name": dict(logical_wheels),
+            "wheel_target_readback_velocity_by_name": physx_wheels,
+            "wheel_target_command_to_readback_error_by_name": wheel_errors,
+            "wheel_target_evidence_valid": not errors,
+            "wheel_target_evidence_error": "; ".join(dict.fromkeys(errors)),
+        }
+        return frame
+
     def _ground_root_velocity_snapshot(self) -> dict[str, Any]:
         """Read the six live root velocities without a zero-value fallback."""
 
@@ -2561,6 +2661,7 @@ class SimRobotAdapter:
         root_pose = self.robot.data.root_pose_w.clone()
         root_pose[:, 2] = root_pose[:, 2] + dz
         joint_pos = self.robot.data.joint_pos.clone()
+        self._record_root_state_write("bounded_ground_correction")
         self.robot.write_root_pose_to_sim(root_pose)
         self.robot.write_root_velocity_to_sim(self.zero_root_velocity)
         self.robot.write_joint_state_to_sim(joint_pos, self.command_zero_joint_vel)

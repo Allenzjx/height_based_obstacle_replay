@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import tempfile
 import time
+import tkinter as tk
 import types
 import unittest
 from pathlib import Path
@@ -22,7 +23,10 @@ class FastButtonAndIndexTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             controller = controller_with_three_steps(Path(tmp))
             controller.selected_step_index = 2
-            ui = RealRobotStyleHeightReplayUi(controller)
+            try:
+                ui = RealRobotStyleHeightReplayUi(controller)
+            except tk.TclError as exc:
+                self.skipTest(f"Tk runtime unavailable in this test environment: {exc}")
             ui.root.withdraw()
             try:
                 fast = ui.playback_buttons_by_label["Play Selected Fast"]

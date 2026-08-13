@@ -264,31 +264,25 @@ class RecordingAudit:
             canonical = {json.dumps(value, sort_keys=True) for value in values.values()}
             if len(canonical) > 1:
                 differences[field] = values
+        # Freeze the complete production replay closure dynamically.  A fixed
+        # hand-maintained shortlist silently omitted newly imported readiness,
+        # grounding and shutdown modules, so a stale environment lock could
+        # still pass while executable behavior had changed.
+        source_candidates = list(PROJECT_ROOT.glob("*.py"))
+        source_candidates.extend(
+            sorted((PROJECT_ROOT / "telemetry").rglob("*.py"))
+        )
+        source_candidates.extend(
+            sorted((PROJECT_ROOT / "config").rglob("*.yaml"))
+        )
+        source_candidates.extend(
+            sorted((PROJECT_ROOT / "config").rglob("*.json"))
+        )
+        source_candidates.extend(sorted(MODULE_ROOT.glob("*.py")))
+        source_candidates.extend(sorted(MODULE_ROOT.glob("*.yaml")))
         source_hashes = {
             str(path.resolve()): sha256_file(path)
-            for path in (
-                BASELINE_PATH,
-                ENVIRONMENT_REFERENCE_PATH,
-                MOTION_REFERENCE_PATH,
-                PROJECT_ROOT / "motion_speed.py",
-                PROJECT_ROOT / "playback.py",
-                PROJECT_ROOT / "sequence_model.py",
-                PROJECT_ROOT / "command_model.py",
-                PROJECT_ROOT / "sim_obstacle_scene.py",
-                PROJECT_ROOT / "sim_robot_adapter.py",
-                PROJECT_ROOT / "sim_worker_runtime.py",
-                PROJECT_ROOT / "robot_ground_diagnostics.py",
-                PROJECT_ROOT / "telemetry" / "collector.py",
-                PROJECT_ROOT / "telemetry" / "contact_metrics.py",
-                PROJECT_ROOT / "height_replay_ui.py",
-                MODULE_ROOT / "recording_audit.py",
-                MODULE_ROOT / "recording_fast_plan.py",
-                MODULE_ROOT / "support_classifier.py",
-                MODULE_ROOT / "filtered_wheel_contact.py",
-                MODULE_ROOT / "nonwheel_obstacle_contact.py",
-                MODULE_ROOT / "fsm50_telemetry.py",
-                MODULE_ROOT / "run_fsm50.py",
-            )
+            for path in sorted({path.resolve() for path in source_candidates})
             if path.is_file()
         }
         robot_usd = Path(str(_nested(baseline, "robot", "usd_path"))).resolve()

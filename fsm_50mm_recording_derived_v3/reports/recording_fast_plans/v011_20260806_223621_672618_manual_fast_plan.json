@@ -7567,8 +7567,8 @@
     "compacted_sequence_duration_s": 109.06666666507954,
     "final_implicit_idle_s": 0.0,
     "fixed_step_gap_s": 0.0,
-    "plan_build_end": 2399245.343,
-    "plan_build_start": 2399245.125,
+    "plan_build_end": 65271.125,
+    "plan_build_start": 65270.921,
     "plan_integrity": {
       "event_count": 217,
       "input_step_count": 28,
@@ -7666,8 +7666,29 @@
       "segment_count": 158
     },
     "raw_sequence_duration_s": 398.13333332753973,
+    "requires_motion_start_readiness_token": false,
+    "requires_verified_motion_batch_ack": false,
     "scheduler_model": "continuous_worker_completion_aware_v2",
     "servo_reference_velocity_deg_s": 150.0,
+    "source_initial_command_state": {
+      "servos": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "source_initial_command_state_sha256": "00b8b95cc44e677ee116530fc515777b7550e7d62f49b62dbc19a8f665ccaf67",
     "step_diagnostics": [
       {
         "explicit_motion_duration_s": 0.7999999999883585,
