@@ -4327,8 +4327,8 @@
     "compacted_sequence_duration_s": 89.06666666537058,
     "final_implicit_idle_s": 0.0,
     "fixed_step_gap_s": 0.0,
-    "plan_build_end": 65270.359,
-    "plan_build_start": 65270.203,
+    "plan_build_end": 66370.171,
+    "plan_build_start": 66370.0,
     "plan_integrity": {
       "event_count": 119,
       "input_step_count": 21,

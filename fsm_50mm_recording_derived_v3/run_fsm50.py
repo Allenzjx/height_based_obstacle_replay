@@ -3085,13 +3085,58 @@ def _evaluate_motion_start_window(
             )
         )
     steps = [int(frame.get("sim_step", -1)) for frame in selected]
-    contiguous = bool(
+    contiguous_physics_ticks = bool(
         steps
         and steps == list(range(steps[0], steps[0] + len(steps)))
     )
+    production_step_stride: int | None = None
+    production_cadence_error = ""
+    try:
+        _render_elapsed_s, raw_step_stride = adapter._render_step_timing()
+        parsed_step_stride = int(raw_step_stride)
+        if parsed_step_stride < 1:
+            raise ValueError("physics-step stride must be positive")
+        production_step_stride = parsed_step_stride
+    except (AttributeError, TypeError, ValueError) as exc:
+        production_cadence_error = (
+            "production render-loop cadence unavailable: "
+            f"{type(exc).__name__}: {exc}"
+        )
+    observed_step_deltas = [
+        int(current - previous)
+        for previous, current in zip(steps, steps[1:])
+    ]
+    production_sampling_cadence_valid = bool(
+        steps
+        and production_step_stride is not None
+        and all(step >= 0 for step in steps)
+        and all(
+            delta == production_step_stride for delta in observed_step_deltas
+        )
+    )
+    window_failed_checks: list[str] = []
+    if len(selected) != int(required_frames):
+        window_failed_checks.append(
+            "observed frame count does not match required production samples"
+        )
+    if not production_sampling_cadence_valid:
+        if production_cadence_error:
+            window_failed_checks.append(production_cadence_error)
+        else:
+            window_failed_checks.append(
+                "motion-start samples do not follow the production render-loop "
+                f"cadence of {production_step_stride} physics tick(s)"
+            )
+    for index, row in enumerate(frame_results):
+        if row.get("ready") is not True:
+            failed = list(row.get("failed_checks", []) or [])
+            window_failed_checks.append(
+                f"sample {index} is not MOTION_START_READY"
+                + (f": {failed}" if failed else "")
+            )
     ready = bool(
         len(selected) == int(required_frames)
-        and contiguous
+        and production_sampling_cadence_valid
         and frame_results
         and all(row.get("ready") is True for row in frame_results)
     )
@@ -3103,7 +3148,20 @@ def _evaluate_motion_start_window(
         "required_consecutive_frames": int(required_frames),
         "observed_frame_count": len(selected),
         "sim_steps": steps,
-        "contiguous_sim_steps": contiguous,
+        # ``SimRobotAdapter.step`` is one production render-loop iteration.  At
+        # render_interval=8 it advances eight 1/120 s physics ticks before the
+        # next scheduler/readiness observation.  Preserve the literal physics
+        # contiguity result instead of mislabelling these samples as +1 ticks,
+        # while qualifying the exact cadence used by the formal worker.
+        "contiguous_sim_steps": contiguous_physics_ticks,
+        "production_sampling_cadence_valid": production_sampling_cadence_valid,
+        "production_step_stride_physics_ticks": production_step_stride,
+        "production_sampling_cadence_error": production_cadence_error,
+        "observed_sim_step_deltas": observed_step_deltas,
+        "sampling_semantics": (
+            "one readiness snapshot per production render-loop iteration"
+        ),
+        "window_failed_checks": window_failed_checks,
         "plan_identity": dict(plan_identity),
         "adapter_runtime_instance_id": expected_instance,
         "root_state_write_count": int(
@@ -3332,9 +3390,7 @@ def _run_recording_version(
             raise RuntimeError(
                 "MOTION_START_READY failed before production start boundary: "
                 + json.dumps(
-                    motion_start_readiness.get("final", {}).get(
-                        "failed_checks", []
-                    ),
+                    motion_start_readiness.get("window_failed_checks", []),
                     ensure_ascii=False,
                 )
             )

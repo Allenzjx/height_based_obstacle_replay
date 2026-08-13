@@ -23,6 +23,7 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _compare_source_freezes,
     _close_simulation_with_explicit_policy,
     _deserialize_replay_args,
+    _evaluate_motion_start_window,
     _existing_simulator_processes,
     _fail_closed_recording_audits,
     _find_reliable_completed_replays,
@@ -48,6 +49,119 @@ from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 
 
 class RunnerContractTests(unittest.TestCase):
+    def test_motion_start_window_uses_formal_render_loop_cadence(self) -> None:
+        adapter = SimpleNamespace(
+            runtime_instance_id="adapter-1",
+            root_state_write_count=0,
+            config=SimpleNamespace(
+                ground_vertical_speed_threshold_m_s=0.01,
+                ground_wheel_speed_threshold_rad_s=0.20,
+                ground_penetration_tolerance_m=0.003,
+            ),
+            _render_step_timing=lambda: (8.0 / 120.0, 8),
+        )
+        frames = [{"sim_step": 180 + 8 * index} for index in range(10)]
+        with mock.patch.object(
+            run_fsm50_module,
+            "evaluate_motion_start_ready",
+            return_value={"ready": True, "failed_checks": [], "status": "PASS"},
+        ):
+            result = _evaluate_motion_start_window(
+                adapter=adapter,
+                startup_ground={},
+                frames=frames,
+                plan_identity={"plan_sha256": "a" * 64},
+                required_frames=10,
+            )
+
+        self.assertTrue(result["ready"])
+        self.assertFalse(result["contiguous_sim_steps"])
+        self.assertTrue(result["production_sampling_cadence_valid"])
+        self.assertEqual(result["production_step_stride_physics_ticks"], 8)
+        self.assertEqual(result["observed_sim_step_deltas"], [8] * 9)
+        self.assertEqual(result["window_failed_checks"], [])
+
+    def test_motion_start_window_rejects_a_missing_production_sample(self) -> None:
+        adapter = SimpleNamespace(
+            runtime_instance_id="adapter-1",
+            root_state_write_count=0,
+            config=SimpleNamespace(
+                ground_vertical_speed_threshold_m_s=0.01,
+                ground_wheel_speed_threshold_rad_s=0.20,
+                ground_penetration_tolerance_m=0.003,
+            ),
+            _render_step_timing=lambda: (8.0 / 120.0, 8),
+        )
+        steps = [180, 188, 196, 204, 212, 220, 228, 236, 252, 260]
+        frames = [{"sim_step": step} for step in steps]
+        with mock.patch.object(
+            run_fsm50_module,
+            "evaluate_motion_start_ready",
+            return_value={"ready": True, "failed_checks": [], "status": "PASS"},
+        ):
+            result = _evaluate_motion_start_window(
+                adapter=adapter,
+                startup_ground={},
+                frames=frames,
+                plan_identity={"plan_sha256": "a" * 64},
+                required_frames=10,
+            )
+
+        self.assertFalse(result["ready"])
+        self.assertFalse(result["production_sampling_cadence_valid"])
+        self.assertIn(16, result["observed_sim_step_deltas"])
+        self.assertTrue(result["window_failed_checks"])
+
+    def test_motion_start_window_fails_closed_without_valid_cadence(self) -> None:
+        base_adapter = {
+            "runtime_instance_id": "adapter-1",
+            "root_state_write_count": 0,
+            "config": SimpleNamespace(
+                ground_vertical_speed_threshold_m_s=0.01,
+                ground_wheel_speed_threshold_rad_s=0.20,
+                ground_penetration_tolerance_m=0.003,
+            ),
+        }
+        adapters = {
+            "missing": SimpleNamespace(**base_adapter),
+            "raises": SimpleNamespace(
+                **base_adapter,
+                _render_step_timing=lambda: (_ for _ in ()).throw(
+                    ValueError("unavailable")
+                ),
+            ),
+            "invalid": SimpleNamespace(
+                **base_adapter,
+                _render_step_timing=lambda: (0.0, 0),
+            ),
+        }
+        frames = [{"sim_step": 180 + 8 * index} for index in range(10)]
+        with mock.patch.object(
+            run_fsm50_module,
+            "evaluate_motion_start_ready",
+            return_value={"ready": True, "failed_checks": [], "status": "PASS"},
+        ):
+            for label, adapter in adapters.items():
+                with self.subTest(label=label):
+                    result = _evaluate_motion_start_window(
+                        adapter=adapter,
+                        startup_ground={},
+                        frames=frames,
+                        plan_identity={"plan_sha256": "a" * 64},
+                        required_frames=10,
+                    )
+                    self.assertFalse(result["ready"])
+                    self.assertFalse(
+                        result["production_sampling_cadence_valid"]
+                    )
+                    self.assertIsNone(
+                        result["production_step_stride_physics_ticks"]
+                    )
+                    self.assertTrue(
+                        result["production_sampling_cadence_error"]
+                    )
+                    self.assertTrue(result["window_failed_checks"])
+
     def test_motion_start_token_evidence_is_json_safe_and_not_self_referential(self) -> None:
         readiness = {
             "ready": True,
