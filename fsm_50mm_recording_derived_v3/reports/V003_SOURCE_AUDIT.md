@@ -87,8 +87,8 @@ Initial/final joint command targets for every Step, every source event identity,
 |---|---|---|
 | accepted_steps | `06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps_fsm_reference_v2\height_050mm\versions\v003_20260805_224517_157723_manual\accepted_steps.jsonl` |
 | metadata | `606f6306bf1781f1462b5a31e8d38b78bbd7363ec062f637851d1eb3ccad0ee3` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\saved_height_steps_fsm_reference_v2\height_050mm\versions\v003_20260805_224517_157723_manual\metadata.json` |
-| production_playback | `e8952e36ace69e6f56d87e49e3e83bb906dab57568100c80d62b9542c2493588` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\playback.py` |
-| production_fast_plan_adapter | `041de2cefc68a579e212f4896586a3c12378ef3c510ce4f65a99e53dde81bc82` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\fsm_50mm_recording_derived_v3\recording_fast_plan.py` |
+| production_playback | `fa808305b1d7167d8a005cb0f8a312d8ff2aac862b7da72e381a7ff52c3ed613` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\playback.py` |
+| production_fast_plan_adapter | `3661860d0b2a901a2b4fb7e6c0e9ae7f35a3aba54348df69fe9747cd04c816e5` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\fsm_50mm_recording_derived_v3\recording_fast_plan.py` |
 | sequence_model | `f2d6ffbb6901dd985149154cc3308341a1b8fd0014224dd9f1520c0b769630a0` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\sequence_model.py` |
 | command_model | `70f1e4183fc711f1dcded5d44a45c661960a383634b252c944ca21705c86e905` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\command_model.py` |
 | motion_speed | `5e41f5501b841ff7764ee6c2a9975afb256d6c121d22519ffc38842737b49421` | `C:\robotics_sim\wlr_robot\height_based_obstacle_replay\motion_speed.py` |
@@ -97,7 +97,7 @@ Initial/final joint command targets for every Step, every source event identity,
 | robot_asset | `e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892` | `C:\robotics_sim\wlr_robot\usd\wlr_robot_drive_test.usd` |
 
 - Production plan SHA-256: `a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c`
-- Static provenance fingerprint: `59e3c443737eef8b50d3fe625813776b9c564daa0a547d87a94519671640bbc8`
+- Static provenance fingerprint: `6ed847eb582fff43b6c1e4147a7c3ce8a99cb4d244f53ae7497c52c7c987fa72`
 
 ## Evidence boundary
 

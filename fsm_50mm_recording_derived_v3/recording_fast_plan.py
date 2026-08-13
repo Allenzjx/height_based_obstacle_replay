@@ -10,10 +10,11 @@ import csv
 import dataclasses
 import json
 import math
+import shlex
 from pathlib import Path
 from typing import Any
 
-from command_model import WHEEL_JOINT_NAMES
+from command_model import WHEEL_JOINT_NAMES, resolve_wheel_name
 from playback import PlaybackPlan, plan_from_steps
 from sequence_model import event_playback_commands, is_record_marker, normalize_events
 
@@ -64,6 +65,49 @@ DISPATCH_TRACE_COLUMNS = (
     "segment_cursor",
     "macro_state_cursor",
 )
+
+
+def _event_applied_wheel_targets(event: Any) -> dict[str, float]:
+    """Map one sparse source wheel command to its compiled applied targets."""
+
+    values = tuple(float(value) for value in event.wheel_applied_target_rad_s)
+    if not values:
+        return {}
+    try:
+        tokens = shlex.split(str(event.command or ""))
+    except ValueError as exc:
+        raise ValueError(f"could not parse compiled wheel command: {exc}") from exc
+    if not tokens:
+        raise ValueError("compiled wheel command is empty")
+    verb = tokens[0].lower()
+    args = tokens[1:]
+    if verb == "wheel" and args and args[0].lower() == "stop":
+        if len(values) != 1:
+            raise ValueError("wheel stop must contain one compiled target")
+        return {name: values[0] for name in WHEEL_JOINT_NAMES}
+    if verb == "wheel" and len(args) == 2 and args[0].lower() == "all":
+        if len(values) != 1:
+            raise ValueError("wheel all must contain one compiled target")
+        return {name: values[0] for name in WHEEL_JOINT_NAMES}
+    if verb in {"wheel", "wheels", "speed"} and len(args) == 2:
+        try:
+            float(args[0])
+            float(args[1])
+        except (TypeError, ValueError):
+            if verb != "wheel" or len(values) != 1:
+                raise ValueError(
+                    "named wheel command must contain one compiled target"
+                )
+            return {resolve_wheel_name(args[0]): values[0]}
+        if len(values) != 2:
+            raise ValueError("left/right wheel command must contain two compiled targets")
+        return {
+            "front_left_ankle": values[0],
+            "rear_left_ankle": values[0],
+            "front_right_ankle": values[1],
+            "rear_right_ankle": values[1],
+        }
+    raise ValueError(f"unsupported compiled wheel command: {event.command!r}")
 
 
 def _source_command_rows(steps: list[dict[str, Any]]) -> dict[int, list[dict[str, Any]]]:
@@ -485,6 +529,14 @@ def build_source_dispatch_ledger(
                 f"source={key} segment={segment_index} has invalid batch ACK: "
                 f"{batch.get('ack_error', '')}"
             )
+        try:
+            wheel_target_rad_s = _event_applied_wheel_targets(event)
+        except (TypeError, ValueError) as exc:
+            wheel_target_rad_s = {}
+            errors.append(
+                f"source={key} global_command={global_cursor} wheel target "
+                f"provenance is invalid: {exc}"
+            )
         retained_count += 1
         ledger.append(
             {
@@ -497,11 +549,7 @@ def build_source_dispatch_ledger(
                 "actual_dispatch_time_s": timing.get("actual_start_sim_time"),
                 "dispatch_lateness_s": timing.get("scheduler_lateness"),
                 "servo_target_deg": dict(event.servo_targets),
-                "wheel_target_rad_s": {
-                    name: float(event.wheel_applied_target_rad_s[index])
-                    for index, name in enumerate(WHEEL_JOINT_NAMES)
-                    if index < len(event.wheel_applied_target_rad_s)
-                },
+                "wheel_target_rad_s": wheel_target_rad_s,
                 "atomic_batch_id": str(batch.get("batch_id", "") or ""),
                 "atomic_batch_applied_sim_step": batch.get("applied_sim_step"),
                 "atomic_batch_first_physics_step": batch.get("first_physics_step"),

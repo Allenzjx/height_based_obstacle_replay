@@ -149,6 +149,55 @@ class SourceDispatchLedgerTests(unittest.TestCase):
             )
         )
 
+    def test_single_wheel_commands_keep_their_exact_source_joint_identity(self):
+        aliases = {
+            "fl": "front_left_ankle",
+            "fr": "front_right_ankle",
+            "rl": "rear_left_ankle",
+            "rr": "rear_right_ankle",
+        }
+        events = []
+        expected = {}
+        for index, (alias, joint_name) in enumerate(aliases.items(), start=1):
+            value = float(index) / 10.0
+            command = f"wheel {alias} {value}"
+            events.append(
+                {
+                    "time": float(index - 1) / 10.0,
+                    "command": command,
+                    "kind": "command",
+                }
+            )
+            expected[command] = {joint_name: value}
+        steps = [
+            {
+                "index": 1,
+                "name": "single-wheel-source-identity",
+                "duration": 0.5,
+                "events": events,
+                "command_state_before": {
+                    "servos": {},
+                    "wheels": {name: 0.0 for name in WHEEL_JOINT_NAMES},
+                },
+            }
+        ]
+        plan, _ = fast_plan_rows(
+            source_version="v003-test", steps=steps, max_wheel_speed=3.0
+        )
+        rows, summary = build_source_dispatch_ledger(
+            source_version="v003-test",
+            steps=steps,
+            plan=plan,
+            timing_trace=self._live_trace(plan),
+        )
+        self.assertTrue(summary["complete"], summary["errors"])
+        applied_rows = {
+            row["source_command"]: row["wheel_target_rad_s"]
+            for row in rows
+            if row["source_command"] in expected
+        }
+        self.assertEqual(applied_rows, expected)
+
     def test_missing_timing_or_invalid_batch_ack_fails_closed(self):
         steps = self._steps()
         plan, _ = fast_plan_rows(

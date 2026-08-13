@@ -325,7 +325,7 @@
       "source_step_index": 23
     }
   ],
-  "content_fingerprint_sha256": "3721712672470bdbcf396c3af8554b2662e1f282ee10d34347d8c1b8aac82e5a",
+  "content_fingerprint_sha256": "7abe8f88665e2d04b1f2e4aedc6e7eb383e6dcbf695f86975f48c406ad78c7ba",
   "counterfactual_30_plan_sha256": "65afdf68caa1e712d05818e412dff93db364c7c2d7246a13796b309a45a47f5e",
   "live_dispatch_trace_status": "NOT_COLLECTED",
   "physical_pass_claimed": false,
@@ -339,7 +339,7 @@
     "runtime_profile_requested": "fast"
   },
   "production_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
-  "provenance_fingerprint_sha256": "59e3c443737eef8b50d3fe625813776b9c564daa0a547d87a94519671640bbc8",
+  "provenance_fingerprint_sha256": "6ed847eb582fff43b6c1e4147a7c3ce8a99cb4d244f53ae7497c52c7c987fa72",
   "schema_version": "fsm50.v003_static_provenance.v1",
   "segments": [
     {
@@ -19468,11 +19468,11 @@
     },
     "production_fast_plan_adapter": {
       "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_fast_plan.py",
-      "sha256": "041de2cefc68a579e212f4896586a3c12378ef3c510ce4f65a99e53dde81bc82"
+      "sha256": "3661860d0b2a901a2b4fb7e6c0e9ae7f35a3aba54348df69fe9747cd04c816e5"
     },
     "production_playback": {
       "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback.py",
-      "sha256": "e8952e36ace69e6f56d87e49e3e83bb906dab57568100c80d62b9542c2493588"
+      "sha256": "fa808305b1d7167d8a005cb0f8a312d8ff2aac862b7da72e381a7ff52c3ed613"
     },
     "recording_bookkeeping_baseline": {
       "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\fsm_recording_baseline.yaml",

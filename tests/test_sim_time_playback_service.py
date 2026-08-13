@@ -258,6 +258,73 @@ class SimTimePlaybackServiceTest(unittest.TestCase):
         self.assertFalse(service.timing_trace["motion_batches"][0]["ack_valid"])
         self.assertEqual(len(adapter.batches), 1)
 
+    def test_segment_dispatches_compiled_applied_wheel_target_not_raw_request(self) -> None:
+        wheel_limit = 2.0943951023931953
+        requested = {
+            "front_left_ankle": 0.0,
+            "front_right_ankle": 2.0944,
+            "rear_left_ankle": 0.0,
+            "rear_right_ankle": 0.0,
+        }
+        applied = {**requested, "front_right_ankle": wheel_limit}
+        event = PlaybackEvent(
+            0.0,
+            "wheel fr 2.0944",
+            source_step=14,
+            source_step_id="step-14",
+            global_command_index=73,
+            segment_index=56,
+            channel="wheel",
+            wheel_requested_velocity_rad_s=(2.0944,),
+            wheel_applied_target_rad_s=(wheel_limit,),
+            wheel_active_duration_s=1.6,
+        )
+        segment = PlaybackSegment(
+            segment_index=56,
+            source_step=14,
+            source_step_id="step-14",
+            event_start_index=0,
+            event_count=1,
+            planned_start_s=0.0,
+            planned_end_s=1.6,
+            base_duration_s=1.6,
+            servo_base_duration_s=0.0,
+            servo_duration_s=0.0,
+            wheel_active_duration_s=1.6,
+            wheel_base_velocity=requested,
+            wheel_requested_velocity_rad_s=requested,
+            wheel_applied_target_rad_s=applied,
+        )
+        plan = PlaybackPlan(
+            path=None,
+            events=[event],
+            segments=[segment],
+            final_time_s=1.6,
+            label="recorded wheel clamp",
+        )
+        adapter = AtomicBatchAdapter(valid_ack=True)
+        service = SimTimePlaybackService()
+        self.assertTrue(
+            service.start_plan(plan, current_sim_time_s=0.0, current_wall_time_s=0.0)
+        )
+
+        service.update(
+            adapter,
+            current_sim_time_s=0.0,
+            current_sim_step=10,
+            current_wall_time_s=0.0,
+        )
+
+        self.assertEqual(
+            adapter.batches[0]["wheel_targets_rad_s"]["front_right_ankle"],
+            wheel_limit,
+        )
+        self.assertEqual(
+            segment.wheel_requested_velocity_rad_s["front_right_ankle"],
+            2.0944,
+        )
+        self.assertTrue(service.timing_trace["motion_batches"][0]["ack_valid"])
+
     def test_start_boundary_and_final_stop_are_separate_acked_ticks(self) -> None:
         adapter = AtomicBatchAdapter(valid_ack=True)
         service = SimTimePlaybackService()

@@ -1774,7 +1774,10 @@ class SimTimePlaybackService:
                 "servo_targets_deg": dict(segment.servo_targets),
                 "wheel_targets_rad_s": {
                     name: float(
-                        segment.wheel_base_velocity.get(
+                        (
+                            segment.wheel_applied_target_rad_s
+                            or segment.wheel_base_velocity
+                        ).get(
                             name,
                             dict(getattr(adapter, "wheel_speeds", {}) or {}).get(
                                 name, 0.0
@@ -1872,7 +1875,10 @@ class SimTimePlaybackService:
                             "batch_id": f"playback-resume-{self.plan_id}-{segment.segment_index}",
                             "source": "playback",
                             "servo_targets_deg": {},
-                            "wheel_targets_rad_s": dict(segment.wheel_base_velocity),
+                            "wheel_targets_rad_s": dict(
+                                segment.wheel_applied_target_rad_s
+                                or segment.wheel_base_velocity
+                            ),
                         },
                         dispatch_kind="wheel_channel_resume",
                         segment=segment,
