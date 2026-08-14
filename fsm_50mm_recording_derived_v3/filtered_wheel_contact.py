@@ -21,9 +21,16 @@ from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 
+from .physx_contact_separation import (
+    decode_contact_pair_separations,
+    separation_evidence_summary,
+    unknown_contact_pair_rows,
+)
+
 
 ROBOT_PRIM_PATH = "/World/WLRRobot"
 GROUND_PRIM_PATH = "/World/defaultGroundPlane"
+GROUND_CONTACT_PRIM_PATH = "/World/defaultGroundPlane/GroundPlane/CollisionPlane"
 OBSTACLE_PRIM_PATH = "/World/Obstacle"
 
 # These are rigid-body prim names, not the ankle joint names.  They are also
@@ -37,7 +44,7 @@ LEG_TO_WHEEL_BODY: dict[str, str] = {
 }
 
 FILTERED_SURFACES: tuple[tuple[str, str], ...] = (
-    ("ground", GROUND_PRIM_PATH),
+    ("ground", GROUND_CONTACT_PRIM_PATH),
     ("obstacle", OBSTACLE_PRIM_PATH),
 )
 
@@ -193,6 +200,7 @@ class FilteredWheelContactSensorBank:
         specs: Sequence[WheelContactSensorSpec],
         *,
         force_threshold_n: float,
+        max_contact_data_count_per_prim: int = 16,
     ) -> None:
         self.specs = tuple(specs)
         self.sensors = {spec.leg: sensors[spec.leg] for spec in self.specs}
@@ -201,8 +209,12 @@ class FilteredWheelContactSensorBank:
         self.cfg = SimpleNamespace(
             force_threshold=self.force_threshold_n,
             filter_prim_paths_expr=[path for _name, path in FILTERED_SURFACES],
+            max_contact_data_count_per_prim=int(
+                max_contact_data_count_per_prim
+            ),
         )
         self._cached_data: FilteredWheelContactBankData | None = None
+        self._cached_separation_rows: list[dict[str, Any]] = []
 
     @property
     def body_names(self) -> list[str]:
@@ -218,11 +230,113 @@ class FilteredWheelContactSensorBank:
         for sensor in self.sensors.values():
             sensor.update(float(dt), force_recompute=bool(force_recompute))
         self._cached_data = self._collect_data()
+        self._cached_separation_rows = self._collect_separation_rows(float(dt))
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         for sensor in self.sensors.values():
             sensor.reset(env_ids)
         self._cached_data = None
+        self._cached_separation_rows = []
+
+    def _collect_separation_rows(self, dt: float) -> list[dict[str, Any]]:
+        """Capture signed PhysX separations without changing simulation state."""
+
+        env_count = int(self.data.force_matrix_w.shape[0])
+        rows: list[dict[str, Any]] = []
+        for spec in self.specs:
+            sensor = self.sensors[spec.leg]
+            sensor_cfg = getattr(sensor, "cfg", None)
+            configured_filters = list(
+                getattr(sensor_cfg, "filter_prim_paths_expr", []) or []
+            )
+            view = getattr(sensor, "contact_physx_view", None)
+            view_capacity: int | None = None
+            try:
+                if view is None or not hasattr(view, "get_contact_data"):
+                    raise RuntimeError("ContactSensor.contact_physx_view unavailable")
+                raw_view_capacity = getattr(view, "max_contact_data_count", None)
+                try:
+                    view_capacity = int(raw_view_capacity)
+                except (TypeError, ValueError):
+                    view_capacity = None
+                payload = view.get_contact_data(float(dt))
+                if not isinstance(payload, (tuple, list)) or len(payload) != 6:
+                    raise RuntimeError(
+                        "RigidContactView.get_contact_data did not return six buffers"
+                    )
+                rows.extend(
+                    decode_contact_pair_separations(
+                        dt_s=float(dt),
+                        distances=payload[3],
+                        counts=payload[4],
+                        starts=payload[5],
+                        env_count=env_count,
+                        body_class="wheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=FILTERED_SURFACES,
+                        configured_filter_paths=configured_filters,
+                        expected_sensor_paths=[spec.prim_path],
+                        view_sensor_paths=getattr(view, "sensor_paths", None),
+                        view_filter_paths=getattr(view, "filter_paths", None),
+                        view_filter_count=getattr(view, "filter_count", None),
+                        view_max_contact_data_count=raw_view_capacity,
+                        leg=spec.leg,
+                    )
+                )
+            except Exception as exc:
+                rows.extend(
+                    unknown_contact_pair_rows(
+                        env_count=env_count,
+                        body_class="wheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=FILTERED_SURFACES,
+                        leg=spec.leg,
+                        capacity=view_capacity,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                )
+        return rows
+
+    def separation_observations(self, *, env_id: int = 0) -> list[dict[str, Any]]:
+        """Return all eight signed-separation pairs for one environment."""
+
+        env_count = int(self.data.force_matrix_w.shape[0])
+        if not 0 <= int(env_id) < env_count:
+            raise IndexError(f"env_id={env_id} outside [0, {env_count})")
+        if not self._cached_separation_rows:
+            rows: list[dict[str, Any]] = []
+            for spec in self.specs:
+                view = getattr(self.sensors[spec.leg], "contact_physx_view", None)
+                try:
+                    capacity = int(getattr(view, "max_contact_data_count", None))
+                except (TypeError, ValueError):
+                    capacity = None
+                rows.extend(
+                    unknown_contact_pair_rows(
+                        env_count=env_count,
+                        body_class="wheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=FILTERED_SURFACES,
+                        leg=spec.leg,
+                        capacity=capacity,
+                        error="signed-separation view has not been sampled",
+                    )
+                )
+        else:
+            rows = self._cached_separation_rows
+        return [dict(row) for row in rows if int(row["env_id"]) == int(env_id)]
+
+    def separation_evidence(self, *, env_id: int = 0) -> dict[str, Any]:
+        rows = self.separation_observations(env_id=env_id)
+        expected = [
+            f"env={int(env_id)}|body={spec.prim_path}|other={other_path}"
+            for spec in self.specs
+            for _surface, other_path in FILTERED_SURFACES
+        ]
+        return separation_evidence_summary(rows, expected_pair_ids=expected)
 
     def _collect_data(self) -> FilteredWheelContactBankData:
         snapshots = [self.sensors[spec.leg].data for spec in self.specs]
@@ -389,6 +503,7 @@ def create_filtered_wheel_contact_sensor_bank(
         sensors,
         specs,
         force_threshold_n=force_threshold_n,
+        max_contact_data_count_per_prim=max_contact_data_count_per_prim,
     )
 
 
@@ -445,6 +560,7 @@ def filtered_contact_rows(
 
 __all__ = [
     "FILTERED_SURFACES",
+    "GROUND_CONTACT_PRIM_PATH",
     "GROUND_PRIM_PATH",
     "LEG_TO_WHEEL_BODY",
     "OBSTACLE_PRIM_PATH",

@@ -1,0 +1,49 @@
+{
+  "actual_viewport_video": true,
+  "artifact_valid": false,
+  "basis": [
+    "actual active Isaac GUI viewport frames",
+    "fsm50_telemetry.csv",
+    "state_timeline.csv",
+    "result.json strict result fields"
+  ],
+  "contact_mode": "formal",
+  "kind": "actual_active_gui_viewport_video_with_telemetry_visualization",
+  "not_camera_video": false,
+  "schema_version": "fsm50.recording_visual_evidence.v2",
+  "telemetry_visualization": {
+    "classification": "SCHEDULER_FAILURE",
+    "fsm50_row_count": 8248,
+    "html": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\fsm50_equivalent_visualization.html",
+    "kind": "fsm50_equivalent_telemetry_visualization",
+    "ok": true,
+    "png": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\fsm50_equivalent_visualization.png",
+    "state_timeline_row_count": 1254,
+    "strict_full_success": false
+  },
+  "video": {
+    "actual_viewport_video": true,
+    "artifact_valid": true,
+    "capture_requested": true,
+    "contact_mode": "formal",
+    "created_utc": "2026-08-13T08:30:02.110700+00:00",
+    "diagnostic_only": false,
+    "error": "",
+    "fps": 15.0,
+    "frame_count": 1031,
+    "frame_directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_frames",
+    "manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_video_manifest.json",
+    "manifest_sha256": "df1d22b189d7cc5d0646d9b2bcee119159dbf5f890abcf874f12753b790b0260",
+    "not_camera_video": false,
+    "render_product_path": "/Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0",
+    "schema_version": "fsm50.recording_viewport_video.v1",
+    "source": "actual_active_isaac_gui_viewport_render_product",
+    "valid": true,
+    "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\fsm50_viewport.mp4",
+    "video_sha256": "45c71f22d63c33d5763dd3e3b3f64e480ef2fb9853f115c494deea23ddc4e1d6"
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\fsm50_viewport.mp4",
+  "video_sha256": "45c71f22d63c33d5763dd3e3b3f64e480ef2fb9853f115c494deea23ddc4e1d6",
+  "viewport_video_manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5\\20260813_025223_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_video_manifest.json",
+  "viewport_video_manifest_sha256": "df1d22b189d7cc5d0646d9b2bcee119159dbf5f890abcf874f12753b790b0260"
+}

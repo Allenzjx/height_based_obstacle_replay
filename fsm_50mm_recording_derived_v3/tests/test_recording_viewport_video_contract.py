@@ -3,12 +3,10 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
-from unittest.mock import patch
+from types import SimpleNamespace
 
 from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _ACTUAL_VIEWPORT_VIDEO_SOURCE,
@@ -21,6 +19,7 @@ from fsm_50mm_recording_derived_v3.run_fsm50 import (
     _write_checksums,
     build_parser,
 )
+from fsm_50mm_recording_derived_v3.viewport_buffer_video import CAPTURE_BACKEND
 
 
 _MINIMAL_MP4 = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
@@ -33,14 +32,63 @@ def _write_test_mp4(path: Path) -> str:
 
 
 def _valid_raw_video(run_dir: Path) -> dict[str, object]:
-    video_path = (run_dir / "fsm50_viewport.mp4").resolve()
+    run_dir.mkdir(parents=True, exist_ok=True)
+    video_path = (run_dir / "actual_viewport_video.mp4").resolve()
     video_sha256 = _write_test_mp4(video_path)
+    ledger_path = (run_dir / "viewport_frame_ledger.jsonl").resolve()
+    render_product_path = "/Render/Product/ActiveViewport"
+    ledger_rows = [
+        {
+            "render_sequence": index,
+            "encoded_frame_index": index,
+            "sim_step": 8 * (index + 1),
+            "sim_time_s": 8 * (index + 1) / 120.0,
+            "capture_backend": CAPTURE_BACKEND,
+            "render_product_path": render_product_path,
+        }
+        for index in range(2)
+    ]
+    ledger_path.write_text(
+        "".join(json.dumps(row, sort_keys=True) + "\n" for row in ledger_rows),
+        encoding="utf-8",
+    )
+    first_frame_path = (run_dir / "viewport_first_frame.png").resolve()
+    last_frame_path = (run_dir / "viewport_last_frame.png").resolve()
+    first_frame_path.write_bytes(b"first-png")
+    last_frame_path.write_bytes(b"last-png")
     return {
         "valid": True,
         "not_camera_video": False,
         "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
-        "render_product_path": "/Render/Product/ActiveViewport",
+        "capture_backend": CAPTURE_BACKEND,
+        "render_product_path": render_product_path,
+        "render_product_unchanged": True,
+        "active_render_product_identity_proven": True,
+        "capture_graph_created": False,
+        "render_observer_only": True,
+        "extra_app_update_count": 0,
+        "extra_render_count": 0,
+        "maximum_pending_captures": 1,
         "frame_count": 2,
+        "frame_ledger_complete": True,
+        "ledger_path": str(ledger_path),
+        "ledger_sha256": hashlib.sha256(ledger_path.read_bytes()).hexdigest(),
+        "full_decode": {
+            "valid": True,
+            "decoded_frame_count": 2,
+            "decoded_width": 1280,
+            "decoded_height": 720,
+            "decoded_channels": 4,
+        },
+        "full_decode_all_frames": True,
+        "first_frame_path": str(first_frame_path),
+        "first_frame_sha256": hashlib.sha256(
+            first_frame_path.read_bytes()
+        ).hexdigest(),
+        "last_frame_path": str(last_frame_path),
+        "last_frame_sha256": hashlib.sha256(
+            last_frame_path.read_bytes()
+        ).hexdigest(),
         "fps": 15.0,
         "video_path": str(video_path),
         "video_sha256": video_sha256,
@@ -64,7 +112,7 @@ class _DisabledRecorder:
             "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
             "render_product_path": "",
             "frame_count": 0,
-            "video_path": str(self.run_dir / "fsm50_viewport.mp4"),
+            "video_path": str(self.run_dir / "actual_viewport_video.mp4"),
             "video_sha256": "",
             "error": "viewport capture disabled",
         }
@@ -75,60 +123,32 @@ class _FakeActiveViewportRecorder:
         self.run_dir = run_dir
         self.viewport = viewport
         self.original_path = str(viewport.render_product_path)
+        self.render_product_path = self.original_path
+        self.error = ""
         self.finalizes = 0
 
-    def start(self) -> None:
-        self.viewport.render_product_path = (
-            self.original_path + "_MovieRecord_Script"
-        )
+    def start(self) -> bool:
+        return True
 
     def finalize(self) -> dict[str, object]:
         self.finalizes += 1
         return _valid_raw_video(self.run_dir)
 
 
-def _fake_viewport_modules(
-    viewport: SimpleNamespace,
-    removals: list[tuple[object, str, str]],
-) -> dict[str, ModuleType]:
-    omni = ModuleType("omni")
-    omni.__path__ = []  # type: ignore[attr-defined]
-    omni_kit = ModuleType("omni.kit")
-    omni_kit.__path__ = []  # type: ignore[attr-defined]
-    viewport_package = ModuleType("omni.kit.viewport")
-    viewport_package.__path__ = []  # type: ignore[attr-defined]
-    utility = ModuleType("omni.kit.viewport.utility")
-    utility.get_active_viewport = lambda: viewport  # type: ignore[attr-defined]
+class _FakeAdapter:
+    def __init__(self) -> None:
+        self.observer = None
+        self.attach_count = 0
+        self.detach_count = 0
 
-    isaacsim = ModuleType("isaacsim")
-    isaacsim.__path__ = []  # type: ignore[attr-defined]
-    isaacsim_kit = ModuleType("isaacsim.kit")
-    isaacsim_kit.__path__ = []  # type: ignore[attr-defined]
-    scripts = ModuleType("isaacsim.kit.scripts")
-    scripts.__path__ = []  # type: ignore[attr-defined]
-    movie_capture = ModuleType("isaacsim.kit.scripts.movie_capture")
-    movie_capture.rpPrimPathPostFix = "_MovieRecord_Script"  # type: ignore[attr-defined]
-    movie_capture.ogNodePath = "/PostProcessGraph"  # type: ignore[attr-defined]
-    stage = object()
-    context = SimpleNamespace(get_stage=lambda: stage)
-    movie_capture.omni = SimpleNamespace(  # type: ignore[attr-defined]
-        usd=SimpleNamespace(get_context=lambda: context)
-    )
-    movie_capture.remove_existing_graph = (  # type: ignore[attr-defined]
-        lambda actual_stage, render_product, graph: removals.append(
-            (actual_stage, render_product, graph)
-        )
-    )
-    return {
-        "omni": omni,
-        "omni.kit": omni_kit,
-        "omni.kit.viewport": viewport_package,
-        "omni.kit.viewport.utility": utility,
-        "isaacsim": isaacsim,
-        "isaacsim.kit": isaacsim_kit,
-        "isaacsim.kit.scripts": scripts,
-        "isaacsim.kit.scripts.movie_capture": movie_capture,
-    }
+    def attach_artifact_render_observer(self, observer) -> None:
+        self.attach_count += 1
+        self.observer = observer
+
+    def detach_artifact_render_observer(self, observer) -> None:
+        self.detach_count += 1
+        if self.observer is observer:
+            self.observer = None
 
 
 class RecordingViewportVideoContractTests(unittest.TestCase):
@@ -182,7 +202,8 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
             checksum_text = (run_dir / "checksums.sha256").read_text(
                 encoding="utf-8"
             )
-            self.assertIn("fsm50_viewport.mp4", checksum_text)
+            self.assertIn("actual_viewport_video.mp4", checksum_text)
+            self.assertIn("viewport_frame_ledger.jsonl", checksum_text)
             self.assertIn("viewport_video_manifest.json", checksum_text)
 
     def test_fake_or_incoherent_video_evidence_is_fail_closed(self) -> None:
@@ -194,6 +215,12 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
             "outside_run",
             "bad_sha256",
             "invalid_mp4",
+            "wrong_backend",
+            "render_product_changed",
+            "capture_graph",
+            "extra_app_update",
+            "ledger_tamper",
+            "decode_incomplete",
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -221,6 +248,20 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
                         raw["video_sha256"] = hashlib.sha256(
                             video_path.read_bytes()
                         ).hexdigest()
+                    elif case == "wrong_backend":
+                        raw["capture_backend"] = "png_movie_capture"
+                    elif case == "render_product_changed":
+                        raw["render_product_unchanged"] = False
+                    elif case == "capture_graph":
+                        raw["capture_graph_created"] = True
+                    elif case == "extra_app_update":
+                        raw["extra_app_update_count"] = 1
+                    elif case == "ledger_tamper":
+                        Path(str(raw["ledger_path"])).write_text(
+                            "{}\n", encoding="utf-8"
+                        )
+                    elif case == "decode_incomplete":
+                        raw["full_decode"]["decoded_frame_count"] = 1
 
                     video = _finalize_recording_viewport_video_contract(
                         run_dir,
@@ -279,7 +320,7 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
                 result["lifecycle"],
             )
 
-    def test_each_version_restores_and_removes_movie_capture_graph(self) -> None:
+    def test_each_version_preserves_active_identity_and_creates_no_graph(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             args = build_parser().parse_args(
@@ -288,44 +329,50 @@ class RecordingViewportVideoContractTests(unittest.TestCase):
             viewport = SimpleNamespace(
                 render_product_path="/Render/Product/ActiveViewport"
             )
-            removals: list[tuple[object, str, str]] = []
-            modules = _fake_viewport_modules(viewport, removals)
             videos: list[dict[str, object]] = []
             recorders: list[_FakeActiveViewportRecorder] = []
 
-            with patch.dict(sys.modules, modules):
-                for version in ("v001", "v002"):
-                    run_dir = root / version
-                    recorder = _FakeActiveViewportRecorder(run_dir, viewport)
-                    recorders.append(recorder)
-                    capture = _RecordingReplayViewportCapture(
-                        run_dir,
-                        args,
-                        contact_mode="formal",
-                        recorder=recorder,
-                    )
-                    capture.start()
-                    self.assertTrue(
-                        str(viewport.render_product_path).endswith(
-                            "_MovieRecord_Script"
-                        )
-                    )
-                    videos.append(capture.finalize())
-                    self.assertEqual(
-                        "/Render/Product/ActiveViewport",
-                        viewport.render_product_path,
-                    )
+            adapters: list[_FakeAdapter] = []
+            for version in ("v001", "v002"):
+                run_dir = root / version
+                recorder = _FakeActiveViewportRecorder(run_dir, viewport)
+                adapter = _FakeAdapter()
+                adapters.append(adapter)
+                recorders.append(recorder)
+                capture = _RecordingReplayViewportCapture(
+                    run_dir,
+                    args,
+                    contact_mode="formal",
+                    adapter=adapter,
+                    recorder=recorder,
+                )
+                capture.start()
+                self.assertIs(adapter.observer, recorder)
+                self.assertEqual(
+                    "/Render/Product/ActiveViewport",
+                    viewport.render_product_path,
+                )
+                videos.append(capture.finalize())
+                self.assertIsNone(adapter.observer)
+                self.assertEqual(
+                    "/Render/Product/ActiveViewport",
+                    viewport.render_product_path,
+                )
 
-            self.assertEqual(2, len(removals))
             self.assertTrue(all(video["actual_viewport_video"] for video in videos))
+            self.assertTrue(
+                all(video["capture_graph_created"] is False for video in videos)
+            )
             self.assertNotEqual(videos[0]["video_path"], videos[1]["video_path"])
             self.assertEqual([1, 1], [recorder.finalizes for recorder in recorders])
+            self.assertEqual([1, 1], [adapter.attach_count for adapter in adapters])
+            self.assertEqual([1, 1], [adapter.detach_count for adapter in adapters])
 
     def test_visual_manifest_never_labels_telemetry_as_camera_video(self) -> None:
         manifest = _recording_visual_manifest(
             video={
                 "actual_viewport_video": True,
-                "video_path": "C:/run/fsm50_viewport.mp4",
+                "video_path": "C:/run/actual_viewport_video.mp4",
                 "video_sha256": "a" * 64,
                 "manifest_path": "C:/run/viewport_video_manifest.json",
                 "manifest_sha256": "b" * 64,

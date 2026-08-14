@@ -1,0 +1,7 @@
+{
+  "error": "RuntimeError: MOTION_START_READY failed before production start boundary: []",
+  "gate": "MOTION_START_READY_PRE_FIRST_DISPATCH",
+  "ready": false,
+  "schema_version": "fsm50.motion_start_readiness_window.v1",
+  "status": "NOT_REACHED"
+}

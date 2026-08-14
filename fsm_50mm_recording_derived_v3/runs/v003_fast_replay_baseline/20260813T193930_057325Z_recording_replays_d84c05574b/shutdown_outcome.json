@@ -1,0 +1,22 @@
+{
+  "child_pid": 1444,
+  "child_returncode": 1,
+  "close_grace_s": 60.0,
+  "close_wait_s": 60.046999999991385,
+  "created_utc": "2026-08-13T19:50:31.733751+00:00",
+  "elapsed_s": 662.4219999999914,
+  "handshake_state": "PRECLOSE_COMPLETE",
+  "parent_pid": 53540,
+  "preclose_observed": true,
+  "schema_version": "fsm50.shutdown_outcome.v1",
+  "status": "SIMULATION_CLOSE_TIMEOUT",
+  "termination": {
+    "child_returncode": 1,
+    "method": "taskkill_exact_owned_pid_tree",
+    "pid": 1444,
+    "requested": true,
+    "returncode": 0,
+    "stderr": "",
+    "stdout": "SUCCESS: The process with PID 34168 (child process of PID 43056) has been terminated.\nSUCCESS: The process with PID 43056 (child process of PID 1444) has been terminated.\nSUCCESS: The process with PID 1444 (child process of PID 53540) has been terminated."
+  }
+}

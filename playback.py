@@ -30,6 +30,7 @@ from motion_speed import load_motion_reference
 
 MOTION_REFERENCE = load_motion_reference()
 SERVO_REFERENCE_VELOCITY_DEG_S = MOTION_REFERENCE.servo_reference_velocity_deg_s
+SERVO_COMPLETION_VELOCITY_DEG_S = 0.5
 
 
 @dataclass
@@ -799,6 +800,7 @@ class SimTimePlaybackService:
         self.segment_last_servo_worsening_elapsed_s = 0.0
         self.segment_contact_within_tolerance_since_s: float | None = None
         self.segment_contact_error_history: list[tuple[float, float]] = []
+        self.segment_contact_stable_error_history: list[tuple[float, float]] = []
         self.last_motion_batch_ack: dict[str, Any] = {}
         self.last_motion_batch_attempt_step: int | None = None
         self.motion_start_readiness_token = ""
@@ -807,6 +809,11 @@ class SimTimePlaybackService:
         # short command look like a multi-second UI/playback hang.
         self.servo_stall_window_s = 0.75
         self.servo_improvement_epsilon_deg = 0.05
+        # A hard liveness bound is derived only from the two existing windows;
+        # it introduces no new physical or convergence threshold.
+        self.servo_tracking_hard_liveness_s = (
+            self.actuator_divergence_window_s + self.servo_stall_window_s
+        )
 
     def start_plan(
         self,
@@ -878,6 +885,7 @@ class SimTimePlaybackService:
         self.segment_last_servo_worsening_elapsed_s = 0.0
         self.segment_contact_within_tolerance_since_s = None
         self.segment_contact_error_history = []
+        self.segment_contact_stable_error_history = []
         self.last_motion_batch_ack = {}
         self.last_motion_batch_attempt_step = None
         self.motion_start_readiness_token = ""
@@ -1098,7 +1106,7 @@ class SimTimePlaybackService:
 
             segment_elapsed = max(0.0, elapsed - self.segment_start_elapsed_s)
             servo_planned_done = segment_elapsed + 1.0e-9 >= float(segment.servo_duration_s)
-            servo_done, errors = (
+            reference_position_done, errors = (
                 self._servo_targets_complete(
                     adapter,
                     segment.servo_targets,
@@ -1108,7 +1116,8 @@ class SimTimePlaybackService:
                 else (False, {})
             )
             if not segment.servo_targets:
-                servo_done = True
+                reference_position_done = True
+            servo_done = reference_position_done
             self.current_servo_errors = errors
             max_error_now = max([abs(float(value)) for value in errors.values()] or [0.0])
             if any(not math.isfinite(float(value)) for value in errors.values()):
@@ -1131,7 +1140,7 @@ class SimTimePlaybackService:
                 self.segment_last_servo_worsening_elapsed_s = float(elapsed)
             self.segment_last_servo_error_deg = max_error_now
             contact_candidate = (
-                servo_done
+                reference_position_done
                 and max_error_now > self.servo_position_tolerance_deg
                 and max_error_now <= float(segment.servo_tolerance_deg)
                 and bool(segment.recorded_servo_residual_deg)
@@ -1143,22 +1152,62 @@ class SimTimePlaybackService:
                 self.segment_contact_within_tolerance_since_s = None
             if servo_planned_done and segment.recorded_servo_residual_deg:
                 self.segment_contact_error_history.append((float(elapsed), max_error_now))
-                window_start = float(elapsed) - max(
-                    self.contact_residual_stable_s,
-                    self.actuator_divergence_window_s,
+                self.segment_contact_stable_error_history.append(
+                    (float(elapsed), max_error_now)
                 )
-                while len(self.segment_contact_error_history) > 1 and self.segment_contact_error_history[1][0] <= window_start:
+                divergence_window_start = (
+                    float(elapsed) - self.actuator_divergence_window_s
+                )
+                while (
+                    len(self.segment_contact_error_history) > 1
+                    and self.segment_contact_error_history[1][0]
+                    <= divergence_window_start
+                ):
                     self.segment_contact_error_history.pop(0)
+                stable_window_start = float(elapsed) - self.contact_residual_stable_s
+                while (
+                    len(self.segment_contact_stable_error_history) > 1
+                    and self.segment_contact_stable_error_history[1][0]
+                    <= stable_window_start
+                ):
+                    self.segment_contact_stable_error_history.pop(0)
             contact_extension = max(0.0, segment_elapsed - float(segment.servo_duration_s))
-            contact_window_errors = [value for _at, value in self.segment_contact_error_history]
+            contact_window_errors = [
+                value for _at, value in self.segment_contact_stable_error_history
+            ]
             contact_window_duration_s = (
-                self.segment_contact_error_history[-1][0] - self.segment_contact_error_history[0][0]
-                if len(self.segment_contact_error_history) >= 2
+                self.segment_contact_stable_error_history[-1][0]
+                - self.segment_contact_stable_error_history[0][0]
+                if len(self.segment_contact_stable_error_history) >= 2
                 else 0.0
             )
             contact_window_ready = bool(
-                len(self.segment_contact_error_history) >= 2
+                len(self.segment_contact_stable_error_history) >= 2
                 and contact_window_duration_s >= self.contact_residual_stable_s * 0.90
+            )
+            divergence_window_errors = [
+                value for _at, value in self.segment_contact_error_history
+            ]
+            divergence_window_duration_s = (
+                self.segment_contact_error_history[-1][0]
+                - self.segment_contact_error_history[0][0]
+                if len(self.segment_contact_error_history) >= 2
+                else 0.0
+            )
+            divergence_window_min = min(
+                divergence_window_errors or [max_error_now]
+            )
+            divergence_window_max = max(
+                divergence_window_errors or [max_error_now]
+            )
+            divergence_window_slope = (
+                (
+                    divergence_window_errors[-1]
+                    - divergence_window_errors[0]
+                )
+                / divergence_window_duration_s
+                if divergence_window_duration_s > 1.0e-9
+                else 0.0
             )
             # Contact-loaded articulated joints can alternate by a fraction of
             # a degree at 120 Hz even though their position residual is bounded.
@@ -1183,12 +1232,21 @@ class SimTimePlaybackService:
                 and max(contact_window_errors or [float("inf")]) <= contact_window_cap
                 and contact_window_errors[-1] <= contact_window_errors[0] + 0.25
             )
+            completed_velocities = self._servo_target_velocities_deg_s(
+                adapter, segment.servo_targets
+            )
+            velocities_near_zero = self._servo_velocities_near_zero(
+                completed_velocities, segment.servo_targets
+            )
+            tracking_evidence = self._servo_tracking_completion_evidence(
+                adapter, segment.servo_targets
+            )
             if contact_candidate:
                 # A recorded, contact-loaded residual that is finite and
                 # currently inside its bounded effective tolerance completes
-                # after one finite grace interval.  Recent jitter is retained
-                # as diagnostic evidence; it is not a reason to abort while
-                # the current residual remains within the <=3 degree cap.
+                # after one finite grace interval.  Recent position and
+                # velocity observations remain diagnostic evidence; they do
+                # not replace the recording-derived position completion rule.
                 servo_done = bool(
                     contact_extension >= self.contact_residual_grace_s
                     and max_error_now <= min(
@@ -1259,15 +1317,17 @@ class SimTimePlaybackService:
                             f"recent_max={contact_window_max:.3f} slope={contact_window_slope:.3f}deg/s"
                         )
                         self.progress.command_phase = "contact_residual_grace"
+                    if reference_position_done:
+                        # The recording-derived endpoint is already complete;
+                        # only its finite contact grace remains.  Servo
+                        # liveness diagnoses a missing position reference, not
+                        # contact-solver velocity residual at a reached one.
                         return
                     if max_error + self.servo_improvement_epsilon_deg < self.segment_best_servo_error_deg:
                         self.segment_best_servo_error_deg = max_error
                         self.segment_last_servo_improvement_elapsed_s = float(elapsed)
                     stalled_for = max(0.0, float(elapsed) - self.segment_last_servo_improvement_elapsed_s)
-                    velocities = self._servo_target_velocities_deg_s(adapter, segment.servo_targets)
-                    velocities_near_zero = bool(velocities) and all(
-                        abs(float(value)) <= 0.5 for value in velocities.values()
-                    )
+                    velocities = completed_velocities
                     worst_joint = max(errors, key=lambda name: abs(float(errors[name]))) if errors else "unknown"
                     worst_joint_velocity = velocities.get(worst_joint)
                     worst_joint_error = errors.get(worst_joint)
@@ -1276,7 +1336,8 @@ class SimTimePlaybackService:
                     )
                     divergence_not_recovering = bool(
                         worst_joint_velocity is None
-                        or abs(float(worst_joint_velocity)) <= 0.5
+                        or abs(float(worst_joint_velocity))
+                        <= SERVO_COMPLETION_VELOCITY_DEG_S
                         or (
                             worst_joint_error is not None
                             and float(worst_joint_error) * float(worst_joint_velocity) > 0.0
@@ -1284,10 +1345,13 @@ class SimTimePlaybackService:
                     )
                     worsening_outside_hard_tolerance = bool(
                         max_error > float(self.contact_residual_hard_cap_deg)
-                        and contact_window_duration_s >= self.actuator_divergence_window_s * 0.90
-                        and contact_window_errors[-1] > contact_window_errors[0] + 0.25
-                        and contact_window_errors[-1] >= contact_window_max - 0.25
-                        and contact_window_slope > 1.0
+                        and divergence_window_duration_s
+                        >= self.actuator_divergence_window_s * 0.90
+                        and divergence_window_errors[-1]
+                        > divergence_window_errors[0] + 0.25
+                        and divergence_window_errors[-1]
+                        >= divergence_window_max - 0.25
+                        and divergence_window_slope > 1.0
                         and divergence_low_response
                         and divergence_not_recovering
                     )
@@ -1297,14 +1361,69 @@ class SimTimePlaybackService:
                             f"step={segment.source_step} segment={segment.segment_index} joint={worst_joint} "
                             f"error_deg={errors.get(worst_joint)} max_error_deg={max_error:.6f} "
                             f"tolerance_deg={segment.servo_tolerance_deg:.6f} "
-                            f"recent_min_deg={contact_window_min:.6f} recent_max_deg={contact_window_max:.6f} "
-                            f"recent_slope_deg_s={contact_window_slope:.6f} "
+                            f"recent_min_deg={divergence_window_min:.6f} recent_max_deg={divergence_window_max:.6f} "
+                            f"recent_slope_deg_s={divergence_window_slope:.6f} "
                             f"joint_velocity_deg_s={worst_joint_velocity}"
                         )
                         self._finish(
                             adapter,
                             success=False,
                             reason="actuator_unstable",
+                            current_sim_time_s=sim_time,
+                            current_wall_time_s=wall_time,
+                        )
+                        return
+                    hard_liveness_expired = bool(
+                        extension
+                        >= float(self.servo_tracking_hard_liveness_s)
+                    )
+                    if hard_liveness_expired and not velocities_near_zero:
+                        fast_joint = max(
+                            (
+                                name
+                                for name in segment.servo_targets
+                                if name in velocities
+                            ),
+                            key=lambda name: abs(float(velocities[name])),
+                            default=worst_joint,
+                        )
+                        self.last_error = (
+                            "actuator_unstable: nonconvergent servo remained in motion "
+                            "through the derived hard liveness bound; "
+                            f"step={segment.source_step} segment={segment.segment_index} "
+                            f"joint={fast_joint} error_deg={errors.get(fast_joint)} "
+                            f"joint_velocity_deg_s={velocities.get(fast_joint)} "
+                            f"extension_s={extension:.6f} "
+                            f"hard_liveness_bound_s={self.servo_tracking_hard_liveness_s:.6f} "
+                            f"divergence_window_s={self.actuator_divergence_window_s:.6f} "
+                            f"stall_window_s={self.servo_stall_window_s:.6f} "
+                            f"tracking_evidence={tracking_evidence}"
+                        )
+                        self._finish(
+                            adapter,
+                            success=False,
+                            reason="actuator_unstable",
+                            current_sim_time_s=sim_time,
+                            current_wall_time_s=wall_time,
+                        )
+                        return
+                    if hard_liveness_expired and velocities_near_zero:
+                        self.last_error = (
+                            "actuator_limit: near-zero servo remained saturated or "
+                            "unconverged through the derived hard liveness bound; "
+                            f"step={segment.source_step} segment={segment.segment_index} "
+                            f"joint={worst_joint} error_deg={errors.get(worst_joint)} "
+                            f"target_joint_velocity_deg_s={velocities.get(worst_joint)} "
+                            f"extension_s={extension:.6f} "
+                            f"hard_liveness_bound_s={self.servo_tracking_hard_liveness_s:.6f} "
+                            f"divergence_window_s={self.actuator_divergence_window_s:.6f} "
+                            f"stall_window_s={self.servo_stall_window_s:.6f} "
+                            f"tracking_evidence={tracking_evidence}"
+                        )
+                        self._finish(
+                            adapter,
+                            success=False,
+                            reason="actuator_limit",
                             current_sim_time_s=sim_time,
                             current_wall_time_s=wall_time,
                         )
@@ -1324,8 +1443,8 @@ class SimTimePlaybackService:
                             f"requested_command_deg={command_target} expected_actual_deg={actual_target} "
                             f"measured_actual_deg={actual_deg} error_deg={errors.get(worst_joint)} "
                             f"max_error_deg={max_error:.6f} tolerance_deg={segment.servo_tolerance_deg:.6f} "
-                            f"recent_min_deg={contact_window_min:.6f} recent_max_deg={contact_window_max:.6f} "
-                            f"recent_slope_deg_s={contact_window_slope:.6f} "
+                            f"recent_min_deg={divergence_window_min:.6f} recent_max_deg={divergence_window_max:.6f} "
+                            f"recent_slope_deg_s={divergence_window_slope:.6f} "
                             f"target_joint_velocity_deg_s={velocities.get(worst_joint)} "
                             f"legacy_missing_endpoint={segment.legacy_missing_endpoint}"
                         )
@@ -1337,13 +1456,16 @@ class SimTimePlaybackService:
                             current_wall_time_s=wall_time,
                         )
                         return
-                    self.last_info = f"servo_completion_extension={extension:.4f}s segment={segment.segment_index}"
-                    self.progress.command_phase = "servo_completion_extension"
+                    if not within_recorded_contact_tolerance:
+                        self.last_info = (
+                            f"servo_completion_extension={extension:.4f}s "
+                            f"segment={segment.segment_index}"
+                        )
+                        self.progress.command_phase = "servo_completion_extension"
                 return
 
             max_completed_error = max([abs(float(value)) for value in errors.values()] or [0.0])
             if max_completed_error > self.servo_position_tolerance_deg:
-                completed_velocities = self._servo_target_velocities_deg_s(adapter, segment.servo_targets)
                 warning = {
                     "warning": "contact_residual_accepted",
                     "step_index": int(segment.source_step),
@@ -1352,7 +1474,10 @@ class SimTimePlaybackService:
                     "effective_tolerance_deg": float(segment.servo_tolerance_deg),
                     "recorded_residual_deg": dict(segment.recorded_servo_residual_deg),
                     "measured_errors_deg": dict(errors),
-                    "stability_basis": "bounded_recorded_contact_tolerance",
+                    "stability_basis": (
+                        "finite_grace_bounded_recorded_contact_tolerance"
+                    ),
+                    "velocity_evidence_role": "diagnostic_only",
                     "stability_window_s": float(self.contact_residual_stable_s),
                     "stability_window_cap_deg": float(contact_window_cap),
                     "recent_min_deg": float(contact_window_min),
@@ -1365,7 +1490,15 @@ class SimTimePlaybackService:
                     f"contact_residual_accepted step={segment.source_step} segment={segment.segment_index} "
                     f"error={max_completed_error:.3f}deg tolerance={segment.servo_tolerance_deg:.3f}deg"
                 )
-            self._finish_segment(adapter, segment, elapsed=elapsed, sim_time=sim_time, wall_time=wall_time, servo_errors=errors)
+            if not self._finish_segment(
+                adapter,
+                segment,
+                elapsed=elapsed,
+                sim_time=sim_time,
+                wall_time=wall_time,
+                servo_errors=errors,
+            ):
+                return
             self.segment_index += 1
             self.segment_active = False
             self.segment_wheel_stopped = False
@@ -1757,6 +1890,7 @@ class SimTimePlaybackService:
         self.segment_last_servo_worsening_elapsed_s = float(elapsed)
         self.segment_contact_within_tolerance_since_s = None
         self.segment_contact_error_history = []
+        self.segment_contact_stable_error_history = []
         self.segment_start_joint_positions = self._joint_positions_by_name(adapter)
         start = int(segment.event_start_index)
         stop = start + int(segment.event_count)
@@ -1934,7 +2068,14 @@ class SimTimePlaybackService:
         if not any_measured:
             return False, {"__joint_state_unreadable__": float("nan")}
         tolerance = self.servo_position_tolerance_deg if tolerance_deg is None else min(3.0, max(1.0, float(tolerance_deg)))
-        return bool(errors) and max(abs(value) for value in errors.values()) <= tolerance, errors
+        complete_error_set = set(errors) == set(targets)
+        finite_errors = complete_error_set and all(
+            math.isfinite(float(errors[name])) for name in targets
+        )
+        return bool(
+            finite_errors
+            and max(abs(float(errors[name])) for name in targets) <= tolerance
+        ), errors
 
     @staticmethod
     def _servo_target_velocities_deg_s(adapter: Any, targets: dict[str, float]) -> dict[str, float]:
@@ -1957,6 +2098,67 @@ class SimTimePlaybackService:
             velocities[name] = parsed
         return velocities
 
+    @staticmethod
+    def _servo_velocities_near_zero(
+        velocities: dict[str, float], targets: dict[str, float]
+    ) -> bool:
+        """Apply the scheduler's existing 0.5 deg/s near-zero rule."""
+
+        return bool(targets) and set(velocities) == set(targets) and all(
+            abs(float(value)) <= SERVO_COMPLETION_VELOCITY_DEG_S
+            for value in velocities.values()
+        )
+
+    @staticmethod
+    def _servo_tracking_completion_evidence(
+        adapter: Any, targets: dict[str, float]
+    ) -> dict[str, Any]:
+        method = getattr(adapter, "servo_tracking_completion_evidence", None)
+        if not callable(method):
+            # Lightweight/offline adapters do not own the production feedback
+            # loop. Their contact/velocity rules still apply, but there is no
+            # correction lifecycle to freeze.
+            return {"supported": False, "converged": True, "joints": {}}
+        try:
+            evidence = dict(method(targets) or {})
+        except Exception as exc:
+            return {
+                "supported": True,
+                "converged": False,
+                "joints": {},
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+        joints = dict(evidence.get("joints", {}) or {})
+        current_hold_rows = bool(targets) and set(joints) == set(targets)
+        if current_hold_rows:
+            for name in targets:
+                row = joints.get(name)
+                if not isinstance(row, dict):
+                    current_hold_rows = False
+                    break
+                try:
+                    stable_ticks = int(row.get("stable_ticks", 0))
+                except (TypeError, ValueError):
+                    stable_ticks = 0
+                if not (
+                    row.get("current_feedback_valid") is True
+                    and row.get("feedback_phase") == "HOLD"
+                    and row.get("stable_evidence_valid") is True
+                    and stable_ticks > 0
+                    and row.get("saturated") is False
+                    and row.get("converged") is True
+                ):
+                    current_hold_rows = False
+                    break
+        return {
+            **evidence,
+            "supported": True,
+            "current_hold_evidence_valid": current_hold_rows,
+            "converged": bool(
+                evidence.get("converged") is True and current_hold_rows
+            ),
+        }
+
     def _finish_segment(
         self,
         adapter: Any,
@@ -1966,9 +2168,48 @@ class SimTimePlaybackService:
         sim_time: float,
         wall_time: float,
         servo_errors: dict[str, float],
-    ) -> None:
+    ) -> bool:
+        tracking_completion_evidence: dict[str, Any] = {}
+        tracking_completion_deferred = False
         if segment.servo_targets and hasattr(adapter, "end_servo_tracking"):
-            adapter.end_servo_tracking(segment.servo_targets)
+            try:
+                end_result = adapter.end_servo_tracking(segment.servo_targets)
+            except Exception as exc:
+                self.last_error = (
+                    "servo_tracking_completion_invalid: end_servo_tracking "
+                    f"raised {type(exc).__name__}: {exc}"
+                )
+                self._finish(
+                    adapter,
+                    success=False,
+                    reason="servo_tracking_completion_invalid",
+                    current_sim_time_s=sim_time,
+                    current_wall_time_s=wall_time,
+                )
+                return False
+            if (
+                not isinstance(end_result, dict)
+                or type(end_result.get("ended")) is not bool
+            ):
+                self.last_error = (
+                    "servo_tracking_completion_invalid: end_servo_tracking "
+                    f"must return an explicit boolean ended result; result={end_result!r}"
+                )
+                self._finish(
+                    adapter,
+                    success=False,
+                    reason="servo_tracking_completion_invalid",
+                    current_sim_time_s=sim_time,
+                    current_wall_time_s=wall_time,
+                )
+                return False
+            tracking_completion_evidence = copy.deepcopy(end_result)
+            tracking_completion_deferred = end_result.get("ended") is False
+            if tracking_completion_deferred:
+                self.last_info = (
+                    "tracking_completion_deferred "
+                    f"segment={segment.segment_index} evidence={end_result}"
+                )
         actual_duration = max(0.0, elapsed - self.segment_start_elapsed_s)
         extension = max(0.0, actual_duration - max(segment.servo_duration_s, segment.wheel_active_duration_s, segment.explicit_hold_s))
         servo_reference_velocity = SERVO_REFERENCE_VELOCITY_DEG_S if segment.servo_targets else 0.0
@@ -2014,9 +2255,15 @@ class SimTimePlaybackService:
                 },
                 "servo_target_error": dict(servo_errors),
                 "completion_decision": (
-                    "contact_residual_accepted" if completion_warning else "exact_completion"
+                    "reference_position_complete_tracking_deferred"
+                    if tracking_completion_deferred
+                    else "contact_residual_accepted"
+                    if completion_warning
+                    else "exact_completion"
                 ),
                 "completion_warning": completion_warning,
+                "tracking_completion_deferred": tracking_completion_deferred,
+                "tracking_completion_evidence": tracking_completion_evidence,
                 "servo_completion_extension": extension,
                 "servo_reference_velocity_deg_s": servo_reference_velocity,
                 "servo_measured_average_velocity_deg_s": servo_measured_average_velocity,
@@ -2048,6 +2295,7 @@ class SimTimePlaybackService:
         next_segment = self.plan.segments[self.segment_index + 1] if self.plan and self.segment_index + 1 < len(self.plan.segments) else None
         if next_segment is None or next_segment.source_step != segment.source_step:
             self.previous_step_end_sim_time_s = float(sim_time)
+        return True
 
     @staticmethod
     def _joint_positions_by_name(adapter: Any) -> dict[str, float]:

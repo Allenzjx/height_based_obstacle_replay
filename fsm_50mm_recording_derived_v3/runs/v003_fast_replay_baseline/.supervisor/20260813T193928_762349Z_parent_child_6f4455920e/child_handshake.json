@@ -1,0 +1,11 @@
+{
+  "batch_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T193930_057325Z_recording_replays_d84c05574b",
+  "child_pid": 1444,
+  "parent_pid": 53540,
+  "preclose_marker": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T193930_057325Z_recording_replays_d84c05574b\\preclose_complete.json",
+  "schema_version": "fsm50.supervisor_handshake.v1",
+  "sequence": 2,
+  "state": "PRECLOSE_COMPLETE",
+  "token": "a8e31f48784c457faddee75403698ab4",
+  "updated_utc": "2026-08-13T19:49:31.048341+00:00"
+}

@@ -63,6 +63,7 @@ class SimTransport:
                 generation=self.wheel_generation,
                 command_id=command_id,
                 requested_wall_time=requested,
+                reason=str(reason),
             )
         else:
             self.adapter.stop_wheels(generation=self.wheel_generation, command_id=command_id, requested_wall_time=requested)
@@ -78,6 +79,7 @@ class SimTransport:
         plan_id: str = "",
         request_id: str = "",
         plan_sha256: str = "",
+        worker_session_id: str = "",
     ) -> None:
         payload = playback_plan_to_payload(plan)
         if self.process_client is not None:
@@ -87,6 +89,7 @@ class SimTransport:
                 plan_id=plan_id,
                 request_id=request_id,
                 plan_sha256=plan_sha256 or plan.plan_sha256,
+                worker_session_id=worker_session_id,
             )
         elif hasattr(self.adapter, "play_plan_blocking"):
             self.adapter.play_plan_blocking(plan)

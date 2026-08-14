@@ -16,11 +16,14 @@ from telemetry.com_metrics import to_numpy
 from telemetry.exporters import write_csv, write_json, write_jsonl
 
 from .filtered_wheel_contact import FILTERED_SURFACES, filtered_contact_rows
-from .grounding_diagnostics import penetration_snapshot
+from .grounding_diagnostics import (
+    penetration_snapshot as wheel_ground_aabb_proxy_snapshot,
+)
 from .nonwheel_obstacle_contact import (
     NONWHEEL_FORCE_SOURCE,
     nonwheel_obstacle_contact_rows,
 )
+from .physx_contact_separation import PHYSX_SEPARATION_SOURCE
 from .support_classifier import (
     LEGS,
     ContactClass,
@@ -104,6 +107,39 @@ def _safe_float(value: Any) -> float:
         return float("nan")
 
 
+def _time_window_numeric_guard_s(
+    rows: list[dict[str, Any]],
+    *,
+    final_time_s: float,
+    cutoff_time_s: float,
+) -> float:
+    """Bound timestamp roundoff accumulated over the recorded physics ticks."""
+
+    if not math.isfinite(final_time_s) or not math.isfinite(cutoff_time_s):
+        return 0.0
+    last = rows[-1] if rows else {}
+    physics_dt_s = _safe_float(last.get("physics_dt_s"))
+    sim_step = _safe_float(last.get("sim_step"))
+    accumulated_steps = max(1, len(rows) - 1)
+    if math.isfinite(sim_step):
+        accumulated_steps = max(accumulated_steps, abs(int(sim_step)))
+    elif math.isfinite(physics_dt_s) and physics_dt_s > 0.0:
+        accumulated_steps = max(
+            accumulated_steps,
+            int(math.ceil(abs(final_time_s) / physics_dt_s)),
+        )
+
+    # Each repeated dt addition can round by at most one ulp at the current
+    # timestamp magnitude.  The extra endpoint ulps cover the final subtraction
+    # used to form cutoff_time_s.  This is a representation-error bound, not a
+    # physical timing tolerance.
+    timestamp_ulp = max(math.ulp(final_time_s), math.ulp(cutoff_time_s))
+    guard_s = float(accumulated_steps + 2) * timestamp_ulp
+    if math.isfinite(physics_dt_s) and physics_dt_s > 0.0:
+        guard_s += float(accumulated_steps) * math.ulp(physics_dt_s)
+    return guard_s
+
+
 class FSM50TelemetryCollector(TelemetryCollector):
     """Augment the existing telemetry collector without replacing it.
 
@@ -122,6 +158,9 @@ class FSM50TelemetryCollector(TelemetryCollector):
         obstacle: ObstacleGeometry,
         wheel_radius_m: float,
         source_version: str,
+        contact_mode: str,
+        environment_equivalence_role: str = "",
+        diagnostic_role: str = "",
         plan: Any | None = None,
         plan_rows: list[dict[str, Any]] | None = None,
         force_threshold_n: float = 2.0,
@@ -141,9 +180,42 @@ class FSM50TelemetryCollector(TelemetryCollector):
         maximum_penetration_m: float = 0.003,
     ) -> None:
         super().__init__(config, args=args, scene_handle=scene_handle)
+        # The base sample must not checkpoint before this collector has added
+        # the same frame's FSM evidence.  ``on_step`` performs the shared
+        # cadence check after the extended row and timeline are complete.
+        self.defer_periodic_checkpoint = True
         self.obstacle = obstacle
         self.wheel_radius_m = float(wheel_radius_m)
         self.source_version = str(source_version)
+        normalized_contact_mode = str(contact_mode).strip().lower()
+        if normalized_contact_mode not in {"disabled", "formal", "instrumented"}:
+            raise ValueError(
+                "contact_mode must be explicitly set to disabled, formal, or instrumented"
+            )
+        self.contact_mode = normalized_contact_mode
+        normalized_role = str(environment_equivalence_role or "").strip().upper()
+        if normalized_role not in {"", "A1", "A2", "B"}:
+            raise ValueError(
+                "environment_equivalence_role must be empty, A1, A2, or B"
+            )
+        if normalized_role in {"A1", "A2"} and normalized_contact_mode != "formal":
+            raise ValueError("A1/A2 evidence requires contact_mode=formal")
+        if normalized_role == "B" and normalized_contact_mode != "instrumented":
+            raise ValueError("B evidence requires contact_mode=instrumented")
+        normalized_diagnostic_role = str(diagnostic_role or "").strip().upper()
+        if normalized_diagnostic_role not in {"", "U"}:
+            raise ValueError("diagnostic_role must be empty or U")
+        if normalized_diagnostic_role == "U":
+            if normalized_role:
+                raise ValueError(
+                    "U diagnostic evidence cannot carry an environment-equivalence role"
+                )
+            if normalized_contact_mode != "disabled":
+                raise ValueError("U diagnostic evidence requires contact_mode=disabled")
+        elif normalized_contact_mode == "disabled":
+            raise ValueError("contact_mode=disabled requires diagnostic_role=U")
+        self.environment_equivalence_role = normalized_role
+        self.diagnostic_role = normalized_diagnostic_role
         self.plan = plan
         self.plan_rows_by_segment = {
             int(row["decoded_segment_index"]): dict(row)
@@ -173,7 +245,9 @@ class FSM50TelemetryCollector(TelemetryCollector):
             )
             for leg in LEGS
         }
-        self.persistence = ContactPersistenceTracker()
+        self.persistence = ContactPersistenceTracker(
+            load_confirm_force_n=load_confirm_force_n
+        )
         self.traversal = TraversalEvidenceTracker(
             unload_force_n=unload_force_n,
             load_confirm_force_n=load_confirm_force_n,
@@ -225,6 +299,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             base_row=base_row,
             filtered_rows=filtered_rows,
             before_contacts=before_contacts,
+            qualification_row=extended,
         )
         extended.update(filtered_evidence)
         base_row.update(
@@ -243,9 +318,106 @@ class FSM50TelemetryCollector(TelemetryCollector):
         )
         self.fsm50_rows.append(extended)
         self._record_timeline(extended)
+        self._maybe_checkpoint(
+            float(base_row.get("time_s", getattr(adapter, "sim_time", 0.0)) or 0.0)
+        )
 
     @staticmethod
-    def _filtered_layout_valid(rows: list[dict[str, Any]]) -> bool:
+    def _filtered_row_identity_valid(
+        row: Mapping[str, Any],
+        *,
+        leg: str,
+        surface: str,
+        filter_index: int,
+        other_prim_path: str,
+    ) -> bool:
+        """Validate the exact wheel/filter identity before trusting its label."""
+
+        def normalized_path(value: Any) -> str:
+            return str(value or "").replace("\\", "/").rstrip("/")
+
+        wheel_body = LEG_TO_WHEEL_BODY[leg]
+        wheel_prim_path = normalized_path(row.get("wheel_prim_path"))
+        filter_value = row.get("filter_index")
+        return bool(
+            str(row.get("leg", "")).upper() == leg
+            and str(row.get("surface", "")) == surface
+            and isinstance(filter_value, int)
+            and not isinstance(filter_value, bool)
+            and filter_value == filter_index
+            and str(row.get("wheel_body_name", "")) == wheel_body
+            and wheel_prim_path == f"/World/WLRRobot/{wheel_body}"
+            and normalized_path(row.get("other_prim_path"))
+            == normalized_path(other_prim_path)
+            and str(row.get("source", "")) == FILTERED_FORCE_SOURCE
+        )
+
+    @classmethod
+    def _exact_filtered_surface_evidence_by_leg(
+        cls,
+        rows: list[dict[str, Any]],
+    ) -> dict[str, dict[str, dict[str, Any]]] | None:
+        """Build the two exact, identity-checked surface rows for every leg.
+
+        ``None`` means the filtered bank is unavailable, preserving the common
+        aggregate/geometry fallback.  A non-empty but malformed layout remains
+        available and emits ``identity_valid=False`` so classification fails
+        closed instead of silently taking that fallback.
+        """
+
+        if not rows:
+            return None
+        expected_pairs = {
+            (leg, surface)
+            for leg in LEGS
+            for surface, _other_prim_path in FILTERED_SURFACES
+        }
+        actual_pairs = [
+            (str(row.get("leg", "")).upper(), str(row.get("surface", "")))
+            for row in rows
+        ]
+        pair_layout_valid = bool(
+            len(rows) == len(expected_pairs)
+            and len(set(actual_pairs)) == len(actual_pairs)
+            and set(actual_pairs) == expected_pairs
+        )
+        result: dict[str, dict[str, dict[str, Any]]] = {}
+        for leg in LEGS:
+            result[leg] = {}
+            for filter_index, (surface, other_prim_path) in enumerate(
+                FILTERED_SURFACES
+            ):
+                matches = [
+                    row
+                    for row in rows
+                    if str(row.get("leg", "")).upper() == leg
+                    and str(row.get("surface", "")) == surface
+                ]
+                row = matches[0] if len(matches) == 1 else {}
+                result[leg][surface] = {
+                    "leg": str(row.get("leg", "")),
+                    "surface": str(row.get("surface", "")),
+                    "identity_valid": bool(
+                        pair_layout_valid
+                        and len(matches) == 1
+                        and cls._filtered_row_identity_valid(
+                            row,
+                            leg=leg,
+                            surface=surface,
+                            filter_index=filter_index,
+                            other_prim_path=other_prim_path,
+                        )
+                    ),
+                    "force_valid": row.get("force_valid"),
+                    "contact_point_valid": row.get("contact_point_valid"),
+                    "active": row.get("active"),
+                    "normal_force_n": row.get("normal_force_n"),
+                    "source": row.get("source"),
+                }
+        return result
+
+    @classmethod
+    def _filtered_layout_valid(cls, rows: list[dict[str, Any]]) -> bool:
         expected = {
             (leg, surface)
             for leg in LEGS
@@ -255,7 +427,17 @@ class FSM50TelemetryCollector(TelemetryCollector):
             (str(row.get("leg", "")), str(row.get("surface", "")))
             for row in rows
         }
-        return len(rows) == len(expected) and actual == expected
+        if len(rows) != len(expected) or actual != expected:
+            return False
+        evidence = cls._exact_filtered_surface_evidence_by_leg(rows)
+        return bool(
+            evidence is not None
+            and all(
+                row.get("identity_valid") is True
+                for surfaces in evidence.values()
+                for row in surfaces.values()
+            )
+        )
 
     def _install_filtered_contact_sample(
         self,
@@ -263,6 +445,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
         base_row: dict[str, Any],
         filtered_rows: list[dict[str, Any]],
         before_contacts: int,
+        qualification_row: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Replace generic contacts with the eight labelled wheel/surface rows."""
 
@@ -272,6 +455,10 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 "filtered_contact_layout_valid": False,
                 "filtered_contact_force_valid": False,
                 "filtered_contact_geometry_valid": False,
+                "filtered_contact_consistency_valid": False,
+                "filtered_contact_consistency_error": (
+                    "filtered wheel/surface layout is incomplete"
+                ),
             }
 
         time_s = float(base_row.get("time_s", 0.0) or 0.0)
@@ -285,6 +472,9 @@ class FSM50TelemetryCollector(TelemetryCollector):
         active_rows = [row for row in filtered_rows if bool(row.get("active", False))]
         geometry_valid = all(
             bool(row.get("contact_point_valid", False)) for row in active_rows
+        )
+        consistency_valid, consistency_error = self._filtered_contact_consistency(
+            qualification_row, filtered_rows
         )
         total_forces = [
             _safe_float(row.get("total_force_n"))
@@ -301,7 +491,11 @@ class FSM50TelemetryCollector(TelemetryCollector):
         return {
             "filtered_contact_layout_valid": True,
             "filtered_contact_force_valid": force_valid,
-            "filtered_contact_geometry_valid": geometry_valid,
+            "filtered_contact_geometry_valid": bool(
+                geometry_valid and consistency_valid
+            ),
+            "filtered_contact_consistency_valid": consistency_valid,
+            "filtered_contact_consistency_error": consistency_error,
             "active_contact_count": len(active_rows),
             "active_contact_count_label": f"{len(active_rows)} (sensor-confirmed)",
             "contact_geometry_source": FILTERED_GEOMETRY_SOURCE,
@@ -311,6 +505,70 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "max_contact_force_n": max_force,
             "max_contact_force_n_source": FILTERED_FORCE_SOURCE,
         }
+
+    def _filtered_contact_consistency(
+        self,
+        qualification_row: Mapping[str, Any] | None,
+        filtered_rows: list[dict[str, Any]],
+    ) -> tuple[bool, str]:
+        """Require a loaded common contact to exist in its exact filter pair."""
+
+        if qualification_row is None:
+            return True, ""
+        classes = dict(qualification_row.get("wheel_contact_classes", {}) or {})
+        upward = dict(qualification_row.get("wheel_contact_force_up_n", {}) or {})
+        total = dict(qualification_row.get("wheel_contact_force_total_n", {}) or {})
+        errors: list[str] = []
+        for leg in LEGS:
+            contact_class = str(classes.get(leg, "") or "")
+            surface = (
+                "ground"
+                if contact_class == ContactClass.GROUND.value
+                else "obstacle"
+                if contact_class
+                in {ContactClass.FRONT_FACE.value, ContactClass.TOP.value}
+                else ""
+            )
+            if not surface:
+                continue
+            common_load_values = [
+                value
+                for value in (
+                    _safe_float(upward.get(leg)),
+                    _safe_float(total.get(leg)),
+                )
+                if math.isfinite(value)
+            ]
+            if not common_load_values:
+                continue
+            common_load = max(common_load_values)
+            if common_load < self.force_threshold_n:
+                continue
+            matching = [
+                row
+                for row in filtered_rows
+                if str(row.get("leg", "")) == leg
+                and str(row.get("surface", "")) == surface
+            ]
+            if len(matching) != 1:
+                errors.append(
+                    f"{leg}/{surface}: expected one filtered pair, got {len(matching)}"
+                )
+                continue
+            row = matching[0]
+            filtered_force = _safe_float(row.get("normal_force_n"))
+            if not (
+                row.get("force_valid") is True
+                and row.get("active") is True
+                and math.isfinite(filtered_force)
+                and filtered_force >= self.force_threshold_n
+                and row.get("contact_point_valid") is True
+            ):
+                errors.append(
+                    f"{leg}/{surface}: common_load={common_load:.9g} N but "
+                    "filtered force/contact-point evidence is zero or invalid"
+                )
+        return not errors, "; ".join(errors)
 
     def _contact_csv_row(
         self,
@@ -693,6 +951,136 @@ class FSM50TelemetryCollector(TelemetryCollector):
             )
         return result
 
+    @staticmethod
+    def _measured_contact_point_validity(
+        classified: Mapping[str, Any],
+        filtered_contacts: list[dict[str, Any]],
+    ) -> dict[str, bool]:
+        """Report whether each installed point came from live sensor geometry.
+
+        ``classify_wheel_contact`` always provides a geometric projection.  It
+        must not be confused with the measured ``contact_pos_w`` required by
+        anchored-drift evidence, so validity is reconstructed from the same
+        filtered-row selection contract used by
+        :meth:`_install_measured_contact_points`.
+        """
+
+        validity = {leg: False for leg in LEGS}
+
+        def finite_point(row: Mapping[str, Any]) -> bool:
+            try:
+                point = np.asarray(row.get("contact_point_w", []), dtype=float).reshape(-1)
+            except Exception:
+                return False
+            return bool(point.size >= 3 and np.isfinite(point[:3]).all())
+
+        for leg in LEGS:
+            contact = classified.get(leg)
+            if contact is None:
+                continue
+            desired_surface = (
+                "ground"
+                if contact.contact_class == ContactClass.GROUND
+                else "obstacle"
+                if contact.contact_class in {ContactClass.FRONT_FACE, ContactClass.TOP}
+                else ""
+            )
+            candidates = [
+                row
+                for row in filtered_contacts
+                if str(row.get("leg", "")).upper() == leg
+                and row.get("active") is True
+                and row.get("contact_point_valid") is True
+                and finite_point(row)
+            ]
+            preferred = [
+                row
+                for row in candidates
+                if str(row.get("surface", "")) == desired_surface
+            ]
+            validity[leg] = bool(preferred or candidates)
+        return validity
+
+    def _physx_separation_sample(self) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Read the cached exact-pair signed separation evidence fail closed."""
+
+        sensor = getattr(self.scene_handle, "contact_sensor", None)
+        unavailable = {
+            "schema_version": "fsm50.physx_contact_separation.v1",
+            "valid": False,
+            "status": "UNKNOWN",
+            "pair_count": 0,
+            "pair_ids": [],
+            "unknown_pair_ids": [],
+            "maximum_physx_penetration_m": None,
+            "maximum_by_scope_m": None,
+            "source": PHYSX_SEPARATION_SOURCE,
+            "errors": [],
+        }
+        # Qualification needs wheel-ground, wheel-obstacle, and every
+        # non-wheel-obstacle pair.  A wheel-only bank is deliberately not
+        # accepted as whole-robot penetration evidence.
+        if not (
+            bool(getattr(sensor, "is_filtered_wheel_contact_bank", False))
+            and bool(getattr(sensor, "is_nonwheel_obstacle_contact_bank", False))
+        ):
+            unavailable["errors"] = [
+                "combined wheel/non-wheel exact-pair PhysX contact views are unavailable"
+            ]
+            return [], unavailable
+        observations = getattr(sensor, "separation_observations", None)
+        evidence_reader = getattr(sensor, "separation_evidence", None)
+        if not callable(observations) or not callable(evidence_reader):
+            unavailable["errors"] = [
+                "contact sensor does not expose signed-separation observations/evidence"
+            ]
+            return [], unavailable
+        try:
+            rows = [dict(row) for row in list(observations(env_id=0) or [])]
+            evidence = dict(evidence_reader(env_id=0) or {})
+        except Exception as exc:
+            unavailable["errors"] = [
+                f"signed-separation read failed: {type(exc).__name__}: {exc}"
+            ]
+            return [], unavailable
+        maximum = _safe_float(evidence.get("maximum_physx_penetration_m"))
+        pair_ids = [str(row.get("pair_id", "") or "") for row in rows]
+        reported_pair_ids = [
+            str(value) for value in list(evidence.get("pair_ids", []) or [])
+        ]
+        row_maxima = [_safe_float(row.get("maximum_penetration_m")) for row in rows]
+        computed_maximum = max(row_maxima, default=float("nan"))
+        try:
+            reported_pair_count = int(evidence.get("pair_count", -1))
+        except (TypeError, ValueError):
+            reported_pair_count = -1
+        structurally_valid = bool(
+            evidence.get("schema_version") == "fsm50.physx_contact_separation.v1"
+            and evidence.get("valid") is True
+            and evidence.get("status") == "AVAILABLE"
+            and evidence.get("source") == PHYSX_SEPARATION_SOURCE
+            and rows
+            and all(row.get("valid") is True for row in rows)
+            and all(pair_ids)
+            and len(pair_ids) == len(set(pair_ids))
+            and reported_pair_ids == pair_ids
+            and reported_pair_count == len(rows)
+            and not list(evidence.get("unknown_pair_ids", []) or [])
+            and all(math.isfinite(value) and value >= 0.0 for value in row_maxima)
+            and math.isfinite(maximum)
+            and maximum >= 0.0
+            and maximum == computed_maximum
+        )
+        if not structurally_valid:
+            evidence["valid"] = False
+            evidence["status"] = "UNKNOWN"
+            evidence["maximum_physx_penetration_m"] = None
+            errors = list(evidence.get("errors", []) or [])
+            if not errors:
+                errors.append("signed-separation evidence is incomplete or non-finite")
+            evidence["errors"] = errors
+        return rows, evidence
+
     def _segment_context(self) -> dict[str, Any]:
         segment_index = self.runtime_context.get("segment_index")
         segment = None
@@ -839,7 +1227,32 @@ class FSM50TelemetryCollector(TelemetryCollector):
         if drive_evidence:
             joint_pos = dict(drive_evidence.get("joint_position_by_name", {}) or {})
             joint_vel = dict(drive_evidence.get("joint_velocity_by_name", {}) or {})
+        actual_target = dict(
+            drive_evidence.get("joint_position_target_by_name", {}) or {}
+        )
+        buffered_position_target = dict(
+            drive_evidence.get("joint_position_target_buffer_by_name", {}) or {}
+        )
+        physx_velocity_target = dict(
+            drive_evidence.get("joint_velocity_target_by_name", {}) or {}
+        )
+        buffered_velocity_target = dict(
+            drive_evidence.get("joint_velocity_target_buffer_by_name", {}) or {}
+        )
+        servo_command_target_rad = dict(
+            drive_evidence.get("servo_command_target_by_name", {}) or {}
+        )
+        servo_command_to_physx_error = dict(
+            drive_evidence.get("servo_command_to_readback_error_by_name", {}) or {}
+        )
+        target_minus_position = dict(
+            drive_evidence.get("joint_target_minus_position_by_name", {}) or {}
+        )
+        drive_evidence_valid = bool(drive_evidence.get("valid", False))
         filtered_contacts, filtered_contact_error = self._filtered_contacts()
+        filtered_surface_evidence_by_leg = (
+            self._exact_filtered_surface_evidence_by_leg(filtered_contacts)
+        )
         (
             nonwheel_contacts,
             collision_evidence_valid,
@@ -897,16 +1310,50 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 self.obstacle,
                 wheel_radius_m=self.wheel_radius_m,
                 force_threshold_n=self.force_threshold_n,
+                filtered_surface_evidence=(
+                    None
+                    if filtered_surface_evidence_by_leg is None
+                    else filtered_surface_evidence_by_leg[leg]
+                ),
             )
             for leg, observation in wheel_observations.items()
         }
-        classified = self._install_measured_contact_points(
+        measured_contact_point_valid = self._measured_contact_point_validity(
             classified, filtered_contacts
         )
-        persistence, drift = self.persistence.update(time_s, classified)
-        if drift:
+        classified = self._install_measured_contact_points(classified, filtered_contacts)
+        wheel_command = dict(getattr(adapter, "wheel_speeds", {}) or {})
+        logical_wheel_target_by_leg = {
+            leg: _safe_float(wheel_command.get(LEG_TO_WHEEL_JOINT[leg]))
+            for leg in LEGS
+        }
+        physx_wheel_target_by_leg = {
+            leg: _safe_float(physx_velocity_target.get(LEG_TO_WHEEL_JOINT[leg]))
+            for leg in LEGS
+        }
+        wheel_drive_evidence_valid = {
+            leg: bool(
+                drive_evidence_valid
+                and math.isfinite(logical_wheel_target_by_leg[leg])
+                and math.isfinite(physx_wheel_target_by_leg[leg])
+            )
+            for leg in LEGS
+        }
+        persistence, drift = self.persistence.update(
+            time_s,
+            classified,
+            logical_wheel_target_rad_s=logical_wheel_target_by_leg,
+            physx_wheel_target_rad_s=physx_wheel_target_by_leg,
+            measured_contact_point_valid=measured_contact_point_valid,
+            drive_evidence_valid=wheel_drive_evidence_valid,
+        )
+        finite_zero_target_contact_displacement = [
+            float(value) for value in drift.values() if math.isfinite(_safe_float(value))
+        ]
+        if finite_zero_target_contact_displacement:
             self.maximum_contact_drift_m = max(
-                self.maximum_contact_drift_m, max(drift.values())
+                self.maximum_contact_drift_m,
+                max(finite_zero_target_contact_displacement),
             )
         diagonal = classify_diagonal_support(
             classified,
@@ -963,15 +1410,21 @@ class FSM50TelemetryCollector(TelemetryCollector):
             if math.isfinite(canonical):
                 self.previous_wheel_angle[leg] = canonical
 
-        sample_dt = _safe_float(dt_s)
+        physics_dt = _safe_float(dt_s)
+        observed_sample_dt = float("nan")
         if self.previous_sample_time_s is not None and math.isfinite(time_s):
             observed_dt = float(time_s) - float(self.previous_sample_time_s)
             if observed_dt > 0.0 and math.isfinite(observed_dt):
-                sample_dt = observed_dt
+                observed_sample_dt = observed_dt
+        impulse_dt = (
+            observed_sample_dt
+            if math.isfinite(observed_sample_dt)
+            else physics_dt
+        )
         impulse_evidence_valid = bool(
             common_force_evidence.get("wheel_net_force_valid") is True
-            and math.isfinite(sample_dt)
-            and sample_dt > 0.0
+            and math.isfinite(impulse_dt)
+            and impulse_dt > 0.0
             and all(
                 len(wheel_net_forces_w[leg]) == 3
                 and all(
@@ -986,10 +1439,10 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 vector = wheel_net_forces_w[leg]
                 for axis in range(3):
                     self.integrated_wheel_force_impulse_w[leg][axis] += (
-                        float(vector[axis]) * sample_dt
+                        float(vector[axis]) * impulse_dt
                     )
                 self.integrated_wheel_upward_impulse_n_s[leg] += (
-                    max(0.0, float(vector[2])) * sample_dt
+                    max(0.0, float(vector[2])) * impulse_dt
                 )
         self.previous_sample_time_s = float(time_s) if math.isfinite(time_s) else None
 
@@ -1017,42 +1470,27 @@ class FSM50TelemetryCollector(TelemetryCollector):
             name: _safe_float(dict(getattr(adapter, "joint_command_deg", {}) or {}).get(name))
             for name in SERVO_JOINT_NAMES
         }
-        actual_target = dict(
-            drive_evidence.get("joint_position_target_by_name", {}) or {}
-        )
-        buffered_position_target = dict(
-            drive_evidence.get("joint_position_target_buffer_by_name", {}) or {}
-        )
-        physx_velocity_target = dict(
-            drive_evidence.get("joint_velocity_target_by_name", {}) or {}
-        )
-        buffered_velocity_target = dict(
-            drive_evidence.get("joint_velocity_target_buffer_by_name", {}) or {}
-        )
-        servo_command_target_rad = dict(
-            drive_evidence.get("servo_command_target_by_name", {}) or {}
-        )
-        servo_command_to_physx_error = dict(
-            drive_evidence.get("servo_command_to_readback_error_by_name", {}) or {}
-        )
-        target_minus_position = dict(
-            drive_evidence.get("joint_target_minus_position_by_name", {}) or {}
-        )
-        drive_evidence_valid = bool(drive_evidence.get("valid", False))
         joint_safety = self._joint_safety_evidence(
             adapter, joint_pos, actual_target
         )
-        wheel_command = dict(getattr(adapter, "wheel_speeds", {}) or {})
         segment = self._segment_context()
         try:
-            penetration = penetration_snapshot(adapter)
+            wheel_ground_aabb_proxy = wheel_ground_aabb_proxy_snapshot(adapter)
         except Exception as exc:
-            penetration = {
+            wheel_ground_aabb_proxy = {
                 "valid": False,
-                "error": f"penetration capture failed: {type(exc).__name__}: {exc}",
+                "error": f"AABB proxy capture failed: {type(exc).__name__}: {exc}",
                 "maximum_collision_penetration_m": float("nan"),
                 "wheel_penetration_m": {},
             }
+        wheel_ground_aabb_proxy = {
+            **wheel_ground_aabb_proxy,
+            "evidence_class": "wheel_ground_aabb_proxy",
+            "physical_qualification_eligible": False,
+        }
+        separation_observations, separation_evidence = (
+            self._physx_separation_sample()
+        )
         root_pose_w = [
             _safe_float(base_row.get(key))
             for key in (
@@ -1100,7 +1538,12 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 self.runtime_context.get("motion_start_readiness_token", "")
             ),
             **segment,
-            "physics_dt_s": sample_dt,
+            # This is the authoritative simulator physics step supplied by the
+            # caller.  Telemetry cadence belongs in ``observed_sample_dt_s``;
+            # replacing physics_dt_s with a timestamp delta corrupts exact
+            # wheel-target integration evidence.
+            "physics_dt_s": physics_dt,
+            "observed_sample_dt_s": observed_sample_dt,
             "root_pose_w": root_pose_w,
             "root_position_w": root_pose_w[:3],
             "root_orientation_wxyz": root_pose_w[3:7],
@@ -1129,13 +1572,22 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "wheel_command_velocity_rad_s": wheel_command,
             "wheel_canonical_forward_angle_rad": canonical_angles,
             "wheel_canonical_forward_velocity_rad_s": canonical_velocities,
-            "wheel_forward_sign": dict(self.wheel_forward_sign),
+            "wheel_forward_sign": {
+                name: float(WHEEL_FORWARD_SIGN[name]) for name in WHEEL_JOINT_NAMES
+            },
+            "wheel_forward_sign_by_leg": dict(self.wheel_forward_sign),
             "wheel_direction": _wheel_sign(
                 wheel_direction,
                 label="adapter.wheel_direction",
             ),
             "wheel_integrated_rotation_rad": dict(self.integrated_wheel_rotation),
             "wheel_integrated_travel_m": dict(self.integrated_wheel_travel),
+            "wheel_legacy_simple_integration_authoritative": False,
+            "wheel_legacy_simple_integration_role": "diagnostic_only",
+            "wheel_legacy_simple_integration_reason": (
+                "authoritative target/measured evidence is emitted by "
+                "V003_WHEEL_INTEGRAL_EVIDENCE.json"
+            ),
             "wheel_net_forces_w": wheel_net_forces_w,
             "wheel_force_impulse_w_n_s": {
                 leg: list(values)
@@ -1173,10 +1625,38 @@ class FSM50TelemetryCollector(TelemetryCollector):
             },
             "filtered_contact_available": bool(filtered_contacts),
             "filtered_contact_error": filtered_contact_error,
+            "wheel_filtered_surface_identity_valid_by_leg": {
+                leg: bool(
+                    filtered_surface_evidence_by_leg is not None
+                    and all(
+                        row.get("identity_valid") is True
+                        for row in filtered_surface_evidence_by_leg[leg].values()
+                    )
+                )
+                for leg in LEGS
+            },
             "wheel_filtered_contacts": filtered_contacts,
             "wheel_surface_normal_force_n": surface_loads,
             "wheel_contact_persistence_s": persistence,
             "wheel_contact_drift_m": drift,
+            "wheel_contact_persistence_mode": {
+                leg: self.persistence.last_samples[leg].mode.value
+                for leg in LEGS
+            },
+            "wheel_contact_persistence_evidence_valid": {
+                leg: self.persistence.last_samples[leg].evidence_valid
+                for leg in LEGS
+            },
+            "wheel_contact_persistence_reason": {
+                leg: self.persistence.last_samples[leg].reason for leg in LEGS
+            },
+            "wheel_contact_persistence_diagnostic": {
+                leg: self.persistence.last_samples[leg].as_dict() for leg in LEGS
+            },
+            "wheel_logical_target_rad_s_by_leg": logical_wheel_target_by_leg,
+            "wheel_physx_target_rad_s_by_leg": physx_wheel_target_by_leg,
+            "wheel_drive_evidence_valid_by_leg": wheel_drive_evidence_valid,
+            "wheel_measured_contact_point_valid_by_leg": measured_contact_point_valid,
             "support_legs": list(diagonal.support_legs),
             "light_support_legs": list(diagonal.light_support_legs),
             "persistent_support_legs": list(diagonal.persistent_support_legs),
@@ -1193,7 +1673,25 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "two_leg_corridor_distance_m": corridor_distance,
             "two_leg_corridor_fraction": corridor_fraction,
             "two_leg_corridor_valid": corridor_valid,
-            "maximum_contact_drift_m_so_far": self.maximum_contact_drift_m,
+            "maximum_contact_drift_m_so_far": (
+                max(
+                    self.persistence.maximum_zero_target_contact_point_displacement_m.values()
+                )
+                if self.persistence.maximum_zero_target_contact_point_displacement_m
+                else None
+            ),
+            "maximum_zero_target_contact_point_displacement_m_so_far": (
+                max(
+                    self.persistence.maximum_zero_target_contact_point_displacement_m.values()
+                )
+                if self.persistence.maximum_zero_target_contact_point_displacement_m
+                else None
+            ),
+            "contact_point_displacement_semantics": (
+                "ZERO_TARGET_LOADED_MEASURED_CONTACT_POINT_DISPLACEMENT"
+            ),
+            "physical_anchoring_proven": False,
+            "material_point_identity_available": False,
             **joint_safety,
             "ik_evidence_applicable": False,
             "ik_evidence_valid": None,
@@ -1205,13 +1703,79 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "dangerous_collision": (
                 dangerous_collision if collision_evidence_valid else None
             ),
-            "penetration": penetration,
-            "penetration_evidence_valid": penetration.get("valid") is True,
-            "penetration_evidence_error": str(penetration.get("error", "") or ""),
-            "maximum_collision_penetration_m": penetration.get(
-                "maximum_collision_penetration_m"
+            "contact_mode": self.contact_mode,
+            "environment_equivalence_role": str(
+                getattr(self, "environment_equivalence_role", "") or ""
+            ),
+            "diagnostic_role": str(
+                getattr(self, "diagnostic_role", "") or ""
+            ),
+            "physx_signed_separation_observations": separation_observations,
+            "physx_signed_separation_evidence": separation_evidence,
+            "penetration": separation_evidence,
+            "penetration_evidence_source": separation_evidence.get("source"),
+            "penetration_evidence_valid": separation_evidence.get("valid") is True,
+            "penetration_evidence_error": "; ".join(
+                str(value) for value in list(separation_evidence.get("errors", []) or [])
+            ),
+            "maximum_collision_penetration_m": separation_evidence.get(
+                "maximum_physx_penetration_m"
+            ),
+            "wheel_ground_aabb_proxy": wheel_ground_aabb_proxy,
+            "wheel_ground_aabb_proxy_valid": (
+                wheel_ground_aabb_proxy.get("valid") is True
+            ),
+            "wheel_ground_aabb_proxy_maximum_overlap_m": (
+                wheel_ground_aabb_proxy.get("maximum_collision_penetration_m")
             ),
         }
+        if str(getattr(self, "diagnostic_role", "") or "").upper() == "U":
+            # U is a kinematic trajectory capture in the ordinary production
+            # scene.  Keep joint/root/wheel-center measurements, but erase all
+            # derived contact assertions so geometry cannot masquerade as a
+            # disabled ContactSensor observation.
+            row.update(
+                wheel_net_forces_w={leg: [None, None, None] for leg in LEGS},
+                wheel_contact_force_up_n={leg: None for leg in LEGS},
+                wheel_contact_force_total_n={leg: None for leg in LEGS},
+                wheel_net_force_valid=False,
+                wheel_net_force_layout_valid=False,
+                wheel_net_force_error="contact sensors deliberately disabled for U diagnostic",
+                wheel_contact_classes={leg: ContactClass.UNKNOWN.value for leg in LEGS},
+                wheel_contact_confidence={leg: "UNAVAILABLE_SENSOR_DISABLED" for leg in LEGS},
+                wheel_contact_points_w={leg: [None, None, None] for leg in LEGS},
+                wheel_measured_contact_point_valid_by_leg={leg: False for leg in LEGS},
+                wheel_filtered_contacts=[],
+                filtered_contact_available=False,
+                filtered_contact_error="contact sensors deliberately disabled for U diagnostic",
+                filtered_contact_layout_valid=False,
+                filtered_contact_force_valid=False,
+                filtered_contact_geometry_valid=False,
+                filtered_contact_consistency_valid=False,
+                nonwheel_obstacle_contacts=[],
+                collision_evidence_source="",
+                collision_evidence_valid=False,
+                collision_evidence_error="contact sensors deliberately disabled for U diagnostic",
+                dangerous_collision=None,
+                force_impulse_evidence_valid=False,
+                support_legs=[],
+                light_support_legs=[],
+                persistent_support_legs=[],
+                stable_contact_legs=[],
+                primary_diagonal="NONE",
+                wheel_support_polygon=[],
+                wheel_support_polygon_valid=False,
+                wheel_support_polygon_degenerate=True,
+                wheel_support_polygon_margin_m=None,
+                two_leg_corridor_distance_m=None,
+                two_leg_corridor_fraction=None,
+                two_leg_corridor_valid=False,
+                physx_signed_separation_observations=[],
+                penetration_evidence_source="",
+                penetration_evidence_valid=False,
+                penetration_evidence_error="contact sensors deliberately disabled for U diagnostic",
+                maximum_collision_penetration_m=None,
+            )
         return row
 
     def _record_timeline(self, row: dict[str, Any]) -> None:
@@ -1250,30 +1814,172 @@ class FSM50TelemetryCollector(TelemetryCollector):
             bool(row.get("filtered_contact_layout_valid", False))
             and bool(row.get("filtered_contact_force_valid", False))
             and bool(row.get("filtered_contact_geometry_valid", False))
+            and bool(row.get("filtered_contact_consistency_valid", False))
             for row in rows
         )
 
     def physical_evidence(self) -> dict[str, Any]:
+        if str(getattr(self, "diagnostic_role", "") or "").upper() == "U":
+            criterion_scopes = {
+                "contact_evidence_valid": "INSTRUMENTED_ONLY",
+                "all_legs_linkage_lift_valid": "COMMON",
+                "no_illegal_drive_up": "COMMON",
+                "attitude_safe": "COMMON",
+                "joint_limits_safe": "COMMON",
+                "collision_safe": "INSTRUMENTED_ONLY",
+                "penetration_safe": "COMMON",
+                "contact_drift_safe": "INSTRUMENTED_ONLY",
+                "final_all_top": "COMMON",
+                "final_all_loaded": "COMMON",
+                "final_velocity_stable": "COMMON",
+            }
+            reason = (
+                "ordinary-UI U diagnostic deliberately disables all contact "
+                "sensors and is not physical-qualification evidence"
+            )
+            records = {
+                name: {
+                    "name": name,
+                    "scope": scope,
+                    "availability": "UNAVAILABLE_BY_ROLE",
+                    "passed": None,
+                    "reason": reason,
+                }
+                for name, scope in criterion_scopes.items()
+            }
+            unavailable = [f"{name}: {reason}" for name in records]
+            return {
+                "schema_version": "fsm50.physical_evidence.v2",
+                "source_version": self.source_version,
+                "contact_mode": "disabled",
+                "environment_equivalence_role": "",
+                "diagnostic_role": "U",
+                "sample_count": len(self.fsm50_rows),
+                "contact_force_valid": False,
+                "common_contact_evidence_valid": False,
+                "filtered_contact_valid": False,
+                "filtered_contact_error_count": 0,
+                "filtered_contact_errors": [],
+                "evidence_complete": False,
+                "not_evaluable_reasons": unavailable,
+                "criteria": records,
+                "criterion_records": list(records.values()),
+                "strict_criteria": {name: None for name in records},
+                "role_capture_verdict": "NOT_EVALUABLE",
+                "full_physical_verdict": "NOT_EVALUABLE",
+                "role_capture_verdict_reasons": unavailable,
+                "full_physical_verdict_reasons": unavailable,
+                "traversal": {
+                    "evidence_available": False,
+                    "all_legs_valid": False,
+                    "any_illegal_drive_up": False,
+                    "legs": {},
+                },
+                "final_wheel_contact_classes": {},
+                "final_all_top": False,
+                "final_all_loaded": False,
+                "maximum_contact_drift_m": None,
+                "minimum_two_leg_corridor_margin_m": None,
+                "dangerous_collision_count": 0,
+                "collision_evidence_valid": False,
+                "physx_drive_target_evidence_valid": False,
+                "penetration_evidence_valid": False,
+                "penetration_evidence_source": "",
+                "maximum_collision_penetration_m": None,
+                "maximum_allowed_penetration_m": self.maximum_penetration_m,
+                "force_impulse_evidence_valid": False,
+                "final_wheel_force_impulse_w_n_s": {},
+                "final_wheel_upward_force_impulse_n_s": {},
+                "joint_limit_evidence_valid": False,
+                "joint_limit_violation_count": 0,
+                "maximum_abs_roll_rad": None,
+                "maximum_abs_pitch_rad": None,
+                "maximum_angular_velocity_rad_s": None,
+                "final_velocity_stable": False,
+                "contact_drift_evidence_valid": False,
+                "zero_target_loaded_contact_displacement_sample_count": 0,
+                "contact_point_displacement_semantics": (
+                    "UNAVAILABLE_BY_ROLE"
+                ),
+                "physical_anchoring_proven": False,
+                "material_point_identity_available": False,
+                "wheel_legacy_simple_integration_authoritative": False,
+                "wheel_integral_authoritative_artifact": (
+                    "V003_WHEEL_INTEGRAL_EVIDENCE.json"
+                ),
+                "physical_qualification_eligible": False,
+                "environment_equivalence_eligible": False,
+                "physical_success": False,
+            }
         traversal = self.traversal.result()
         last = self.fsm50_rows[-1] if self.fsm50_rows else {}
-        contact_force_valid = any(
-            bool(row.get("contact_force_valid", False)) for row in self.fsm50_rows
+        sample_count = len(self.fsm50_rows)
+
+        def finite_mapping(
+            row: Mapping[str, Any], key: str, names: tuple[str, ...] = LEGS
+        ) -> bool:
+            values = dict(row.get(key, {}) or {})
+            return set(values) == set(names) and all(
+                math.isfinite(_safe_float(values.get(name))) for name in names
+            )
+
+        def finite_vectors(
+            row: Mapping[str, Any], key: str, names: tuple[str, ...] = LEGS
+        ) -> bool:
+            values = dict(row.get(key, {}) or {})
+            if set(values) != set(names):
+                return False
+            for name in names:
+                try:
+                    vector = np.asarray(values.get(name, []), dtype=float).reshape(-1)
+                except Exception:
+                    return False
+                if vector.size < 3 or not np.isfinite(vector[:3]).all():
+                    return False
+            return True
+
+        contact_force_valid = bool(
+            self.fsm50_rows
+            and all(row.get("wheel_net_force_valid") is True for row in self.fsm50_rows)
+        )
+        common_contact_evidence_valid = bool(
+            contact_force_valid
+            and all(
+                finite_mapping(row, "wheel_contact_force_up_n")
+                and finite_mapping(row, "wheel_canonical_forward_angle_rad")
+                and finite_vectors(row, "wheel_centers_w")
+                and set(dict(row.get("wheel_contact_classes", {}) or {})) == set(LEGS)
+                and all(
+                    dict(row.get("wheel_contact_classes", {}) or {}).get(leg)
+                    in {item.value for item in ContactClass if item != ContactClass.UNKNOWN}
+                    for leg in LEGS
+                )
+                for row in self.fsm50_rows
+            )
         )
         filtered_contact_valid = self._filtered_samples_valid(self.fsm50_rows)
         final_classes = dict(last.get("wheel_contact_classes", {}) or {})
+        final_contact_classes_valid = bool(
+            set(final_classes) == set(LEGS)
+            and all(final_classes.get(leg) != ContactClass.UNKNOWN.value for leg in LEGS)
+        )
         final_all_top = bool(
-            final_classes
+            final_contact_classes_valid
             and all(final_classes.get(leg) == ContactClass.TOP.value for leg in LEGS)
         )
         final_loads = dict(last.get("wheel_contact_force_up_n", {}) or {})
+        final_loads_valid = bool(
+            set(final_loads) == set(LEGS)
+            and all(math.isfinite(_safe_float(final_loads.get(leg))) for leg in LEGS)
+        )
         final_all_loaded = bool(
-            final_loads
+            final_loads_valid
             and all(
-                math.isfinite(_safe_float(final_loads.get(leg)))
-                and _safe_float(final_loads.get(leg)) >= self.force_threshold_n
+                _safe_float(final_loads.get(leg)) >= self.force_threshold_n
                 for leg in LEGS
             )
         )
+
         def finite_values(key: str) -> list[float]:
             values: list[float] = []
             for row in self.fsm50_rows:
@@ -1315,18 +2021,47 @@ class FSM50TelemetryCollector(TelemetryCollector):
             self.fsm50_rows
             and all(bool(row.get("joint_limit_evidence_valid", False)) for row in self.fsm50_rows)
         )
+        known_joint_limit_violation = any(
+            row.get("joint_limit_evidence_valid") is True
+            and row.get("joint_limit_violation") is True
+            for row in self.fsm50_rows
+        )
         joint_limit_safe = bool(
             joint_limit_evidence_valid
-            and not any(bool(row.get("joint_limit_violation", True)) for row in self.fsm50_rows)
+            and not known_joint_limit_violation
         )
         final_time = _safe_float(last.get("time_s"))
+        stable_cutoff = final_time - self.final_stable_dwell_s
+        stable_cutoff_guard = _time_window_numeric_guard_s(
+            self.fsm50_rows,
+            final_time_s=final_time,
+            cutoff_time_s=stable_cutoff,
+        )
         stable_rows = [
             row
             for row in self.fsm50_rows
             if math.isfinite(final_time)
-            and _safe_float(row.get("time_s")) >= final_time - self.final_stable_dwell_s
+            and _safe_float(row.get("time_s"))
+            >= stable_cutoff - stable_cutoff_guard
         ]
-        final_stable = bool(stable_rows)
+        kinematics_evidence_valid = bool(
+            self.fsm50_rows
+            and all(
+                math.isfinite(_safe_float(row.get(key)))
+                for row in self.fsm50_rows
+                for key in (
+                    "time_s",
+                    "base_vx_m_s",
+                    "base_vy_m_s",
+                    "base_vz_m_s",
+                    "base_wx_rad_s",
+                    "base_wy_rad_s",
+                    "base_wz_rad_s",
+                )
+            )
+        )
+        final_stable = bool(stable_rows and kinematics_evidence_valid)
+        known_final_velocity_violation = False
         for row in stable_rows:
             linear = math.sqrt(
                 sum(_safe_float(row.get(key)) ** 2 for key in ("base_vx_m_s", "base_vy_m_s", "base_vz_m_s"))
@@ -1341,19 +2076,28 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 or angular > self.final_angular_velocity_rad_s
             ):
                 final_stable = False
+                if math.isfinite(linear) and math.isfinite(angular):
+                    known_final_velocity_violation = True
                 break
         if stable_rows:
             stable_span = _safe_float(stable_rows[-1].get("time_s")) - _safe_float(
                 stable_rows[0].get("time_s")
             )
-            final_stable = bool(final_stable and stable_span + 1.0e-9 >= self.final_stable_dwell_s)
+            final_stable = bool(
+                final_stable and stable_span >= self.final_stable_dwell_s
+            )
         collision_valid = bool(
             self.fsm50_rows
             and all(bool(row.get("collision_evidence_valid", False)) for row in self.fsm50_rows)
         )
+        known_dangerous_collision = any(
+            row.get("collision_evidence_valid") is True
+            and row.get("dangerous_collision") is True
+            for row in self.fsm50_rows
+        )
         collision_safe = bool(
             collision_valid
-            and not any(bool(row.get("dangerous_collision", False)) for row in self.fsm50_rows)
+            and not known_dangerous_collision
         )
         drive_target_evidence_valid = bool(
             self.fsm50_rows
@@ -1366,6 +2110,8 @@ class FSM50TelemetryCollector(TelemetryCollector):
             self.fsm50_rows
             and all(
                 row.get("penetration_evidence_valid") is True
+                and str(row.get("penetration_evidence_source", "") or "")
+                == PHYSX_SEPARATION_SOURCE
                 for row in self.fsm50_rows
             )
         )
@@ -1376,6 +2122,13 @@ class FSM50TelemetryCollector(TelemetryCollector):
         maximum_penetration = max(
             (value for value in penetration_values if math.isfinite(value)),
             default=float("nan"),
+        )
+        known_penetration_violation = any(
+            row.get("penetration_evidence_valid") is True
+            and math.isfinite(_safe_float(row.get("maximum_collision_penetration_m")))
+            and _safe_float(row.get("maximum_collision_penetration_m"))
+            > self.maximum_penetration_m
+            for row in self.fsm50_rows
         )
         penetration_safe = bool(
             penetration_evidence_valid
@@ -1390,61 +2143,310 @@ class FSM50TelemetryCollector(TelemetryCollector):
                 for row in self.fsm50_rows
             )
         )
-        evidence_complete = bool(
-            filtered_contact_valid
-            and attitude_evidence_valid
-            and joint_limit_evidence_valid
-            and collision_valid
-            and drive_target_evidence_valid
-            and penetration_evidence_valid
-            and force_impulse_evidence_valid
+        zero_target_contact_displacement_samples: list[dict[str, Any]] = []
+        drift_relevant_invalid = False
+        drift_layout_valid = bool(self.fsm50_rows)
+        for row in self.fsm50_rows:
+            diagnostics = dict(row.get("wheel_contact_persistence_diagnostic", {}) or {})
+            if set(diagnostics) != set(LEGS):
+                drift_layout_valid = False
+                continue
+            for leg in LEGS:
+                sample = dict(diagnostics.get(leg, {}) or {})
+                mode = str(sample.get("mode", "") or "")
+                contact_class = str(sample.get("contact_class", "") or "")
+                if mode == "ZERO_TARGET_LOADED_CONTACT_EPOCH":
+                    value = _safe_float(
+                        sample.get("zero_target_contact_point_displacement_m")
+                    )
+                    semantics_valid = bool(
+                        sample.get("physical_anchoring_proven") is False
+                        and sample.get("material_point_identity_available") is False
+                        and sample.get("contact_point_displacement_semantics")
+                        == "ZERO_TARGET_LOADED_MEASURED_CONTACT_POINT_DISPLACEMENT"
+                    )
+                    if (
+                        sample.get("evidence_valid") is True
+                        and semantics_valid
+                        and math.isfinite(value)
+                    ):
+                        zero_target_contact_displacement_samples.append(sample)
+                    else:
+                        drift_relevant_invalid = True
+                elif mode == "ANCHORED":
+                    # Old rows used a zero command as an anchoring label.  A
+                    # new producer must never accept that semantic claim.
+                    drift_layout_valid = False
+                    drift_relevant_invalid = True
+                elif mode == "INVALID_EVIDENCE" and contact_class in {
+                    ContactClass.GROUND.value,
+                    ContactClass.TOP.value,
+                    ContactClass.UNKNOWN.value,
+                }:
+                    drift_relevant_invalid = True
+                elif mode not in {
+                    "NO_CONTACT",
+                    "UNLOADED",
+                    "ACTIVE_ROLLING",
+                    "INVALID_EVIDENCE",
+                }:
+                    drift_layout_valid = False
+        zero_target_contact_displacement_values = [
+            _safe_float(sample.get("zero_target_contact_point_displacement_m"))
+            for sample in zero_target_contact_displacement_samples
+        ]
+        contact_drift_evidence_valid = bool(
+            drift_layout_valid
+            and not drift_relevant_invalid
+            and zero_target_contact_displacement_samples
+            and all(
+                math.isfinite(value)
+                for value in zero_target_contact_displacement_values
+            )
         )
-        not_evaluable_reasons: list[str] = []
-        if not filtered_contact_valid:
-            not_evaluable_reasons.append("filtered wheel force/contact-point evidence incomplete")
-        if not attitude_evidence_valid:
-            not_evaluable_reasons.append("base attitude/angular-velocity evidence incomplete")
-        if not joint_limit_evidence_valid:
-            not_evaluable_reasons.append("per-servo joint-limit evidence incomplete")
-        if not collision_valid:
-            not_evaluable_reasons.append("non-wheel link/chassis obstacle-collision evidence unavailable")
-        if not drive_target_evidence_valid:
-            not_evaluable_reasons.append("independent PhysX drive-target evidence incomplete")
-        if not penetration_evidence_valid:
-            not_evaluable_reasons.append("per-tick penetration evidence incomplete")
-        if not force_impulse_evidence_valid:
-            not_evaluable_reasons.append("per-wheel force impulse evidence incomplete")
-        criteria = {
-            "contact_evidence_valid": filtered_contact_valid,
-            "all_legs_linkage_lift_valid": bool(traversal["all_legs_valid"]),
-            "no_illegal_drive_up": not bool(traversal["any_illegal_drive_up"]),
-            "attitude_safe": attitude_safe,
-            "joint_limits_safe": joint_limit_safe,
-            "collision_safe": collision_safe,
-            "penetration_safe": penetration_safe,
-            "contact_drift_safe": bool(
-                self.maximum_contact_drift_m <= self.maximum_allowed_contact_drift_m
+        known_contact_drift_violation = any(
+            value > self.maximum_allowed_contact_drift_m
+            for value in zero_target_contact_displacement_values
+            if math.isfinite(value)
+        )
+        contact_drift_safe = bool(
+            contact_drift_evidence_valid and not known_contact_drift_violation
+        )
+
+        records: dict[str, dict[str, Any]] = {}
+
+        def add_record(
+            name: str,
+            *,
+            scope: str,
+            available: bool,
+            passed_when_available: bool,
+            known_failure: bool = False,
+            missing_reason: str = "evidence is incomplete",
+            failure_reason: str = "criterion failed",
+        ) -> None:
+            if scope == "INSTRUMENTED_ONLY" and self.contact_mode == "formal":
+                availability = "UNAVAILABLE_BY_ROLE"
+                passed: bool | None = None
+                reason = "criterion is reserved for instrumented B-role capture"
+            elif known_failure:
+                # A directly observed violation remains a FAIL even when some
+                # other ticks are missing.  This is the fail-before-unknown
+                # rule used by both verdict aggregators.
+                availability = "AVAILABLE" if available else "MISSING"
+                passed = False
+                reason = failure_reason
+            elif available:
+                availability = "AVAILABLE"
+                passed = bool(passed_when_available)
+                reason = "" if passed else failure_reason
+            else:
+                availability = "MISSING"
+                passed = None
+                reason = missing_reason
+            records[name] = {
+                "name": name,
+                "scope": scope,
+                "availability": availability,
+                "passed": passed,
+                "reason": reason,
+            }
+
+        add_record(
+            "contact_evidence_valid",
+            scope="INSTRUMENTED_ONLY",
+            available=filtered_contact_valid,
+            passed_when_available=filtered_contact_valid,
+            missing_reason="all-tick filtered wheel force/contact-point evidence is incomplete",
+        )
+        add_record(
+            "all_legs_linkage_lift_valid",
+            scope="COMMON",
+            available=common_contact_evidence_valid,
+            passed_when_available=bool(traversal["all_legs_valid"]),
+            missing_reason="all-tick common wheel force/geometry/angle evidence is incomplete",
+            failure_reason="one or more legs lack a valid linkage-lift episode",
+        )
+        add_record(
+            "no_illegal_drive_up",
+            scope="COMMON",
+            available=common_contact_evidence_valid,
+            passed_when_available=not bool(traversal["any_illegal_drive_up"]),
+            known_failure=bool(traversal["any_illegal_drive_up"]),
+            missing_reason="all-tick common traversal evidence is incomplete",
+            failure_reason="an illegal drive-up event was observed",
+        )
+        add_record(
+            "attitude_safe",
+            scope="COMMON",
+            available=attitude_evidence_valid,
+            passed_when_available=attitude_safe,
+            known_failure=bool(
+                (math.isfinite(maximum_abs_roll) and maximum_abs_roll > self.maximum_roll_rad)
+                or (math.isfinite(maximum_abs_pitch) and maximum_abs_pitch > self.maximum_pitch_rad)
+                or (
+                    math.isfinite(maximum_angular_speed)
+                    and maximum_angular_speed > self.maximum_angular_velocity_rad_s
+                )
             ),
-            "final_all_top": final_all_top,
-            "final_all_loaded": final_all_loaded,
-            "final_velocity_stable": final_stable,
+            missing_reason="all-tick base attitude/angular-velocity evidence is incomplete",
+            failure_reason="base attitude or angular velocity exceeded an existing limit",
+        )
+        add_record(
+            "joint_limits_safe",
+            scope="COMMON",
+            available=joint_limit_evidence_valid,
+            passed_when_available=joint_limit_safe,
+            known_failure=known_joint_limit_violation,
+            missing_reason="all-tick per-servo joint-limit evidence is incomplete",
+            failure_reason="a servo joint-limit violation was observed",
+        )
+        add_record(
+            "collision_safe",
+            scope="INSTRUMENTED_ONLY",
+            available=collision_valid,
+            passed_when_available=collision_safe,
+            known_failure=known_dangerous_collision,
+            missing_reason="all-tick non-wheel obstacle-contact evidence is incomplete",
+            failure_reason="a dangerous non-wheel obstacle collision was observed",
+        )
+        add_record(
+            "penetration_safe",
+            scope="COMMON",
+            available=penetration_evidence_valid,
+            passed_when_available=penetration_safe,
+            known_failure=known_penetration_violation,
+            missing_reason=(
+                "all-tick exact-pair PhysX signed-separation evidence is incomplete; "
+                "wheel-ground AABB overlap is diagnostic-only"
+            ),
+            failure_reason="exact-pair PhysX penetration exceeded the existing limit",
+        )
+        add_record(
+            "contact_drift_safe",
+            scope="INSTRUMENTED_ONLY",
+            available=contact_drift_evidence_valid,
+            passed_when_available=contact_drift_safe,
+            known_failure=known_contact_drift_violation,
+            missing_reason=(
+                "zero-target loaded measured contact-point displacement evidence "
+                "is incomplete"
+            ),
+            failure_reason=(
+                "zero-target loaded measured contact-point displacement exceeded "
+                "the existing limit"
+            ),
+        )
+        add_record(
+            "final_all_top",
+            scope="COMMON",
+            available=final_contact_classes_valid,
+            passed_when_available=final_all_top,
+            known_failure=bool(final_contact_classes_valid and not final_all_top),
+            missing_reason="final four-wheel contact classes are incomplete",
+            failure_reason="the final contact class is not TOP for all four wheels",
+        )
+        add_record(
+            "final_all_loaded",
+            scope="COMMON",
+            available=final_loads_valid,
+            passed_when_available=final_all_loaded,
+            known_failure=bool(final_loads_valid and not final_all_loaded),
+            missing_reason="final four-wheel common load evidence is incomplete",
+            failure_reason="one or more final wheel loads are below the existing threshold",
+        )
+        add_record(
+            "final_velocity_stable",
+            scope="COMMON",
+            available=kinematics_evidence_valid,
+            passed_when_available=final_stable,
+            known_failure=known_final_velocity_violation,
+            missing_reason="all-tick base velocity/timestamp evidence is incomplete",
+            failure_reason="the final base-velocity dwell did not meet existing limits",
+        )
+
+        if len(records) != 11:
+            raise RuntimeError(f"physical evidence must contain exactly 11 criteria, got {len(records)}")
+
+        def verdict(*, full: bool) -> tuple[str, list[str]]:
+            selected = list(records.values())
+            if not full:
+                selected = [
+                    record
+                    for record in selected
+                    if record["availability"] != "UNAVAILABLE_BY_ROLE"
+                ]
+            failures = [record for record in selected if record["passed"] is False]
+            if failures:
+                return "FAIL", [
+                    f"{record['name']}: {record['reason']}" for record in failures
+                ]
+            unknown = [
+                record
+                for record in selected
+                if record["availability"] != "AVAILABLE"
+                or record["passed"] is None
+            ]
+            if unknown:
+                return "NOT_EVALUABLE", [
+                    f"{record['name']}: {record['reason']}" for record in unknown
+                ]
+            return "PASS", []
+
+        role_capture_verdict, role_reasons = verdict(full=False)
+        full_physical_verdict, full_reasons = verdict(full=True)
+        evidence_complete = all(
+            record["availability"] == "AVAILABLE" for record in records.values()
+        )
+        strict_criteria = {
+            name: record["passed"] for name, record in records.items()
         }
-        physical_success = bool(evidence_complete and all(criteria.values()))
+        not_evaluable_reasons = [
+            f"{record['name']}: {record['reason']}"
+            for record in records.values()
+            if record["availability"] != "AVAILABLE"
+            or record["passed"] is None
+        ]
+        physical_success = full_physical_verdict == "PASS"
         return {
+            "schema_version": "fsm50.physical_evidence.v2",
             "source_version": self.source_version,
-            "sample_count": len(self.fsm50_rows),
+            "contact_mode": self.contact_mode,
+            "environment_equivalence_role": str(
+                getattr(self, "environment_equivalence_role", "") or ""
+            ),
+            "diagnostic_role": str(
+                getattr(self, "diagnostic_role", "") or ""
+            ),
+            "sample_count": sample_count,
             "contact_force_valid": contact_force_valid,
+            "common_contact_evidence_valid": common_contact_evidence_valid,
             "filtered_contact_valid": filtered_contact_valid,
             "filtered_contact_error_count": len(self.filtered_contact_errors),
             "filtered_contact_errors": list(self.filtered_contact_errors),
             "evidence_complete": evidence_complete,
             "not_evaluable_reasons": not_evaluable_reasons,
-            "strict_criteria": criteria,
+            "criteria": records,
+            "criterion_records": list(records.values()),
+            "strict_criteria": strict_criteria,
+            "role_capture_verdict": role_capture_verdict,
+            "full_physical_verdict": full_physical_verdict,
+            "role_capture_verdict_reasons": role_reasons,
+            "full_physical_verdict_reasons": full_reasons,
             "traversal": traversal,
             "final_wheel_contact_classes": final_classes,
             "final_all_top": final_all_top,
             "final_all_loaded": final_all_loaded,
-            "maximum_contact_drift_m": self.maximum_contact_drift_m,
+            "maximum_contact_drift_m": (
+                max(zero_target_contact_displacement_values)
+                if zero_target_contact_displacement_values
+                else None
+            ),
+            "maximum_zero_target_contact_point_displacement_m": (
+                max(zero_target_contact_displacement_values)
+                if zero_target_contact_displacement_values
+                else None
+            ),
             "minimum_two_leg_corridor_margin_m": None
             if not math.isfinite(self.minimum_corridor_margin_m)
             else self.minimum_corridor_margin_m,
@@ -1452,6 +2454,7 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "collision_evidence_valid": collision_valid,
             "physx_drive_target_evidence_valid": drive_target_evidence_valid,
             "penetration_evidence_valid": penetration_evidence_valid,
+            "penetration_evidence_source": PHYSX_SEPARATION_SOURCE,
             "maximum_collision_penetration_m": maximum_penetration,
             "maximum_allowed_penetration_m": self.maximum_penetration_m,
             "force_impulse_evidence_valid": force_impulse_evidence_valid,
@@ -1468,26 +2471,72 @@ class FSM50TelemetryCollector(TelemetryCollector):
             "maximum_abs_pitch_rad": maximum_abs_pitch,
             "maximum_angular_velocity_rad_s": maximum_angular_speed,
             "final_velocity_stable": final_stable,
+            "contact_drift_evidence_valid": contact_drift_evidence_valid,
+            "zero_target_loaded_contact_displacement_sample_count": len(
+                zero_target_contact_displacement_samples
+            ),
+            "contact_point_displacement_semantics": (
+                "ZERO_TARGET_LOADED_MEASURED_CONTACT_POINT_DISPLACEMENT"
+            ),
+            "physical_anchoring_proven": False,
+            "material_point_identity_available": False,
+            "wheel_legacy_simple_integration_authoritative": False,
+            "wheel_integral_authoritative_artifact": (
+                "V003_WHEEL_INTEGRAL_EVIDENCE.json"
+            ),
             "physical_success": physical_success,
         }
 
-    def flush(self) -> None:
-        super().flush()
+    def _journal_stream_rows(self) -> dict[str, list[dict[str, Any]]]:
+        streams = super()._journal_stream_rows()
+        streams.update(
+            {
+                "fsm50_telemetry": self.fsm50_rows,
+                "wheel_filtered_contacts": self.filtered_surface_rows,
+                "nonwheel_obstacle_contacts": self.nonwheel_obstacle_rows,
+            }
+        )
+        return streams
+
+    def _validate_checkpoint_state(self) -> None:
+        super()._validate_checkpoint_state()
+        if len(self.rows) != len(self.fsm50_rows):
+            raise RuntimeError(
+                "base/FSM telemetry row alignment failed: "
+                f"base={len(self.rows)}, fsm50={len(self.fsm50_rows)}"
+            )
+
+    def _write_canonical_artifacts(self) -> dict[str, int]:
+        record_counts = super()._write_canonical_artifacts()
         if self.run_dir is None:
-            return
+            raise RuntimeError("telemetry run_dir is unavailable")
         write_csv(self.run_dir / "fsm50_telemetry.csv", self.fsm50_rows)
+        record_counts["fsm50_telemetry.csv"] = len(self.fsm50_rows)
         write_jsonl(self.run_dir / "fsm50_telemetry.jsonl", self.fsm50_rows)
+        record_counts["fsm50_telemetry.jsonl"] = len(self.fsm50_rows)
         write_jsonl(
             self.run_dir / "wheel_filtered_contacts.jsonl",
             self.filtered_surface_rows,
+        )
+        record_counts["wheel_filtered_contacts.jsonl"] = len(
+            self.filtered_surface_rows
         )
         write_csv(
             self.run_dir / "nonwheel_obstacle_contacts.csv",
             self.nonwheel_obstacle_rows,
         )
+        record_counts["nonwheel_obstacle_contacts.csv"] = len(
+            self.nonwheel_obstacle_rows
+        )
         write_jsonl(
             self.run_dir / "nonwheel_obstacle_contacts.jsonl",
             self.nonwheel_obstacle_rows,
         )
+        record_counts["nonwheel_obstacle_contacts.jsonl"] = len(
+            self.nonwheel_obstacle_rows
+        )
         write_csv(self.run_dir / "state_timeline.csv", self.state_timeline_rows)
+        record_counts["state_timeline.csv"] = len(self.state_timeline_rows)
         write_json(self.run_dir / "physical_evidence.json", self.physical_evidence())
+        record_counts["physical_evidence.json"] = 1
+        return record_counts

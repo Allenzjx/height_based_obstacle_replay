@@ -1,0 +1,29 @@
+{
+  "artifact_owner": "formal_worker_batch_controller",
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00",
+  "batch_error": "RuntimeError: formal worker artifact preflight failed: ValueError: ordinary-UI U role requires the incoming production default telemetry_contact_sensors_enabled=false",
+  "close_error": "PENDING_FORMAL_WORKER_CLOSE",
+  "command_success": false,
+  "diagnostic_role": "",
+  "environment_equivalence_diagnostic_complete": false,
+  "environment_equivalence_eligible": false,
+  "environment_equivalence_role": "",
+  "failed": true,
+  "finalization_errors": [],
+  "finalized": false,
+  "gate1_eligible": true,
+  "gate1_physical_qualification_eligible": true,
+  "ordinary_ui_diagnostic_complete": false,
+  "phase": "PRECLOSE_FINALIZED",
+  "qualification_scope": "GATE1_PHYSICAL_QUALIFICATION",
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-14T01:09:38.124778+00:00",
+    "before_created_utc": "2026-08-14T01:09:16.746168+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false,
+  "worker_artifact_result_count": 0
+}

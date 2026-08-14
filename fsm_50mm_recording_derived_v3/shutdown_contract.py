@@ -2,12 +2,135 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Mapping
 
 
 SUCCESSFUL_SHUTDOWN_STATUSES = frozenset(
     {"GRACEFUL_EXIT", "FAST_EXIT_VERIFIED", "NORMAL_EXIT"}
 )
+
+
+def _exact_int(value: Any, label: str) -> int:
+    if type(value) is not int:
+        raise ValueError(f"{label} must be an exact JSON integer")
+    return value
+
+
+def _strict_json_equal(left: Any, right: Any) -> bool:
+    try:
+        options = {
+            "ensure_ascii": False,
+            "sort_keys": True,
+            "separators": (",", ":"),
+            "allow_nan": False,
+        }
+        return json.dumps(left, **options) == json.dumps(right, **options)
+    except (TypeError, ValueError):
+        return False
+
+
+def _validate_formal_worker_fast_outcome(outcome: Mapping[str, Any]) -> None:
+    worker_pid = _exact_int(
+        outcome.get("formal_worker_pid"), "formal worker PID"
+    )
+    child_pid = _exact_int(outcome.get("child_pid"), "controller child PID")
+    session_id = str(outcome.get("formal_worker_session_id", "") or "")
+    adapter_id = str(outcome.get("adapter_runtime_instance_id", "") or "")
+    artifact_request_id = str(outcome.get("artifact_request_id", "") or "")
+    artifact_request_sha256 = str(
+        outcome.get("artifact_request_sha256", "") or ""
+    ).lower()
+    shutdown_request_id = str(
+        outcome.get("worker_shutdown_request_id", "") or ""
+    )
+    runtime_version = str(outcome.get("runtime_version", "") or "")
+    if child_pid <= 0 or worker_pid <= 0 or worker_pid == child_pid:
+        raise ValueError("formal worker PID is invalid or aliases controller child")
+    if not session_id or not adapter_id or not artifact_request_id:
+        raise ValueError("formal worker identity is incomplete")
+    if (
+        len(artifact_request_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in artifact_request_sha256)
+    ):
+        raise ValueError("formal worker artifact request SHA is invalid")
+    if not shutdown_request_id:
+        raise ValueError("formal worker shutdown request id is missing")
+    if _exact_int(outcome.get("worker_returncode"), "formal worker return code") != 0:
+        raise ValueError("formal worker return code is not zero")
+    if outcome.get("worker_process_returned_normally") is not True:
+        raise ValueError("formal worker did not return normally")
+    if outcome.get("worker_forced_termination") is not False:
+        raise ValueError("formal worker forced-termination evidence is not false")
+    if (
+        str(outcome.get("handshake_state", "") or "")
+        != "FAST_WORKER_PROCESS_RETURNED"
+    ):
+        raise ValueError("formal worker requires FAST_WORKER_PROCESS_RETURNED")
+    if not runtime_version.startswith("5.1."):
+        raise ValueError("formal worker requires explicit Isaac 5.1 runtime")
+
+    preclose = dict(outcome.get("preclose_verification", {}) or {})
+    if dict(preclose.get("formal_worker_identity", {}) or {}) != {
+        "worker_pid": worker_pid,
+        "worker_session_id": session_id,
+        "adapter_runtime_instance_id": adapter_id,
+        "artifact_request_id": artifact_request_id,
+        "artifact_request_sha256": artifact_request_sha256,
+    }:
+        raise ValueError("formal worker preclose identity differs from shutdown")
+    fast_kwargs = {
+        "wait_for_replicator": False,
+        "skip_cleanup": True,
+    }
+    common = {
+        "request_id": shutdown_request_id,
+        "worker_pid": worker_pid,
+        "worker_session_id": session_id,
+        "adapter_runtime_instance_id": adapter_id,
+        "artifact_request_id": artifact_request_id,
+        "root_state_write_count": 0,
+        "mode": "fast",
+        "accepted": True,
+        "error": "",
+        "close_kwargs": fast_kwargs,
+        "runtime_version": runtime_version,
+    }
+    for label, key, specific in (
+        ("shutdown", "worker_shutdown_ack", {"type": "operation_ack", "operation": "shutdown"}),
+        ("close_requested", "worker_close_requested_ack", {"type": "close_requested"}),
+    ):
+        row = dict(outcome.get(key, {}) or {})
+        for field, expected in {**common, **specific}.items():
+            if not _strict_json_equal(row.get(field), expected):
+                raise ValueError(
+                    f"formal worker {label} ACK {field} mismatch"
+                )
+    if outcome.get("worker_shutdown_accepted") is not True:
+        raise ValueError("formal worker shutdown accepted evidence is not true")
+    if outcome.get("worker_close_requested") is not True:
+        raise ValueError("formal worker close-requested evidence is not true")
+    close_returned_observed = outcome.get("worker_close_returned")
+    if type(close_returned_observed) is not bool:
+        raise ValueError(
+            "formal worker close-returned observation is not an exact boolean"
+        )
+    close_returned = dict(
+        outcome.get("worker_close_returned_ack", {}) or {}
+    )
+    if close_returned_observed:
+        for field, expected in {
+            **common,
+            "type": "close_returned",
+        }.items():
+            if not _strict_json_equal(close_returned.get(field), expected):
+                raise ValueError(
+                    f"formal worker close_returned ACK {field} mismatch"
+                )
+    elif close_returned:
+        raise ValueError(
+            "formal worker close_returned ACK exists without observed return"
+        )
 
 
 def validate_shutdown_outcome(
@@ -35,7 +158,9 @@ def validate_shutdown_outcome(
         if str(outcome.get("handshake_state", "") or "") != "CLOSE_RETURNED":
             raise ValueError("legacy NORMAL_EXIT handshake is not CLOSE_RETURNED")
         try:
-            legacy_returncode = int(outcome["child_returncode"])
+            legacy_returncode = _exact_int(
+                outcome["child_returncode"], "legacy child return code"
+            )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError(
                 "legacy NORMAL_EXIT child return code is missing/invalid"
@@ -52,8 +177,12 @@ def validate_shutdown_outcome(
     if outcome.get("process_returned_normally") is not True:
         raise ValueError("supervised child did not return normally")
     try:
-        intended = int(outcome["intended_returncode"])
-        actual = int(outcome["child_returncode"])
+        intended = _exact_int(
+            outcome["intended_returncode"], "shutdown intended return code"
+        )
+        actual = _exact_int(
+            outcome["child_returncode"], "shutdown child return code"
+        )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("shutdown return-code evidence is missing/invalid") from exc
     if intended < 0 or actual < 0 or intended != actual:
@@ -73,7 +202,29 @@ def validate_shutdown_outcome(
             )
         if mode != "fast":
             raise ValueError("FAST_EXIT_VERIFIED shutdown_mode is not fast")
-        if state not in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}:
+        formal_worker_markers = (
+            outcome.get("formal_worker_pid"),
+            outcome.get("formal_worker_session_id"),
+            outcome.get("adapter_runtime_instance_id"),
+            outcome.get("artifact_request_id"),
+            outcome.get("artifact_request_sha256"),
+            outcome.get("worker_shutdown_request_id"),
+            outcome.get("worker_shutdown_accepted"),
+            outcome.get("worker_close_requested"),
+            outcome.get("worker_close_returned"),
+            outcome.get("worker_shutdown_ack"),
+            outcome.get("worker_close_requested_ack"),
+            outcome.get("worker_close_returned_ack"),
+            dict(outcome.get("preclose_verification", {}) or {}).get(
+                "formal_worker_identity"
+            ),
+        )
+        formal_worker = any(bool(value) for value in formal_worker_markers)
+        if state not in {
+            "FAST_EXIT_REQUESTED",
+            "FAST_CLOSE_RETURNED",
+            "FAST_WORKER_PROCESS_RETURNED",
+        }:
             raise ValueError("FAST_EXIT_VERIFIED handshake state is invalid")
         if kwargs != {
             "wait_for_replicator": False,
@@ -85,7 +236,15 @@ def validate_shutdown_outcome(
             raise ValueError(
                 "FAST_EXIT_VERIFIED requires an explicit Isaac 5.1 runtime"
             )
-        contract_kind = "isaac_5_1_fast_exit"
+        if formal_worker:
+            _validate_formal_worker_fast_outcome(outcome)
+            contract_kind = "isaac_5_1_worker_fast_exit"
+        else:
+            if state == "FAST_WORKER_PROCESS_RETURNED":
+                raise ValueError(
+                    "FAST_WORKER_PROCESS_RETURNED requires formal worker evidence"
+                )
+            contract_kind = "isaac_5_1_fast_exit"
     else:
         if mode != "graceful":
             raise ValueError("GRACEFUL_EXIT shutdown_mode is not graceful")

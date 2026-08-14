@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
+import shutil
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -51,6 +55,18 @@ class TelemetryCollector:
         self.dropped_samples = 0
         self.next_sample_time_s = 0.0
         self.last_flush_time_s = -math.inf
+        self.defer_periodic_checkpoint = False
+        self._journal_sequence = 0
+        self._journal_cursors: dict[str, int] = {}
+        self._journal_commits: list[dict[str, Any]] = []
+        self._journal_errors: list[str] = []
+        self._canonical_export_attempted = False
+        self._canonical_export_error = ""
+        self._telemetry_finalization: dict[str, Any] = {
+            "schema_version": "telemetry.canonical_finalization.v1",
+            "canonical_complete": False,
+            "canonical_export_attempted": False,
+        }
         self.last_equilibrium_time_s = -math.inf
         self.last_equilibrium: dict[str, Any] | None = None
         self.last_status: dict[str, Any] = {"enabled": self.enabled, "run_dir": ""}
@@ -153,25 +169,173 @@ class TelemetryCollector:
             self.dropped_live_frames = int(self.live_buffer.dropped_frames)
             self._record_warning_events(row, joint_result, contacts, stability, equilibrium)
             self.overlay.update(row, stability, contacts, equilibrium)
-            if sim_time - self.last_flush_time_s >= float(self.config.telemetry.flush_interval_s):
-                self.flush()
-                self.last_flush_time_s = sim_time
+            if not self.defer_periodic_checkpoint:
+                self._maybe_checkpoint(sim_time)
         except Exception as exc:
             self.record_event(sim_time, "telemetry_sample_failed", severity="warning", message=str(exc))
 
-    def flush(self) -> None:
-        if not self.enabled or self.run_dir is None:
+    def _maybe_checkpoint(self, sim_time_s: float) -> None:
+        if float(sim_time_s) - self.last_flush_time_s < float(
+            self.config.telemetry.flush_interval_s
+        ):
             return
+        # Advance the retry deadline before writing.  A transient journal
+        # failure is retried at the next configured checkpoint, not on every
+        # 120 Hz sample.
+        self.last_flush_time_s = float(sim_time_s)
+        self.checkpoint()
+
+    def _journal_stream_rows(self) -> dict[str, list[dict[str, Any]]]:
+        return {
+            "telemetry_samples": self.rows,
+            "body_com_timeseries": self.body_rows,
+            "joint_timeseries": self.joint_rows,
+            "contacts": self.contact_rows,
+            "events": self.events,
+        }
+
+    def _validate_checkpoint_state(self) -> None:
+        """Hook for collectors whose append-only streams must stay aligned."""
+
+    def checkpoint(self) -> dict[str, Any]:
+        """Durably append only rows not covered by an earlier commit marker."""
+
+        if not self.enabled or self.run_dir is None:
+            return {"enabled": False, "committed_checkpoint_count": 0}
+        self._validate_checkpoint_state()
+        streams = self._journal_stream_rows()
+        snapshots: dict[str, tuple[int, int, list[dict[str, Any]]]] = {}
+        for name, rows in streams.items():
+            start = int(self._journal_cursors.get(name, 0))
+            end = len(rows)
+            if start < 0 or start > end:
+                raise RuntimeError(
+                    f"telemetry journal cursor is invalid for {name}: "
+                    f"cursor={start}, rows={end}"
+                )
+            snapshots[name] = (start, end, list(rows[start:end]))
+        if not any(end > start for start, end, _rows in snapshots.values()):
+            return self.journal_status()
+
+        journal_root = self.run_dir / ".telemetry_journal"
+        journal_root.mkdir(parents=True, exist_ok=True)
+        sequence = self._journal_sequence + 1
+        chunk_dir = journal_root / (
+            f"checkpoint-{sequence:06d}-{uuid.uuid4().hex[:12]}"
+        )
+        chunk_dir.mkdir(parents=False, exist_ok=False)
+        stream_manifest: dict[str, Any] = {}
+        try:
+            for name, (start, end, delta_rows) in snapshots.items():
+                stream_path = chunk_dir / f"{name}.jsonl"
+                write_jsonl(stream_path, delta_rows)
+                stream_manifest[name] = {
+                    "path": stream_path.relative_to(journal_root).as_posix(),
+                    "row_start": start,
+                    "row_end_exclusive": end,
+                    "row_count": end - start,
+                    "size_bytes": stream_path.stat().st_size,
+                    "sha256": _sha256_file(stream_path),
+                }
+            commit = {
+                "schema_version": "telemetry.delta_checkpoint.v1",
+                "checkpoint_index": sequence,
+                "created_wall_time_s": time.time(),
+                "streams": stream_manifest,
+            }
+            commit_path = chunk_dir / "commit.json"
+            # The commit marker is always written last.  A directory without
+            # it is an orphan diagnostic and never advances a persisted cursor.
+            write_json(commit_path, commit)
+        except Exception as exc:
+            self._journal_errors.append(
+                f"checkpoint {sequence}: {type(exc).__name__}: {exc}"
+            )
+            raise
+
+        self._journal_sequence = sequence
+        self._journal_cursors.update(
+            {name: end for name, (_start, end, _rows) in snapshots.items()}
+        )
+        committed = {
+            **commit,
+            "commit_path": str(commit_path.resolve()),
+            "commit_sha256": _sha256_file(commit_path),
+        }
+        self._journal_commits.append(committed)
+        return committed
+
+    def journal_status(self) -> dict[str, Any]:
+        journal_root = (
+            None
+            if self.run_dir is None
+            else (self.run_dir / ".telemetry_journal").resolve()
+        )
+        return {
+            "enabled": bool(self.enabled),
+            "journal_dir": "" if journal_root is None else str(journal_root),
+            "committed_checkpoint_count": len(self._journal_commits),
+            "final_cursors": dict(self._journal_cursors),
+            "errors": list(self._journal_errors),
+            "last_commit": (
+                {} if not self._journal_commits else dict(self._journal_commits[-1])
+            ),
+        }
+
+    def _write_journal_checksum_manifest(self) -> dict[str, Any]:
+        if self.run_dir is None:
+            return {}
+        journal_root = self.run_dir / ".telemetry_journal"
+        journal_root.mkdir(parents=True, exist_ok=True)
+        files: dict[str, Any] = {}
+        for committed in self._journal_commits:
+            commit_path = Path(str(committed["commit_path"])).resolve()
+            chunk_dir = commit_path.parent
+            for path in sorted(chunk_dir.iterdir()):
+                if not path.is_file():
+                    continue
+                relative = path.relative_to(journal_root).as_posix()
+                files[relative] = {
+                    "sha256": _sha256_file(path),
+                    "size_bytes": path.stat().st_size,
+                }
+        payload = {
+            "schema_version": "telemetry.journal_checksums.v1",
+            "created_wall_time_s": time.time(),
+            "committed_checkpoint_count": len(self._journal_commits),
+            "final_cursors": dict(self._journal_cursors),
+            "files": files,
+            "errors": list(self._journal_errors),
+        }
+        manifest_path = journal_root / "journal_checksums.json"
+        write_json(manifest_path, payload)
+        return {
+            **payload,
+            "manifest_path": str(manifest_path.resolve()),
+            "manifest_sha256": _sha256_file(manifest_path),
+            "manifest_size_bytes": manifest_path.stat().st_size,
+        }
+
+    def _write_canonical_artifacts(self) -> dict[str, int]:
+        if self.run_dir is None:
+            raise RuntimeError("telemetry run_dir is unavailable")
+        record_counts: dict[str, int] = {}
         if bool(self.config.telemetry.save_csv):
             write_csv(self.run_dir / "telemetry_samples.csv", self.rows)
+            record_counts["telemetry_samples.csv"] = len(self.rows)
             write_csv(self.run_dir / "body_com_timeseries.csv", self.body_rows)
+            record_counts["body_com_timeseries.csv"] = len(self.body_rows)
             write_csv(self.run_dir / "joint_timeseries.csv", self.joint_rows)
+            record_counts["joint_timeseries.csv"] = len(self.joint_rows)
             if bool(self.config.telemetry.save_contacts):
                 write_csv(self.run_dir / "contacts.csv", self.contact_rows)
+                record_counts["contacts.csv"] = len(self.contact_rows)
         if bool(self.config.telemetry.save_npz):
             write_npz(self.run_dir / "telemetry_timeseries.npz", self.rows)
+            record_counts["telemetry_timeseries.npz"] = len(self.rows)
         if bool(self.config.telemetry.save_events) and self.event_recorder is not None:
-            self.event_recorder.flush()
+            self.event_recorder.export_canonical()
+            record_counts["events.jsonl"] = len(self.events)
         summary = summarize_run(
             self.rows,
             self.body_rows,
@@ -183,6 +347,7 @@ class TelemetryCollector:
             dropped_samples=self.dropped_samples,
         )
         write_json(self.run_dir / "stability_summary.json", summary)
+        record_counts["stability_summary.json"] = 1
         self.last_status.update(
             {
                 "enabled": True,
@@ -202,10 +367,183 @@ class TelemetryCollector:
                 "live_buffer": self.live_buffer.status(),
             }
         )
+        return record_counts
+
+    def _canonical_file_manifest(
+        self, record_counts: dict[str, int]
+    ) -> dict[str, Any]:
+        if self.run_dir is None:
+            raise RuntimeError("telemetry run_dir is unavailable")
+        manifest: dict[str, Any] = {}
+        for relative, count in sorted(record_counts.items()):
+            path = (self.run_dir / relative).resolve()
+            if not path.is_file():
+                raise RuntimeError(f"canonical telemetry file is missing: {path}")
+            manifest[relative] = {
+                "record_count": int(count),
+                "size_bytes": path.stat().st_size,
+                "sha256": _sha256_file(path),
+            }
+        return manifest
+
+    def _verify_canonical_finalization(
+        self,
+        marker_path: Path,
+        payload: dict[str, Any],
+    ) -> None:
+        if self.run_dir is None:
+            raise RuntimeError("telemetry run_dir is unavailable")
+
+        def reject_constant(value: str) -> None:
+            raise ValueError(f"non-finite JSON constant {value}")
+
+        observed = json.loads(
+            marker_path.read_text(encoding="utf-8"),
+            parse_constant=reject_constant,
+        )
+        if observed != payload:
+            raise RuntimeError("telemetry finalization marker readback mismatch")
+        for relative, evidence in dict(payload["canonical_files"]).items():
+            path = (self.run_dir / str(relative)).resolve()
+            if (
+                not path.is_file()
+                or path.stat().st_size != int(evidence["size_bytes"])
+                or _sha256_file(path) != str(evidence["sha256"])
+            ):
+                raise RuntimeError(
+                    f"canonical telemetry self-verification failed: {relative}"
+                )
+
+    def _remove_successful_journal(self) -> None:
+        if self.run_dir is None:
+            raise RuntimeError("telemetry run_dir is unavailable")
+        run_dir = self.run_dir.resolve()
+        journal_root = (run_dir / ".telemetry_journal").resolve()
+        if journal_root.parent != run_dir or journal_root.name != ".telemetry_journal":
+            raise RuntimeError(f"unsafe telemetry journal path: {journal_root}")
+        if journal_root.exists():
+            shutil.rmtree(journal_root)
+        if journal_root.exists():
+            raise RuntimeError(
+                f"telemetry journal still exists after successful removal: {journal_root}"
+            )
+
+    def flush(self) -> None:
+        """Export the immutable canonical telemetry set exactly once."""
+
+        if not self.enabled or self.run_dir is None:
+            return
+        if self._canonical_export_attempted:
+            if self._telemetry_finalization.get("canonical_complete") is True:
+                return
+            raise RuntimeError(
+                self._canonical_export_error
+                or "canonical telemetry export previously failed"
+            )
+        self._canonical_export_attempted = True
+        errors: list[str] = []
+        journal: dict[str, Any] = self.journal_status()
+        try:
+            self.checkpoint()
+        except Exception as exc:
+            errors.append(f"final checkpoint: {type(exc).__name__}: {exc}")
+        try:
+            journal = self._write_journal_checksum_manifest()
+        except Exception as exc:
+            errors.append(f"journal manifest: {type(exc).__name__}: {exc}")
+            journal = self.journal_status()
+        for journal_error in self._journal_errors:
+            message = f"journal checkpoint: {journal_error}"
+            if message not in errors:
+                errors.append(message)
+
+        canonical_files: dict[str, Any] = {}
+        canonical_error = ""
+        try:
+            self._validate_checkpoint_state()
+            record_counts = self._write_canonical_artifacts()
+            canonical_files = self._canonical_file_manifest(record_counts)
+        except Exception as exc:
+            canonical_error = f"{type(exc).__name__}: {exc}"
+            errors.append(f"canonical export: {canonical_error}")
+
+        canonical_complete = not bool(errors)
+        journal = {
+            **journal,
+            "removed_after_success": bool(canonical_complete),
+        }
+        payload = {
+            "schema_version": "telemetry.canonical_finalization.v1",
+            "created_wall_time_s": time.time(),
+            "canonical_export_attempted": True,
+            "canonical_complete": canonical_complete,
+            "stream_counts": {
+                name: len(rows)
+                for name, rows in self._journal_stream_rows().items()
+            },
+            "canonical_files": canonical_files,
+            "journal": journal,
+            "errors": errors,
+        }
+        marker_path = self.run_dir / "telemetry_finalization.json"
+        marker_error = ""
+        try:
+            write_json(marker_path, payload)
+        except Exception as exc:
+            marker_error = f"{type(exc).__name__}: {exc}"
+            payload["canonical_complete"] = False
+            payload["errors"] = [*errors, f"finalization marker: {marker_error}"]
+
+        if payload["canonical_complete"] is True and not marker_error:
+            try:
+                self._verify_canonical_finalization(marker_path, payload)
+                self._remove_successful_journal()
+            except Exception as exc:
+                verification_error = f"{type(exc).__name__}: {exc}"
+                payload["canonical_complete"] = False
+                payload["journal"] = {
+                    **dict(payload.get("journal", {}) or {}),
+                    "removed_after_success": False,
+                }
+                payload["errors"] = [
+                    *list(payload.get("errors", []) or []),
+                    f"canonical self-verification: {verification_error}",
+                ]
+                try:
+                    write_json(marker_path, payload)
+                except Exception as exc:
+                    marker_error = (
+                        f"self-verification failure marker: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                canonical_error = verification_error
+
+        status = {
+            **payload,
+            "marker_path": str(marker_path.resolve()),
+            "marker_sha256": (
+                _sha256_file(marker_path) if marker_path.is_file() else ""
+            ),
+        }
+        self._telemetry_finalization = status
+        self.last_status["telemetry_finalization"] = dict(status)
+        if payload["canonical_complete"] is not True or marker_error:
+            self._canonical_export_error = (
+                canonical_error
+                or marker_error
+                or "canonical telemetry finalization is incomplete"
+            )
+            raise RuntimeError(self._canonical_export_error)
+
+    def telemetry_finalization_status(self) -> dict[str, Any]:
+        return dict(self._telemetry_finalization)
 
     def finish_episode(self, *, success: bool = True, reason: str = "") -> dict[str, Any]:
         if not self.enabled:
             return {"enabled": False}
+        if self._canonical_export_attempted:
+            self.flush()
+            return self.status()
         sim_time = float((self.last_row or {}).get("time_s", 0.0) or 0.0)
         self.finish_replay(success=success, reason=reason, sim_time_s=sim_time)
         self.finished_wall = time.time()
@@ -232,6 +570,8 @@ class TelemetryCollector:
                 "live_packet": self.live_packet(),
                 "live_events": self.live_buffer.recent_events(),
                 "live_buffer": self.live_buffer.status(),
+                "journal": self.journal_status(),
+                "telemetry_finalization": self.telemetry_finalization_status(),
             }
         )
         return status
@@ -366,8 +706,7 @@ class TelemetryCollector:
             step_sequence=self.replay_context.sequence_name,
             phase=self.replay_context.phase,
         )
-        if bool(self.config.telemetry.save_events) and self.event_recorder is not None:
-            self.event_recorder.flush()
+        self.checkpoint()
 
     def update_obstacle_context(self, *, height_cm: int, height_m: float | None = None, source: str = "", request_id: str = "") -> None:
         self.obstacle_height_cm = int(height_cm)
@@ -906,3 +1245,11 @@ def _component(values: Any, index: int) -> float:
         return float(values[index])
     except Exception:
         return float("nan")
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

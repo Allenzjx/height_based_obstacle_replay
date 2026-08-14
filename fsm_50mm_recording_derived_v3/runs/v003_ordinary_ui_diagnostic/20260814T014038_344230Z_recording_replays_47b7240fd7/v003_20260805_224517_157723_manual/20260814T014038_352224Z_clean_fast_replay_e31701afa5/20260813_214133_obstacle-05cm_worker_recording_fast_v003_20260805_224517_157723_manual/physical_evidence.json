@@ -1,0 +1,263 @@
+{
+  "collision_evidence_valid": false,
+  "common_contact_evidence_valid": false,
+  "contact_drift_evidence_valid": false,
+  "contact_force_valid": false,
+  "contact_mode": "disabled",
+  "contact_point_displacement_semantics": "UNAVAILABLE_BY_ROLE",
+  "criteria": {
+    "all_legs_linkage_lift_valid": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "all_legs_linkage_lift_valid",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "attitude_safe": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "attitude_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "collision_safe": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "collision_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "contact_drift_safe": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "contact_drift_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "contact_evidence_valid": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "contact_evidence_valid",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "final_all_loaded": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_all_loaded",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "final_all_top": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_all_top",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "final_velocity_stable": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_velocity_stable",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "joint_limits_safe": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "joint_limits_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "no_illegal_drive_up": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "no_illegal_drive_up",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    "penetration_safe": {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "penetration_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    }
+  },
+  "criterion_records": [
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "contact_evidence_valid",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "all_legs_linkage_lift_valid",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "no_illegal_drive_up",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "attitude_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "joint_limits_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "collision_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "penetration_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "contact_drift_safe",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_all_top",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_all_loaded",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "UNAVAILABLE_BY_ROLE",
+      "name": "final_velocity_stable",
+      "passed": null,
+      "reason": "ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+      "scope": "COMMON"
+    }
+  ],
+  "dangerous_collision_count": 0,
+  "diagnostic_role": "U",
+  "environment_equivalence_eligible": false,
+  "environment_equivalence_role": "",
+  "evidence_complete": false,
+  "filtered_contact_error_count": 0,
+  "filtered_contact_errors": [],
+  "filtered_contact_valid": false,
+  "final_all_loaded": false,
+  "final_all_top": false,
+  "final_velocity_stable": false,
+  "final_wheel_contact_classes": {},
+  "final_wheel_force_impulse_w_n_s": {},
+  "final_wheel_upward_force_impulse_n_s": {},
+  "force_impulse_evidence_valid": false,
+  "full_physical_verdict": "NOT_EVALUABLE",
+  "full_physical_verdict_reasons": [
+    "contact_evidence_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "all_legs_linkage_lift_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "no_illegal_drive_up: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "attitude_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "joint_limits_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "collision_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "penetration_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "contact_drift_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_top: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_loaded: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_velocity_stable: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence"
+  ],
+  "joint_limit_evidence_valid": false,
+  "joint_limit_violation_count": 0,
+  "material_point_identity_available": false,
+  "maximum_abs_pitch_rad": null,
+  "maximum_abs_roll_rad": null,
+  "maximum_allowed_penetration_m": 0.003,
+  "maximum_angular_velocity_rad_s": null,
+  "maximum_collision_penetration_m": null,
+  "maximum_contact_drift_m": null,
+  "minimum_two_leg_corridor_margin_m": null,
+  "not_evaluable_reasons": [
+    "contact_evidence_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "all_legs_linkage_lift_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "no_illegal_drive_up: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "attitude_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "joint_limits_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "collision_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "penetration_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "contact_drift_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_top: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_loaded: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_velocity_stable: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence"
+  ],
+  "penetration_evidence_source": "",
+  "penetration_evidence_valid": false,
+  "physical_anchoring_proven": false,
+  "physical_qualification_eligible": false,
+  "physical_success": false,
+  "physx_drive_target_evidence_valid": false,
+  "role_capture_verdict": "NOT_EVALUABLE",
+  "role_capture_verdict_reasons": [
+    "contact_evidence_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "all_legs_linkage_lift_valid: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "no_illegal_drive_up: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "attitude_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "joint_limits_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "collision_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "penetration_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "contact_drift_safe: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_top: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_all_loaded: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence",
+    "final_velocity_stable: ordinary-UI U diagnostic deliberately disables all contact sensors and is not physical-qualification evidence"
+  ],
+  "sample_count": 11008,
+  "schema_version": "fsm50.physical_evidence.v2",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "strict_criteria": {
+    "all_legs_linkage_lift_valid": null,
+    "attitude_safe": null,
+    "collision_safe": null,
+    "contact_drift_safe": null,
+    "contact_evidence_valid": null,
+    "final_all_loaded": null,
+    "final_all_top": null,
+    "final_velocity_stable": null,
+    "joint_limits_safe": null,
+    "no_illegal_drive_up": null,
+    "penetration_safe": null
+  },
+  "traversal": {
+    "all_legs_valid": false,
+    "any_illegal_drive_up": false,
+    "evidence_available": false,
+    "legs": {}
+  },
+  "wheel_integral_authoritative_artifact": "V003_WHEEL_INTEGRAL_EVIDENCE.json",
+  "wheel_legacy_simple_integration_authoritative": false,
+  "zero_target_loaded_contact_displacement_sample_count": 0
+}

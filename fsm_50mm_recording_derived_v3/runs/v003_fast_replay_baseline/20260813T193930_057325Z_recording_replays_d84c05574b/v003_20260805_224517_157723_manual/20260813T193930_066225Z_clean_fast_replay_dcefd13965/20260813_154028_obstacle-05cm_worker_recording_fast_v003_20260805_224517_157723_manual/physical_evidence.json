@@ -1,0 +1,451 @@
+{
+  "anchored_contact_drift_sample_count": 320,
+  "collision_evidence_valid": true,
+  "common_contact_evidence_valid": true,
+  "contact_drift_evidence_valid": true,
+  "contact_force_valid": true,
+  "contact_mode": "instrumented",
+  "criteria": {
+    "all_legs_linkage_lift_valid": {
+      "availability": "AVAILABLE",
+      "name": "all_legs_linkage_lift_valid",
+      "passed": false,
+      "reason": "one or more legs lack a valid linkage-lift episode",
+      "scope": "COMMON"
+    },
+    "attitude_safe": {
+      "availability": "AVAILABLE",
+      "name": "attitude_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    "collision_safe": {
+      "availability": "AVAILABLE",
+      "name": "collision_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "contact_drift_safe": {
+      "availability": "AVAILABLE",
+      "name": "contact_drift_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "contact_evidence_valid": {
+      "availability": "AVAILABLE",
+      "name": "contact_evidence_valid",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    "final_all_loaded": {
+      "availability": "AVAILABLE",
+      "name": "final_all_loaded",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    "final_all_top": {
+      "availability": "AVAILABLE",
+      "name": "final_all_top",
+      "passed": false,
+      "reason": "the final contact class is not TOP for all four wheels",
+      "scope": "COMMON"
+    },
+    "final_velocity_stable": {
+      "availability": "AVAILABLE",
+      "name": "final_velocity_stable",
+      "passed": false,
+      "reason": "the final base-velocity dwell did not meet existing limits",
+      "scope": "COMMON"
+    },
+    "joint_limits_safe": {
+      "availability": "AVAILABLE",
+      "name": "joint_limits_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    "no_illegal_drive_up": {
+      "availability": "AVAILABLE",
+      "name": "no_illegal_drive_up",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    "penetration_safe": {
+      "availability": "AVAILABLE",
+      "name": "penetration_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    }
+  },
+  "criterion_records": [
+    {
+      "availability": "AVAILABLE",
+      "name": "contact_evidence_valid",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "all_legs_linkage_lift_valid",
+      "passed": false,
+      "reason": "one or more legs lack a valid linkage-lift episode",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "no_illegal_drive_up",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "attitude_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "joint_limits_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "collision_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "penetration_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "contact_drift_safe",
+      "passed": true,
+      "reason": "",
+      "scope": "INSTRUMENTED_ONLY"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "final_all_top",
+      "passed": false,
+      "reason": "the final contact class is not TOP for all four wheels",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "final_all_loaded",
+      "passed": true,
+      "reason": "",
+      "scope": "COMMON"
+    },
+    {
+      "availability": "AVAILABLE",
+      "name": "final_velocity_stable",
+      "passed": false,
+      "reason": "the final base-velocity dwell did not meet existing limits",
+      "scope": "COMMON"
+    }
+  ],
+  "dangerous_collision_count": 0,
+  "evidence_complete": true,
+  "filtered_contact_error_count": 0,
+  "filtered_contact_errors": [],
+  "filtered_contact_valid": true,
+  "final_all_loaded": true,
+  "final_all_top": false,
+  "final_velocity_stable": false,
+  "final_wheel_contact_classes": {
+    "FL": "GROUND",
+    "FR": "GROUND",
+    "RL": "GROUND",
+    "RR": "GROUND"
+  },
+  "final_wheel_force_impulse_w_n_s": {
+    "FL": [
+      6.655834662675848e-07,
+      0.0,
+      4.953774984677616
+    ],
+    "FR": [
+      6.084607624264494e-07,
+      0.0,
+      4.528624733289068
+    ],
+    "RL": [
+      6.233747825490335e-07,
+      0.0,
+      4.639626185099271
+    ],
+    "RR": [
+      6.779436082145648e-07,
+      0.0,
+      5.0457685430844466
+    ]
+  },
+  "final_wheel_upward_force_impulse_n_s": {
+    "FL": 4.953774984677616,
+    "FR": 4.528624733289068,
+    "RL": 4.639626185099271,
+    "RR": 5.0457685430844466
+  },
+  "force_impulse_evidence_valid": true,
+  "full_physical_verdict": "FAIL",
+  "full_physical_verdict_reasons": [
+    "all_legs_linkage_lift_valid: one or more legs lack a valid linkage-lift episode",
+    "final_all_top: the final contact class is not TOP for all four wheels",
+    "final_velocity_stable: the final base-velocity dwell did not meet existing limits"
+  ],
+  "joint_limit_evidence_valid": true,
+  "joint_limit_violation_count": 0,
+  "maximum_abs_pitch_rad": 0.012019981375530711,
+  "maximum_abs_roll_rad": 4.271637459208103e-05,
+  "maximum_allowed_penetration_m": 0.003,
+  "maximum_angular_velocity_rad_s": 0.007991746937055538,
+  "maximum_collision_penetration_m": 1.8060216007143026e-06,
+  "maximum_contact_drift_m": 3.204745856875373e-05,
+  "minimum_two_leg_corridor_margin_m": null,
+  "not_evaluable_reasons": [],
+  "penetration_evidence_source": "omni.physics.tensors.RigidContactView.get_contact_data.distances",
+  "penetration_evidence_valid": true,
+  "physical_success": false,
+  "physx_drive_target_evidence_valid": true,
+  "role_capture_verdict": "FAIL",
+  "role_capture_verdict_reasons": [
+    "all_legs_linkage_lift_valid: one or more legs lack a valid linkage-lift episode",
+    "final_all_top: the final contact class is not TOP for all four wheels",
+    "final_velocity_stable: the final base-velocity dwell did not meet existing limits"
+  ],
+  "sample_count": 80,
+  "schema_version": "fsm50.physical_evidence.v2",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "strict_criteria": {
+    "all_legs_linkage_lift_valid": false,
+    "attitude_safe": true,
+    "collision_safe": true,
+    "contact_drift_safe": true,
+    "contact_evidence_valid": true,
+    "final_all_loaded": true,
+    "final_all_top": false,
+    "final_velocity_stable": false,
+    "joint_limits_safe": true,
+    "no_illegal_drive_up": true,
+    "penetration_safe": true
+  },
+  "traversal": {
+    "all_legs_valid": false,
+    "any_illegal_drive_up": false,
+    "legs": {
+      "FL": {
+        "active_episode_status": "ACTIVE_UNARMED",
+        "airborne_end_s": null,
+        "airborne_seen_before_top": false,
+        "airborne_start_s": null,
+        "canonical_episode": null,
+        "canonical_episode_index": null,
+        "episodes": [
+          {
+            "airborne_candidate_s": null,
+            "airborne_end_s": null,
+            "airborne_seen_before_top": false,
+            "airborne_start_s": null,
+            "ended_s": null,
+            "episode_index": 0,
+            "evidence_reason": "",
+            "front_face_crossing_s": null,
+            "illegal_reasons": [],
+            "linkage_lift_valid": false,
+            "loaded_support_seen_s": 1.5083333333333304,
+            "maximum_clearance_m": null,
+            "minimum_load_n": 7.40655517578125,
+            "started_s": 1.5083333333333304,
+            "status": "ACTIVE_UNARMED",
+            "top_contact_s": null,
+            "top_load_confirm_s": null,
+            "top_load_since_s": null,
+            "unload_candidate_s": null,
+            "unload_end_s": null,
+            "unload_start_s": null
+          }
+        ],
+        "front_face_crossing_s": null,
+        "illegal_reasons": [],
+        "last_class": "GROUND",
+        "leg": "FL",
+        "linkage_lift_valid": false,
+        "loaded_front_face_rotation_rad": 0.0,
+        "loaded_support_seen_s": 1.5083333333333304,
+        "maximum_clearance_m": null,
+        "minimum_airborne_s": 0.05,
+        "minimum_load_n": 7.40655517578125,
+        "minimum_unload_dwell_s": 0.025,
+        "top_contact_s": null,
+        "top_load_confirm_s": null,
+        "unload_end_s": null,
+        "unload_start_s": null
+      },
+      "FR": {
+        "active_episode_status": "ACTIVE_UNARMED",
+        "airborne_end_s": null,
+        "airborne_seen_before_top": false,
+        "airborne_start_s": null,
+        "canonical_episode": null,
+        "canonical_episode_index": null,
+        "episodes": [
+          {
+            "airborne_candidate_s": null,
+            "airborne_end_s": null,
+            "airborne_seen_before_top": false,
+            "airborne_start_s": null,
+            "ended_s": null,
+            "episode_index": 0,
+            "evidence_reason": "",
+            "front_face_crossing_s": null,
+            "illegal_reasons": [],
+            "linkage_lift_valid": false,
+            "loaded_support_seen_s": 1.5083333333333304,
+            "maximum_clearance_m": null,
+            "minimum_load_n": 6.769707679748535,
+            "started_s": 1.5083333333333304,
+            "status": "ACTIVE_UNARMED",
+            "top_contact_s": null,
+            "top_load_confirm_s": null,
+            "top_load_since_s": null,
+            "unload_candidate_s": null,
+            "unload_end_s": null,
+            "unload_start_s": null
+          }
+        ],
+        "front_face_crossing_s": null,
+        "illegal_reasons": [],
+        "last_class": "GROUND",
+        "leg": "FR",
+        "linkage_lift_valid": false,
+        "loaded_front_face_rotation_rad": 0.0,
+        "loaded_support_seen_s": 1.5083333333333304,
+        "maximum_clearance_m": null,
+        "minimum_airborne_s": 0.05,
+        "minimum_load_n": 6.769707679748535,
+        "minimum_unload_dwell_s": 0.025,
+        "top_contact_s": null,
+        "top_load_confirm_s": null,
+        "unload_end_s": null,
+        "unload_start_s": null
+      },
+      "RL": {
+        "active_episode_status": "ACTIVE_UNARMED",
+        "airborne_end_s": null,
+        "airborne_seen_before_top": false,
+        "airborne_start_s": null,
+        "canonical_episode": null,
+        "canonical_episode_index": null,
+        "episodes": [
+          {
+            "airborne_candidate_s": null,
+            "airborne_end_s": null,
+            "airborne_seen_before_top": false,
+            "airborne_start_s": null,
+            "ended_s": null,
+            "episode_index": 0,
+            "evidence_reason": "",
+            "front_face_crossing_s": null,
+            "illegal_reasons": [],
+            "linkage_lift_valid": false,
+            "loaded_support_seen_s": 1.5083333333333304,
+            "maximum_clearance_m": null,
+            "minimum_load_n": 6.939067840576172,
+            "started_s": 1.5083333333333304,
+            "status": "ACTIVE_UNARMED",
+            "top_contact_s": null,
+            "top_load_confirm_s": null,
+            "top_load_since_s": null,
+            "unload_candidate_s": null,
+            "unload_end_s": null,
+            "unload_start_s": null
+          }
+        ],
+        "front_face_crossing_s": null,
+        "illegal_reasons": [],
+        "last_class": "GROUND",
+        "leg": "RL",
+        "linkage_lift_valid": false,
+        "loaded_front_face_rotation_rad": 0.0,
+        "loaded_support_seen_s": 1.5083333333333304,
+        "maximum_clearance_m": null,
+        "minimum_airborne_s": 0.05,
+        "minimum_load_n": 6.939067840576172,
+        "minimum_unload_dwell_s": 0.025,
+        "top_contact_s": null,
+        "top_load_confirm_s": null,
+        "unload_end_s": null,
+        "unload_start_s": null
+      },
+      "RR": {
+        "active_episode_status": "ACTIVE_UNARMED",
+        "airborne_end_s": null,
+        "airborne_seen_before_top": false,
+        "airborne_start_s": null,
+        "canonical_episode": null,
+        "canonical_episode_index": null,
+        "episodes": [
+          {
+            "airborne_candidate_s": null,
+            "airborne_end_s": null,
+            "airborne_seen_before_top": false,
+            "airborne_start_s": null,
+            "ended_s": null,
+            "episode_index": 0,
+            "evidence_reason": "",
+            "front_face_crossing_s": null,
+            "illegal_reasons": [],
+            "linkage_lift_valid": false,
+            "loaded_support_seen_s": 1.5083333333333304,
+            "maximum_clearance_m": null,
+            "minimum_load_n": 7.54055643081665,
+            "started_s": 1.5083333333333304,
+            "status": "ACTIVE_UNARMED",
+            "top_contact_s": null,
+            "top_load_confirm_s": null,
+            "top_load_since_s": null,
+            "unload_candidate_s": null,
+            "unload_end_s": null,
+            "unload_start_s": null
+          }
+        ],
+        "front_face_crossing_s": null,
+        "illegal_reasons": [],
+        "last_class": "GROUND",
+        "leg": "RR",
+        "linkage_lift_valid": false,
+        "loaded_front_face_rotation_rad": 0.0,
+        "loaded_support_seen_s": 1.5083333333333304,
+        "maximum_clearance_m": null,
+        "minimum_airborne_s": 0.05,
+        "minimum_load_n": 7.54055643081665,
+        "minimum_unload_dwell_s": 0.025,
+        "top_contact_s": null,
+        "top_load_confirm_s": null,
+        "unload_end_s": null,
+        "unload_start_s": null
+      }
+    }
+  },
+  "wheel_integral_authoritative_artifact": "V003_WHEEL_INTEGRAL_EVIDENCE.json",
+  "wheel_legacy_simple_integration_authoritative": false
+}

@@ -1,0 +1,5 @@
+{
+  "error": "RuntimeError: formal worker artifact preflight failed: ValueError: ordinary-UI U role requires the incoming production default telemetry_contact_sensors_enabled=false",
+  "results_so_far": [],
+  "worker_binding": {}
+}

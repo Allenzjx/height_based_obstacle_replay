@@ -36,7 +36,7 @@ from motion_speed import load_motion_reference
 from playback import SimTimePlaybackService
 from sequence_model import load_steps_jsonl
 from telemetry.config import RuntimeTelemetryConfig
-from telemetry.exporters import write_csv, write_json
+from telemetry.exporters import strict_json_dumps, write_csv, write_json
 
 from .filtered_wheel_contact import make_filtered_wheel_contact_sensor_factory
 from .fsm50_telemetry import FSM50TelemetryCollector
@@ -53,6 +53,7 @@ from .recording_fast_plan import (
     write_fast_plan,
     write_source_dispatch_ledger,
 )
+from .wheel_integral_evidence import evaluate_wheel_integral_evidence
 from .motion_start_readiness import (
     capture_live_motion_start_snapshot,
     evaluate_motion_start_ready,
@@ -60,6 +61,10 @@ from .motion_start_readiness import (
 )
 from .shutdown_contract import SUCCESSFUL_SHUTDOWN_STATUSES
 from .support_classifier import ObstacleGeometry
+from .viewport_buffer_video import (
+    CAPTURE_BACKEND as ACTIVE_VIEWPORT_BUFFER_BACKEND,
+    ActiveViewportBufferVideoRecorder,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -111,15 +116,14 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
         f".{destination.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
     )
     try:
+        encoded = strict_json_dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
         with temporary.open("w", encoding="utf-8", newline="\n") as stream:
-            json.dump(
-                payload,
-                stream,
-                ensure_ascii=False,
-                sort_keys=True,
-                indent=2,
-                default=str,
-            )
+            stream.write(encoded)
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
@@ -153,6 +157,14 @@ _PRECLOSE_SNAPSHOT_FILES: tuple[tuple[str, str], ...] = (
     ("checksums.sha256", "checksums.preclose.sha256"),
 )
 
+_WORKER_BATCH_CONTROL_FILES: tuple[str, ...] = (
+    "worker_artifact_request.json",
+    "worker_startup_binding.json",
+    "worker_preplay_stop_ack.json",
+    "worker_playback_start_ack.json",
+    "worker_artifact_complete_ack.json",
+)
+
 
 def _snapshot_preclose_files(batch_root: Path) -> list[str]:
     """Copy the durable batch evidence set and report every failed copy."""
@@ -177,6 +189,49 @@ def _path_is_within(path: Path, parent: Path) -> bool:
     return True
 
 
+def _strict_json_equal(left: Any, right: Any) -> bool:
+    """Compare JSON values without Python's bool/int/float coercions."""
+
+    try:
+        options = {
+            "ensure_ascii": False,
+            "sort_keys": True,
+            "separators": (",", ":"),
+        }
+        return strict_json_dumps(left, **options) == strict_json_dumps(
+            right, **options
+        )
+    except (TypeError, ValueError):
+        return False
+
+
+def _exact_json_int(value: Any, label: str) -> int:
+    if type(value) is not int:
+        raise RuntimeError(f"{label} must be an exact JSON integer")
+    return value
+
+
+def _strict_json_read(path: Path) -> Any:
+    """Read one JSON file while rejecting duplicates and non-finite constants."""
+
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"non-finite JSON constant {value}")
+
+    def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        decoded: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in decoded:
+                raise ValueError(f"duplicate JSON object key {key!r}")
+            decoded[key] = value
+        return decoded
+
+    return json.loads(
+        Path(path).read_text(encoding="utf-8"),
+        parse_constant=reject_constant,
+        object_pairs_hook=reject_duplicate_keys,
+    )
+
+
 class ChildSupervisorHandshake:
     """Child-owned atomic handshake consumed only by its exact parent PID."""
 
@@ -187,6 +242,7 @@ class ChildSupervisorHandshake:
         self.child_pid = os.getpid()
         self.batch_root: Path | None = None
         self.sequence = 0
+        self.worker_binding: dict[str, Any] = {}
 
     def _write(self, state: str, **extra: Any) -> None:
         self.sequence += 1
@@ -201,6 +257,7 @@ class ChildSupervisorHandshake:
                 "state": str(state),
                 "sequence": self.sequence,
                 "updated_utc": datetime.now(timezone.utc).isoformat(),
+                **_jsonable(self.worker_binding),
                 **_jsonable(extra),
             },
         )
@@ -226,7 +283,35 @@ class ChildSupervisorHandshake:
         self._write("PRECLOSE_COMPLETE", preclose_marker=str(marker))
         return marker
 
-    def mark_graceful_close_returned(self, *, intended_returncode: int) -> None:
+    def bind_worker(
+        self,
+        *,
+        worker_pid: int,
+        worker_session_id: str,
+        adapter_runtime_instance_id: str,
+        artifact_request_id: str,
+        artifact_request_sha256: str,
+    ) -> None:
+        if int(worker_pid) <= 0 or not str(worker_session_id):
+            raise ValueError("formal worker binding requires PID and session id")
+        self.worker_binding = {
+            "formal_worker_pid": int(worker_pid),
+            "formal_worker_session_id": str(worker_session_id),
+            "adapter_runtime_instance_id": str(adapter_runtime_instance_id),
+            "artifact_request_id": str(artifact_request_id),
+            "artifact_request_sha256": str(artifact_request_sha256).lower(),
+        }
+        self._write("FORMAL_WORKER_BOUND")
+
+    def mark_graceful_close_returned(
+        self,
+        *,
+        intended_returncode: int,
+        worker_returncode: int | None = None,
+        worker_process_returned_normally: bool | None = None,
+        worker_shutdown_accepted: bool | None = None,
+        worker_shutdown_request_id: str = "",
+    ) -> None:
         self._write(
             "GRACEFUL_CLOSE_RETURNED",
             shutdown_mode="graceful",
@@ -235,6 +320,10 @@ class ChildSupervisorHandshake:
                 "skip_cleanup": False,
             },
             intended_returncode=int(intended_returncode),
+            worker_returncode=worker_returncode,
+            worker_process_returned_normally=worker_process_returned_normally,
+            worker_shutdown_accepted=worker_shutdown_accepted,
+            worker_shutdown_request_id=str(worker_shutdown_request_id),
         )
 
     def mark_fast_exit_requested(
@@ -242,6 +331,7 @@ class ChildSupervisorHandshake:
         *,
         intended_returncode: int,
         runtime_version: str,
+        worker_shutdown_request_id: str = "",
     ) -> None:
         self._write(
             "FAST_EXIT_REQUESTED",
@@ -252,6 +342,7 @@ class ChildSupervisorHandshake:
             },
             intended_returncode=int(intended_returncode),
             runtime_version=str(runtime_version),
+            worker_shutdown_request_id=str(worker_shutdown_request_id),
         )
 
     def mark_fast_close_returned(
@@ -259,6 +350,16 @@ class ChildSupervisorHandshake:
         *,
         intended_returncode: int,
         runtime_version: str,
+        worker_returncode: int | None = None,
+        worker_process_returned_normally: bool | None = None,
+        worker_shutdown_accepted: bool | None = None,
+        worker_close_requested: bool | None = None,
+        worker_close_returned: bool | None = None,
+        worker_forced_termination: bool | None = None,
+        worker_shutdown_request_id: str = "",
+        worker_shutdown_ack: dict[str, Any] | None = None,
+        worker_close_requested_ack: dict[str, Any] | None = None,
+        worker_close_returned_ack: dict[str, Any] | None = None,
     ) -> None:
         # This state is deliberately not named CLOSE_RETURNED: a fast close
         # does not claim that graceful close_stage cleanup completed.
@@ -271,6 +372,66 @@ class ChildSupervisorHandshake:
             },
             intended_returncode=int(intended_returncode),
             runtime_version=str(runtime_version),
+            worker_returncode=worker_returncode,
+            worker_process_returned_normally=worker_process_returned_normally,
+            worker_shutdown_accepted=worker_shutdown_accepted,
+            worker_close_requested=worker_close_requested,
+            worker_close_returned=worker_close_returned,
+            worker_forced_termination=worker_forced_termination,
+            worker_shutdown_request_id=str(worker_shutdown_request_id),
+            worker_shutdown_ack=_jsonable(worker_shutdown_ack or {}),
+            worker_close_requested_ack=_jsonable(
+                worker_close_requested_ack or {}
+            ),
+            worker_close_returned_ack=_jsonable(worker_close_returned_ack or {}),
+        )
+
+    def mark_fast_worker_process_returned(
+        self,
+        *,
+        intended_returncode: int,
+        runtime_version: str,
+        worker_returncode: int,
+        worker_process_returned_normally: bool,
+        worker_shutdown_accepted: bool,
+        worker_close_requested: bool,
+        worker_close_returned: bool,
+        worker_forced_termination: bool,
+        worker_shutdown_request_id: str,
+        worker_shutdown_ack: dict[str, Any],
+        worker_close_requested_ack: dict[str, Any],
+        worker_close_returned_ack: dict[str, Any] | None = None,
+    ) -> None:
+        """Record controller-observed worker exit after fast close dispatch.
+
+        Isaac's ``skip_cleanup=True`` path may terminate the worker process
+        without returning from ``SimulationApp.close``.  Therefore this state
+        claims only that the controller received the pre-close ACK chain and
+        then observed the exact worker process return normally.  A genuine
+        post-close ACK is retained when available, but is never synthesized.
+        """
+
+        self._write(
+            "FAST_WORKER_PROCESS_RETURNED",
+            shutdown_mode="fast",
+            close_kwargs={
+                "wait_for_replicator": False,
+                "skip_cleanup": True,
+            },
+            intended_returncode=int(intended_returncode),
+            runtime_version=str(runtime_version),
+            worker_returncode=worker_returncode,
+            worker_process_returned_normally=worker_process_returned_normally,
+            worker_shutdown_accepted=worker_shutdown_accepted,
+            worker_close_requested=worker_close_requested,
+            worker_close_returned=worker_close_returned,
+            worker_forced_termination=worker_forced_termination,
+            worker_shutdown_request_id=str(worker_shutdown_request_id),
+            worker_shutdown_ack=_jsonable(worker_shutdown_ack),
+            worker_close_requested_ack=_jsonable(worker_close_requested_ack),
+            worker_close_returned_ack=_jsonable(
+                worker_close_returned_ack or {}
+            ),
         )
 
     def mark_close_error(self, *, shutdown_mode: str, error: str) -> None:
@@ -282,6 +443,51 @@ class ChildSupervisorHandshake:
 
     def mark_failed(self, error: str) -> None:
         self._write("CHILD_FAILED", error=str(error))
+
+
+def _viewport_preclose_evidence_paths(
+    run_dir: Path,
+    video: dict[str, Any],
+) -> list[Path]:
+    """Return fail-closed viewport evidence without breaking failure shutdown.
+
+    A valid-video claim requires the complete direct-buffer closure.  When
+    capture itself fails, the wrapper manifest and any low-level diagnostic
+    files that were actually finalized remain required evidence, while
+    nonexistent PNG/MP4 outputs are not invented as required paths.  The run
+    remains ARTIFACT_INVALID, but its diagnostic artifact can still reach
+    PRECLOSE_COMPLETE and a separately verified Isaac shutdown.
+    """
+
+    root = Path(run_dir).resolve()
+    wrapper_text = str(video.get("manifest_path", "") or "")
+    wrapper = (
+        Path(wrapper_text).resolve()
+        if wrapper_text
+        else root / "viewport_video_manifest.json"
+    )
+    paths = [wrapper]
+    diagnostic_names = (
+        "viewport_buffer_video_manifest.json",
+        "viewport_frame_ledger.jsonl",
+    )
+    for name in diagnostic_names:
+        candidate = root / name
+        if candidate.is_file():
+            paths.append(candidate)
+    if video.get("actual_viewport_video") is True:
+        paths.extend(
+            [
+                root / "viewport_buffer_video_manifest.json",
+                root / "viewport_frame_ledger.jsonl",
+                root / "viewport_first_frame.png",
+                root / "viewport_last_frame.png",
+                Path(
+                    str(video.get("video_path", "") or root / "actual_viewport_video.mp4")
+                ).resolve(),
+            ]
+        )
+    return list(dict.fromkeys(paths))
 
 
 def _preclose_evidence_manifest(
@@ -304,6 +510,13 @@ def _preclose_evidence_manifest(
     ]
     if include_global_analysis_reports:
         paths.extend([VERSION_MATRIX_PATH, DIAGONAL_TIMELINE_PATH])
+    paths.extend(
+        candidate
+        for name in _WORKER_BATCH_CONTROL_FILES
+        if (candidate := batch_root / name).is_file()
+    )
+    if any(_result_is_worker_owned(dict(result or {})) for result in results):
+        paths.extend(batch_root / name for name in _WORKER_BATCH_CONTROL_FILES)
     for result in results:
         run_dir_text = str(result.get("run_dir", "") or "")
         if not run_dir_text:
@@ -314,12 +527,6 @@ def _preclose_evidence_manifest(
             paths.extend(Path(str(path)).resolve() for path in declared)
         else:
             video_record = dict(result.get("video", {}) or {})
-            video_manifest = Path(
-                str(video_record.get("manifest_path", "") or run_dir / "viewport_video_manifest.json")
-            )
-            video_path = Path(
-                str(video_record.get("video_path", "") or run_dir / "actual_viewport_video.mp4")
-            )
             paths.extend(
                 [
                     run_dir / "result.json",
@@ -328,12 +535,12 @@ def _preclose_evidence_manifest(
                     run_dir / "fsm50_telemetry.csv",
                     run_dir / "fsm50_telemetry.jsonl",
                     run_dir / "state_timeline.csv",
+                    run_dir / "telemetry_finalization.json",
                     run_dir / "visual_recording_manifest.json",
-                    video_manifest,
-                    video_path,
                     run_dir / "checksums.sha256",
                 ]
             )
+            paths.extend(_viewport_preclose_evidence_paths(run_dir, video_record))
     missing = [str(path.resolve()) for path in sorted(set(paths)) if not path.is_file()]
     if missing:
         raise RuntimeError(
@@ -580,7 +787,7 @@ def _read_supervisor_handshake(
 ) -> tuple[dict[str, Any] | None, Path | None, bool]:
     if not Path(path).is_file():
         return None, None, False
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload = _strict_json_read(Path(path))
     expected = {
         "schema_version": "fsm50.supervisor_handshake.v1",
         "token": str(token),
@@ -603,7 +810,7 @@ def _read_supervisor_handshake(
     if batch_root is not None:
         marker_path = batch_root / "preclose_complete.json"
         if marker_path.is_file():
-            marker = json.loads(marker_path.read_text(encoding="utf-8"))
+            marker = _strict_json_read(marker_path)
             marker_expected = {
                 "schema_version": "fsm50.preclose_complete.v1",
                 "token": str(token),
@@ -628,7 +835,7 @@ def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
     marker_path = root / "preclose_complete.json"
     if not marker_path.is_file():
         raise RuntimeError("preclose_complete.json is missing")
-    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    marker = _strict_json_read(marker_path)
     evidence = marker.get("evidence")
     if not isinstance(evidence, dict):
         raise RuntimeError("preclose marker evidence is not a mapping")
@@ -700,9 +907,7 @@ def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
     ):
         raise RuntimeError("preclose checksum snapshot differs from live bytes")
 
-    batch_results = json.loads(
-        (root / "batch_results.preclose.json").read_text(encoding="utf-8")
-    )
+    batch_results = _strict_json_read(root / "batch_results.preclose.json")
     if not isinstance(batch_results, list):
         raise RuntimeError("batch_results preclose snapshot is not a list")
     try:
@@ -711,10 +916,366 @@ def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
         raise RuntimeError("preclose physics_result_count is invalid") from exc
     if physics_result_count != len(batch_results):
         raise RuntimeError("preclose physics_result_count differs from batch_results")
-    snapshot_finalization = json.loads(
-        (root / "batch_finalization.preclose.json").read_text(encoding="utf-8")
+    worker_results = [
+        dict(row or {})
+        for row in batch_results
+        if isinstance(row, dict) and _result_is_worker_owned(dict(row or {}))
+    ]
+    batch_request = _strict_json_read(root / "batch_request.json")
+    formal_worker_schema = bool(
+        isinstance(batch_request, dict)
+        and batch_request.get("schema_version")
+        == "fsm50.formal_worker_recording_batch.v1"
     )
-    if evidence.get("batch_finalization") != snapshot_finalization:
+    formal_worker_controls_present = any(
+        (root / name).exists() for name in _WORKER_BATCH_CONTROL_FILES
+    )
+    formal_worker_batch = bool(
+        formal_worker_schema
+        or worker_results
+        or formal_worker_controls_present
+    )
+    if formal_worker_batch and (
+        not formal_worker_schema or not worker_results
+    ):
+        raise RuntimeError(
+            "formal-worker batch request/result ownership is inconsistent"
+        )
+    formal_worker_identity: dict[str, Any] | None = None
+    if formal_worker_batch:
+        if len(batch_results) != 1 or len(worker_results) != 1:
+            raise RuntimeError(
+                "formal-worker batch_results must contain exactly one durable result"
+            )
+        for name in _WORKER_BATCH_CONTROL_FILES:
+            control_path = (root / name).resolve()
+            if str(control_path) not in verified_files:
+                raise RuntimeError(
+                    f"preclose formal-worker evidence does not cover {name}"
+                )
+        request = _strict_json_read(root / "worker_artifact_request.json")
+        request_sha = sha256_file(root / "worker_artifact_request.json").lower()
+        startup = _strict_json_read(root / "worker_startup_binding.json")
+        stop_ack = _strict_json_read(root / "worker_preplay_stop_ack.json")
+        start_ack = _strict_json_read(root / "worker_playback_start_ack.json")
+        ack = _strict_json_read(root / "worker_artifact_complete_ack.json")
+        if (
+            ack.get("type") != "operation_ack"
+            or ack.get("operation") != "recording_artifact"
+            or ack.get("phase") != "ARTIFACT_COMPLETE"
+            or ack.get("accepted") is not True
+            or ack.get("artifact_complete") is not True
+        ):
+            raise RuntimeError("preclose worker artifact ACK is not complete")
+        request_identity = {
+            "request_id": str(request.get("request_id", "") or ""),
+            "plan_id": str(request.get("plan_id", "") or ""),
+            "plan_sha256": str(request.get("plan_sha256", "") or ""),
+            "source_version": str(request.get("source_version", "") or ""),
+            "trial_id": _exact_json_int(
+                request.get("trial_id"), "worker request trial_id"
+            ),
+            "contact_mode": str(request.get("contact_mode", "") or ""),
+            "environment_equivalence_role": str(
+                request.get("environment_equivalence_role", "") or ""
+            ),
+            "diagnostic_role": str(request.get("diagnostic_role", "") or ""),
+            "qualification_scope": str(
+                request.get("qualification_scope", "") or ""
+            ),
+            "gate1_eligible": request.get("gate1_eligible"),
+            "gate1_physical_qualification_eligible": request.get(
+                "gate1_physical_qualification_eligible"
+            ),
+            "environment_equivalence_eligible": request.get(
+                "environment_equivalence_eligible"
+            ),
+            "artifact_root": str(
+                Path(str(request.get("artifact_root", "") or "")).resolve()
+            ),
+            "artifact_request_sha256": request_sha,
+        }
+        if (
+            batch_request.get("schema_version")
+            != "fsm50.formal_worker_recording_batch.v1"
+            or list(batch_request.get("versions", []) or [])
+            != [request_identity["source_version"]]
+            or str(batch_request.get("artifact_request_path", "") or "")
+            != str((root / "worker_artifact_request.json").resolve())
+            or str(
+                batch_request.get("artifact_request_sha256", "") or ""
+            ).lower()
+            != request_sha
+            or str(batch_request.get("plan_id", "") or "")
+            != request_identity["plan_id"]
+            or str(batch_request.get("plan_sha256", "") or "")
+            != request_identity["plan_sha256"]
+            or _exact_json_int(
+                batch_request.get("trial_id"), "batch request trial_id"
+            )
+            != request_identity["trial_id"]
+            or str(
+                dict(batch_request.get("args", {}) or {}).get(
+                    "contact_mode", ""
+                )
+                or ""
+            )
+            != request_identity["contact_mode"]
+            or str(
+                dict(batch_request.get("args", {}) or {}).get(
+                    "environment_equivalence_role", ""
+                )
+                or ""
+            )
+            != request_identity["environment_equivalence_role"]
+            or str(
+                batch_request.get("environment_equivalence_role", "") or ""
+            )
+            != request_identity["environment_equivalence_role"]
+            or str(
+                dict(batch_request.get("args", {}) or {}).get(
+                    "diagnostic_role", ""
+                )
+                or ""
+            )
+            != request_identity["diagnostic_role"]
+            or str(batch_request.get("diagnostic_role", "") or "")
+            != request_identity["diagnostic_role"]
+            or str(batch_request.get("qualification_scope", "") or "")
+            != request_identity["qualification_scope"]
+            or batch_request.get("gate1_eligible")
+            is not request_identity["gate1_eligible"]
+            or batch_request.get("gate1_physical_qualification_eligible")
+            is not request_identity["gate1_physical_qualification_eligible"]
+            or batch_request.get("environment_equivalence_eligible")
+            is not request_identity["environment_equivalence_eligible"]
+            or dict(
+                batch_request.get("prelaunch_environment_validation", {}) or {}
+            ).get("ok")
+            is not True
+        ):
+            raise RuntimeError("preclose batch request differs from worker request")
+        worker_identity = {
+            "worker_pid": _exact_json_int(
+                startup.get("worker_pid"), "preclose worker PID"
+            ),
+            "worker_session_id": str(startup.get("worker_session_id", "") or ""),
+            "adapter_runtime_instance_id": str(
+                startup.get("adapter_runtime_instance_id", "") or ""
+            ),
+        }
+        if (
+            worker_identity["worker_pid"] <= 0
+            or not worker_identity["worker_session_id"]
+            or not worker_identity["adapter_runtime_instance_id"]
+            or str(startup.get("artifact_request_id", "") or "")
+            != request_identity["request_id"]
+            or str(startup.get("artifact_request_sha256", "") or "").lower()
+            != request_sha
+        ):
+            raise RuntimeError("preclose worker startup binding is incomplete")
+        replayed_startup = _validate_recording_worker_ready_status(
+            dict(startup.get("status", {}) or {}),
+            request=request,
+            request_sha256=request_sha,
+            worker_pid=worker_identity["worker_pid"],
+        )
+        for key, value in worker_identity.items():
+            if replayed_startup.get(key) != value:
+                raise RuntimeError(
+                    f"preclose replayed startup {key} differs from binding"
+                )
+        formal_worker_identity = {
+            **worker_identity,
+            "artifact_request_id": request_identity["request_id"],
+            "artifact_request_sha256": request_sha,
+        }
+        if (
+            stop_ack.get("type") != "stop_ack"
+            or stop_ack.get("zero_target_applied") is not True
+            or str(stop_ack.get("error", "") or "")
+            or str(stop_ack.get("reason", "") or "")
+            != "playback_start_boundary"
+            or not str(stop_ack.get("command_id", "") or "")
+            or _exact_json_int(
+                stop_ack.get("root_state_write_count"),
+                "pre-play stop root_state_write_count",
+            )
+            != 0
+            or str(stop_ack.get("artifact_request_id", "") or "")
+            != request_identity["request_id"]
+        ):
+            raise RuntimeError("preclose formal-worker pre-play stop is invalid")
+        if (
+            start_ack.get("type") != "operation_ack"
+            or start_ack.get("operation") != "start_playback_plan"
+            or start_ack.get("accepted") is not True
+            or start_ack.get("motion_start_ready") is not True
+            or str(start_ack.get("error", "") or "")
+            or str(start_ack.get("artifact_request_id", "") or "")
+            != request_identity["request_id"]
+            or _exact_json_int(
+                start_ack.get("root_state_write_count"),
+                "playback start root_state_write_count",
+            )
+            != 0
+            or _exact_json_int(
+                start_ack.get("event_count"), "playback start event_count"
+            )
+            != _exact_json_int(
+                request.get("plan_event_count"), "worker request plan_event_count"
+            )
+            or _exact_json_int(
+                start_ack.get("segment_count"), "playback start segment_count"
+            )
+            != _exact_json_int(
+                request.get("plan_segment_count"),
+                "worker request plan_segment_count",
+            )
+        ):
+            raise RuntimeError("preclose formal-worker playback start is invalid")
+        for label, row in (
+            ("pre-play stop", stop_ack),
+            ("playback start", start_ack),
+            ("artifact complete", ack),
+        ):
+            for key, value in worker_identity.items():
+                if not _strict_json_equal(row.get(key), value):
+                    raise RuntimeError(
+                        f"preclose {label} {key} differs from worker binding"
+                    )
+            for key in (
+                "contact_mode",
+                "environment_equivalence_role",
+                "diagnostic_role",
+                "qualification_scope",
+                "gate1_eligible",
+                "gate1_physical_qualification_eligible",
+                "environment_equivalence_eligible",
+            ):
+                if not _strict_json_equal(row.get(key), request_identity[key]):
+                    raise RuntimeError(
+                        f"preclose {label} {key} differs from worker request"
+                    )
+        for key, value in request_identity.items():
+            actual = ack.get(key)
+            if key == "artifact_root" and actual:
+                actual = str(Path(str(actual)).resolve())
+            elif key == "artifact_request_sha256" and actual:
+                actual = str(actual).lower()
+            if actual != value:
+                raise RuntimeError(
+                    f"preclose artifact ACK {key} differs from request"
+                )
+        for key in ("request_id", "plan_id", "plan_sha256"):
+            if start_ack.get(key) != request_identity[key]:
+                raise RuntimeError(
+                    f"preclose playback start {key} differs from request"
+                )
+        try:
+            stop_applied_wall = float(stop_ack["target_applied_wall_time"])
+            start_accepted_wall = float(start_ack["accepted_wall_time"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RuntimeError(
+                "preclose stop/start ordering timestamps are missing or invalid"
+            ) from exc
+        if (
+            not math.isfinite(stop_applied_wall)
+            or not math.isfinite(start_accepted_wall)
+            or stop_applied_wall > start_accepted_wall
+        ):
+            raise RuntimeError(
+                "preclose playback start preceded the applied zero-wheel stop"
+            )
+        durable_result = _validate_worker_artifact_complete_ack(
+            ack,
+            request=request,
+            request_sha256=request_sha,
+            batch_root=root,
+            worker_pid=worker_identity["worker_pid"],
+            worker_session_id=worker_identity["worker_session_id"],
+            adapter_runtime_instance_id=worker_identity[
+                "adapter_runtime_instance_id"
+            ],
+        )
+        if not _strict_json_equal(batch_results, [durable_result]):
+            raise RuntimeError(
+                "batch_results is not byte-semantically equal to the worker result"
+            )
+        for key, value in {
+            **worker_identity,
+            **request_identity,
+            "artifact_owner": "sim_worker_process",
+            "execution_path": "sim_worker_process_ipc",
+            "root_state_write_count": 0,
+        }.items():
+            if not _strict_json_equal(durable_result.get(key), value):
+                raise RuntimeError(
+                    f"preclose durable worker result {key} differs from closure"
+                )
+    snapshot_finalization = _strict_json_read(
+        root / "batch_finalization.preclose.json"
+    )
+    if formal_worker_batch:
+        durable_result = worker_results[0]
+        environment_diagnostic_role = str(
+            durable_result.get("environment_equivalence_role", "") or ""
+        )
+        ordinary_diagnostic_role = str(
+            durable_result.get("diagnostic_role", "") or ""
+        )
+        expected_batch_diagnostic = bool(
+            environment_diagnostic_role
+            and durable_result.get(
+                "environment_equivalence_diagnostic_complete"
+            )
+            is True
+        )
+        expected_ordinary_diagnostic = bool(
+            ordinary_diagnostic_role == "U"
+            and durable_result.get("ordinary_ui_diagnostic_complete") is True
+        )
+        expected_batch_scope = (
+            "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+            if ordinary_diagnostic_role == "U"
+            else "TRAJECTORY_COMPARISON"
+            if environment_diagnostic_role
+            else "GATE1_PHYSICAL_QUALIFICATION"
+        )
+        expected_batch_command_success = bool(
+            expected_ordinary_diagnostic
+            if ordinary_diagnostic_role == "U"
+            else expected_batch_diagnostic
+            if environment_diagnostic_role
+            else durable_result.get("strict_full_success") is True
+        )
+        expected_batch_fields = {
+            "environment_equivalence_role": environment_diagnostic_role,
+            "environment_equivalence_diagnostic_complete": (
+                expected_batch_diagnostic
+            ),
+            "diagnostic_role": ordinary_diagnostic_role,
+            "ordinary_ui_diagnostic_complete": expected_ordinary_diagnostic,
+            "qualification_scope": expected_batch_scope,
+            "gate1_physical_qualification_eligible": bool(
+                not ordinary_diagnostic_role and not environment_diagnostic_role
+            ),
+            "gate1_eligible": bool(
+                not ordinary_diagnostic_role and not environment_diagnostic_role
+            ),
+            "environment_equivalence_eligible": bool(
+                environment_diagnostic_role and not ordinary_diagnostic_role
+            ),
+            "command_success": expected_batch_command_success,
+        }
+        for key, value in expected_batch_fields.items():
+            if not _strict_json_equal(snapshot_finalization.get(key), value):
+                raise RuntimeError(
+                    f"preclose batch diagnostic {key} differs from worker result"
+                )
+    if not _strict_json_equal(
+        evidence.get("batch_finalization"), snapshot_finalization
+    ):
         raise RuntimeError(
             "preclose embedded finalization differs from immutable snapshot"
         )
@@ -801,6 +1362,139 @@ def _validate_preclose_closure(batch_root: Path) -> dict[str, Any]:
         "verified_file_count": len(verified_files),
         "checksum_row_count": len(checksum_rows),
         "checksums_preclose_sha256": sha256_file(checksum_path),
+        "formal_worker_identity": _jsonable(formal_worker_identity),
+    }
+
+
+def _validate_formal_worker_fast_shutdown(
+    *,
+    handshake: dict[str, Any],
+    preclose_identity: dict[str, Any],
+    child_pid: int,
+) -> dict[str, Any]:
+    """Cross-bind the worker producer to pre-close ACKs and process exit."""
+
+    fast_kwargs = {
+        "wait_for_replicator": False,
+        "skip_cleanup": True,
+    }
+    worker_pid = _exact_json_int(
+        handshake.get("formal_worker_pid"), "formal worker PID"
+    )
+    controller_child_pid = _exact_json_int(
+        child_pid, "controller child PID"
+    )
+    worker_session_id = str(
+        handshake.get("formal_worker_session_id", "") or ""
+    )
+    adapter_id = str(
+        handshake.get("adapter_runtime_instance_id", "") or ""
+    )
+    artifact_request_id = str(
+        handshake.get("artifact_request_id", "") or ""
+    )
+    artifact_request_sha256 = str(
+        handshake.get("artifact_request_sha256", "") or ""
+    ).lower()
+    expected_preclose = {
+        "worker_pid": worker_pid,
+        "worker_session_id": worker_session_id,
+        "adapter_runtime_instance_id": adapter_id,
+        "artifact_request_id": artifact_request_id,
+        "artifact_request_sha256": artifact_request_sha256,
+    }
+    if controller_child_pid <= 0 or worker_pid <= 0 or worker_pid == controller_child_pid:
+        raise RuntimeError("formal worker PID is missing or aliases controller child")
+    if not worker_session_id or not adapter_id or not artifact_request_id:
+        raise RuntimeError("formal worker shutdown identity is incomplete")
+    if (
+        len(artifact_request_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in artifact_request_sha256)
+    ):
+        raise RuntimeError("formal worker artifact request SHA is invalid")
+    if not _strict_json_equal(dict(preclose_identity or {}), expected_preclose):
+        raise RuntimeError(
+            "formal worker shutdown identity differs from preclose artifact producer"
+        )
+
+    shutdown_request_id = str(
+        handshake.get("worker_shutdown_request_id", "") or ""
+    )
+    runtime_version = str(handshake.get("runtime_version", "") or "")
+    if not shutdown_request_id or not runtime_version.startswith("5.1."):
+        raise RuntimeError("formal worker fast shutdown request/runtime is invalid")
+    common = {
+        "request_id": shutdown_request_id,
+        "worker_pid": worker_pid,
+        "worker_session_id": worker_session_id,
+        "adapter_runtime_instance_id": adapter_id,
+        "artifact_request_id": artifact_request_id,
+        "root_state_write_count": 0,
+        "mode": "fast",
+        "accepted": True,
+        "error": "",
+        "close_kwargs": fast_kwargs,
+        "runtime_version": runtime_version,
+    }
+    rows = (
+        (
+            "shutdown",
+            dict(handshake.get("worker_shutdown_ack", {}) or {}),
+            {"type": "operation_ack", "operation": "shutdown"},
+        ),
+        (
+            "close_requested",
+            dict(handshake.get("worker_close_requested_ack", {}) or {}),
+            {"type": "close_requested"},
+        ),
+    )
+    for label, row, specific in rows:
+        for key, value in {**common, **specific}.items():
+            if not _strict_json_equal(row.get(key), value):
+                raise RuntimeError(
+                    f"formal worker {label} ACK {key} mismatch: "
+                    f"expected={value!r} actual={row.get(key)!r}"
+                )
+    if handshake.get("worker_shutdown_accepted") is not True:
+        raise RuntimeError("formal worker shutdown accepted evidence is not true")
+    if handshake.get("worker_close_requested") is not True:
+        raise RuntimeError("formal worker close-requested evidence is not true")
+    close_returned_observed = handshake.get("worker_close_returned")
+    if type(close_returned_observed) is not bool:
+        raise RuntimeError(
+            "formal worker close-returned observation must be an exact boolean"
+        )
+    close_returned = dict(
+        handshake.get("worker_close_returned_ack", {}) or {}
+    )
+    if close_returned_observed:
+        for key, value in {**common, "type": "close_returned"}.items():
+            if not _strict_json_equal(close_returned.get(key), value):
+                raise RuntimeError(
+                    f"formal worker close_returned ACK {key} mismatch: "
+                    f"expected={value!r} actual={close_returned.get(key)!r}"
+                )
+    elif close_returned:
+        raise RuntimeError(
+            "formal worker close_returned ACK exists without an observed return"
+        )
+    if _exact_json_int(
+        handshake.get("worker_returncode"), "formal worker return code"
+    ) != 0:
+        raise RuntimeError("formal worker return code is not zero")
+    if handshake.get("worker_process_returned_normally") is not True:
+        raise RuntimeError("formal worker did not return normally")
+    if handshake.get("worker_forced_termination") is not False:
+        raise RuntimeError("formal worker shutdown used or omitted forced-termination evidence")
+    return {
+        **expected_preclose,
+        "worker_shutdown_request_id": shutdown_request_id,
+        "runtime_version": runtime_version,
+        "close_kwargs": fast_kwargs,
+        "worker_returncode": 0,
+        "worker_process_returned_normally": True,
+        "worker_forced_termination": False,
+        "worker_close_returned_observed": close_returned_observed,
     }
 
 
@@ -988,8 +1682,9 @@ def _monitor_supervised_child(
                 else handshake.get("intended_returncode")
             )
             returncode_matches = bool(
-                intended_returncode is not None
-                and int(returncode) == int(intended_returncode)
+                type(returncode) is int
+                and type(intended_returncode) is int
+                and returncode == intended_returncode
             )
             shutdown_mode = str(
                 "" if handshake is None else handshake.get("shutdown_mode", "")
@@ -1003,13 +1698,124 @@ def _monitor_supervised_child(
             close_error = str(
                 "" if handshake is None else handshake.get("close_error", "")
             )
+            try:
+                formal_worker_pid = int(
+                    0
+                    if handshake is None
+                    else handshake.get("formal_worker_pid", 0) or 0
+                )
+            except (TypeError, ValueError):
+                formal_worker_pid = 0
+            preclose_worker_identity = dict(
+                preclose_verification.get("formal_worker_identity", {}) or {}
+            )
+            worker_bound = bool(
+                preclose_worker_identity
+                or formal_worker_pid
+                or (
+                    handshake is not None
+                    and any(
+                        bool(handshake.get(key))
+                        for key in (
+                            "formal_worker_session_id",
+                            "adapter_runtime_instance_id",
+                            "artifact_request_id",
+                            "artifact_request_sha256",
+                            "worker_shutdown_request_id",
+                            "worker_shutdown_accepted",
+                            "worker_close_requested",
+                            "worker_close_returned",
+                            "worker_shutdown_ack",
+                            "worker_close_requested_ack",
+                            "worker_close_returned_ack",
+                        )
+                    )
+                )
+            )
+            artifact_request_id = str(
+                ""
+                if handshake is None
+                else handshake.get("artifact_request_id", "") or ""
+            )
+            formal_worker_shutdown_verification: dict[str, Any] = {}
             if not preclose_valid:
                 status = "CHILD_EXIT_BEFORE_PRECLOSE"
             elif preclose_verification.get("ok") is not True:
                 status = "PRECLOSE_CLOSURE_INVALID"
             elif last_state == "CLOSE_ERROR":
                 status = "SIMULATION_CLOSE_ERROR"
-            elif last_state in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}:
+            elif last_state in {
+                "FAST_EXIT_REQUESTED",
+                "FAST_CLOSE_RETURNED",
+                "FAST_WORKER_PROCESS_RETURNED",
+            }:
+                worker_shutdown_request_id = str(
+                    ""
+                    if handshake is None
+                    else handshake.get("worker_shutdown_request_id", "") or ""
+                )
+                worker_shutdown_ack = dict(
+                    {} if handshake is None else handshake.get("worker_shutdown_ack", {}) or {}
+                )
+                worker_close_requested_ack = dict(
+                    {}
+                    if handshake is None
+                    else handshake.get("worker_close_requested_ack", {}) or {}
+                )
+                worker_close_returned_ack = dict(
+                    {}
+                    if handshake is None
+                    else handshake.get("worker_close_returned_ack", {}) or {}
+                )
+                formal_worker_session_id = str(
+                    ""
+                    if handshake is None
+                    else handshake.get("formal_worker_session_id", "") or ""
+                )
+                formal_worker_shutdown_verification: dict[str, Any] = {
+                    "ok": not worker_bound,
+                    "error": "",
+                }
+                if worker_bound:
+                    try:
+                        verified_shutdown = _validate_formal_worker_fast_shutdown(
+                            handshake=dict(handshake or {}),
+                            preclose_identity=preclose_worker_identity,
+                            child_pid=int(child.pid),
+                        )
+                        formal_worker_shutdown_verification = {
+                            "ok": True,
+                            "error": "",
+                            **verified_shutdown,
+                        }
+                    except Exception as exc:
+                        formal_worker_shutdown_verification = {
+                            "ok": False,
+                            "error": f"{type(exc).__name__}: {exc}",
+                        }
+                worker_close_verified = bool(
+                    (
+                        not worker_bound
+                        and last_state
+                        in {"FAST_EXIT_REQUESTED", "FAST_CLOSE_RETURNED"}
+                    )
+                    or (
+                        worker_bound
+                        and last_state == "FAST_WORKER_PROCESS_RETURNED"
+                        and handshake is not None
+                        and _strict_json_equal(
+                            handshake.get("worker_returncode"), 0
+                        )
+                        and handshake.get("worker_process_returned_normally") is True
+                        and handshake.get("worker_shutdown_accepted") is True
+                        and handshake.get("worker_close_requested") is True
+                        and type(handshake.get("worker_close_returned")) is bool
+                        and handshake.get("worker_forced_termination") is False
+                        and str(handshake.get("formal_worker_session_id", "") or "")
+                        and str(handshake.get("artifact_request_id", "") or "")
+                        and formal_worker_shutdown_verification.get("ok") is True
+                    )
+                )
                 fast_contract = bool(
                     shutdown_mode == "fast"
                     and runtime_version.startswith("5.1.")
@@ -1018,6 +1824,7 @@ def _monitor_supervised_child(
                         "wait_for_replicator": False,
                         "skip_cleanup": True,
                     }
+                    and worker_close_verified
                 )
                 status = (
                     "FAST_EXIT_VERIFIED"
@@ -1025,6 +1832,17 @@ def _monitor_supervised_child(
                     else "FAST_EXIT_FAILED"
                 )
             elif last_state == "GRACEFUL_CLOSE_RETURNED":
+                worker_close_verified = bool(
+                    not worker_bound
+                    or (
+                        handshake is not None
+                        and handshake.get("worker_returncode") == 0
+                        and handshake.get("worker_process_returned_normally") is True
+                        and handshake.get("worker_shutdown_accepted") is True
+                        and str(handshake.get("worker_shutdown_request_id", "") or "")
+                        and str(handshake.get("formal_worker_session_id", "") or "")
+                    )
+                )
                 graceful_contract = bool(
                     shutdown_mode == "graceful"
                     and close_kwargs
@@ -1032,6 +1850,7 @@ def _monitor_supervised_child(
                         "wait_for_replicator": False,
                         "skip_cleanup": False,
                     }
+                    and worker_close_verified
                 )
                 status = (
                     "GRACEFUL_EXIT"
@@ -1057,6 +1876,90 @@ def _monitor_supervised_child(
                     "process_returned_normally": True,
                     "runtime_version": runtime_version,
                     "close_error": close_error,
+                    "formal_worker_pid": (
+                        None
+                        if handshake is None
+                        else handshake.get("formal_worker_pid")
+                    ),
+                    "formal_worker_session_id": (
+                        ""
+                        if handshake is None
+                        else str(handshake.get("formal_worker_session_id", "") or "")
+                    ),
+                    "worker_returncode": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_returncode")
+                    ),
+                    "worker_process_returned_normally": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_process_returned_normally")
+                    ),
+                    "worker_shutdown_accepted": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_shutdown_accepted")
+                    ),
+                    "worker_close_requested": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_close_requested")
+                    ),
+                    "worker_close_returned": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_close_returned")
+                    ),
+                    "worker_shutdown_request_id": (
+                        ""
+                        if handshake is None
+                        else str(handshake.get("worker_shutdown_request_id", "") or "")
+                    ),
+                    "worker_shutdown_ack": (
+                        {}
+                        if handshake is None
+                        else _jsonable(handshake.get("worker_shutdown_ack", {}) or {})
+                    ),
+                    "worker_close_requested_ack": (
+                        {}
+                        if handshake is None
+                        else _jsonable(
+                            handshake.get("worker_close_requested_ack", {}) or {}
+                        )
+                    ),
+                    "worker_close_returned_ack": (
+                        {}
+                        if handshake is None
+                        else _jsonable(
+                            handshake.get("worker_close_returned_ack", {}) or {}
+                        )
+                    ),
+                    "formal_worker_shutdown_verification": (
+                        {}
+                        if not worker_bound
+                        else _jsonable(formal_worker_shutdown_verification)
+                    ),
+                    "adapter_runtime_instance_id": (
+                        ""
+                        if handshake is None
+                        else str(
+                            handshake.get("adapter_runtime_instance_id", "") or ""
+                        )
+                    ),
+                    "artifact_request_id": artifact_request_id,
+                    "artifact_request_sha256": (
+                        ""
+                        if handshake is None
+                        else str(
+                            handshake.get("artifact_request_sha256", "") or ""
+                        ).lower()
+                    ),
+                    "worker_forced_termination": (
+                        None
+                        if handshake is None
+                        else handshake.get("worker_forced_termination")
+                    ),
                     "elapsed_s": float(now - started),
                     "close_wait_s": None
                     if preclose_seen_at is None
@@ -1119,6 +2022,18 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def _result_is_worker_owned(result: dict[str, Any]) -> bool:
+    """Return whether immutable per-run bytes belong to the formal worker.
+
+    A completed production-worker artifact has exactly one writer.  Batch
+    source-integrity and shutdown failures remain qualification failures, but
+    they must never rewrite telemetry, result, checksum, or lifecycle-marker
+    bytes that the worker already finalized.
+    """
+
+    return str(result.get("artifact_owner", "") or "") == "sim_worker_process"
+
+
 def _record_shutdown_outcome(
     batch_root: Path,
     outcome: dict[str, Any],
@@ -1139,6 +2054,11 @@ def _record_shutdown_outcome(
     if shutdown_failed:
         for result in results:
             if not isinstance(result, dict):
+                continue
+            if _result_is_worker_owned(result):
+                # Preserve the worker-owned artifact byte-for-byte.  The
+                # batch finalization below records the shutdown failure and
+                # is the authoritative qualification boundary.
                 continue
             # Deliberately preserve classification, physical_success, and
             # strict_full_success: shutdown is an artifact lifecycle failure,
@@ -1189,6 +2109,9 @@ def _record_shutdown_outcome(
                 "finalized": False,
                 "failed": True,
                 "strict_success": False,
+                "environment_equivalence_diagnostic_complete": False,
+                "ordinary_ui_diagnostic_complete": False,
+                "command_success": False,
                 "failure_reason": status,
                 "close_error": str(outcome.get("close_error", "") or status),
                 "phase": status,
@@ -1233,6 +2156,27 @@ def _batch_command_exit_code(batch_root: Path, *, fallback: int) -> int:
         or (root / ".failed").exists()
     ):
         return 1
+    diagnostic_role = str(
+        finalization.get("environment_equivalence_role", "") or ""
+    )
+    ordinary_role = str(finalization.get("diagnostic_role", "") or "")
+    if ordinary_role == "U":
+        return (
+            0
+            if finalization.get("ordinary_ui_diagnostic_complete") is True
+            and finalization.get("command_success") is True
+            else 1
+        )
+    if diagnostic_role:
+        return (
+            0
+            if finalization.get(
+                "environment_equivalence_diagnostic_complete"
+            )
+            is True
+            and finalization.get("command_success") is True
+            else 1
+        )
     return 0 if finalization.get("strict_success") is True else 1
 
 
@@ -1261,6 +2205,1008 @@ def _process_returncode_after_close(
 
 def _serialize_replay_args(args: argparse.Namespace) -> dict[str, Any]:
     return {key: _jsonable(value) for key, value in vars(args).items()}
+
+
+def _normalize_recording_replay_role(
+    args: argparse.Namespace,
+) -> argparse.Namespace:
+    """Bind the opt-in A1/A2/B role to exactly one contact mode.
+
+    An absent role is the existing Gate-1 contract and remains instrumented.
+    Formal aggregate-sensor capture is reachable only through an explicit A
+    role; this prevents a plain physical-qualification invocation from being
+    silently downgraded to trajectory-comparison evidence.
+    """
+
+    if str(getattr(args, "command", "") or "") != "replay-recordings":
+        return args
+    role = str(
+        getattr(args, "environment_equivalence_role", "") or ""
+    ).strip().upper()
+    diagnostic_role = str(
+        getattr(args, "diagnostic_role", "") or ""
+    ).strip().upper()
+    if role not in {"", "A1", "A2", "B"}:
+        raise RuntimeError(
+            "--environment-equivalence-role must be A1, A2, or B"
+        )
+    if diagnostic_role not in {"", "U"}:
+        raise RuntimeError("--diagnostic-role must be U")
+    if diagnostic_role and role:
+        raise RuntimeError(
+            "--diagnostic-role U and --environment-equivalence-role are mutually exclusive"
+        )
+    requested_mode = str(getattr(args, "contact_mode", "") or "").strip().lower()
+    expected_mode = (
+        "disabled"
+        if diagnostic_role == "U"
+        else "formal"
+        if role in {"A1", "A2"}
+        else "instrumented"
+    )
+    if not role and requested_mode == "formal":
+        raise RuntimeError(
+            "formal capture requires an explicit --environment-equivalence-role A1 or A2"
+        )
+    if requested_mode and requested_mode != expected_mode:
+        raise RuntimeError(
+            f"environment-equivalence role {role or '<none>'} requires "
+            f"--contact-mode {expected_mode}"
+        )
+    if (role or diagnostic_role) and bool(getattr(args, "resume", False)):
+        raise RuntimeError(
+            "diagnostic captures must be fresh; --resume is forbidden"
+        )
+    args.environment_equivalence_role = role
+    args.diagnostic_role = diagnostic_role
+    args.contact_mode = expected_mode
+    return args
+
+
+def _canonical_payload_sha256(payload: dict[str, Any]) -> str:
+    return hashlib.sha256(
+        strict_json_dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
+def _recording_worker_args(
+    args: argparse.Namespace,
+    *,
+    robot_usd: Path,
+    motion: Any,
+    artifact_request_path: Path,
+) -> SimpleNamespace:
+    """Build the exact production-worker launch surface for Gate-1 replay."""
+
+    from sim_obstacle_scene import OBSTACLE_LENGTH_M, OBSTACLE_WIDTH_M
+
+    return SimpleNamespace(
+        worker_launch_mode=str(
+            getattr(args, "worker_launch_mode", "auto") or "auto"
+        ),
+        worker_python_exe=str(
+            getattr(args, "worker_python_exe", "") or ""
+        ),
+        isaaclab_bat=str(
+            getattr(args, "isaaclab_bat", "C:/robotics_sim/IsaacLab/isaaclab.bat")
+        ),
+        preflight_timeout_s=float(
+            getattr(args, "preflight_timeout_s", 30.0)
+        ),
+        sim_startup_timeout_s=float(
+            getattr(args, "sim_startup_timeout_s", 600.0)
+        ),
+        sim_worker_status_timeout_s=float(
+            getattr(args, "sim_worker_status_timeout_s", 10.0)
+        ),
+        sim_worker_log_lines=int(
+            getattr(args, "sim_worker_log_lines", 200)
+        ),
+        accept_isaac_eula=bool(
+            getattr(args, "accept_isaac_eula", False)
+        ),
+        height_mm=50,
+        height_cm=None,
+        robot_usd=str(Path(robot_usd).resolve()),
+        save_usd=str(
+            (PROJECT_ROOT / "usd" / "wlr_robot_height_replay_env.usd").resolve()
+        ),
+        save_scene=False,
+        spawn_z=0.04,
+        obstacle_x=1.55,
+        obstacle_width=float(OBSTACLE_WIDTH_M),
+        obstacle_length=float(OBSTACLE_LENGTH_M),
+        infer_obstacle_size=False,
+        robot_width=0.80,
+        robot_length=0.55,
+        physics_dt=1.0 / 120.0,
+        render_interval=8,
+        wheel_direction=1.0,
+        max_wheel_speed_rad_s=float(motion.wheel_velocity_limit_rad_s),
+        default_wheel_speed_rad_s=float(motion.wheel_reference_velocity_rad_s),
+        servo_stiffness=600.0,
+        servo_damping=60.0,
+        wheel_damping=20.0,
+        device=str(getattr(args, "device", "cuda:0") or "cuda:0"),
+        sim_status_refresh_ms=125,
+        headless=bool(getattr(args, "headless", False)),
+        livestream=int(getattr(args, "livestream", 0) or 0),
+        experience=str(getattr(args, "experience", "") or ""),
+        apply_safe_servo_joint_limits=True,
+        apply_physx_joint_limits=True,
+        no_continuous_sim_step=False,
+        worker_smoke_negative_knee_test=False,
+        worker_smoke_ground_structure=False,
+        worker_smoke_ground_calibration=False,
+        worker_smoke_output="",
+        worker_smoke_test_s=0.0,
+        defer_first_visible_render=True,
+        robot_ground_settle_s=0.75,
+        robot_ground_settle_max_steps=180,
+        robot_ground_stable_frames=10,
+        robot_ground_vertical_speed_threshold_m_s=0.01,
+        robot_ground_joint_speed_threshold_rad_s=0.02,
+        robot_ground_servo_speed_threshold_rad_s=0.02,
+        robot_ground_wheel_speed_threshold_rad_s=0.20,
+        robot_ground_clearance_m=0.002,
+        robot_ground_penetration_tolerance_m=0.003,
+        robot_auto_ground_correction=False,
+        robot_max_ground_correction_m=0.10,
+        fsm50_gate_request_path=str(Path(artifact_request_path).resolve()),
+    )
+
+
+def _recording_artifact_request(
+    *,
+    item: VersionFiles,
+    batch_root: Path,
+    args: argparse.Namespace,
+    robot_usd: Path,
+    environment_lock_path: Path,
+    expected_steps_sha256: str,
+    plan: Any,
+    request_id: str,
+    plan_id: str,
+    trial_id: int,
+) -> dict[str, Any]:
+    """Create the immutable, pre-launch formal-worker artifact request."""
+
+    # Allocate only a name.  The production worker is the exclusive creator
+    # and writer of the version/artifact subtree.
+    artifact_root = (
+        Path(batch_root).resolve()
+        / item.version_id
+        / f"{_utc_stamp()}_clean_fast_replay_{uuid.uuid4().hex[:10]}"
+    )
+    equivalence_role = str(
+        getattr(args, "environment_equivalence_role", "") or ""
+    )
+    diagnostic_role = str(getattr(args, "diagnostic_role", "") or "")
+    qualification_scope = (
+        "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+        if diagnostic_role == "U"
+        else "TRAJECTORY_COMPARISON"
+        if equivalence_role
+        else "GATE1_PHYSICAL_QUALIFICATION"
+    )
+    request = {
+        "schema_version": "fsm50.worker_recording_gate_request.v1",
+        "enabled": True,
+        "artifact_owner": "sim_worker_process",
+        "request_id": str(request_id),
+        "plan_id": str(plan_id),
+        "plan_sha256": str(plan.plan_sha256),
+        "plan_event_count": len(plan.events),
+        "plan_segment_count": len(plan.segments),
+        "source_version": item.version_id,
+        "trial_id": int(trial_id),
+        "contact_mode": str(
+            getattr(args, "contact_mode", "instrumented") or "instrumented"
+        ),
+        "environment_equivalence_role": equivalence_role,
+        "diagnostic_role": diagnostic_role,
+        "qualification_scope": qualification_scope,
+        "gate1_eligible": bool(not diagnostic_role and not equivalence_role),
+        "gate1_physical_qualification_eligible": bool(
+            not diagnostic_role and not equivalence_role
+        ),
+        "environment_equivalence_eligible": bool(
+            equivalence_role and not diagnostic_role
+        ),
+        "height_mm": 50,
+        "artifact_root": str(artifact_root),
+        "accepted_steps_path": str(item.steps_path.resolve()),
+        "metadata_path": str(item.metadata_path.resolve()),
+        "accepted_steps_sha256": str(expected_steps_sha256).lower(),
+        "expected_accepted_steps_sha256": str(expected_steps_sha256).lower(),
+        "robot_usd_path": str(Path(robot_usd).resolve()),
+        "expected_robot_usd_sha256": sha256_file(robot_usd).lower(),
+        "environment_lock_path": str(Path(environment_lock_path).resolve()),
+        "environment_lock_sha256": sha256_file(environment_lock_path).lower(),
+        "telemetry_rate_hz": float(args.telemetry_rate),
+        "post_run_settle_s": float(args.post_run_settle_s),
+        "timeout_s": float(args.timeout_s),
+        "timeout_scale": float(args.timeout_scale),
+        "capture_video": bool(
+            not bool(getattr(args, "no_video", False))
+            and not bool(getattr(args, "headless", False))
+        ),
+        "headless": bool(getattr(args, "headless", False)),
+        "video_fps": float(args.video_fps),
+        "expected_root_state_write_count": 0,
+        "expected_plan_sha256": str(plan.plan_sha256),
+    }
+    return request
+
+
+def _parse_checksum_manifest(path: Path) -> dict[str, str]:
+    rows: dict[str, str] = {}
+    for line_number, raw in enumerate(
+        Path(path).read_text(encoding="utf-8").splitlines(), start=1
+    ):
+        digest, separator, relative = raw.partition("  ")
+        digest = digest.strip().lower()
+        relative = relative.strip().replace("\\", "/")
+        if (
+            not separator
+            or len(digest) != 64
+            or any(character not in "0123456789abcdef" for character in digest)
+            or not relative
+            or relative in rows
+        ):
+            raise RuntimeError(
+                f"invalid/duplicate checksum row {line_number}: {path}"
+            )
+        rows[relative] = digest
+    if not rows:
+        raise RuntimeError(f"checksum manifest is empty: {path}")
+    return rows
+
+
+def _validate_worker_artifact_complete_ack(
+    ack: dict[str, Any],
+    *,
+    request: dict[str, Any],
+    request_sha256: str,
+    batch_root: Path,
+    worker_pid: int,
+    worker_session_id: str,
+    adapter_runtime_instance_id: str,
+) -> dict[str, Any]:
+    """Re-read a sealed worker artifact without mutating its subtree."""
+
+    requested_equivalence_role = str(
+        request.get("environment_equivalence_role", "") or ""
+    )
+    requested_diagnostic_role = str(request.get("diagnostic_role", "") or "")
+    expected_scope = (
+        "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+        if requested_diagnostic_role == "U"
+        else "TRAJECTORY_COMPARISON"
+        if requested_equivalence_role
+        else "GATE1_PHYSICAL_QUALIFICATION"
+    )
+    expected = {
+        "type": "operation_ack",
+        "operation": "recording_artifact",
+        "phase": "ARTIFACT_COMPLETE",
+        "artifact_owner": "sim_worker_process",
+        "request_id": str(request["request_id"]),
+        "artifact_request_id": str(request["request_id"]),
+        "plan_id": str(request["plan_id"]),
+        "plan_sha256": str(request["plan_sha256"]),
+        "artifact_request_sha256": str(request_sha256),
+        "worker_pid": int(worker_pid),
+        "worker_session_id": str(worker_session_id),
+        "adapter_runtime_instance_id": str(adapter_runtime_instance_id),
+        "source_version": str(request["source_version"]),
+        "trial_id": int(request["trial_id"]),
+        "accepted_steps_sha256": str(
+            request.get(
+                "expected_accepted_steps_sha256",
+                request.get("accepted_steps_sha256", ""),
+            )
+        ),
+        "contact_mode": str(request["contact_mode"]),
+        "environment_equivalence_role": str(
+            request.get("environment_equivalence_role", "") or ""
+        ),
+        "environment_equivalence_diagnostic": bool(
+            requested_equivalence_role
+        ),
+        "diagnostic_role": requested_diagnostic_role,
+        "ordinary_ui_diagnostic": requested_diagnostic_role == "U",
+        "qualification_scope": expected_scope,
+        "gate1_eligible": bool(
+            not requested_diagnostic_role and not requested_equivalence_role
+        ),
+        "gate1_physical_qualification_eligible": bool(
+            not requested_diagnostic_role and not requested_equivalence_role
+        ),
+        "environment_equivalence_eligible": bool(
+            requested_equivalence_role and not requested_diagnostic_role
+        ),
+    }
+    for key, value in expected.items():
+        if not _strict_json_equal(ack.get(key), value):
+            raise RuntimeError(
+                f"worker artifact ACK {key} mismatch: "
+                f"expected={value!r} actual={ack.get(key)!r}"
+            )
+    if ack.get("accepted") is not True or ack.get("artifact_complete") is not True:
+        raise RuntimeError("worker artifact ACK is not accepted and complete")
+    if str(ack.get("error", "") or ""):
+        raise RuntimeError(f"worker artifact ACK contains error: {ack['error']}")
+    try:
+        root_write_count = _exact_json_int(
+            ack.get("root_state_write_count"),
+            "worker artifact root_state_write_count",
+        )
+    except (TypeError, ValueError):
+        root_write_count = -1
+    if root_write_count != 0:
+        raise RuntimeError("worker artifact reports a root-state write")
+
+    root = Path(batch_root).resolve()
+    artifact_root = Path(str(ack.get("artifact_root", "") or "")).resolve()
+    run_dir = Path(str(ack.get("run_dir", "") or "")).resolve()
+    result_path = Path(str(ack.get("result_path", "") or "")).resolve()
+    if not _path_is_within(artifact_root, root) or artifact_root == root:
+        raise RuntimeError("worker artifact_root escapes or aliases batch_root")
+    if artifact_root != Path(str(request.get("artifact_root", "") or "")).resolve():
+        raise RuntimeError("worker artifact_root differs from the sealed request")
+    if not _path_is_within(run_dir, artifact_root):
+        raise RuntimeError("worker run_dir escapes artifact_root")
+    if result_path != run_dir / "result.json":
+        raise RuntimeError("worker result_path is not run_dir/result.json")
+    if (artifact_root / ".partial").exists():
+        raise RuntimeError("worker artifact is still partial")
+    finalized = (artifact_root / ".finalized").is_file()
+    failed = (artifact_root / ".failed").is_file()
+    if finalized == failed:
+        raise RuntimeError("worker artifact lifecycle marker is ambiguous")
+
+    declared_paths = {
+        "result_path": "result_sha256",
+        "artifact_pointer_path": "artifact_pointer_sha256",
+        "checksums_path": "checksums_sha256",
+        "telemetry_finalization_path": "telemetry_finalization_sha256",
+        "visual_manifest_path": "visual_manifest_sha256",
+    }
+    resolved_paths: dict[str, Path] = {}
+    for path_key, sha_key in declared_paths.items():
+        path = Path(str(ack.get(path_key, "") or "")).resolve()
+        if not path.is_file() or not _path_is_within(path, artifact_root):
+            raise RuntimeError(f"worker ACK path missing/escaping: {path_key}")
+        if sha256_file(path).lower() != str(ack.get(sha_key, "") or "").lower():
+            raise RuntimeError(f"worker ACK digest mismatch: {path_key}")
+        resolved_paths[path_key] = path
+
+    pointer = _strict_json_read(resolved_paths["artifact_pointer_path"])
+    if Path(str(pointer.get("run_dir", "") or "")).resolve() != run_dir:
+        raise RuntimeError("worker artifact pointer does not bind run_dir")
+    result = _strict_json_read(result_path)
+    if not isinstance(result, dict):
+        raise RuntimeError("worker result is not a mapping")
+    equivalence_role = str(
+        request.get("environment_equivalence_role", "") or ""
+    )
+    diagnostic_role = str(request.get("diagnostic_role", "") or "")
+    contact_mode = str(request.get("contact_mode", "") or "")
+    expected_contact_mode = (
+        "disabled"
+        if diagnostic_role == "U"
+        else "formal"
+        if equivalence_role in {"A1", "A2"}
+        else "instrumented"
+    )
+    if (
+        equivalence_role not in {"", "A1", "A2", "B"}
+        or diagnostic_role not in {"", "U"}
+        or bool(equivalence_role and diagnostic_role)
+        or contact_mode != expected_contact_mode
+        or str(request.get("qualification_scope", "") or "") != expected_scope
+    ):
+        raise RuntimeError(
+            "worker request environment-equivalence role/contact-mode matrix is invalid"
+        )
+    result_expected = {
+        "artifact_owner": "sim_worker_process",
+        "execution_path": "sim_worker_process_ipc",
+        "artifact_request_sha256": str(request_sha256),
+        "request_id": str(request["request_id"]),
+        "plan_id": str(request["plan_id"]),
+        "source_version": str(request["source_version"]),
+        "trial_id": int(request["trial_id"]),
+        "plan_sha256": str(request["plan_sha256"]),
+        "contact_mode": str(request["contact_mode"]),
+        "environment_equivalence_role": str(
+            request.get("environment_equivalence_role", "") or ""
+        ),
+        "diagnostic_role": diagnostic_role,
+        "qualification_scope": expected_scope,
+        "gate1_eligible": bool(not diagnostic_role and not equivalence_role),
+        "gate1_physical_qualification_eligible": bool(
+            not diagnostic_role and not equivalence_role
+        ),
+        "environment_equivalence_eligible": bool(
+            equivalence_role and not diagnostic_role
+        ),
+        "accepted_steps_sha256": str(
+            request.get(
+                "expected_accepted_steps_sha256",
+                request.get("accepted_steps_sha256", ""),
+            )
+        ),
+        "run_dir": str(run_dir),
+        "artifact_root": str(artifact_root),
+        "worker_pid": int(worker_pid),
+        "worker_session_id": str(worker_session_id),
+        "adapter_runtime_instance_id": str(adapter_runtime_instance_id),
+        "root_state_write_count": 0,
+    }
+    for key, value in result_expected.items():
+        if not _strict_json_equal(result.get(key), value):
+            raise RuntimeError(
+                f"worker result {key} mismatch: "
+                f"expected={value!r} actual={result.get(key)!r}"
+            )
+    lifecycle = dict(result.get("lifecycle", {}) or {})
+    if finalized != (lifecycle.get("finalized") is True):
+        raise RuntimeError("worker lifecycle finalized flag/marker mismatch")
+    if failed != (lifecycle.get("failed") is True):
+        raise RuntimeError("worker lifecycle failed flag/marker mismatch")
+    artifact_valid = result.get("artifact_valid") is True
+    if artifact_valid != finalized or artifact_valid == failed:
+        raise RuntimeError("worker artifact_valid/lifecycle marker mismatch")
+    if lifecycle.get("strict_success") is not bool(
+        artifact_valid and result.get("strict_full_success") is True
+    ):
+        raise RuntimeError("worker lifecycle strict_success is inconsistent")
+    if _exact_json_int(
+        dict(result.get("respawn", {}) or {}).get("root_state_write_count"),
+        "worker result respawn root_state_write_count",
+    ) != 0:
+        raise RuntimeError("worker result does not prove zero root-state writes")
+    policy_valid = bool(
+        dict(result.get("source_integrity", {}) or {}).get("ok") is True
+        and dict(result.get("visualization", {}) or {}).get("ok") is True
+        and result.get("actual_viewport_video") is True
+        and dict(result.get("video", {}) or {}).get("actual_viewport_video")
+        is True
+        and result.get("motion_start_ready") is True
+        and result.get("dispatch_complete") is True
+        and str(
+            result.get("wheel_target_integral_verdict", "NOT_EVALUABLE")
+            or "NOT_EVALUABLE"
+        ).upper()
+        in {"PASS", "FAIL"}
+        and _telemetry_finalization_valid(result)
+    )
+    if artifact_valid != policy_valid:
+        raise RuntimeError("worker artifact_valid differs from re-evaluated policy")
+    expected_diagnostic_complete = bool(
+        equivalence_role
+        and artifact_valid
+        and result.get("scheduler_complete") is True
+        and result.get("dispatch_complete") is True
+        and dict(result.get("source_integrity", {}) or {}).get("ok") is True
+    )
+    ordinary_trace_valid = False
+    contact_sensor_disabled = False
+    ordinary_receipt: dict[str, Any] = {}
+    if diagnostic_role == "U":
+        from .ordinary_ui_trajectory import (
+            ordinary_ui_diagnostic_complete,
+            validate_ordinary_ui_trajectory,
+        )
+
+        ordinary_receipt = validate_ordinary_ui_trajectory(run_dir)
+        ordinary_trace_valid = ordinary_ui_diagnostic_complete(ordinary_receipt)
+        runtime_environment = _strict_json_read(run_dir / "runtime_environment.json")
+        scene_config = dict(runtime_environment.get("scene_config", {}) or {})
+        contact_sensor_disabled = bool(
+            scene_config.get("telemetry_contact_sensors_enabled") is False
+            and scene_config.get("contact_sensor_factory") is None
+            and str(runtime_environment.get("contact_sensor_type", "") or "") == ""
+            and str(runtime_environment.get("contact_sensor_error", "") or "") == ""
+            and result.get("contact_sensor_disabled") is True
+            and str(result.get("contact_sensor_type", "") or "") == ""
+            and str(result.get("contact_sensor_error", "") or "") == ""
+        )
+        manifest = _strict_json_read(
+            run_dir / "ordinary_ui_trajectory_manifest.json"
+        )
+        identity_envelope = dict(manifest.get("identity_envelope", {}) or {})
+        readiness_path = run_dir / "motion_start_pre_first_dispatch.json"
+        readiness = _strict_json_read(readiness_path)
+        dispatch_path = run_dir / "V003_DISPATCH_TRACE.json"
+        dispatch = _strict_json_read(dispatch_path)
+        evidence = dict(identity_envelope.get("evidence", {}) or {})
+        actual_evidence_hashes = {
+            "durable_result": sha256_file(result_path).lower(),
+            "immutable_request": str(request_sha256).lower(),
+            "readiness": sha256_file(readiness_path).lower(),
+            "dispatch_ledger": sha256_file(dispatch_path).lower(),
+        }
+        for label, actual_sha in actual_evidence_hashes.items():
+            declared_sha = str(
+                dict(evidence.get(label, {}) or {}).get("artifact_sha256", "")
+                or ""
+            ).lower()
+            if declared_sha != actual_sha:
+                raise RuntimeError(
+                    f"ordinary-UI identity evidence {label} hash is not durable"
+                )
+        expected_identity = {
+            "source_version": str(request["source_version"]),
+            "accepted_steps_sha256": str(
+                request.get(
+                    "expected_accepted_steps_sha256",
+                    request.get("accepted_steps_sha256", ""),
+                )
+            ).lower(),
+            "plan_sha256": str(request["plan_sha256"]),
+            "plan_id": str(request["plan_id"]),
+            "request_id": str(request["request_id"]),
+            "worker_session_id": str(worker_session_id),
+            "adapter_runtime_instance_id": str(adapter_runtime_instance_id),
+            "readiness_token_sha256": str(
+                readiness.get("readiness_token_sha256", "") or ""
+            ).lower(),
+            "root_state_write_count": 0,
+        }
+        readiness_plan_identity = dict(
+            readiness.get("plan_identity", {}) or {}
+        )
+        expected_readiness_identity = {
+            "source_version": expected_identity["source_version"],
+            "source_sha256": expected_identity[
+                "accepted_steps_sha256"
+            ],
+            "plan_sha256": expected_identity["plan_sha256"],
+            "plan_id": expected_identity["plan_id"],
+            "request_id": expected_identity["request_id"],
+            "worker_session_id": expected_identity["worker_session_id"],
+        }
+        for key, value in expected_readiness_identity.items():
+            if not _strict_json_equal(
+                readiness_plan_identity.get(key), value
+            ):
+                raise RuntimeError(
+                    f"ordinary-UI readiness artifact {key} differs from closure"
+                )
+        if (
+            str(
+                readiness.get("adapter_runtime_instance_id", "") or ""
+            )
+            != expected_identity["adapter_runtime_instance_id"]
+            or readiness.get("root_state_write_count") != 0
+            or str(dispatch.get("source_version", "") or "")
+            != expected_identity["source_version"]
+            or str(
+                dispatch.get("motion_start_readiness_token", "") or ""
+            ).lower()
+            != expected_identity["readiness_token_sha256"]
+        ):
+            raise RuntimeError(
+                "ordinary-UI readiness/dispatch artifacts differ from closure"
+            )
+        for key, value in expected_identity.items():
+            if not _strict_json_equal(identity_envelope.get(key), value):
+                raise RuntimeError(
+                    f"ordinary-UI identity envelope {key} differs from closure"
+                )
+        physical = dict(result.get("physical_evidence", {}) or {})
+        if (
+            result.get("classification") != "TRAJECTORY_DIAGNOSTIC_ONLY"
+            or str(result.get("first_failure_phase", "") or "")
+            or result.get("motion_start_ready") is not True
+            or result.get("motion_start_readiness_scope")
+            != "SENSOR_INDEPENDENT_TRAJECTORY_ADMISSION"
+            or result.get("physical_motion_start_verdict")
+            != "NOT_EVALUABLE"
+            or
+            result.get("physical_success") is not False
+            or result.get("strict_full_success") is not False
+            or str(result.get("full_physical_verdict", "") or "")
+            != "NOT_EVALUABLE"
+            or str(physical.get("full_physical_verdict", "") or "")
+            != "NOT_EVALUABLE"
+            or physical.get("physical_qualification_eligible") is not False
+            or physical.get("environment_equivalence_eligible") is not False
+        ):
+            raise RuntimeError(
+                "ordinary-UI diagnostic contains an ineligible physical claim"
+            )
+    expected_ordinary_complete = bool(
+        diagnostic_role == "U"
+        and artifact_valid
+        and result.get("scheduler_complete") is True
+        and result.get("dispatch_complete") is True
+        and str(result.get("wheel_target_integral_verdict", "") or "").upper()
+        == "PASS"
+        and ordinary_trace_valid
+        and contact_sensor_disabled
+        and dict(result.get("source_integrity", {}) or {}).get("ok") is True
+        and result.get("root_state_write_count") == 0
+    )
+    expected_diagnostic = {
+        "environment_equivalence_diagnostic": bool(equivalence_role),
+        "environment_equivalence_diagnostic_complete": (
+            expected_diagnostic_complete
+        ),
+        "diagnostic_role": diagnostic_role,
+        "ordinary_ui_diagnostic": diagnostic_role == "U",
+        "qualification_scope": expected_scope,
+        "gate1_eligible": bool(not diagnostic_role and not equivalence_role),
+        "gate1_physical_qualification_eligible": bool(
+            not diagnostic_role and not equivalence_role
+        ),
+        "environment_equivalence_eligible": bool(
+            equivalence_role and not diagnostic_role
+        ),
+    }
+    if diagnostic_role == "U":
+        expected_diagnostic.update(
+            ordinary_ui_diagnostic_complete=expected_ordinary_complete,
+            physical_qualification_eligible=False,
+            contact_sensor_disabled=True,
+        )
+    for key, value in expected_diagnostic.items():
+        if not _strict_json_equal(result.get(key), value):
+            raise RuntimeError(
+                f"worker result diagnostic {key} mismatch: "
+                f"expected={value!r} actual={result.get(key)!r}"
+            )
+    summary_fields = [
+        "artifact_valid",
+        "classification",
+        "scheduler_complete",
+        "physical_success",
+        "strict_full_success",
+        "environment_equivalence_diagnostic_complete",
+    ]
+    if diagnostic_role == "U":
+        summary_fields.append("ordinary_ui_diagnostic_complete")
+        if not _strict_json_equal(
+            ack.get("ordinary_ui_trajectory_receipt"), ordinary_receipt
+        ):
+            raise RuntimeError(
+                "worker ACK ordinary-UI trajectory receipt differs from strict readback"
+            )
+    for key in summary_fields:
+        if not _strict_json_equal(ack.get(key), result.get(key)):
+            raise RuntimeError(f"worker ACK/result summary mismatch: {key}")
+
+    checksum_path = resolved_paths["checksums_path"]
+    checksum_rows = _parse_checksum_manifest(checksum_path)
+    required = list(result.get("required_evidence_paths", []) or [])
+    if not required:
+        raise RuntimeError("worker result required_evidence_paths is empty")
+    for raw in required:
+        path = Path(str(raw)).resolve()
+        if not path.is_file() or not _path_is_within(path, artifact_root):
+            raise RuntimeError(f"worker required evidence missing/escaping: {path}")
+        if path == checksum_path:
+            continue
+        relative = path.relative_to(run_dir).as_posix() if _path_is_within(path, run_dir) else path.relative_to(artifact_root).as_posix()
+        manifest_relative = (
+            relative
+            if _path_is_within(path, run_dir)
+            else relative
+        )
+        # Run checksums are rooted at run_dir.  Artifact-root control files
+        # are authenticated directly by the ACK and are not silently treated
+        # as run checksum rows.
+        if _path_is_within(path, run_dir):
+            actual = sha256_file(path).lower()
+            if checksum_rows.get(manifest_relative) != actual:
+                raise RuntimeError(
+                    f"worker checksum omits/mismatches required evidence: {path}"
+                )
+    return result
+
+
+def _validate_recording_worker_ready_status(
+    status: dict[str, Any],
+    *,
+    request: dict[str, Any],
+    request_sha256: str,
+    worker_pid: int,
+) -> dict[str, Any]:
+    """Bind the exact production worker before any playback request is sent."""
+
+    session = dict(status.get("worker_artifact_session", {}) or {})
+    preflight = dict(status.get("worker_artifact_preflight", {}) or {})
+    if status.get("ready") is not True or status.get("artifact_preflight_ready") is not True:
+        raise RuntimeError("formal worker artifact preflight is not ready")
+    expected = {
+        "request_id": str(request["request_id"]),
+        "source_version": str(request["source_version"]),
+        "trial_id": int(request["trial_id"]),
+        "contact_mode": str(request["contact_mode"]),
+        "environment_equivalence_role": str(
+            request.get("environment_equivalence_role", "") or ""
+        ),
+        "diagnostic_role": str(request.get("diagnostic_role", "") or ""),
+        "qualification_scope": str(request.get("qualification_scope", "") or ""),
+        "gate1_eligible": request.get("gate1_eligible"),
+        "gate1_physical_qualification_eligible": request.get(
+            "gate1_physical_qualification_eligible"
+        ),
+        "environment_equivalence_eligible": request.get(
+            "environment_equivalence_eligible"
+        ),
+        "artifact_root": str(Path(str(request["artifact_root"])).resolve()),
+    }
+    for key, value in expected.items():
+        actual = session.get(key)
+        if key == "artifact_root" and actual:
+            actual = str(Path(str(actual)).resolve())
+        if not _strict_json_equal(actual, value):
+            raise RuntimeError(
+                f"formal worker ready status {key} mismatch: "
+                f"expected={value!r} actual={actual!r}"
+            )
+    if str(preflight.get("artifact_request_sha256", "") or "").lower() != str(
+        request_sha256
+    ).lower():
+        raise RuntimeError("formal worker did not bind the exact artifact request bytes")
+    if str(preflight.get("expected_plan_sha256", "") or "") != str(
+        request["plan_sha256"]
+    ):
+        raise RuntimeError("formal worker preflight plan SHA mismatch")
+    if str(
+        preflight.get("environment_equivalence_role", "") or ""
+    ) != str(request.get("environment_equivalence_role", "") or ""):
+        raise RuntimeError(
+            "formal worker preflight environment-equivalence role mismatch"
+        )
+    for key in (
+        "diagnostic_role",
+        "qualification_scope",
+        "gate1_eligible",
+        "gate1_physical_qualification_eligible",
+        "environment_equivalence_eligible",
+    ):
+        if not _strict_json_equal(preflight.get(key), request.get(key)):
+            raise RuntimeError(f"formal worker preflight {key} mismatch")
+    if _exact_json_int(status.get("worker_pid"), "worker ready PID") != _exact_json_int(
+        worker_pid, "launched worker PID"
+    ):
+        raise RuntimeError("formal worker status PID differs from the launched process")
+    worker_session_id = str(status.get("worker_session_id", "") or "")
+    if not worker_session_id or worker_session_id != str(
+        session.get("worker_session_id", "") or ""
+    ):
+        raise RuntimeError("formal worker session identity is missing or inconsistent")
+    adapter_id = str(session.get("adapter_runtime_instance_id", "") or "")
+    if not adapter_id:
+        raise RuntimeError("formal worker adapter runtime identity is missing")
+    if _exact_json_int(
+        session.get("root_state_write_count"),
+        "worker ready root_state_write_count",
+    ) != _exact_json_int(
+        request.get("expected_root_state_write_count"),
+        "worker request expected_root_state_write_count",
+    ):
+        raise RuntimeError("formal worker performed or misreported a root-state write")
+    if session.get("motion_start_ready") is not True:
+        raise RuntimeError("formal worker 10-frame motion-start preflight is not ready")
+    if _exact_json_int(
+        session.get("readiness_frame_count"), "worker readiness frame_count"
+    ) < _exact_json_int(
+        session.get("readiness_frame_count_required"),
+        "worker readiness required frame_count",
+    ):
+        raise RuntimeError("formal worker readiness window is incomplete")
+    if _exact_json_int(
+        session.get("readiness_sample_stride_physics_ticks"),
+        "worker readiness sample stride",
+    ) != 8:
+        raise RuntimeError("formal worker readiness cadence differs from render_interval=8")
+    environment = dict(session.get("environment_equivalence", {}) or {})
+    if environment.get("ok") is not True or list(environment.get("failed_checks", []) or []):
+        raise RuntimeError("formal worker runtime environment equivalence failed")
+    diagnostic_role = str(request.get("diagnostic_role", "") or "")
+    if str(session.get("contact_sensor_error", "") or ""):
+        raise RuntimeError("formal worker contact sensor has an error")
+    sensor_type = str(session.get("contact_sensor_type", "") or "")
+    role = str(request.get("environment_equivalence_role", "") or "")
+    expected_sensor_type = (
+        ""
+        if diagnostic_role == "U"
+        else "ContactSensor"
+        if role in {"A1", "A2"}
+        else "WheelAndNonWheelContactSensorBank"
+    )
+    if sensor_type != expected_sensor_type:
+        raise RuntimeError(
+            "formal worker contact sensor role mismatch: "
+            f"expected={expected_sensor_type} actual={sensor_type or '<missing>'}"
+        )
+    return {
+        "worker_pid": int(worker_pid),
+        "worker_session_id": worker_session_id,
+        "adapter_runtime_instance_id": adapter_id,
+        "artifact_request_id": str(request["request_id"]),
+        "artifact_request_sha256": str(request_sha256),
+        "contact_mode": str(request.get("contact_mode", "") or ""),
+        "environment_equivalence_role": str(
+            request.get("environment_equivalence_role", "") or ""
+        ),
+        "diagnostic_role": str(request.get("diagnostic_role", "") or ""),
+        "qualification_scope": str(request.get("qualification_scope", "") or ""),
+        "gate1_eligible": request.get("gate1_eligible"),
+        "gate1_physical_qualification_eligible": request.get(
+            "gate1_physical_qualification_eligible"
+        ),
+        "environment_equivalence_eligible": request.get(
+            "environment_equivalence_eligible"
+        ),
+        "status": _jsonable(status),
+    }
+
+
+def _wait_for_recording_worker_ready(
+    client: Any,
+    *,
+    request: dict[str, Any],
+    request_sha256: str,
+    timeout_s: float,
+    poll_interval_s: float = 0.05,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + max(1.0, float(timeout_s))
+    last_status: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        client.poll()
+        last_status = dict(client.status() or {})
+        artifact_acks = list(last_status.get("artifact_ack_history", []) or [])
+        latest_artifact_ack = dict(last_status.get("last_artifact_ack", {}) or {})
+        if latest_artifact_ack:
+            artifact_acks.append(latest_artifact_ack)
+        for row in reversed(artifact_acks):
+            ack = dict(row or {})
+            if (
+                str(ack.get("type", "") or "") == "operation_ack"
+                and str(ack.get("operation", "") or "")
+                == "recording_artifact"
+                and str(ack.get("request_id", "") or "")
+                == str(request.get("request_id", "") or "")
+                and str(ack.get("phase", "") or "") == "ARTIFACT_FAILED"
+                and ack.get("accepted") is False
+                and ack.get("artifact_complete") is False
+            ):
+                raise RuntimeError(
+                    "formal worker artifact preflight failed: "
+                    + str(ack.get("error", "") or ack)
+                )
+        artifact_session = dict(
+            last_status.get("worker_artifact_session", {}) or {}
+        )
+        if (
+            str(artifact_session.get("request_id", "") or "")
+            == str(request.get("request_id", "") or "")
+            and artifact_session.get("terminal") is True
+            and str(artifact_session.get("state", "") or "") == "failed"
+        ):
+            raise RuntimeError(
+                "formal worker artifact preflight failed: "
+                + str(artifact_session.get("error", "") or artifact_session)
+            )
+        process = getattr(client, "process", None)
+        returncode = None if process is None else process.poll()
+        if returncode is not None:
+            raise RuntimeError(
+                "formal worker exited before artifact preflight completed: "
+                f"returncode={returncode} status={last_status}"
+            )
+        if (
+            last_status.get("ready") is True
+            and last_status.get("artifact_preflight_ready") is True
+        ):
+            pid = int(getattr(client, "pid", 0) or 0)
+            if pid <= 0:
+                raise RuntimeError("formal worker has no launched process PID")
+            return _validate_recording_worker_ready_status(
+                last_status,
+                request=request,
+                request_sha256=request_sha256,
+                worker_pid=pid,
+            )
+        error = str(last_status.get("error", "") or "")
+        if error and last_status.get("starting") is not True:
+            raise RuntimeError(f"formal worker startup failed: {error}")
+        time.sleep(max(0.005, min(0.25, float(poll_interval_s))))
+    raise RuntimeError(
+        "formal worker artifact preflight timed out: " + repr(last_status)
+    )
+
+
+def _wait_for_worker_operation_ack(
+    client: Any,
+    *,
+    operation: str,
+    request_id: str,
+    timeout_s: float = 30.0,
+    poll_interval_s: float = 0.02,
+) -> dict[str, Any]:
+    """Find one exact critical operation ACK without guessing from latest status."""
+
+    deadline = time.monotonic() + max(0.1, float(timeout_s))
+    while time.monotonic() < deadline:
+        client.poll()
+        status = dict(client.status() or {})
+        history = list(status.get("operation_ack_history", []) or [])
+        latest = dict(status.get("last_operation_ack", {}) or {})
+        if latest:
+            history.append(latest)
+        for row in reversed(history):
+            ack = dict(row or {})
+            if (
+                str(ack.get("operation", "") or "") == str(operation)
+                and str(ack.get("request_id", "") or "") == str(request_id)
+            ):
+                return ack
+        process = getattr(client, "process", None)
+        if process is not None and process.poll() is not None:
+            raise RuntimeError(
+                f"formal worker exited before {operation} ACK: "
+                f"returncode={process.poll()}"
+            )
+        time.sleep(max(0.005, min(0.10, float(poll_interval_s))))
+    raise RuntimeError(
+        f"timed out waiting for formal worker {operation} ACK request={request_id}"
+    )
+
+
+def _wait_for_worker_stop_ack(
+    client: Any,
+    *,
+    command_id: str,
+    worker_pid: int,
+    worker_session_id: str,
+    timeout_s: float = 30.0,
+    poll_interval_s: float = 0.02,
+) -> dict[str, Any]:
+    deadline = time.monotonic() + max(0.1, float(timeout_s))
+    while time.monotonic() < deadline:
+        client.poll()
+        status = dict(client.status() or {})
+        history = list(status.get("operation_ack_history", []) or [])
+        latest = dict(status.get("last_operation_ack", {}) or {})
+        if latest:
+            history.append(latest)
+        for row in reversed(history):
+            ack = dict(row or {})
+            if (
+                str(ack.get("type", "") or "") == "stop_ack"
+                and str(ack.get("command_id", "") or "") == str(command_id)
+            ):
+                if ack.get("zero_target_applied") is not True or str(
+                    ack.get("error", "") or ""
+                ):
+                    raise RuntimeError("formal worker pre-play stop was not applied")
+                if int(ack.get("worker_pid", 0) or 0) != int(worker_pid):
+                    raise RuntimeError("formal worker pre-play stop PID mismatch")
+                if str(ack.get("worker_session_id", "") or "") != str(
+                    worker_session_id
+                ):
+                    raise RuntimeError("formal worker pre-play stop session mismatch")
+                if int(ack.get("root_state_write_count", -1)) != 0:
+                    raise RuntimeError("formal worker pre-play stop reports a root write")
+                return ack
+        process = getattr(client, "process", None)
+        if process is not None and process.poll() is not None:
+            raise RuntimeError("formal worker exited before pre-play stop ACK")
+        time.sleep(max(0.005, min(0.10, float(poll_interval_s))))
+    raise RuntimeError("timed out waiting for formal worker pre-play stop ACK")
 
 
 def _deserialize_replay_args(payload: dict[str, Any]) -> argparse.Namespace:
@@ -1408,6 +3354,7 @@ _RELIABLE_REPLAY_CLASSIFICATIONS = frozenset(
         "PARTIAL_SUCCESS",
         "PHYSICAL_FAILURE",
         "SCHEDULER_FAILURE",
+        "WHEEL_INTEGRAL_FAILURE",
     }
 )
 
@@ -1459,7 +3406,7 @@ def _finalize_recording_viewport_video_contract(
     video_path = (
         Path(video_text).resolve()
         if video_text
-        else (run_dir / "fsm50_viewport.mp4").resolve()
+        else (run_dir / "actual_viewport_video.mp4").resolve()
     )
     video_exists = bool(
         video_path.is_file()
@@ -1481,10 +3428,124 @@ def _finalize_recording_viewport_video_contract(
         errors.append("telemetry visualization is not camera video")
     if str(raw.get("source", "") or "") != _ACTUAL_VIEWPORT_VIDEO_SOURCE:
         errors.append("video source is not the active GUI viewport render product")
+    if str(raw.get("capture_backend", "") or "") != ACTIVE_VIEWPORT_BUFFER_BACKEND:
+        errors.append("viewport video was not produced by the direct LdrColor buffer backend")
     if not str(raw.get("render_product_path", "") or ""):
         errors.append("active viewport render product path is missing")
+    if raw.get("render_product_unchanged") is not True:
+        errors.append("active viewport render product identity was not preserved")
+    if raw.get("active_render_product_identity_proven") is not True:
+        errors.append("active viewport identity evidence is incomplete")
+    if raw.get("capture_graph_created") is not False:
+        errors.append("a viewport capture graph was created")
+    if raw.get("render_observer_only") is not True:
+        errors.append("viewport capture was not an existing-render observer")
+    if raw.get("extra_app_update_count") != 0:
+        errors.append("viewport capture invoked extra app.update calls")
+    if raw.get("extra_render_count") != 0:
+        errors.append("viewport capture invoked extra renders")
+    if raw.get("maximum_pending_captures") != 1:
+        errors.append("viewport capture did not enforce one pending buffer")
     if frame_count < 2:
         errors.append("fewer than two viewport frames were captured")
+
+    ledger_text = str(raw.get("ledger_path", "") or "")
+    ledger_path = Path(ledger_text).resolve() if ledger_text else None
+    ledger_rows: list[dict[str, Any]] = []
+    ledger_sha256 = ""
+    if (
+        ledger_path is None
+        or not ledger_path.is_file()
+        or not _path_is_within(ledger_path, run_dir)
+        or ledger_path.suffix.lower() != ".jsonl"
+    ):
+        errors.append("viewport frame ledger is missing or outside the run")
+    else:
+        ledger_sha256 = sha256_file(ledger_path).lower()
+        claimed_ledger_sha256 = str(raw.get("ledger_sha256", "") or "").lower()
+        if not claimed_ledger_sha256 or claimed_ledger_sha256 != ledger_sha256:
+            errors.append("viewport frame ledger SHA256 is missing or mismatched")
+        try:
+            for line_number, line in enumerate(
+                ledger_path.read_text(encoding="utf-8").splitlines(),
+                start=1,
+            ):
+                if not line.strip():
+                    raise ValueError(f"blank line {line_number}")
+                decoded = json.loads(
+                    line,
+                    parse_constant=lambda value: (_ for _ in ()).throw(
+                        ValueError(f"non-finite constant {value}")
+                    ),
+                )
+                if not isinstance(decoded, dict):
+                    raise ValueError(f"line {line_number} is not an object")
+                ledger_rows.append(decoded)
+        except Exception as exc:
+            errors.append(
+                "viewport frame ledger is not valid JSONL: "
+                f"{type(exc).__name__}: {exc}"
+            )
+    if len(ledger_rows) != frame_count:
+        errors.append("viewport frame ledger count does not match frame_count")
+    elif ledger_rows:
+        if [row.get("render_sequence") for row in ledger_rows] != list(
+            range(frame_count)
+        ):
+            errors.append("viewport frame ledger render sequence is not contiguous")
+        if [row.get("encoded_frame_index") for row in ledger_rows] != list(
+            range(frame_count)
+        ):
+            errors.append("viewport frame ledger encoded sequence is not contiguous")
+        if any(
+            str(row.get("capture_backend", "") or "")
+            != ACTIVE_VIEWPORT_BUFFER_BACKEND
+            or str(row.get("render_product_path", "") or "")
+            != str(raw.get("render_product_path", "") or "")
+            for row in ledger_rows
+        ):
+            errors.append("viewport frame ledger backend/render product is inconsistent")
+    if raw.get("frame_ledger_complete") is not True:
+        errors.append("viewport frame ledger was not finalized as complete")
+
+    full_decode = dict(raw.get("full_decode", {}) or {})
+    try:
+        decoded_frame_count = int(full_decode.get("decoded_frame_count", -1))
+        decoded_width = int(full_decode.get("decoded_width", 0))
+        decoded_height = int(full_decode.get("decoded_height", 0))
+        decoded_channels = int(full_decode.get("decoded_channels", 0))
+    except (TypeError, ValueError):
+        decoded_frame_count = -1
+        decoded_width = decoded_height = decoded_channels = 0
+    if (
+        raw.get("full_decode_all_frames") is not True
+        or full_decode.get("valid") is not True
+        or decoded_frame_count != frame_count
+        or decoded_width < 1
+        or decoded_height < 1
+        or decoded_channels not in (3, 4)
+    ):
+        errors.append("full MP4 decode does not exactly match the frame ledger")
+
+    for checkpoint_name in ("first_frame", "last_frame"):
+        checkpoint_text = str(raw.get(f"{checkpoint_name}_path", "") or "")
+        checkpoint_path = Path(checkpoint_text).resolve() if checkpoint_text else None
+        checkpoint_exists = bool(
+            checkpoint_path is not None
+            and checkpoint_path.is_file()
+            and checkpoint_path.stat().st_size > 0
+            and _path_is_within(checkpoint_path, run_dir)
+            and checkpoint_path.suffix.lower() == ".png"
+        )
+        claimed_checkpoint_sha = str(
+            raw.get(f"{checkpoint_name}_sha256", "") or ""
+        ).lower()
+        if (
+            not checkpoint_exists
+            or not claimed_checkpoint_sha
+            or claimed_checkpoint_sha != sha256_file(checkpoint_path).lower()
+        ):
+            errors.append(f"viewport {checkpoint_name} checkpoint is invalid")
     if not video_exists:
         errors.append("viewport MP4 is missing, empty, outside the run, or not MP4")
     elif not _mp4_has_container_signature(video_path):
@@ -1507,6 +3568,8 @@ def _finalize_recording_viewport_video_contract(
         "not_camera_video": False,
         "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
         "frame_count": frame_count,
+        "ledger_path": "" if ledger_path is None else str(ledger_path),
+        "ledger_sha256": ledger_sha256,
         "video_path": str(video_path),
         "video_sha256": video_sha256,
         "error": "; ".join(errors),
@@ -1520,12 +3583,12 @@ def _finalize_recording_viewport_video_contract(
 
 
 class _RecordingReplayViewportCapture:
-    """Per-version scope around the shared Isaac viewport recorder.
+    """Per-version direct-buffer observer of the adapter's existing renders.
 
-    Isaac's movie-capture helper leaves its temporary render product attached.
-    Restoring and deleting that graph after each version is required so the next
-    version receives a new frame directory instead of silently reusing the
-    previous version's global ``basePath``.
+    The recorder never rebinds the active viewport, creates a post-process
+    graph, calls ``app.update``, or requests a render.  It is attached only to
+    :class:`SimRobotAdapter`'s already-required render hook and is detached
+    before its encoder and evidence files are finalized.
     """
 
     def __init__(
@@ -1534,6 +3597,7 @@ class _RecordingReplayViewportCapture:
         args: argparse.Namespace,
         *,
         contact_mode: str,
+        adapter: Any | None = None,
         recorder: Any | None = None,
     ) -> None:
         self.run_dir = Path(run_dir).resolve()
@@ -1541,100 +3605,104 @@ class _RecordingReplayViewportCapture:
         self.contact_mode = str(contact_mode)
         self.capture_requested = _recording_video_capture_requested(args)
         if recorder is None:
-            from .fsm50_isaac_runtime import ViewportVideoRecorder
-
-            recorder = ViewportVideoRecorder(
+            recorder = ActiveViewportBufferVideoRecorder(
                 self.run_dir,
                 enabled=self.capture_requested,
                 fps=float(getattr(args, "video_fps", 15.0)),
             )
         self.recorder = recorder
-        self.viewport: Any | None = None
+        self.adapter = adapter
         self.original_render_product_path = ""
-        self.capture_render_product_path = ""
+        self.observed_render_product_path = ""
+        self.observer_attached = False
         self.capture_error = ""
         self._finalized: dict[str, Any] | None = None
 
     def start(self) -> None:
-        if self.capture_requested:
-            try:
-                from omni.kit.viewport.utility import get_active_viewport  # type: ignore
-
-                self.viewport = get_active_viewport()
-                if self.viewport is None:
-                    raise RuntimeError("active GUI viewport is unavailable")
-                self.original_render_product_path = str(
-                    self.viewport.render_product_path
-                )
-            except Exception as exc:
-                self.capture_error = f"viewport preflight failed: {type(exc).__name__}: {exc}"
         try:
-            self.recorder.start()
+            started = self.recorder.start()
         except Exception as exc:
+            started = False
             self.capture_error = self.capture_error or (
                 f"viewport recorder start failed: {type(exc).__name__}: {exc}"
             )
-        if self.capture_requested and self.viewport is not None:
-            self.capture_render_product_path = str(
-                self.viewport.render_product_path
+        if not self.capture_requested:
+            return
+        self.original_render_product_path = str(
+            getattr(self.recorder, "render_product_path", "") or ""
+        )
+        self.observed_render_product_path = self.original_render_product_path
+        if started is False or str(getattr(self.recorder, "error", "") or ""):
+            self.capture_error = self.capture_error or (
+                "direct viewport recorder did not start successfully"
             )
-            if (
-                not self.capture_render_product_path
-                or self.capture_render_product_path
-                == self.original_render_product_path
-            ):
-                self.capture_error = self.capture_error or (
-                    "movie capture did not attach a distinct viewport render product"
-                )
+            return
+        if not self.original_render_product_path:
+            self.capture_error = self.capture_error or (
+                "active viewport render product path is unavailable"
+            )
+            return
+        if self.adapter is None:
+            self.capture_error = self.capture_error or (
+                "adapter render hook is unavailable"
+            )
+            return
+        try:
+            self.adapter.attach_artifact_render_observer(self.recorder)
+            self.observer_attached = True
+        except Exception as exc:
+            self.capture_error = self.capture_error or (
+                "viewport observer attach failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
 
-    def _release_capture_graph(self) -> str:
-        if (
-            not self.capture_requested
-            or self.viewport is None
-            or not self.original_render_product_path
-            or not self.capture_render_product_path
-            or self.capture_render_product_path == self.original_render_product_path
-        ):
+    def _detach_observer(self) -> str:
+        if not self.observer_attached:
             return ""
         try:
-            import isaacsim.kit.scripts.movie_capture as movie_capture  # type: ignore
-
-            postfix = str(movie_capture.rpPrimPathPostFix)
-            expected_capture = self.original_render_product_path + postfix
-            if self.capture_render_product_path != expected_capture:
-                raise RuntimeError(
-                    "unexpected movie-capture render product: "
-                    f"{self.capture_render_product_path}"
-                )
-            self.viewport.render_product_path = self.original_render_product_path
-            stage = movie_capture.omni.usd.get_context().get_stage()
-            movie_capture.remove_existing_graph(
-                stage,
-                self.capture_render_product_path,
-                self.capture_render_product_path + str(movie_capture.ogNodePath),
-            )
+            if self.adapter is None:
+                raise RuntimeError("attached viewport observer lost its adapter")
+            self.adapter.detach_artifact_render_observer(self.recorder)
             return ""
         except Exception as exc:
-            return f"viewport capture cleanup failed: {type(exc).__name__}: {exc}"
+            return f"viewport observer detach failed: {type(exc).__name__}: {exc}"
+        finally:
+            self.observer_attached = False
 
     def finalize(self) -> dict[str, Any]:
         if self._finalized is not None:
             return dict(self._finalized)
+        detach_error = ""
+        raw: dict[str, Any]
         try:
-            raw = dict(self.recorder.finalize() or {})
-        except Exception as exc:
-            raw = {
-                "valid": False,
-                "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
-                "video_path": str(self.run_dir / "fsm50_viewport.mp4"),
-                "video_sha256": "",
-                "frame_count": 0,
-                "error": f"viewport recorder finalize failed: {type(exc).__name__}: {exc}",
-            }
-        cleanup_error = self._release_capture_graph()
+            detach_error = self._detach_observer()
+        finally:
+            try:
+                raw = dict(self.recorder.finalize() or {})
+            except Exception as exc:
+                raw = {
+                    "valid": False,
+                    "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
+                    "video_path": str(self.run_dir / "actual_viewport_video.mp4"),
+                    "video_sha256": "",
+                    "frame_count": 0,
+                    "error": (
+                        "viewport recorder finalize failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                }
+        observed_path = str(raw.get("render_product_path", "") or "")
+        if (
+            self.capture_requested
+            and self.original_render_product_path
+            and observed_path != self.original_render_product_path
+        ):
+            self.capture_error = self.capture_error or (
+                "active viewport render product identity changed during capture"
+            )
         combined_error = "; ".join(
             reason
-            for reason in (self.capture_error, cleanup_error)
+            for reason in (self.capture_error, detach_error)
             if reason
         )
         self._finalized = _finalize_recording_viewport_video_contract(
@@ -1662,7 +3730,9 @@ def _missing_recording_viewport_video(
             "source": _ACTUAL_VIEWPORT_VIDEO_SOURCE,
             "render_product_path": "",
             "frame_count": 0,
-            "video_path": str(Path(run_dir).resolve() / "fsm50_viewport.mp4"),
+            "video_path": str(
+                Path(run_dir).resolve() / "actual_viewport_video.mp4"
+            ),
             "video_sha256": "",
             "error": str(error),
         },
@@ -1716,12 +3786,20 @@ def _apply_recording_artifact_policy(
     video_ok = bool(video.get("actual_viewport_video", False))
     motion_start_ok = bool(result.get("motion_start_ready") is True)
     dispatch_ok = bool(result.get("dispatch_complete") is True)
+    wheel_integral_verdict = str(
+        result.get("wheel_target_integral_verdict", "NOT_EVALUABLE")
+        or "NOT_EVALUABLE"
+    ).upper()
+    wheel_integral_evaluable = wheel_integral_verdict in {"PASS", "FAIL"}
+    telemetry_ok = _telemetry_finalization_valid(result)
     artifact_valid = bool(
         source_ok
         and visualization_ok
         and video_ok
         and motion_start_ok
         and dispatch_ok
+        and wheel_integral_evaluable
+        and telemetry_ok
     )
     if not artifact_valid and source_ok:
         result["classification_before_artifact_validation"] = result.get(
@@ -1735,6 +3813,10 @@ def _apply_recording_artifact_policy(
             if not motion_start_ok
             else "SOURCE_DISPATCH_LEDGER_INCOMPLETE"
             if not dispatch_ok
+            else "WHEEL_TARGET_INTEGRAL_NOT_EVALUABLE"
+            if not wheel_integral_evaluable
+            else "TELEMETRY_FINALIZATION_INCOMPLETE"
+            if not telemetry_ok
             else "VISUALIZATION_FAILED"
         )
         result["strict_full_success"] = False
@@ -1748,6 +3830,69 @@ def _apply_recording_artifact_policy(
         ),
     }
     return artifact_valid
+
+
+def _telemetry_finalization_valid(result: dict[str, Any]) -> bool:
+    finalization = dict(result.get("telemetry_finalization", {}) or {})
+    journal = dict(finalization.get("journal", {}) or {})
+    if (
+        str(finalization.get("schema_version", ""))
+        != "telemetry.canonical_finalization.v1"
+        or finalization.get("canonical_export_attempted") is not True
+        or finalization.get("canonical_complete") is not True
+        or list(finalization.get("errors", []) or [])
+        or journal.get("removed_after_success") is not True
+        or list(journal.get("errors", []) or [])
+    ):
+        return False
+    run_dir_text = str(result.get("run_dir", "") or "")
+    marker_text = str(finalization.get("marker_path", "") or "")
+    marker_sha = str(finalization.get("marker_sha256", "") or "").lower()
+    if not run_dir_text or not marker_text or len(marker_sha) != 64:
+        return False
+    run_dir = Path(run_dir_text).resolve()
+    marker_path = Path(marker_text).resolve()
+    if marker_path != run_dir / "telemetry_finalization.json":
+        return False
+    if (
+        not marker_path.is_file()
+        or sha256_file(marker_path).lower() != marker_sha
+        or (run_dir / ".telemetry_journal").exists()
+    ):
+        return False
+    try:
+        def reject_constant(value: str) -> None:
+            raise ValueError(f"non-finite JSON constant {value}")
+
+        def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            decoded: dict[str, Any] = {}
+            for key, value in pairs:
+                if key in decoded:
+                    raise ValueError(f"duplicate JSON object key {key!r}")
+                decoded[key] = value
+            return decoded
+
+        marker = json.loads(
+            marker_path.read_text(encoding="utf-8"),
+            parse_constant=reject_constant,
+            object_pairs_hook=reject_duplicate_keys,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        return False
+    if not isinstance(marker, dict):
+        return False
+    for key in (
+        "schema_version",
+        "canonical_export_attempted",
+        "canonical_complete",
+        "stream_counts",
+        "canonical_files",
+        "journal",
+        "errors",
+    ):
+        if finalization.get(key) != marker.get(key):
+            return False
+    return True
 
 
 def _reliable_recording_video_files(
@@ -1897,6 +4042,8 @@ def _reliable_replay_completion(
         return None
     if not bool(dict(result.get("visualization", {}) or {}).get("ok", False)):
         return None
+    if not _telemetry_finalization_valid(result):
+        return None
 
     run_dir_text = str(result.get("run_dir", "") or "")
     artifact_root_text = str(result.get("artifact_root", "") or "")
@@ -1924,6 +4071,7 @@ def _reliable_replay_completion(
         return None
 
     diagnostics_path = run_dir / "failure_diagnostics.json"
+    telemetry_finalization_path = run_dir / "telemetry_finalization.json"
     pointer_path = artifact_root / "artifact_pointer.json"
     try:
         diagnostics = json.loads(diagnostics_path.read_text(encoding="utf-8"))
@@ -1941,7 +4089,12 @@ def _reliable_replay_completion(
         return None
     if not _checksums_match_required_files(
         run_dir,
-        (result_path, diagnostics_path, *video_files),
+        (
+            result_path,
+            diagnostics_path,
+            telemetry_finalization_path,
+            *video_files,
+        ),
     ):
         return None
     try:
@@ -2623,8 +4776,13 @@ def _result_payload(
     motion_start_readiness: dict[str, Any],
     pre_first_dispatch_readiness: dict[str, Any],
     dispatch_ledger: dict[str, Any],
+    wheel_integral_evidence: dict[str, Any],
     trial_id: int,
+    diagnostic_role: str = "",
 ) -> dict[str, Any]:
+    normalized_diagnostic_role = str(diagnostic_role or "").strip().upper()
+    if normalized_diagnostic_role not in {"", "U"}:
+        raise ValueError("diagnostic_role must be empty or U")
     last_sim_time_s = float((collector.last_row or {}).get("time_s", 0.0) or 0.0)
     scheduler = service.status_dict(
         current_sim_time_s=last_sim_time_s,
@@ -2632,20 +4790,48 @@ def _result_payload(
         compact=False,
     )
     physical = collector.physical_evidence()
+    role_capture_verdict = str(
+        physical.get("role_capture_verdict", "NOT_EVALUABLE")
+        or "NOT_EVALUABLE"
+    ).upper()
+    full_physical_verdict = str(
+        physical.get("full_physical_verdict", "NOT_EVALUABLE")
+        or "NOT_EVALUABLE"
+    ).upper()
     scheduler_complete = bool(service.stop_reason == "complete" and not timed_out)
-    motion_start_ready = bool(
-        motion_start_readiness.get("ready") is True
-        and dict(
-            motion_start_readiness.get("shared_production_worker_gate", {}) or {}
+    rich_motion_start_ready = motion_start_readiness.get("ready") is True
+    shared_physical_motion_start_ready = (
+        dict(
+            motion_start_readiness.get(
+                "shared_production_worker_gate", {}
+            )
+            or {}
         ).get("motion_start_ready")
         is True
+    )
+    motion_start_ready = bool(
+        rich_motion_start_ready
         and pre_first_dispatch_readiness.get("ready") is True
+        and (
+            normalized_diagnostic_role == "U"
+            or shared_physical_motion_start_ready
+        )
     )
     dispatch_complete = bool(dispatch_ledger.get("complete") is True)
+    wheel_target_integral_verdict = str(
+        wheel_integral_evidence.get(
+            "target_integral_verdict", "NOT_EVALUABLE"
+        )
+        or "NOT_EVALUABLE"
+    ).upper()
+    wheel_target_integral_complete = bool(
+        wheel_target_integral_verdict == "PASS"
+    )
     strict_success = bool(
         scheduler_complete
         and motion_start_ready
         and dispatch_complete
+        and wheel_target_integral_complete
         and physical.get("physical_success", False)
     )
     valid_legs = [
@@ -2658,9 +4844,28 @@ def _result_payload(
         if strict_success
         else "SCHEDULER_FAILURE"
         if not scheduler_complete
+        else "MOTION_START_BLOCKED"
+        if not motion_start_ready
+        else "DISPATCH_FAILURE"
+        if not dispatch_complete
+        else "WHEEL_INTEGRAL_FAILURE"
+        if not wheel_target_integral_complete
         else "PARTIAL_SUCCESS"
         if valid_legs
         else "PHYSICAL_FAILURE"
+    )
+    first_failure_phase = (
+        ""
+        if strict_success
+        else "SCHEDULER"
+        if not scheduler_complete
+        else "MOTION_START_READY"
+        if not motion_start_ready
+        else "SOURCE_DISPATCH_LEDGER"
+        if not dispatch_complete
+        else "WHEEL_TARGET_INTEGRAL"
+        if not wheel_target_integral_complete
+        else _first_failure(physical)
     )
     rows = collector.fsm50_rows
     final_home_error = None
@@ -2693,18 +4898,45 @@ def _result_payload(
             pre_first_dispatch_readiness
         ),
         "motion_start_ready": motion_start_ready,
+        "motion_start_readiness_scope": (
+            "SENSOR_INDEPENDENT_TRAJECTORY_ADMISSION"
+            if normalized_diagnostic_role == "U"
+            else "PHYSICAL_MOTION_ADMISSION"
+        ),
+        "physical_motion_start_verdict": (
+            "NOT_EVALUABLE"
+            if normalized_diagnostic_role == "U"
+            else "PASS"
+            if shared_physical_motion_start_ready
+            else "FAIL"
+        ),
         "dispatch_ledger": _jsonable(dispatch_ledger),
         "dispatch_complete": dispatch_complete,
+        "wheel_integral_evidence": _jsonable(wheel_integral_evidence),
+        "wheel_target_integral_verdict": wheel_target_integral_verdict,
+        "wheel_target_integral_complete": wheel_target_integral_complete,
+        "measured_wheel_tracking_verdict": str(
+            wheel_integral_evidence.get(
+                "measured_tracking_verdict", "NOT_EVALUABLE"
+            )
+            or "NOT_EVALUABLE"
+        ).upper(),
         "scheduler_complete": scheduler_complete,
         "scheduler_stop_reason": str(service.stop_reason or ""),
         "scheduler_status": _jsonable(scheduler),
         "timed_out": bool(timed_out),
         "physical_evidence": physical,
+        "role_capture_verdict": role_capture_verdict,
+        "role_capture_success": role_capture_verdict == "PASS",
+        "full_physical_verdict": full_physical_verdict,
+        "telemetry_finalization": _jsonable(
+            getattr(collector, "telemetry_finalization_status", lambda: {})()
+        ),
         "physical_success": bool(physical.get("physical_success", False)),
         "strict_full_success": strict_success,
         "classification": classification,
         "valid_linkage_lift_legs": valid_legs,
-        "first_failure_phase": "" if strict_success else _first_failure(physical),
+        "first_failure_phase": first_failure_phase,
         "maximum_abs_roll_rad": _finite_extreme(
             [{**row, "abs_roll": abs(float(row.get("base_roll_rad", math.nan)))} for row in rows],
             "abs_roll",
@@ -2721,7 +4953,8 @@ def _result_payload(
         "final_joint_target_error_rad": final_home_error,
         "success_semantics": (
             "MOTION_START_READY, complete source/semantic-noop dispatch ledger, "
-            "scheduler completion, and strict per-leg "
+            "scheduler completion, a PASS authoritative plan-to-PhysX wheel "
+            "target integral, and strict per-leg "
             "UNLOAD->AIR->CLEAR_FACE->TOP->LOAD evidence are independent; "
             "only their conjunction can be success"
         ),
@@ -2744,12 +4977,17 @@ def _write_checksums(
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
+        relative_parts = path.relative_to(root).parts
         if path.resolve() == destination or path.name in {
             ".partial",
             ".complete",
             ".finalized",
             ".failed",
         }:
+            continue
+        if ".telemetry_journal" in relative_parts or (
+            path.name.startswith(".") and ".tmp" in path.name
+        ):
             continue
         if exclude_preclose_snapshots and relative in preclose_destinations:
             continue
@@ -3056,34 +5294,106 @@ def _evaluate_motion_start_window(
     frames: list[dict[str, Any]],
     plan_identity: dict[str, Any],
     required_frames: int,
+    command_dispatch_idle: bool = True,
+    command_dispatch_evidence: dict[str, Any] | None = None,
+    diagnostic_role: str = "",
 ) -> dict[str, Any]:
+    normalized_diagnostic_role = str(diagnostic_role or "").strip().upper()
+    if normalized_diagnostic_role not in {"", "U"}:
+        raise ValueError("diagnostic_role must be empty or U")
     selected = list(frames[-max(1, int(required_frames)) :])
     frame_results: list[dict[str, Any]] = []
     expected_instance = str(getattr(adapter, "runtime_instance_id", "") or "")
     for frame in selected:
-        frame_results.append(
-            evaluate_motion_start_ready(
-                ground_reference=_fresh_ground_evidence_for_motion_start(
-                    startup_ground, frame
-                ),
-                snapshot=frame,
-                production_runtime_ready=True,
-                expected_sim_step=int(frame.get("sim_step", -1)),
-                expected_adapter_runtime_instance_id=expected_instance,
-                plan_identity=plan_identity,
-                command_dispatch_idle=True,
-                root_seed_applied=False,
-                vertical_speed_limit_m_s=float(
-                    adapter.config.ground_vertical_speed_threshold_m_s
-                ),
-                wheel_speed_limit_rad_s=float(
-                    adapter.config.ground_wheel_speed_threshold_rad_s
-                ),
-                penetration_limit_m=float(
-                    adapter.config.ground_penetration_tolerance_m
-                ),
-            )
+        frame_result = evaluate_motion_start_ready(
+            ground_reference=_fresh_ground_evidence_for_motion_start(
+                startup_ground, frame
+            ),
+            snapshot=frame,
+            production_runtime_ready=True,
+            expected_sim_step=int(frame.get("sim_step", -1)),
+            expected_adapter_runtime_instance_id=expected_instance,
+            plan_identity=plan_identity,
+            command_dispatch_idle=bool(command_dispatch_idle),
+            root_seed_applied=False,
+            vertical_speed_limit_m_s=float(
+                adapter.config.ground_vertical_speed_threshold_m_s
+            ),
+            wheel_speed_limit_rad_s=float(
+                adapter.config.ground_wheel_speed_threshold_rad_s
+            ),
+            penetration_limit_m=float(
+                adapter.config.ground_penetration_tolerance_m
+            ),
         )
+        if normalized_diagnostic_role == "U":
+            # U proves that the ordinary production UI trajectory can be
+            # dispatched with its contact sensor plumbing left disabled.  A
+            # missing contact observation is therefore expected and must not
+            # be converted into either a physical PASS or a readiness FAIL.
+            # Retain only identity/runtime/kinematic admission checks; mark
+            # every physical/contact check explicitly NOT_EVALUABLE.
+            applicable_checks = {
+                "production_runtime_ready",
+                "no_historical_root_seed",
+                "fresh_adapter_instance",
+                "fresh_snapshot",
+                "plan_identity_bound_and_no_prior_dispatch",
+                "live_command_state_matches_source_initial_state",
+                "root_motion_evidence_complete",
+                "attitude_evidence_complete",
+                "obstacle_relative_pose_complete",
+                "joint_and_physx_position_targets_valid",
+                "wheel_measured_motion_safe",
+                "wheel_targets_zero_and_physx_verified",
+            }
+            raw_checks = dict(frame_result.get("checks", {}) or {})
+            role_checks: dict[str, dict[str, Any]] = {}
+            for name, raw_check in raw_checks.items():
+                if name in applicable_checks:
+                    role_checks[name] = dict(raw_check or {})
+                else:
+                    role_checks[name] = {
+                        "passed": None,
+                        "verdict": "NOT_EVALUABLE",
+                        "availability": "UNAVAILABLE_BY_ROLE",
+                        "reason": (
+                            "ordinary-UI diagnostic role U runs with contact "
+                            "sensors disabled and cannot make physical claims"
+                        ),
+                    }
+            applicable_ready = bool(
+                applicable_checks
+                and applicable_checks.issubset(role_checks)
+                and all(
+                    role_checks[name].get("passed") is True
+                    for name in applicable_checks
+                )
+            )
+            frame_result.update(
+                diagnostic_role="U",
+                qualification_scope=(
+                    "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+                ),
+                checks=role_checks,
+                ready=applicable_ready,
+                status="PASS" if applicable_ready else "FAIL",
+                classification=(
+                    "MOTION_START_READY"
+                    if applicable_ready
+                    else "MOTION_START_BLOCKED"
+                ),
+                failed_checks=[
+                    name
+                    for name in sorted(applicable_checks)
+                    if role_checks.get(name, {}).get("passed") is not True
+                ],
+                physical_readiness_verdict="NOT_EVALUABLE",
+                production_worker_motion_ready=None,
+                production_worker_motion_reason="",
+                production_worker_ground_state="NOT_EVALUABLE",
+            )
+        frame_results.append(frame_result)
     steps = [int(frame.get("sim_step", -1)) for frame in selected]
     contiguous_physics_ticks = bool(
         steps
@@ -3163,6 +5473,8 @@ def _evaluate_motion_start_window(
         ),
         "window_failed_checks": window_failed_checks,
         "plan_identity": dict(plan_identity),
+        "command_dispatch_idle": bool(command_dispatch_idle),
+        "command_dispatch_evidence": dict(command_dispatch_evidence or {}),
         "adapter_runtime_instance_id": expected_instance,
         "root_state_write_count": int(
             getattr(adapter, "root_state_write_count", 0) or 0
@@ -3174,6 +5486,15 @@ def _evaluate_motion_start_window(
         "strict_rest_is_required": False,
         "envelope_status": "PENDING_THREE_SUCCESSFUL_V003_FAST_REPLAYS",
         "writes_robot_state": False,
+        "diagnostic_role": normalized_diagnostic_role,
+        "qualification_scope": (
+            "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+            if normalized_diagnostic_role == "U"
+            else "GATE1_PHYSICAL_QUALIFICATION"
+        ),
+        "physical_readiness_verdict": (
+            "NOT_EVALUABLE" if normalized_diagnostic_role == "U" else "EVALUATED"
+        ),
     }
 
 
@@ -3222,6 +5543,7 @@ def _run_recording_version(
     motion_start_readiness: dict[str, Any] = {}
     pre_first_dispatch_readiness: dict[str, Any] = {}
     dispatch_ledger: dict[str, Any] = {}
+    wheel_integral_evidence: dict[str, Any] = {}
     try:
         source_freeze = _source_freeze(item, robot_usd=robot_usd)
         write_json(artifact_root / "source_freeze_pre.json", source_freeze)
@@ -3309,6 +5631,7 @@ def _run_recording_version(
             "obstacle": obstacle,
             "wheel_radius_m": wheel_radius,
             "source_version": item.version_id,
+            "contact_mode": contact_mode,
             "plan": plan,
             "force_threshold_n": 2.0,
             "unload_force_n": 1.0,
@@ -3333,6 +5656,7 @@ def _run_recording_version(
             run_dir,
             args,
             contact_mode=contact_mode,
+            adapter=adapter,
         )
         video_capture.start()
         adapter.attach_telemetry(collector)
@@ -3646,6 +5970,16 @@ def _run_recording_version(
             plan=plan,
             timing_trace=service.timing_trace,
         )
+        wheel_integral_evidence = evaluate_wheel_integral_evidence(
+            plan=plan,
+            timing_trace=service.timing_trace,
+            telemetry_rows=collector.fsm50_rows,
+            wheel_direction=float(getattr(adapter, "wheel_direction", 1.0)),
+        )
+        write_json(
+            run_dir / "V003_WHEEL_INTEGRAL_EVIDENCE.json",
+            wheel_integral_evidence,
+        )
         write_json(
             run_dir / "production_dispatch_timing.json",
             service.timing_trace,
@@ -3691,7 +6025,9 @@ def _run_recording_version(
             motion_start_readiness=motion_start_readiness,
             pre_first_dispatch_readiness=pre_first_dispatch_readiness,
             dispatch_ledger=dispatch_ledger,
+            wheel_integral_evidence=wheel_integral_evidence,
             trial_id=trial_id,
+            diagnostic_role="",
         )
         result["artifact_root"] = str(artifact_root)
         result["run_dir"] = str(run_dir)
@@ -3717,6 +6053,7 @@ def _run_recording_version(
                 "result.json",
                 "failure_diagnostics.json",
                 "physical_evidence.json",
+                "telemetry_finalization.json",
                 "fsm50_telemetry.csv",
                 "fsm50_telemetry.jsonl",
                 "state_timeline.csv",
@@ -3724,19 +6061,17 @@ def _run_recording_version(
                 "motion_start_pre_first_dispatch.json",
                 "V003_DISPATCH_TRACE.csv",
                 "V003_DISPATCH_TRACE.json",
+                "V003_WHEEL_INTEGRAL_EVIDENCE.json",
                 "production_dispatch_timing.json",
                 "runtime_environment.json",
                 "visual_recording_manifest.json",
-                "viewport_video_manifest.json",
                 "checksums.sha256",
             )
         ]
-        if result.get("actual_viewport_video") is True and Path(
-            result["video_path"]
-        ).is_file():
-            result["required_evidence_paths"].append(
-                str(Path(result["video_path"]).resolve())
-            )
+        result["required_evidence_paths"].extend(
+            str(path)
+            for path in _viewport_preclose_evidence_paths(run_dir, video)
+        )
         post_source_freeze = _source_freeze(item, robot_usd=robot_usd)
         source_comparison = _compare_source_freezes(source_freeze, post_source_freeze)
         write_json(artifact_root / "source_freeze_post.json", post_source_freeze)
@@ -3787,6 +6122,10 @@ def _run_recording_version(
                 "scheduler_info": service.last_info,
                 "servo_residual_warnings": service.servo_residual_warnings,
                 "strict_physical_evidence": result["physical_evidence"],
+                "wheel_integral_evidence": result["wheel_integral_evidence"],
+                "wheel_target_integral_verdict": result[
+                    "wheel_target_integral_verdict"
+                ],
                 "source_integrity": result["source_integrity"],
                 "contact_mode": contact_mode,
                 "video": _jsonable(video),
@@ -3847,7 +6186,9 @@ def _run_recording_version(
                     "actual_viewport_video": False,
                     "not_camera_video": False,
                     "contact_mode": contact_mode,
-                    "video_path": str(Path(run_dir) / "fsm50_viewport.mp4"),
+                    "video_path": str(
+                        Path(run_dir) / "actual_viewport_video.mp4"
+                    ),
                     "video_sha256": "",
                     "manifest_path": str(
                         Path(run_dir) / "viewport_video_manifest.json"
@@ -3913,6 +6254,33 @@ def _run_recording_version(
                 Path(run_dir) / "V003_DISPATCH_TRACE.json",
                 {**dispatch_ledger, "rows": [], "motion_batches": []},
             )
+        if not wheel_integral_evidence and plan is not None:
+            try:
+                wheel_integral_evidence = evaluate_wheel_integral_evidence(
+                    plan=plan,
+                    timing_trace=service.timing_trace,
+                    telemetry_rows=(
+                        [] if collector is None else collector.fsm50_rows
+                    ),
+                    wheel_direction=float(
+                        getattr(adapter, "wheel_direction", 1.0)
+                    ),
+                )
+            except Exception as integral_exc:
+                wheel_integral_evidence = {
+                    "schema_version": 1,
+                    "target_integral_verdict": "NOT_EVALUABLE",
+                    "measured_tracking_verdict": "NOT_EVALUABLE",
+                    "overall_verdict": "NOT_EVALUABLE",
+                    "physical_success": False,
+                    "structural_errors": [
+                        f"{type(integral_exc).__name__}: {integral_exc}"
+                    ],
+                }
+        write_json(
+            Path(run_dir) / "V003_WHEEL_INTEGRAL_EVIDENCE.json",
+            wheel_integral_evidence,
+        )
         write_json(
             Path(run_dir) / "motion_start_readiness.json",
             motion_start_readiness,
@@ -3965,6 +6333,15 @@ def _run_recording_version(
                 video.get("manifest_sha256", "") or ""
             ),
             "physical_evidence": physical,
+            "telemetry_finalization": (
+                {}
+                if collector is None
+                else getattr(
+                    collector,
+                    "telemetry_finalization_status",
+                    lambda: {},
+                )()
+            ),
             "respawn": _jsonable(respawn),
             "fresh_process_clean_reset": True,
             "motion_start_readiness": _jsonable(motion_start_readiness),
@@ -3974,6 +6351,19 @@ def _run_recording_version(
             "motion_start_ready": False,
             "dispatch_ledger": _jsonable(dispatch_ledger),
             "dispatch_complete": False,
+            "wheel_integral_evidence": _jsonable(
+                wheel_integral_evidence
+            ),
+            "wheel_target_integral_verdict": str(
+                wheel_integral_evidence.get(
+                    "target_integral_verdict", "NOT_EVALUABLE"
+                )
+            ),
+            "measured_wheel_tracking_verdict": str(
+                wheel_integral_evidence.get(
+                    "measured_tracking_verdict", "NOT_EVALUABLE"
+                )
+            ),
             "visualization": {"ok": False, "error": "not generated"},
             "artifact_valid": False,
             "strict_success": False,
@@ -4032,14 +6422,15 @@ def _run_recording_version(
             "motion_start_pre_first_dispatch.json",
             "V003_DISPATCH_TRACE.csv",
             "V003_DISPATCH_TRACE.json",
+            "V003_WHEEL_INTEGRAL_EVIDENCE.json",
             "production_dispatch_timing.json",
             "runtime_environment.json",
             "visual_recording_manifest.json",
-            "viewport_video_manifest.json",
             "checksums.sha256",
         )
         optional_names = (
             "physical_evidence.json",
+            "telemetry_finalization.json",
             "fsm50_telemetry.csv",
             "fsm50_telemetry.jsonl",
             "state_timeline.csv",
@@ -4051,12 +6442,10 @@ def _run_recording_version(
             for name in optional_names
             if (Path(run_dir) / name).is_file()
         ]
-        if failure.get("actual_viewport_video") is True and Path(
-            failure["video_path"]
-        ).is_file():
-            failure["required_evidence_paths"].append(
-                str(Path(failure["video_path"]).resolve())
-            )
+        failure["required_evidence_paths"].extend(
+            str(path)
+            for path in _viewport_preclose_evidence_paths(Path(run_dir), video)
+        )
         runtime_environment = {
             "source_version": item.version_id,
             "contact_mode": contact_mode,
@@ -4224,6 +6613,11 @@ def _apply_batch_source_drift(
     results: list[dict[str, Any]], drift: dict[str, Any]
 ) -> None:
     for result in results:
+        if _result_is_worker_owned(result):
+            # A post-run batch source mismatch invalidates the batch, not the
+            # already sealed worker artifact.  The caller records the mismatch
+            # in batch source_integrity/finalization and returns failure.
+            continue
         _invalidate_result_for_source_drift(result, drift=drift, scope="batch")
         run_dir = Path(str(result.get("run_dir", "") or ""))
         artifact_root = Path(str(result.get("artifact_root", "") or ""))
@@ -4416,6 +6810,7 @@ def _run_grounding_only_locked(
             diagnostic_dir,
             args,
             contact_mode="formal_grounding_diagnostic",
+            adapter=adapter,
         )
         capture.start()
         trace_writer = GroundingTraceWriter(
@@ -4605,7 +7000,12 @@ def _run_grounding_only_locked(
         diagnostic_dir / "checksums.sha256",
     ]
     video_path = Path(
-        str(video.get("video_path", diagnostic_dir / "fsm50_viewport.mp4"))
+        str(
+            video.get(
+                "video_path",
+                diagnostic_dir / "actual_viewport_video.mp4",
+            )
+        )
     ).resolve()
     if video_valid and video_path.is_file():
         evidence_paths.append(video_path)
@@ -4823,7 +7223,7 @@ def _run_grounding_only_locked(
     )
 
 
-def _run_recording_replays_locked(
+def _run_recording_replays_direct_legacy_locked(
     args: argparse.Namespace,
     *,
     process_snapshot: list[dict[str, Any]],
@@ -5286,6 +7686,13 @@ def _run_recording_replays_locked(
                     "manifest_failure_rewrite: "
                     f"{type(rewrite_exc).__name__}: {rewrite_exc}"
                 )
+            # The fallback marker must embed the same finalization payload as
+            # the freshly rewritten immutable preclose snapshot.  Keeping the
+            # pre-rewrite copy here makes an otherwise complete diagnostic
+            # shutdown fail parent-side closure verification.
+            evidence_manifest["batch_finalization"] = _jsonable(
+                batch_finalization
+            )
         if immutable_preclose_errors:
             evidence_manifest["immutable_preclose_errors"] = list(
                 immutable_preclose_errors
@@ -5377,7 +7784,1028 @@ def _run_recording_replays_locked(
     )
 
 
+def _finalize_worker_recording_batch_preclose(
+    batch_root: Path,
+    *,
+    artifact_request: dict[str, Any],
+    results: list[dict[str, Any]],
+    batch_error: str,
+    source_integrity: dict[str, Any],
+    supervisor: ChildSupervisorHandshake,
+) -> tuple[dict[str, Any], bool]:
+    """Freeze controller-owned batch bytes without touching worker run bytes."""
+
+    root = Path(batch_root).resolve()
+    finalization_errors: list[str] = []
+    worker_result = dict(results[0] or {}) if len(results) == 1 else {}
+    equivalence_role = str(
+        artifact_request.get("environment_equivalence_role", "") or ""
+    )
+    diagnostic_role = str(artifact_request.get("diagnostic_role", "") or "")
+    qualification_scope = (
+        "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+        if diagnostic_role == "U"
+        else "TRAJECTORY_COMPARISON"
+        if equivalence_role
+        else "GATE1_PHYSICAL_QUALIFICATION"
+    )
+    gate1_eligible = bool(not diagnostic_role and not equivalence_role)
+    environment_equivalence_eligible = bool(
+        equivalence_role and not diagnostic_role
+    )
+    expected_role_identity = {
+        "environment_equivalence_role": equivalence_role,
+        "diagnostic_role": diagnostic_role,
+        "qualification_scope": qualification_scope,
+        "gate1_physical_qualification_eligible": gate1_eligible,
+        "gate1_eligible": gate1_eligible,
+        "environment_equivalence_eligible": environment_equivalence_eligible,
+    }
+    if (
+        equivalence_role not in {"", "A1", "A2", "B"}
+        or diagnostic_role not in {"", "U"}
+        or bool(equivalence_role and diagnostic_role)
+    ):
+        finalization_errors.append(
+            "artifact_request_role_identity: invalid diagnostic role matrix"
+        )
+    for key, expected in expected_role_identity.items():
+        if not _strict_json_equal(artifact_request.get(key), expected):
+            finalization_errors.append(
+                "artifact_request_role_identity: "
+                f"{key} expected={expected!r} "
+                f"actual={artifact_request.get(key)!r}"
+            )
+        if worker_result and not _strict_json_equal(
+            worker_result.get(key), expected
+        ):
+            finalization_errors.append(
+                "worker_result_role_identity: "
+                f"{key} expected={expected!r} "
+                f"actual={worker_result.get(key)!r}"
+            )
+    worker_result_complete = bool(
+        len(results) == 1
+        and _result_is_worker_owned(worker_result)
+        and dict(results[0].get("lifecycle", {}) or {}).get("finalized") is True
+        and dict(results[0].get("lifecycle", {}) or {}).get("failed") is not True
+    )
+    batch_valid = bool(
+        not batch_error
+        and source_integrity.get("equal") is True
+        and worker_result_complete
+        and not finalization_errors
+    )
+    environment_diagnostic_complete = bool(
+        batch_valid
+        and equivalence_role
+        and worker_result.get(
+            "environment_equivalence_diagnostic_complete"
+        )
+        is True
+    )
+    ordinary_diagnostic_complete = bool(
+        batch_valid
+        and diagnostic_role == "U"
+        and worker_result.get("ordinary_ui_diagnostic_complete") is True
+    )
+    batch_finalization = {
+        "artifact_root": str(root),
+        "artifact_owner": "formal_worker_batch_controller",
+        "finalized": batch_valid,
+        "failed": not batch_valid,
+        "strict_success": bool(
+            batch_valid
+            and len(results) == 1
+            and results[0].get("strict_full_success") is True
+        ),
+        "environment_equivalence_role": equivalence_role,
+        "environment_equivalence_diagnostic_complete": (
+            environment_diagnostic_complete
+        ),
+        "diagnostic_role": diagnostic_role,
+        "ordinary_ui_diagnostic_complete": ordinary_diagnostic_complete,
+        "command_success": bool(
+            ordinary_diagnostic_complete
+            if diagnostic_role == "U"
+            else environment_diagnostic_complete
+            if equivalence_role
+            else (
+                batch_valid
+                and len(results) == 1
+                and results[0].get("strict_full_success") is True
+            )
+        ),
+        "qualification_scope": qualification_scope,
+        "gate1_physical_qualification_eligible": gate1_eligible,
+        "gate1_eligible": gate1_eligible,
+        "environment_equivalence_eligible": environment_equivalence_eligible,
+        "batch_error": str(batch_error or ""),
+        "close_error": "PENDING_FORMAL_WORKER_CLOSE",
+        "phase": "PRECLOSE_FINALIZED",
+        "source_integrity": _jsonable(source_integrity),
+        "finalization_errors": finalization_errors,
+        "worker_artifact_result_count": len(results),
+    }
+
+    def persist_live() -> None:
+        _atomic_write_json(root / "batch_results.json", results)
+        _atomic_write_json(root / "batch_finalization.json", batch_finalization)
+        _write_checksums(root, exclude_preclose_snapshots=True)
+
+    try:
+        persist_live()
+    except Exception as exc:
+        finalization_errors.append(
+            f"live_batch_bytes: {type(exc).__name__}: {exc}"
+        )
+        batch_valid = False
+    if finalization_errors:
+        batch_finalization.update(
+            finalized=False,
+            failed=True,
+            strict_success=False,
+            environment_equivalence_diagnostic_complete=False,
+            ordinary_ui_diagnostic_complete=False,
+            command_success=False,
+            finalization_errors=list(finalization_errors),
+        )
+        try:
+            persist_live()
+        except Exception as exc:
+            finalization_errors.append(
+                f"failure_live_rewrite: {type(exc).__name__}: {exc}"
+            )
+
+    immutable_errors = _snapshot_preclose_files(root)
+    if immutable_errors:
+        batch_valid = False
+        finalization_errors.extend(
+            f"immutable_preclose: {error}" for error in immutable_errors
+        )
+        batch_finalization.update(
+            finalized=False,
+            failed=True,
+            strict_success=False,
+            environment_equivalence_diagnostic_complete=False,
+            ordinary_ui_diagnostic_complete=False,
+            command_success=False,
+            finalization_errors=list(finalization_errors),
+        )
+        try:
+            persist_live()
+            immutable_errors.extend(
+                f"refresh: {error}" for error in _snapshot_preclose_files(root)
+            )
+        except Exception as exc:
+            immutable_errors.append(
+                f"failure_rewrite: {type(exc).__name__}: {exc}"
+            )
+
+    try:
+        evidence = _preclose_evidence_manifest(
+            root,
+            results=results,
+            batch_source_comparison=source_integrity,
+            batch_finalization=batch_finalization,
+            include_global_analysis_reports=False,
+        )
+    except Exception as exc:
+        batch_valid = False
+        finalization_errors.append(
+            f"preclose_evidence_manifest: {type(exc).__name__}: {exc}"
+        )
+        batch_finalization.update(
+            finalized=False,
+            failed=True,
+            strict_success=False,
+            environment_equivalence_diagnostic_complete=False,
+            ordinary_ui_diagnostic_complete=False,
+            command_success=False,
+            finalization_errors=list(finalization_errors),
+        )
+        try:
+            persist_live()
+            immutable_errors.extend(
+                f"manifest_failure_refresh: {error}"
+                for error in _snapshot_preclose_files(root)
+            )
+        except Exception as rewrite_exc:
+            immutable_errors.append(
+                "manifest_failure_rewrite: "
+                f"{type(rewrite_exc).__name__}: {rewrite_exc}"
+            )
+        evidence = {
+            "physics_result_count": len(results),
+            "manifest_error": f"{type(exc).__name__}: {exc}",
+            "source_integrity": _jsonable(source_integrity),
+            "batch_finalization": _jsonable(batch_finalization),
+        }
+    if immutable_errors:
+        evidence["immutable_preclose_errors"] = list(immutable_errors)
+
+    try:
+        _mark_artifact_root(root, valid=batch_valid)
+    except Exception as exc:
+        batch_valid = False
+        marker_error = f"{type(exc).__name__}: {exc}"
+        evidence["batch_marker_error"] = marker_error
+        finalization_errors.append(f"batch_marker: {marker_error}")
+        batch_finalization.update(
+            finalized=False,
+            failed=True,
+            strict_success=False,
+            environment_equivalence_diagnostic_complete=False,
+            ordinary_ui_diagnostic_complete=False,
+            command_success=False,
+            finalization_errors=list(finalization_errors),
+        )
+        evidence["batch_finalization"] = _jsonable(batch_finalization)
+        try:
+            persist_live()
+            _snapshot_preclose_files(root)
+            _mark_artifact_root(root, valid=False)
+        except Exception:
+            pass
+    supervisor.mark_preclose(evidence)
+    return batch_finalization, batch_valid
+
+
+def _select_exact_operation_ack(
+    status: dict[str, Any], *, operation: str, request_id: str
+) -> dict[str, Any]:
+    history = list(status.get("operation_ack_history", []) or [])
+    latest = dict(status.get("last_operation_ack", {}) or {})
+    if latest:
+        history.append(latest)
+    for row in reversed(history):
+        ack = dict(row or {})
+        if (
+            str(ack.get("operation", "") or "") == str(operation)
+            and str(ack.get("request_id", "") or "") == str(request_id)
+        ):
+            return ack
+    return {}
+
+
+def _failed_formal_worker_cleanup_identity(
+    client: Any,
+    process: Any,
+    artifact_request: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Bind failed-worker cleanup to its exact terminal ACK without startup claims."""
+
+    if not isinstance(artifact_request, dict):
+        raise RuntimeError(
+            "failed formal worker shutdown requires its immutable artifact request"
+        )
+    request_id = str(artifact_request.get("request_id", "") or "")
+    if not request_id:
+        raise RuntimeError("failed formal worker artifact request has no request_id")
+    failed_ack: dict[str, Any] = {}
+    # A failed session status and its critical terminal ACK travel as separate
+    # ordered IPC messages.  Drain before requesting shutdown and accept only
+    # the exact request-matched terminal ACK.
+    for attempt in range(101):
+        try:
+            client.poll()
+        except Exception:
+            pass
+        pre_shutdown_status = dict(client.status() or {})
+        artifact_acks = list(
+            pre_shutdown_status.get("artifact_ack_history", []) or []
+        )
+        latest_artifact_ack = dict(
+            pre_shutdown_status.get("last_artifact_ack", {}) or {}
+        )
+        if latest_artifact_ack:
+            artifact_acks.append(latest_artifact_ack)
+        for row in reversed(artifact_acks):
+            candidate = dict(row or {})
+            if (
+                candidate.get("type") == "operation_ack"
+                and candidate.get("operation") == "recording_artifact"
+                and candidate.get("phase") == "ARTIFACT_FAILED"
+                and candidate.get("accepted") is False
+                and candidate.get("artifact_complete") is False
+                and candidate.get("request_id") == request_id
+            ):
+                failed_ack = candidate
+                break
+        if failed_ack or attempt >= 100:
+            break
+        time.sleep(0.01)
+    if not failed_ack:
+        raise RuntimeError(
+            "failed formal worker has no exact terminal ARTIFACT_FAILED ACK"
+        )
+    launched_pid = _exact_json_int(
+        getattr(client, "pid", None), "launched formal worker PID"
+    )
+    process_pid = _exact_json_int(
+        getattr(process, "pid", None), "formal worker process PID"
+    )
+    if launched_pid <= 0:
+        raise RuntimeError("launched formal worker PID must be positive")
+    if launched_pid != process_pid:
+        raise RuntimeError(
+            "formal worker client/process PID mismatch: "
+            f"client={launched_pid} process={process_pid}"
+        )
+    worker_session_id = failed_ack.get("worker_session_id")
+    adapter_runtime_instance_id = failed_ack.get("adapter_runtime_instance_id")
+    if not isinstance(worker_session_id, str) or not worker_session_id:
+        raise RuntimeError(
+            "failed formal worker ACK has no exact worker session identity"
+        )
+    if not isinstance(adapter_runtime_instance_id, str):
+        raise RuntimeError(
+            "failed formal worker ACK adapter identity must be a string"
+        )
+    expected_identity = {
+        "worker_pid": launched_pid,
+        "worker_session_id": worker_session_id,
+        "adapter_runtime_instance_id": adapter_runtime_instance_id,
+        "artifact_request_id": request_id,
+        "root_state_write_count": 0,
+        "contact_mode": artifact_request.get("contact_mode"),
+        "environment_equivalence_role": artifact_request.get(
+            "environment_equivalence_role"
+        ),
+        "diagnostic_role": artifact_request.get("diagnostic_role"),
+        "qualification_scope": artifact_request.get("qualification_scope"),
+        "gate1_eligible": artifact_request.get("gate1_eligible"),
+        "gate1_physical_qualification_eligible": artifact_request.get(
+            "gate1_physical_qualification_eligible"
+        ),
+        "environment_equivalence_eligible": artifact_request.get(
+            "environment_equivalence_eligible"
+        ),
+    }
+    for key, value in {
+        "request_id": request_id,
+        **expected_identity,
+    }.items():
+        if not _strict_json_equal(failed_ack.get(key), value):
+            raise RuntimeError(
+                f"failed formal worker terminal ACK {key} mismatch: "
+                f"expected={value!r} actual={failed_ack.get(key)!r}"
+            )
+    if not str(failed_ack.get("error", "") or ""):
+        raise RuntimeError("failed formal worker terminal ACK has no error")
+    return expected_identity
+
+
+def _cleanup_owned_formal_worker_without_claim(client: Any, process: Any) -> None:
+    """Reap one launched worker without creating any lifecycle success claim."""
+
+    if process.poll() is None:
+        try:
+            client.request_shutdown(mode="normal", request_id=uuid.uuid4().hex)
+        except Exception:
+            pass
+        # The outer parent owns the 60-second tree timeout.  Keeping this child
+        # alive while waiting ensures that timeout can reap the whole PID tree.
+        while process.poll() is None:
+            try:
+                client.poll()
+            except Exception:
+                pass
+            time.sleep(0.02)
+    # Drain any bytes queued immediately before process exit, but never promote
+    # them to an accepted shutdown/close handshake on this cleanup-only path.
+    for _attempt in range(101):
+        try:
+            client.poll()
+        except Exception:
+            break
+        time.sleep(0.01)
+    client.close()
+
+
+def _close_formal_recording_worker(
+    client: Any,
+    *,
+    supervisor: ChildSupervisorHandshake,
+    worker_binding: dict[str, Any],
+    artifact_complete: bool,
+    artifact_request: dict[str, Any] | None = None,
+) -> str:
+    """Request close; only the outer parent owns the 60-second kill policy."""
+
+    process = getattr(client, "process", None)
+    if process is None:
+        raise RuntimeError("formal worker process was never launched")
+    expected_identity: dict[str, Any]
+    required_binding_keys = (
+        "worker_pid",
+        "worker_session_id",
+        "adapter_runtime_instance_id",
+        "artifact_request_id",
+    )
+    cleanup_only = not all(
+        key in worker_binding for key in required_binding_keys
+    )
+    if not cleanup_only:
+        if process.poll() is not None:
+            raise RuntimeError(
+                "formal worker exited before controller-requested shutdown: "
+                f"returncode={process.poll()}"
+            )
+        expected_identity = {
+            "worker_pid": _exact_json_int(
+                worker_binding["worker_pid"], "formal worker binding PID"
+            ),
+            "worker_session_id": str(worker_binding["worker_session_id"]),
+            "adapter_runtime_instance_id": str(
+                worker_binding["adapter_runtime_instance_id"]
+            ),
+            "artifact_request_id": str(worker_binding["artifact_request_id"]),
+            "root_state_write_count": 0,
+        }
+        for key in (
+            "contact_mode",
+            "environment_equivalence_role",
+            "diagnostic_role",
+            "qualification_scope",
+            "gate1_eligible",
+            "gate1_physical_qualification_eligible",
+            "environment_equivalence_eligible",
+        ):
+            if key in worker_binding:
+                expected_identity[key] = worker_binding[key]
+    else:
+        if artifact_complete:
+            _cleanup_owned_formal_worker_without_claim(client, process)
+            raise RuntimeError(
+                "completed formal worker artifact has no durable startup binding"
+            )
+        try:
+            expected_identity = _failed_formal_worker_cleanup_identity(
+                client,
+                process,
+                artifact_request,
+            )
+        except Exception:
+            _cleanup_owned_formal_worker_without_claim(client, process)
+            raise
+        if process.poll() is not None:
+            # The worker's top-level preflight exception can close its own Kit
+            # process before the controller requests shutdown.  The terminal
+            # ACK above proves which owned worker failed; closing the client is
+            # cleanup only and must not synthesize a graceful-close handshake.
+            failed_returncode = process.poll()
+            client.close()
+            if _strict_json_equal(failed_returncode, 0):
+                raise RuntimeError(
+                    "failed formal worker exited zero without accepting normal shutdown"
+                )
+            return "normal"
+    mode = "fast" if artifact_complete else "normal"
+    shutdown_request_id = uuid.uuid4().hex
+    runtime_version = ""
+    if mode == "fast":
+        # The exact runtime is learned from the worker's accepted close ACK;
+        # do not synthesize a version string in the controller.
+        runtime_version = "PENDING_FORMAL_WORKER_ACK"
+    client.request_shutdown(mode=mode, request_id=shutdown_request_id)
+    while process.poll() is None:
+        client.poll()
+        time.sleep(0.02)
+    for _attempt in range(101):
+        try:
+            client.poll()
+        except Exception:
+            break
+        time.sleep(0.005)
+    returncode = process.poll()
+    status = dict(client.status() or {})
+    shutdown_ack = _select_exact_operation_ack(
+        status,
+        operation="shutdown",
+        request_id=shutdown_request_id,
+    )
+    if cleanup_only and not shutdown_ack:
+        # A top-level failed worker may self-exit while the controller's normal
+        # shutdown request is in flight.  Exact ARTIFACT_FAILED identity was
+        # already verified, so release local IPC resources while preserving the
+        # original batch failure.  Do not claim that shutdown was accepted.
+        client.close()
+        if _strict_json_equal(returncode, 0):
+            raise RuntimeError(
+                "failed formal worker exited zero without accepting normal shutdown"
+            )
+        return mode
+    expected_identity = {
+        "request_id": shutdown_request_id,
+        **expected_identity,
+    }
+    for key, value in expected_identity.items():
+        if not _strict_json_equal(shutdown_ack.get(key), value):
+            raise RuntimeError(
+                f"formal worker shutdown ACK {key} mismatch: "
+                f"expected={value!r} actual={shutdown_ack.get(key)!r}"
+            )
+    if (
+        shutdown_ack.get("type") != "operation_ack"
+        or shutdown_ack.get("operation") != "shutdown"
+        or shutdown_ack.get("accepted") is not True
+        or str(shutdown_ack.get("error", "") or "")
+        or str(shutdown_ack.get("mode", "") or "") != mode
+        or returncode != 0
+    ):
+        raise RuntimeError(
+            "formal worker shutdown was not accepted/normal: "
+            f"ack={shutdown_ack!r} returncode={returncode!r}"
+        )
+    if mode == "fast":
+        close_requested = dict(status.get("close_requested_ack", {}) or {})
+        close_returned = dict(status.get("close_returned_ack", {}) or {})
+        runtime_version = str(shutdown_ack.get("runtime_version", "") or "")
+        fast_close_kwargs = {
+            "wait_for_replicator": False,
+            "skip_cleanup": True,
+        }
+        if (
+            not runtime_version.startswith("5.1.")
+            or not _strict_json_equal(
+                shutdown_ack.get("close_kwargs"), fast_close_kwargs
+            )
+        ):
+            raise RuntimeError("formal worker fast-shutdown contract is invalid")
+        for label, ack in (("close_requested", close_requested),):
+            if str(ack.get("type", "") or "") != label:
+                raise RuntimeError(f"formal worker {label} ACK is missing")
+            for key, value in {
+                **expected_identity,
+                "mode": "fast",
+                "accepted": True,
+                "error": "",
+                "close_kwargs": fast_close_kwargs,
+                "runtime_version": runtime_version,
+            }.items():
+                if not _strict_json_equal(ack.get(key), value):
+                    raise RuntimeError(
+                        f"formal worker {label} {key} mismatch: "
+                        f"expected={value!r} actual={ack.get(key)!r}"
+                    )
+        close_returned_observed = bool(close_returned)
+        if close_returned_observed:
+            if str(close_returned.get("type", "") or "") != "close_returned":
+                raise RuntimeError("formal worker close_returned ACK type is invalid")
+            for key, value in {
+                **expected_identity,
+                "mode": "fast",
+                "accepted": True,
+                "error": "",
+                "close_kwargs": fast_close_kwargs,
+                "runtime_version": runtime_version,
+            }.items():
+                if not _strict_json_equal(close_returned.get(key), value):
+                    raise RuntimeError(
+                        f"formal worker close_returned {key} mismatch: "
+                        f"expected={value!r} actual={close_returned.get(key)!r}"
+                    )
+        supervisor.mark_fast_worker_process_returned(
+            intended_returncode=0,
+            runtime_version=runtime_version,
+            worker_returncode=0,
+            worker_process_returned_normally=True,
+            worker_shutdown_accepted=True,
+            worker_close_requested=True,
+            worker_close_returned=close_returned_observed,
+            worker_forced_termination=False,
+            worker_shutdown_request_id=shutdown_request_id,
+            worker_shutdown_ack=shutdown_ack,
+            worker_close_requested_ack=close_requested,
+            worker_close_returned_ack=close_returned,
+        )
+    elif not cleanup_only:
+        supervisor.mark_graceful_close_returned(
+            intended_returncode=0,
+            worker_returncode=0,
+            worker_process_returned_normally=True,
+            worker_shutdown_accepted=True,
+            worker_shutdown_request_id=shutdown_request_id,
+        )
+    client.close()
+    return mode
+
+
+def _run_recording_replays_locked(
+    args: argparse.Namespace,
+    *,
+    process_snapshot: list[dict[str, Any]],
+    supervisor: ChildSupervisorHandshake | None = None,
+) -> int:
+    """Run Gate-1 through the production IPC worker, never a local adapter."""
+
+    if supervisor is None:
+        raise RuntimeError(
+            "formal recording replay requires the supervised child/worker topology"
+        )
+    from playback import playback_plan_to_payload
+    from sim_obstacle_scene import DEFAULT_ROBOT_USD_PATH
+    from sim_process_client import SimProcessClient
+    from sim_transport import SimTransport
+
+    audit = RecordingAudit(Path(args.recording_root), Path(args.report_root))
+    selected = _select_versions(audit.enumerate_versions(), args.versions)
+    if len(selected) != 1:
+        raise RuntimeError(
+            "formal worker recording replay requires exactly one selected version"
+        )
+    item = selected[0]
+    trial_id = int(getattr(args, "trial_id", 0) or 0)
+    if trial_id < 1:
+        raise RuntimeError("recording replay requires a positive --trial-id")
+    _normalize_recording_replay_role(args)
+    contact_mode = str(getattr(args, "contact_mode", "") or "")
+    equivalence_role = str(
+        getattr(args, "environment_equivalence_role", "") or ""
+    )
+    diagnostic_role = str(getattr(args, "diagnostic_role", "") or "")
+    if not equivalence_role and not diagnostic_role and contact_mode != "instrumented":
+        raise RuntimeError(
+            "Gate-1 formal worker replay requires --contact-mode instrumented"
+        )
+    if bool(getattr(args, "headless", False)) or bool(
+        getattr(args, "no_video", False)
+    ):
+        raise RuntimeError("Gate-1 formal worker replay requires the actual GUI viewport")
+
+    preflight_audits = _fail_closed_recording_audits(audit, selected)
+    expected_steps_sha256 = str(preflight_audits[0]["accepted_steps_sha256"])
+    robot_usd = Path(args.robot_usd or DEFAULT_ROBOT_USD_PATH).resolve()
+    if not robot_usd.is_file():
+        raise FileNotFoundError(f"robot USD not found: {robot_usd}")
+    environment_lock_path = (
+        Path(args.report_root).resolve() / "environment_lock_50mm.json"
+    )
+    environment_lock = _load_environment_lock(environment_lock_path)
+    locked_source_check = _verify_locked_source_hashes(environment_lock)
+    robot_hash = sha256_file(robot_usd).lower()
+    metadata_robot_sha = str(
+        dict(preflight_audits[0].get("metadata", {}) or {}).get(
+            "robot_asset_sha256", ""
+        )
+        or ""
+    ).lower()
+    locked_robot_sha = str(
+        dict(environment_lock.get("selected_environment", {}) or {}).get(
+            "robot_usd_sha256", ""
+        )
+        or ""
+    ).lower()
+    prelaunch_environment_ok = bool(
+        locked_source_check.get("ok") is True
+        and metadata_robot_sha == robot_hash
+        and locked_robot_sha == robot_hash
+    )
+
+    motion = load_motion_reference()
+    steps = load_steps_jsonl(item.steps_path)
+    plan, _plan_rows = fast_plan_rows(
+        source_version=item.version_id,
+        steps=steps,
+        max_wheel_speed=float(motion.wheel_velocity_limit_rad_s),
+    )
+    request_id = uuid.uuid4().hex
+    plan_scope = (
+        "ordinary-ui-u"
+        if diagnostic_role == "U"
+        else f"environment-{equivalence_role.lower()}"
+        if equivalence_role
+        else "gate1"
+    )
+    plan_id = (
+        f"fsm50-{plan_scope}-{item.version_id}-trial{trial_id}-"
+        f"{uuid.uuid4().hex[:10]}"
+    )
+    batch_source_pre = _source_freeze(robot_usd=robot_usd)
+    batch_root = _new_directory(
+        Path(args.output_root).resolve(), "recording_replays"
+    )
+    supervisor.announce_batch(batch_root)
+    (batch_root / ".partial").write_text("running\n", encoding="utf-8")
+    artifact_request = _recording_artifact_request(
+        item=item,
+        batch_root=batch_root,
+        args=args,
+        robot_usd=robot_usd,
+        environment_lock_path=environment_lock_path,
+        expected_steps_sha256=expected_steps_sha256,
+        plan=plan,
+        request_id=request_id,
+        plan_id=plan_id,
+        trial_id=trial_id,
+    )
+    request_path = batch_root / "worker_artifact_request.json"
+    _atomic_write_json(request_path, artifact_request)
+    artifact_request_sha256 = sha256_file(request_path).lower()
+    _atomic_write_json(
+        batch_root / "batch_request.json",
+        {
+            "schema_version": "fsm50.formal_worker_recording_batch.v1",
+            "created_utc": datetime.now(timezone.utc).isoformat(),
+            "versions": [item.version_id],
+            "trial_id": trial_id,
+            "environment_equivalence_role": equivalence_role,
+            "diagnostic_role": diagnostic_role,
+            "qualification_scope": (
+                "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+                if diagnostic_role == "U"
+                else "TRAJECTORY_COMPARISON"
+                if equivalence_role
+                else "GATE1_PHYSICAL_QUALIFICATION"
+            ),
+            "gate1_physical_qualification_eligible": bool(
+                not diagnostic_role and not equivalence_role
+            ),
+            "gate1_eligible": bool(
+                not diagnostic_role and not equivalence_role
+            ),
+            "environment_equivalence_eligible": bool(
+                equivalence_role and not diagnostic_role
+            ),
+            "args": _serialize_replay_args(args),
+            "source_freeze": batch_source_pre,
+            "recording_preflight_audits": [
+                _compact_recording_audit(row) for row in preflight_audits
+            ],
+            "environment_lock_path": str(environment_lock_path),
+            "prelaunch_environment_validation": {
+                "ok": prelaunch_environment_ok,
+                "locked_source_hashes": locked_source_check,
+                "metadata_robot_sha256": metadata_robot_sha,
+                "locked_robot_usd_sha256": locked_robot_sha,
+                "actual_robot_usd_sha256": robot_hash,
+            },
+            "artifact_request_path": str(request_path),
+            "artifact_request_sha256": artifact_request_sha256,
+            "plan_id": plan_id,
+            "plan_sha256": str(plan.plan_sha256),
+            "process_preflight": [
+                {
+                    "pid": row.get("pid"),
+                    "name": row.get("name"),
+                    "command_line_sha256": hashlib.sha256(
+                        str(row.get("command_line", "")).encode("utf-8")
+                    ).hexdigest(),
+                }
+                for row in process_snapshot
+            ],
+        },
+    )
+
+    client: Any | None = None
+    worker_binding: dict[str, Any] = {}
+    results: list[dict[str, Any]] = []
+    batch_error = ""
+    artifact_complete = False
+    command_exit_code = 0
+    try:
+        if not prelaunch_environment_ok:
+            raise RuntimeError(
+                "environment/source lock prelaunch validation failed; "
+                "see batch_request.json"
+            )
+        worker_args = _recording_worker_args(
+            args,
+            robot_usd=robot_usd,
+            motion=motion,
+            artifact_request_path=request_path,
+        )
+        client = SimProcessClient(worker_args)
+        client.start()
+        worker_binding = _wait_for_recording_worker_ready(
+            client,
+            request=artifact_request,
+            request_sha256=artifact_request_sha256,
+            timeout_s=float(worker_args.sim_startup_timeout_s),
+        )
+        _atomic_write_json(
+            batch_root / "worker_startup_binding.json", worker_binding
+        )
+        supervisor.bind_worker(
+            worker_pid=int(worker_binding["worker_pid"]),
+            worker_session_id=str(worker_binding["worker_session_id"]),
+            adapter_runtime_instance_id=str(
+                worker_binding["adapter_runtime_instance_id"]
+            ),
+            artifact_request_id=request_id,
+            artifact_request_sha256=artifact_request_sha256,
+        )
+        transport = SimTransport()
+        transport.attach_process_client(client)
+        preplay_stop = transport.stop_wheels(reason="playback_start_boundary")
+        preplay_stop_ack = _wait_for_worker_stop_ack(
+            client,
+            command_id=str(preplay_stop["command_id"]),
+            worker_pid=int(worker_binding["worker_pid"]),
+            worker_session_id=str(worker_binding["worker_session_id"]),
+            timeout_s=30.0,
+        )
+        _atomic_write_json(
+            batch_root / "worker_preplay_stop_ack.json", preplay_stop_ack
+        )
+        transport.start_playback_plan(
+            plan,
+            start_delay_sim_s=0.0,
+            plan_id=plan_id,
+            request_id=request_id,
+            plan_sha256=str(plan.plan_sha256),
+            worker_session_id=str(worker_binding["worker_session_id"]),
+        )
+        start_ack = _wait_for_worker_operation_ack(
+            client,
+            operation="start_playback_plan",
+            request_id=request_id,
+            timeout_s=30.0,
+        )
+        _atomic_write_json(
+            batch_root / "worker_playback_start_ack.json", start_ack
+        )
+        expected_start = {
+            "accepted": True,
+            "request_id": request_id,
+            "plan_id": plan_id,
+            "plan_sha256": str(plan.plan_sha256),
+            "worker_session_id": str(worker_binding["worker_session_id"]),
+            "motion_start_ready": True,
+            "contact_mode": contact_mode,
+            "environment_equivalence_role": equivalence_role,
+            "diagnostic_role": diagnostic_role,
+            "qualification_scope": str(
+                artifact_request["qualification_scope"]
+            ),
+            "gate1_eligible": artifact_request["gate1_eligible"],
+            "gate1_physical_qualification_eligible": artifact_request[
+                "gate1_physical_qualification_eligible"
+            ],
+            "environment_equivalence_eligible": artifact_request[
+                "environment_equivalence_eligible"
+            ],
+        }
+        for key, value in expected_start.items():
+            if start_ack.get(key) != value:
+                raise RuntimeError(
+                    f"formal worker playback-start ACK {key} mismatch: "
+                    f"expected={value!r} actual={start_ack.get(key)!r}"
+                )
+        if str(start_ack.get("error", "") or ""):
+            raise RuntimeError(
+                "formal worker rejected playback: " + str(start_ack["error"])
+            )
+
+        artifact_ack = client.wait_for_artifact(
+            timeout_s=None,
+            request_id=request_id,
+        )
+        _atomic_write_json(
+            batch_root / "worker_artifact_complete_ack.json", artifact_ack
+        )
+        artifact_complete = bool(
+            artifact_ack.get("operation") == "recording_artifact"
+            and artifact_ack.get("phase") == "ARTIFACT_COMPLETE"
+            and artifact_ack.get("accepted") is True
+            and artifact_ack.get("artifact_complete") is True
+        )
+        result = _validate_worker_artifact_complete_ack(
+            artifact_ack,
+            request=artifact_request,
+            request_sha256=artifact_request_sha256,
+            batch_root=batch_root,
+            worker_pid=int(worker_binding["worker_pid"]),
+            worker_session_id=str(worker_binding["worker_session_id"]),
+            adapter_runtime_instance_id=str(
+                worker_binding["adapter_runtime_instance_id"]
+            ),
+        )
+        results = [result]
+        _atomic_write_json(batch_root / "batch_results.json", results)
+        command_exit_code = (
+            0
+            if (
+                result.get("ordinary_ui_diagnostic_complete") is True
+                if diagnostic_role == "U"
+                else result.get("environment_equivalence_diagnostic_complete")
+                is True
+                if equivalence_role
+                else result.get("strict_full_success") is True
+            )
+            else 1
+        )
+    except Exception as exc:
+        command_exit_code = 1
+        batch_error = f"{type(exc).__name__}: {exc}"
+        _atomic_write_json(
+            batch_root / "batch_failure.json",
+            {
+                "error": batch_error,
+                "results_so_far": results,
+                "worker_binding": worker_binding,
+            },
+        )
+        print(f"[FSM50] formal worker batch failed: {batch_error}", file=sys.stderr, flush=True)
+
+    close_error = ""
+    shutdown_mode = "fast" if artifact_complete else "graceful"
+    try:
+        try:
+            batch_source_post = _source_freeze(robot_usd=robot_usd)
+            source_integrity = _compare_source_freezes(
+                batch_source_pre, batch_source_post
+            )
+            _atomic_write_json(
+                batch_root / "source_freeze_post.json", batch_source_post
+            )
+        except Exception as exc:
+            source_integrity = {
+                "equal": False,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+            command_exit_code = 1
+        _atomic_write_json(batch_root / "source_integrity.json", source_integrity)
+        if source_integrity.get("equal") is not True:
+            command_exit_code = 1
+            _apply_batch_source_drift(results, source_integrity)
+        _batch_finalization, _batch_valid = (
+            _finalize_worker_recording_batch_preclose(
+                batch_root,
+                artifact_request=artifact_request,
+                results=results,
+                batch_error=batch_error,
+                source_integrity=source_integrity,
+                supervisor=supervisor,
+            )
+        )
+    except Exception as exc:
+        command_exit_code = 1
+        postprocessing_error = f"{type(exc).__name__}: {exc}"
+        batch_error = (
+            f"{batch_error}; postprocessing: {postprocessing_error}"
+            if batch_error
+            else f"postprocessing: {postprocessing_error}"
+        )
+        try:
+            _atomic_write_json(
+                batch_root / "batch_failure.json",
+                {
+                    "error": batch_error,
+                    "results_so_far": results,
+                    "worker_binding": worker_binding,
+                    "postprocessing_error": postprocessing_error,
+                },
+            )
+        except Exception as persist_exc:
+            print(
+                "[FSM50] failed to persist postprocessing failure: "
+                f"{type(persist_exc).__name__}: {persist_exc}",
+                file=sys.stderr,
+                flush=True,
+            )
+    finally:
+        try:
+            if client is None:
+                raise RuntimeError("formal worker client was not created")
+            shutdown_mode = _close_formal_recording_worker(
+                client,
+                supervisor=supervisor,
+                worker_binding=worker_binding,
+                artifact_complete=artifact_complete,
+                artifact_request=artifact_request,
+            )
+        except Exception as exc:
+            close_error = f"{type(exc).__name__}: {exc}"
+            command_exit_code = 1
+            supervisor.mark_close_error(
+                shutdown_mode=shutdown_mode,
+                error=close_error,
+            )
+    print(
+        json.dumps(
+            {
+                "batch_root": str(batch_root),
+                "execution_path": "sim_worker_process_ipc",
+                "results": results,
+                "close_error": close_error,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        flush=True,
+    )
+    return _process_returncode_after_close(
+        command_exit_code=command_exit_code,
+        shutdown_mode=shutdown_mode,
+        close_error=close_error,
+        supervised=True,
+    )
+
+
 def run_recording_replays(args: argparse.Namespace) -> int:
+    _normalize_recording_replay_role(args)
     singleton = ReplaySingletonLock()
     singleton.acquire()
     try:
@@ -5692,10 +9120,31 @@ def build_parser() -> argparse.ArgumentParser:
     replay.add_argument(
         "--contact-mode",
         choices=("formal", "instrumented"),
-        default="instrumented",
+        default="",
         help=(
-            "formal uses the production aggregate ContactSensor; instrumented "
-            "uses only the filtered wheel/non-wheel telemetry factory."
+            "Explicit sensor mode. Omit for Gate-1 instrumented capture or to "
+            "derive the exact mode from --environment-equivalence-role."
+        ),
+    )
+    replay.add_argument(
+        "--environment-equivalence-role",
+        choices=("A1", "A2", "B"),
+        default="",
+        help=(
+            "Explicit trajectory-comparison capture role: A1/A2 use the "
+            "production aggregate ContactSensor; B uses the instrumented "
+            "filtered wheel/non-wheel bank. Physical Gate-1 qualification "
+            "remains separate."
+        ),
+    )
+    replay.add_argument(
+        "--diagnostic-role",
+        choices=("U",),
+        default="",
+        help=(
+            "Explicit sensor-free ordinary-production-UI trajectory diagnostic. "
+            "U derives contact_mode=disabled and is never Gate-1 or "
+            "environment-equivalence qualification evidence."
         ),
     )
     replay.add_argument(
@@ -5828,6 +9277,7 @@ def main(argv: list[str] | None = None) -> int:
     if raw_argv and raw_argv[0] == SUPERVISED_CHILD_SENTINEL:
         return _supervised_child_main(raw_argv[1:])
     args = build_parser().parse_args(raw_argv)
+    _normalize_recording_replay_role(args)
     if args.command == "audit":
         result = RecordingAudit(args.recording_root, args.report_root).run()
         print(json.dumps(result, ensure_ascii=False, indent=2))

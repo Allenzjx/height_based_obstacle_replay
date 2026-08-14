@@ -1,0 +1,123 @@
+{
+  "artifact_owner": "formal_worker_batch_controller",
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T222848_123995Z_recording_replays_9bdfc9235a",
+  "batch_error": "",
+  "close_error": "",
+  "failed": false,
+  "finalization_errors": [],
+  "finalized": true,
+  "phase": "SHUTDOWN_COMPLETE",
+  "shutdown_outcome": {
+    "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+    "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+    "artifact_request_sha256": "f08b2918b1785bd876f98975751ab9f9f3c7bc4604198157de19e223c48a2caf",
+    "child_pid": 58184,
+    "child_returncode": 0,
+    "close_error": "",
+    "close_kwargs": {
+      "skip_cleanup": true,
+      "wait_for_replicator": false
+    },
+    "close_wait_s": 2.452999999994063,
+    "created_utc": "2026-08-13T23:32:03.638468+00:00",
+    "elapsed_s": 3791.0149999999994,
+    "formal_worker_pid": 22704,
+    "formal_worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+    "formal_worker_shutdown_verification": {
+      "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+      "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+      "artifact_request_sha256": "f08b2918b1785bd876f98975751ab9f9f3c7bc4604198157de19e223c48a2caf",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "ok": true,
+      "runtime_version": "5.1.0.0",
+      "worker_close_returned_observed": false,
+      "worker_forced_termination": false,
+      "worker_pid": 22704,
+      "worker_process_returned_normally": true,
+      "worker_returncode": 0,
+      "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+      "worker_shutdown_request_id": "48c8920beef74efe90ab474f093d368c"
+    },
+    "handshake_state": "FAST_WORKER_PROCESS_RETURNED",
+    "intended_returncode": 0,
+    "parent_pid": 54592,
+    "preclose_observed": true,
+    "preclose_verification": {
+      "checksum_row_count": 59,
+      "checksums_preclose_sha256": "7abc67f08f7708ef57f31207c6b26866752d8a7e8a62a1ce7630e0f1906823d6",
+      "formal_worker_identity": {
+        "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+        "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+        "artifact_request_sha256": "f08b2918b1785bd876f98975751ab9f9f3c7bc4604198157de19e223c48a2caf",
+        "worker_pid": 22704,
+        "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+      },
+      "marker_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T222848_123995Z_recording_replays_9bdfc9235a\\preclose_complete.json",
+      "marker_sha256": "c3532f73285177904d94eb30d943d91e422ffee80464a57414afc1d82f0a0540",
+      "ok": true,
+      "verified_file_count": 38
+    },
+    "process_returned_normally": true,
+    "runtime_version": "5.1.0.0",
+    "schema_version": "fsm50.shutdown_outcome.v1",
+    "shutdown_mode": "fast",
+    "status": "FAST_EXIT_VERIFIED",
+    "worker_close_requested": true,
+    "worker_close_requested_ack": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+      "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "mode": "fast",
+      "request_id": "48c8920beef74efe90ab474f093d368c",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "type": "close_requested",
+      "worker_pid": 22704,
+      "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+    },
+    "worker_close_returned": false,
+    "worker_close_returned_ack": {},
+    "worker_forced_termination": false,
+    "worker_process_returned_normally": true,
+    "worker_returncode": 0,
+    "worker_shutdown_accepted": true,
+    "worker_shutdown_ack": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+      "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "mode": "fast",
+      "operation": "shutdown",
+      "request_id": "48c8920beef74efe90ab474f093d368c",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "type": "operation_ack",
+      "worker_pid": 22704,
+      "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+    },
+    "worker_shutdown_request_id": "48c8920beef74efe90ab474f093d368c"
+  },
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-13T23:31:50.235755+00:00",
+    "before_created_utc": "2026-08-13T22:28:47.866047+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false,
+  "worker_artifact_result_count": 1
+}

@@ -166,13 +166,27 @@ class GroundSettleAdaptiveTest(unittest.TestCase):
         self.assertFalse(result["final_window_stable"])
 
     def test_stable_from_first_tick_stops_at_ten(self) -> None:
-        result = make_adapter(unstable_ticks=0).settle_robot_on_ground(
-            label="early"
-        )
+        adapter = make_adapter(unstable_ticks=0)
+        renders: list[tuple[int, float]] = []
+
+        class Observer:
+            error = ""
+
+            def before_render(self, *, sim_step, sim_time_s):
+                renders.append((int(sim_step), float(sim_time_s)))
+
+            def after_render(self):
+                return None
+
+        adapter.attach_artifact_render_observer(Observer())
+        result = adapter.settle_robot_on_ground(label="early")
 
         self.assertEqual(result["steps_run"], 10)
         self.assertTrue(result["stopped_early"])
         self.assertTrue(result["stable"])
+        self.assertEqual([step for step, _time in renders], [8, 10])
+        self.assertTrue(result["settle_tick_trace"][-1]["render_performed"])
+        self.assertTrue(result["settle_tick_trace"][-1]["final_evidence_render"])
 
     def test_terminal_heuristic_cannot_synthesize_stable_ticks(self) -> None:
         result = make_adapter(unstable_ticks=180).settle_robot_on_ground(

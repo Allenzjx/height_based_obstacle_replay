@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from .exporters import write_jsonl
 
 
 @dataclass
@@ -93,8 +94,10 @@ class EventRecorder:
                 **kwargs,
             )
 
+    def export_canonical(self) -> None:
+        write_jsonl(self.output_path, self.events)
+
     def flush(self) -> None:
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.output_path.open("w", encoding="utf-8", newline="\n") as stream:
-            for event in self.events:
-                stream.write(json.dumps(event, ensure_ascii=False, sort_keys=True, default=str) + "\n")
+        """Backward-compatible explicit canonical export."""
+
+        self.export_canonical()

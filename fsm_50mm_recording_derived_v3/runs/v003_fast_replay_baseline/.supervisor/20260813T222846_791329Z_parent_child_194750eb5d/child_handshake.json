@@ -1,0 +1,65 @@
+{
+  "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+  "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+  "artifact_request_sha256": "f08b2918b1785bd876f98975751ab9f9f3c7bc4604198157de19e223c48a2caf",
+  "batch_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T222848_123995Z_recording_replays_9bdfc9235a",
+  "child_pid": 58184,
+  "close_kwargs": {
+    "skip_cleanup": true,
+    "wait_for_replicator": false
+  },
+  "formal_worker_pid": 22704,
+  "formal_worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+  "intended_returncode": 0,
+  "parent_pid": 54592,
+  "runtime_version": "5.1.0.0",
+  "schema_version": "fsm50.supervisor_handshake.v1",
+  "sequence": 4,
+  "shutdown_mode": "fast",
+  "state": "FAST_WORKER_PROCESS_RETURNED",
+  "token": "ba1fc8fef8ce450ba36305c8c1bb441f",
+  "updated_utc": "2026-08-13T23:31:56.784872+00:00",
+  "worker_close_requested": true,
+  "worker_close_requested_ack": {
+    "accepted": true,
+    "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+    "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+    "close_kwargs": {
+      "skip_cleanup": true,
+      "wait_for_replicator": false
+    },
+    "error": "",
+    "mode": "fast",
+    "request_id": "48c8920beef74efe90ab474f093d368c",
+    "root_state_write_count": 0,
+    "runtime_version": "5.1.0.0",
+    "type": "close_requested",
+    "worker_pid": 22704,
+    "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+  },
+  "worker_close_returned": false,
+  "worker_close_returned_ack": {},
+  "worker_forced_termination": false,
+  "worker_process_returned_normally": true,
+  "worker_returncode": 0,
+  "worker_shutdown_accepted": true,
+  "worker_shutdown_ack": {
+    "accepted": true,
+    "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+    "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+    "close_kwargs": {
+      "skip_cleanup": true,
+      "wait_for_replicator": false
+    },
+    "error": "",
+    "mode": "fast",
+    "operation": "shutdown",
+    "request_id": "48c8920beef74efe90ab474f093d368c",
+    "root_state_write_count": 0,
+    "runtime_version": "5.1.0.0",
+    "type": "operation_ack",
+    "worker_pid": 22704,
+    "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+  },
+  "worker_shutdown_request_id": "48c8920beef74efe90ab474f093d368c"
+}

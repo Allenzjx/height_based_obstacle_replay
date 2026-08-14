@@ -1,0 +1,11 @@
+{
+  "batch_root": "",
+  "child_pid": 50128,
+  "error": "RuntimeError: Gate-1 formal worker replay requires --contact-mode instrumented",
+  "parent_pid": 40740,
+  "schema_version": "fsm50.supervisor_handshake.v1",
+  "sequence": 1,
+  "state": "CHILD_FAILED",
+  "token": "00dfaabed878451e946443dc1b9d9524",
+  "updated_utc": "2026-08-13T23:34:06.288295+00:00"
+}

@@ -1,0 +1,60 @@
+{
+  "filters": {
+    "acceleration_cutoff_hz": 10.0,
+    "acceleration_filter_enabled": true,
+    "contact_force_cutoff_hz": 20.0,
+    "contact_force_filter_enabled": true
+  },
+  "schema_version": "height_replay_telemetry.v1",
+  "stability": {
+    "contact_force_threshold_n": 2.0,
+    "direction_samples": 48,
+    "equilibrium_enabled": false,
+    "equilibrium_hz": 5.0,
+    "friction_coefficient_default": 1.05,
+    "friction_pyramid_sides": 8,
+    "safe_margin_m": 0.05,
+    "solver_tolerance": 1e-07,
+    "warning_margin_m": 0.02
+  },
+  "telemetry": {
+    "enable_contact_sensor": true,
+    "enabled": true,
+    "env_id": 0,
+    "flush_interval_s": 15.0,
+    "live_queue_max_frames": 5,
+    "max_full_samples": 250000,
+    "output_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T065114_824418Z_recording_replays_bc012408e3\\v003_20260805_224517_157723_manual\\20260813T065200_151748Z_clean_fast_replay_adf029e8c5",
+    "sample_hz": 120.0,
+    "save_contacts": true,
+    "save_csv": true,
+    "save_events": true,
+    "save_npz": false
+  },
+  "visualization": {
+    "com_trail_duration_s": 5.0,
+    "force_arrow_scale": 0.002,
+    "live_enabled": false,
+    "marker_limit": 256,
+    "show_base_trajectory": true,
+    "show_com": true,
+    "show_com_projection": true,
+    "show_com_trail": true,
+    "show_contact_forces": true,
+    "show_contact_points": true,
+    "show_equilibrium_region": true,
+    "show_hud": true,
+    "show_support_polygon": true,
+    "update_hz": 20.0,
+    "visualized_env_id": 0
+  },
+  "warnings": {
+    "friction_utilization": 0.8,
+    "impact_force_n": 200.0,
+    "pitch_rad": 0.35,
+    "replay_position_rmse_rad": 0.1,
+    "roll_rad": 0.35,
+    "torque_utilization": 0.9,
+    "wheel_slip_ratio": 0.2
+  }
+}

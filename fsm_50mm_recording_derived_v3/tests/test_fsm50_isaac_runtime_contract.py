@@ -14,9 +14,13 @@ from fsm_50mm_recording_derived_v3.environment_ab_artifacts import (
 )
 from fsm_50mm_recording_derived_v3.fsm50_isaac_runtime import (
     ViewportVideoRecorder,
+    _finalize_runtime_viewport_video,
     _finalize_episode_result,
     _load_environment_gate,
     run_fsm_locked,
+)
+from fsm_50mm_recording_derived_v3.viewport_buffer_video import (
+    ActiveViewportBufferVideoRecorder,
 )
 from fsm_50mm_recording_derived_v3.tests.test_environment_ab_artifacts import (
     _make_run,
@@ -27,11 +31,80 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_viewport_capture_delegates_unique_frame_numbering_to_isaac() -> None:
-    source = inspect.getsource(ViewportVideoRecorder.start)
+def test_runtime_json_writer_replaces_nonfinite_values_with_null(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "runtime.json"
+    isaac_runtime._write_json(
+        path,
+        {
+            "value": float("nan"),
+            "nested": [float("inf"), float("-inf")],
+            "reason": "unavailable",
+        },
+    )
 
-    assert 'movie_capture.baseFilename = ""' in source
-    assert 'movie_capture.baseFilename = "fsm50_viewport_frame.png"' not in source
+    text = path.read_text(encoding="utf-8")
+    assert "NaN" not in text
+    assert "Infinity" not in text
+    decoded = json.loads(
+        text,
+        parse_constant=lambda value: pytest.fail(
+            f"non-finite JSON constant {value}"
+        ),
+    )
+    assert decoded["value"] is None
+    assert decoded["nested"] == [None, None]
+    assert decoded["reason"] == "unavailable"
+
+
+def test_runtime_viewport_recorder_is_direct_buffer_compatibility_name() -> None:
+    assert issubclass(ViewportVideoRecorder, ActiveViewportBufferVideoRecorder)
+    source = inspect.getsource(isaac_runtime)
+    assert "movie_capture" not in source
+    assert "attach_post_process_save_to_disk" not in source
+    assert "viewport_frames" not in source
+
+
+def test_runtime_attaches_direct_recorder_before_grounding() -> None:
+    source = inspect.getsource(run_fsm_locked)
+    start = source.index("video_started = bool(video.start())")
+    attach = source.index("adapter.attach_artifact_render_observer(video)", start)
+    grounding = source.index("initialize_adapter_ground_reference(adapter)", attach)
+    assert start < attach < grounding
+
+
+def test_runtime_video_finalization_detaches_before_encoder_and_wrapper(
+    tmp_path: Path,
+) -> None:
+    events: list[str] = []
+
+    class Recorder:
+        def finalize(self):
+            events.append("recorder.finalize")
+            return {"valid": False, "error": "synthetic failure"}
+
+    class Adapter:
+        def detach_artifact_render_observer(self, recorder):
+            events.append("adapter.detach")
+
+    class Runner:
+        @staticmethod
+        def _finalize_recording_viewport_video_contract(*args, **kwargs):
+            events.append("wrapper.finalize")
+            assert kwargs["capture_requested"] is True
+            return {"valid": False, "artifact_valid": False}
+
+    result = _finalize_runtime_viewport_video(
+        recorder=Recorder(),  # type: ignore[arg-type]
+        adapter=Adapter(),
+        batch_root=tmp_path,
+        runner=Runner(),
+        capture_requested=True,
+    )
+
+    assert result["valid"] is False
+    assert events == ["adapter.detach", "recorder.finalize", "wrapper.finalize"]
 
 
 def _required_run_files(run_dir: Path) -> None:
@@ -47,6 +120,25 @@ def _required_run_files(run_dir: Path) -> None:
         "fsm50_equivalent_visualization.html",
     ):
         (run_dir / name).write_bytes(b"evidence\n")
+    (run_dir / "telemetry_finalization.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "telemetry.canonical_finalization.v1",
+                "canonical_export_attempted": True,
+                "canonical_complete": True,
+                "stream_counts": {},
+                "canonical_files": {},
+                "journal": {
+                    "removed_after_success": True,
+                    "errors": [],
+                },
+                "errors": [],
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     (run_dir / "visual_recording_manifest.json").write_text(
         json.dumps(
             {
@@ -61,6 +153,7 @@ def _required_run_files(run_dir: Path) -> None:
 
 
 def _result(artifact_root: Path, run_dir: Path) -> dict[str, object]:
+    marker_path = (run_dir / "telemetry_finalization.json").resolve()
     return {
         "schema_version": "fsm50.controller_run_result.v1",
         "mode": "test-state",
@@ -71,6 +164,20 @@ def _result(artifact_root: Path, run_dir: Path) -> dict[str, object]:
         "strict_success": False,
         "artifact_valid": False,
         "visualization": {"ok": True},
+        "telemetry_finalization": {
+            "schema_version": "telemetry.canonical_finalization.v1",
+            "canonical_export_attempted": True,
+            "canonical_complete": True,
+            "stream_counts": {},
+            "canonical_files": {},
+            "journal": {
+                "removed_after_success": True,
+                "errors": [],
+            },
+            "errors": [],
+            "marker_path": str(marker_path),
+            "marker_sha256": _sha256(marker_path),
+        },
         "captured_state_ids": ["A0_RESET_AND_SETTLE"],
         "lifecycle": {"finalized": False, "failed": False},
     }

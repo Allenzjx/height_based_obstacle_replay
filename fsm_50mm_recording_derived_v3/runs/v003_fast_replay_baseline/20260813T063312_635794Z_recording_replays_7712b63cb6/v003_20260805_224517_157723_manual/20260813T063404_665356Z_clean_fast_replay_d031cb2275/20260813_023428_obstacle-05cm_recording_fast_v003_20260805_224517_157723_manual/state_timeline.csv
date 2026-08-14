@@ -1,0 +1,2 @@
+start_time_s,end_time_s,sample_count,source_version,source_fast_segment,source_step,source_event_indices,support_legs,primary_diagonal,wheel_contact_classes
+1.5083333333333304,2.1666666666666616,80,v003_20260805_224517_157723_manual,,,[],"[""FL"", ""FR"", ""RL"", ""RR""]",BALANCED,"{""FL"": ""GROUND"", ""FR"": ""GROUND"", ""RL"": ""GROUND"", ""RR"": ""GROUND""}"

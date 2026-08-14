@@ -1,0 +1,754 @@
+{
+  "canonical_complete": true,
+  "canonical_export_attempted": true,
+  "canonical_files": {
+    "body_com_timeseries.csv": {
+      "record_count": 369512,
+      "sha256": "d81695ddc114366917d1165d4b8b5e9337996e42a5dfe1ffad0fd25cd3cc10ec",
+      "size_bytes": 76606572
+    },
+    "contacts.csv": {
+      "record_count": 227392,
+      "sha256": "e598d33642c0264cab73842d9ce6254f858c1e929de2f002032ba8629e5be9ec",
+      "size_bytes": 96525424
+    },
+    "events.jsonl": {
+      "record_count": 10501,
+      "sha256": "bfa334d22bbeeec97b397e77b8fe070073566fcb5f750a1a3d225e9b78c33452",
+      "size_bytes": 3705204
+    },
+    "fsm50_telemetry.csv": {
+      "record_count": 28424,
+      "sha256": "228c2e160dc8a04795f1c5a9f6823ba2db536822a9e66787fc3b599caebd5078",
+      "size_bytes": 1333603117
+    },
+    "fsm50_telemetry.jsonl": {
+      "record_count": 28424,
+      "sha256": "694c994d24b35a568f0d6f55edfaeb3d6d8e7b37b964e20a8644a5262099ddbf",
+      "size_bytes": 1411414014
+    },
+    "joint_timeseries.csv": {
+      "record_count": 341088,
+      "sha256": "bfa96ef3b1b8bc0d8a7d08ae115b6493e65e6efb7b7b17b6bb8566c08f1fc99a",
+      "size_bytes": 155941915
+    },
+    "nonwheel_obstacle_contacts.csv": {
+      "record_count": 255816,
+      "sha256": "b82dfebac2823a77efd13e1a3ba3ed1bc40fca37155cdbd855fe7f7aad26b108",
+      "size_bytes": 72947233
+    },
+    "nonwheel_obstacle_contacts.jsonl": {
+      "record_count": 255816,
+      "sha256": "48135c7bd810645379ce00970066375e97739b2fde511fd71299b0aaa30917d1",
+      "size_bytes": 154040664
+    },
+    "physical_evidence.json": {
+      "record_count": 1,
+      "sha256": "6b9e49b887834f5a3ab39451b127c45ac11b8594b5d7c6fcb0c83ddad6c5aaea",
+      "size_bytes": 3360922
+    },
+    "stability_summary.json": {
+      "record_count": 1,
+      "sha256": "26ab3ec19e9b7c7afa4e216cee02fbbea206b4c446a439e97c299c98d4a9d4f4",
+      "size_bytes": 734
+    },
+    "state_timeline.csv": {
+      "record_count": 7052,
+      "sha256": "362f29667ef28c6f8ab4b679f3e9812000318c27bb8efb70bdff952442ba149e",
+      "size_bytes": 1343359
+    },
+    "telemetry_samples.csv": {
+      "record_count": 28424,
+      "sha256": "0597759189c153c8c8ba0b1aa37d79b877a5850339c1352baf3887f764f2d97c",
+      "size_bytes": 106960419
+    },
+    "wheel_filtered_contacts.jsonl": {
+      "record_count": 227392,
+      "sha256": "233e47d7de454c296901c374fb0f8138d541078ab0b744ae63ee928aaf188354",
+      "size_bytes": 144277376
+    }
+  },
+  "created_wall_time_s": 1786633005.2466416,
+  "errors": [],
+  "journal": {
+    "committed_checkpoint_count": 18,
+    "created_wall_time_s": 1786632864.3374746,
+    "errors": [],
+    "files": {
+      "checkpoint-000001-c3cca1bac4be/body_com_timeseries.jsonl": {
+        "sha256": "ec8c1249c6839659158d620ea72bc19ddbd28786615c62835ce4c792210b68dd",
+        "size_bytes": 5428
+      },
+      "checkpoint-000001-c3cca1bac4be/commit.json": {
+        "sha256": "31dcef0b7cbdd7b9be8c31326a12564e7736cec83c764a9202b7effc180a9d6b",
+        "size_bytes": 2449
+      },
+      "checkpoint-000001-c3cca1bac4be/contacts.jsonl": {
+        "sha256": "b88630c16489cde3bc80098bc383b1863dcada5ef27b639f1b1698c82458db7b",
+        "size_bytes": 7344
+      },
+      "checkpoint-000001-c3cca1bac4be/events.jsonl": {
+        "sha256": "73100d57846854644dcda546c397ea696636b659cef904b7cfc13ef55b0d73cc",
+        "size_bytes": 949
+      },
+      "checkpoint-000001-c3cca1bac4be/fsm50_telemetry.jsonl": {
+        "sha256": "192aa56bbe55125510813711aebc5cf422f6aeafc4486ae9637154be8d12ed6a",
+        "size_bytes": 49329
+      },
+      "checkpoint-000001-c3cca1bac4be/joint_timeseries.jsonl": {
+        "sha256": "a6e8d5b2ce9fc60e2d5de1cba7f69c1507a0dbe2e5d1f34191b57c3167983139",
+        "size_bytes": 13898
+      },
+      "checkpoint-000001-c3cca1bac4be/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "dafb7bf31047749aff5f74984673d515385b00d39f21bd4830e7b9272ab42205",
+        "size_bytes": 5424
+      },
+      "checkpoint-000001-c3cca1bac4be/telemetry_samples.jsonl": {
+        "sha256": "72f865800a079ac9e1b817901377d2f298c9ed43f90d0a4b64ef5eaf11bd73c8",
+        "size_bytes": 5694
+      },
+      "checkpoint-000001-c3cca1bac4be/wheel_filtered_contacts.jsonl": {
+        "sha256": "cd59f1709613ec48c8c92aa2dc420c25ccba9cbe5d32db1d9441b1bb55111e78",
+        "size_bytes": 5080
+      },
+      "checkpoint-000002-623078c5e570/body_com_timeseries.jsonl": {
+        "sha256": "134e64baea2ed0037075108a827968b1858f4103b2ab51b69eeae6817d4fe6c4",
+        "size_bytes": 9769347
+      },
+      "checkpoint-000002-623078c5e570/commit.json": {
+        "sha256": "aa518f4b25b0b8c7bb4f901b41140bdb49938e7bdd3ee25d2b9b1bb953a21ebb",
+        "size_bytes": 2530
+      },
+      "checkpoint-000002-623078c5e570/contacts.jsonl": {
+        "sha256": "8f561db1031e4425672eb9abebc81b556b231169f83ab161dd52630b24eeaa71",
+        "size_bytes": 13218056
+      },
+      "checkpoint-000002-623078c5e570/events.jsonl": {
+        "sha256": "e371ea55ce3108e290465a0d74fbf9a6ae97836149e1a3a5d426b2f22b9cdfde",
+        "size_bytes": 258072
+      },
+      "checkpoint-000002-623078c5e570/fsm50_telemetry.jsonl": {
+        "sha256": "3bc05d15266ce3857a5bc8e7ae9d4093749abb93166dd607cf29ee9bfa8e03fc",
+        "size_bytes": 89447663
+      },
+      "checkpoint-000002-623078c5e570/joint_timeseries.jsonl": {
+        "sha256": "bb1b17437aa0879a439ded1182a9dc6767c26f29317a61c0d8727f7b0b592667",
+        "size_bytes": 25673901
+      },
+      "checkpoint-000002-623078c5e570/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "6e6aad98357d78310c4d0b8cee0c458f690af9de06f8464fff9e56e755536f6f",
+        "size_bytes": 9759075
+      },
+      "checkpoint-000002-623078c5e570/telemetry_samples.jsonl": {
+        "sha256": "785383c5bc8775770f2860c4b0da28742fa5ebc7b9cc3fd8e6693c5ec9aff4df",
+        "size_bytes": 10104541
+      },
+      "checkpoint-000002-623078c5e570/wheel_filtered_contacts.jsonl": {
+        "sha256": "4acb50f47feddfbd24e8fd0b3138e87f928a440813a2747fd90dc2655e440f70",
+        "size_bytes": 9140592
+      },
+      "checkpoint-000003-4e3f17908738/body_com_timeseries.jsonl": {
+        "sha256": "5998298afa7aed93db9b06fbf27b054dfa7cfa50b6ddacb9acf99a0ba4c20582",
+        "size_bytes": 9773776
+      },
+      "checkpoint-000003-4e3f17908738/commit.json": {
+        "sha256": "7405eb9adbbac7919b6245af7cb2a22aef69feb88977f0ca4eeba771868df02f",
+        "size_bytes": 2557
+      },
+      "checkpoint-000003-4e3f17908738/contacts.jsonl": {
+        "sha256": "db0bebbde249e41d99e6fe56c68e8f80f8e88d94aed62c472639239012c2c750",
+        "size_bytes": 13220896
+      },
+      "checkpoint-000003-4e3f17908738/events.jsonl": {
+        "sha256": "86021b9155d279892f02d1b008245928bcfabd86b4a3d8b04176da7980334bd3",
+        "size_bytes": 243262
+      },
+      "checkpoint-000003-4e3f17908738/fsm50_telemetry.jsonl": {
+        "sha256": "815e43d57cf8caee0832274f4b96309c87bbcc250d2ef77d0bd7eff11e9ada5d",
+        "size_bytes": 89435941
+      },
+      "checkpoint-000003-4e3f17908738/joint_timeseries.jsonl": {
+        "sha256": "5435f9a186aa3435703591f8114c262c619aee6a67652a5cb0996e7b6830f7ac",
+        "size_bytes": 25648843
+      },
+      "checkpoint-000003-4e3f17908738/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "16ffc4b547f2da24afc2b383d6ed2cf3f8ac093f817cdcd6e92dae9a807b2700",
+        "size_bytes": 9762270
+      },
+      "checkpoint-000003-4e3f17908738/telemetry_samples.jsonl": {
+        "sha256": "d19e5abaa879eaf1da0d698fc763fe462fd419fb8c9f2b6fd498c0f02d88bb92",
+        "size_bytes": 10099562
+      },
+      "checkpoint-000003-4e3f17908738/wheel_filtered_contacts.jsonl": {
+        "sha256": "03e680685c0e121600366b6f66b85b6b245f36a0e93adc3197cafca5c20ed764",
+        "size_bytes": 9143432
+      },
+      "checkpoint-000004-edb4cafb90f4/body_com_timeseries.jsonl": {
+        "sha256": "803f1d3dc499e68dd85c087b31f4144829baa3abbd9bf4e9692c87b17cd42b56",
+        "size_bytes": 9764756
+      },
+      "checkpoint-000004-edb4cafb90f4/commit.json": {
+        "sha256": "24b5a8dbd76303663e908c45133a31e95baf6a6e2a578ce151be0b695a642d8e",
+        "size_bytes": 2558
+      },
+      "checkpoint-000004-edb4cafb90f4/contacts.jsonl": {
+        "sha256": "a8608634775955e5cf8965491a443d41680e0d0b3544a6cd33bef7bbb65d75f5",
+        "size_bytes": 13215352
+      },
+      "checkpoint-000004-edb4cafb90f4/events.jsonl": {
+        "sha256": "3f9d124f8459354ec42160c74cc26f37510e0234fdd9f1afd28719006394e83f",
+        "size_bytes": 255797
+      },
+      "checkpoint-000004-edb4cafb90f4/fsm50_telemetry.jsonl": {
+        "sha256": "1a9c6f31cb48d6db330667a8e638efa0c0b5b487f6fdf3abfac1dbb045eb6181",
+        "size_bytes": 89430537
+      },
+      "checkpoint-000004-edb4cafb90f4/joint_timeseries.jsonl": {
+        "sha256": "138e7e2eaf351282184d1e5e1faf0d829b54dbf51cb276b386f737cf08f410f3",
+        "size_bytes": 25617533
+      },
+      "checkpoint-000004-edb4cafb90f4/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "b74f8c07716e01fd1360bb6037d7001e71da8305870c93eeb1b7f03b8e973561",
+        "size_bytes": 9756033
+      },
+      "checkpoint-000004-edb4cafb90f4/telemetry_samples.jsonl": {
+        "sha256": "e7a41c563069e93f3db06a00a763cbe66e6c59f5a57739f575aeac28018ffcaf",
+        "size_bytes": 10098312
+      },
+      "checkpoint-000004-edb4cafb90f4/wheel_filtered_contacts.jsonl": {
+        "sha256": "c80090ee2242178fd733fe5792a084f39b82aa33ec0c38321d3af3693afe39b5",
+        "size_bytes": 9137888
+      },
+      "checkpoint-000005-2f6ef2298218/body_com_timeseries.jsonl": {
+        "sha256": "57049b3bc752b05ef9b38a5bea43d443e7d0e49645df07143633efa1cdb7d16a",
+        "size_bytes": 9764512
+      },
+      "checkpoint-000005-2f6ef2298218/commit.json": {
+        "sha256": "6d1b93ea792120064bdbbbba663a3ba15c69b9ac3406f9dd56400e728124f9ac",
+        "size_bytes": 2558
+      },
+      "checkpoint-000005-2f6ef2298218/contacts.jsonl": {
+        "sha256": "d4cfbb62783f2f14510fca3472bf04d3bc44c149e7748b88b74f5bcf5eb50d2e",
+        "size_bytes": 13215192
+      },
+      "checkpoint-000005-2f6ef2298218/events.jsonl": {
+        "sha256": "bf29faa971e664a2949d62294ea93ca9690df6d77b21c2c272b5687f103fb517",
+        "size_bytes": 248369
+      },
+      "checkpoint-000005-2f6ef2298218/fsm50_telemetry.jsonl": {
+        "sha256": "0f3f25ffe99aea6e66bb2d6cd7ac03898c8490275dd99fd6d323734b53185a70",
+        "size_bytes": 89429736
+      },
+      "checkpoint-000005-2f6ef2298218/joint_timeseries.jsonl": {
+        "sha256": "7892b40222f61d46a8514c553bea9091ac9aceee30a18bf2a1196470007e9686",
+        "size_bytes": 25626176
+      },
+      "checkpoint-000005-2f6ef2298218/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "902a3d8edadc7415b8365e1c17639029bc501f9073e4b8eeb35586828a981b0f",
+        "size_bytes": 9755853
+      },
+      "checkpoint-000005-2f6ef2298218/telemetry_samples.jsonl": {
+        "sha256": "450d19b09b00764a69ec09ac77f8e49164b52fde74c2730d5a970343cf5f78f0",
+        "size_bytes": 10097480
+      },
+      "checkpoint-000005-2f6ef2298218/wheel_filtered_contacts.jsonl": {
+        "sha256": "875d5c6fca20a4fee5b02f341f4f1d9798382ba0d2b64b178fcd6e64e6597f25",
+        "size_bytes": 9137728
+      },
+      "checkpoint-000006-d3059b9a8b75/body_com_timeseries.jsonl": {
+        "sha256": "6a2a04fe16b4de3ac7c78a22770055bac7cc95fd24dd804e408a0222563147a8",
+        "size_bytes": 9751226
+      },
+      "checkpoint-000006-d3059b9a8b75/commit.json": {
+        "sha256": "9f718fc77286741728933411841b03dfdebafd28e93c99b55f3ae50c2dc79a4f",
+        "size_bytes": 2560
+      },
+      "checkpoint-000006-d3059b9a8b75/contacts.jsonl": {
+        "sha256": "d18085ccbdac4b3d97ef5c2ac7f6f11c683379f32edbf3ec0059db2762abbb7e",
+        "size_bytes": 13203376
+      },
+      "checkpoint-000006-d3059b9a8b75/events.jsonl": {
+        "sha256": "b199e1c0890a43fabc0c5f1fd4ba7b6b60cd2b516881bfdda21bce853507f041",
+        "size_bytes": 225102
+      },
+      "checkpoint-000006-d3059b9a8b75/fsm50_telemetry.jsonl": {
+        "sha256": "56a8f4207e33d6814c3afdf26d8400d9ddfa16ca4eb03db1e0120010c0ae8d0e",
+        "size_bytes": 89377420
+      },
+      "checkpoint-000006-d3059b9a8b75/joint_timeseries.jsonl": {
+        "sha256": "e04aea95562f41cf730750e93b03617ad60578aebf9db85ca343d187d1982179",
+        "size_bytes": 25608495
+      },
+      "checkpoint-000006-d3059b9a8b75/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "2add32ff42622049300ff3e2d1c56a9b83debafc91388b54f6d3cc99d6fadea4",
+        "size_bytes": 9745398
+      },
+      "checkpoint-000006-d3059b9a8b75/telemetry_samples.jsonl": {
+        "sha256": "9b9cb3961846c11f04d62a9bd40a3240c2cda00087e9b6b8752649069adf92a9",
+        "size_bytes": 10089600
+      },
+      "checkpoint-000006-d3059b9a8b75/wheel_filtered_contacts.jsonl": {
+        "sha256": "bfa655559e2bd9c76cb2791385d9ff3f338fa3deef7c175219a95d95698cbdb9",
+        "size_bytes": 9128176
+      },
+      "checkpoint-000007-fee03f490041/body_com_timeseries.jsonl": {
+        "sha256": "501cadd2f8543f63e5365857241a730b1341c6bfbd9b097d31fe6f3260a451ee",
+        "size_bytes": 9750338
+      },
+      "checkpoint-000007-fee03f490041/commit.json": {
+        "sha256": "6835d6a4a037a8b67928cef508a37ff35c3eca2297b80863517058573dfcb240",
+        "size_bytes": 2564
+      },
+      "checkpoint-000007-fee03f490041/contacts.jsonl": {
+        "sha256": "45b758d3447008ce29531830a5665fb769711db9a774ee5e4137f4c3fc8e9467",
+        "size_bytes": 13202576
+      },
+      "checkpoint-000007-fee03f490041/events.jsonl": {
+        "sha256": "34a33bab3d93880586cae6d0bc1392fd44da92f854f634a12eca78c002fb06ab",
+        "size_bytes": 231964
+      },
+      "checkpoint-000007-fee03f490041/fsm50_telemetry.jsonl": {
+        "sha256": "9ca77bc8e4e0ed4198217161bfb717dcf3ba9905db8cf3bb0679349ce501d83e",
+        "size_bytes": 89363885
+      },
+      "checkpoint-000007-fee03f490041/joint_timeseries.jsonl": {
+        "sha256": "2caab072853b20634227575bc85d8f8ba88e626282091f92fc7e01a4a1be1530",
+        "size_bytes": 25605217
+      },
+      "checkpoint-000007-fee03f490041/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "614bebf25b975e28af02a6ec1c17340d047b8b6cf88dbd58a570c11c441d7615",
+        "size_bytes": 9744498
+      },
+      "checkpoint-000007-fee03f490041/telemetry_samples.jsonl": {
+        "sha256": "eb08d231a06f1b99d72151caf5eb01b5b25833bb7a9b1066745b244af272c619",
+        "size_bytes": 10071756
+      },
+      "checkpoint-000007-fee03f490041/wheel_filtered_contacts.jsonl": {
+        "sha256": "3b40b1849afd815470ad63d75abfe8040561741aa5b7daa5bec7f43442f32516",
+        "size_bytes": 9127376
+      },
+      "checkpoint-000008-30262acbedd7/body_com_timeseries.jsonl": {
+        "sha256": "eecffc12ae6df4e527949a416def428c2a5ae356ff0b394a2b84585a59b3ccb8",
+        "size_bytes": 9759978
+      },
+      "checkpoint-000008-30262acbedd7/commit.json": {
+        "sha256": "fc8755f154f45ed39e6fbde3e9f3737413ea581d124e51311d216b3ddb18a47b",
+        "size_bytes": 2569
+      },
+      "checkpoint-000008-30262acbedd7/contacts.jsonl": {
+        "sha256": "05a7a9027d5b6726fff501897038aa86cfae9e95fff29159ea5fd2f65fc4c992",
+        "size_bytes": 13208776
+      },
+      "checkpoint-000008-30262acbedd7/events.jsonl": {
+        "sha256": "c827fbe8fc90cc03add1919d6550b847db2b8ccd6eaf2be64b392807f982bc53",
+        "size_bytes": 227240
+      },
+      "checkpoint-000008-30262acbedd7/fsm50_telemetry.jsonl": {
+        "sha256": "18f93e18f93836a68b67fedd38756f561f1e605624c46336a5aa24cca5ca27c3",
+        "size_bytes": 89372270
+      },
+      "checkpoint-000008-30262acbedd7/joint_timeseries.jsonl": {
+        "sha256": "1d719594e718a080d54987ca14b31289583986766c02fcfea1340a9cbd6b4034",
+        "size_bytes": 25612455
+      },
+      "checkpoint-000008-30262acbedd7/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "58558a202983fcc0d34c1515c79f5c6657c6858239824c1381309049f93f2143",
+        "size_bytes": 9751473
+      },
+      "checkpoint-000008-30262acbedd7/telemetry_samples.jsonl": {
+        "sha256": "54b0d6c476b7402ea93031d4ce0925fcf7422135d2904d1caaf5f19cbfa97bc3",
+        "size_bytes": 10066783
+      },
+      "checkpoint-000008-30262acbedd7/wheel_filtered_contacts.jsonl": {
+        "sha256": "2177e9fd4229a69714964205bb25a8690a7c41eac360bbab9ae5badfc1abe578",
+        "size_bytes": 9133576
+      },
+      "checkpoint-000009-d24a642d13ad/body_com_timeseries.jsonl": {
+        "sha256": "5cbef0c44de1f7834f740f55a304e67ec2c452ac1521a3a78386e96bada03c78",
+        "size_bytes": 9773253
+      },
+      "checkpoint-000009-d24a642d13ad/commit.json": {
+        "sha256": "90c308ee4e4acbdcd5627dc895a02490a5c3f8369643331b0caa19cca8537874",
+        "size_bytes": 2572
+      },
+      "checkpoint-000009-d24a642d13ad/contacts.jsonl": {
+        "sha256": "cc3ea0354db56260b8903f9a480324b64778ec5a0cbf5c730984f6733565b726",
+        "size_bytes": 13216888
+      },
+      "checkpoint-000009-d24a642d13ad/events.jsonl": {
+        "sha256": "9b302694474e59dd61140995ef397d5e3c4e1d543fad6b53bdc74e26b56b321a",
+        "size_bytes": 226811
+      },
+      "checkpoint-000009-d24a642d13ad/fsm50_telemetry.jsonl": {
+        "sha256": "61c6b8f0a752a29586c3cc6513fd0d01bd8d932356d3985441057b8abc830319",
+        "size_bytes": 89391319
+      },
+      "checkpoint-000009-d24a642d13ad/joint_timeseries.jsonl": {
+        "sha256": "70ec6702cd8f15e300645cc2df2e9dbc806351cd11bce74a34625ded948229ca",
+        "size_bytes": 25630055
+      },
+      "checkpoint-000009-d24a642d13ad/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "031e5bad480f7a4b0daded5c2ef87b687cfd5ead09259cfb9c884655579b97d5",
+        "size_bytes": 9760599
+      },
+      "checkpoint-000009-d24a642d13ad/telemetry_samples.jsonl": {
+        "sha256": "da3ca46c565f99a2e07c99d4607b044bb8654be17423f19a0a7a29d3f7901a2a",
+        "size_bytes": 10068001
+      },
+      "checkpoint-000009-d24a642d13ad/wheel_filtered_contacts.jsonl": {
+        "sha256": "dfbe9a3e34e2d686e2dcf528c8944669aa9f0380c6ba39df91e02666feced40d",
+        "size_bytes": 9141688
+      },
+      "checkpoint-000010-e24bcb0354cf/body_com_timeseries.jsonl": {
+        "sha256": "3b0e8a958b9eb233fcb9a2b82e5cb1b8e4c5c90a516370fe5489c952950d3981",
+        "size_bytes": 9776382
+      },
+      "checkpoint-000010-e24bcb0354cf/commit.json": {
+        "sha256": "7d513e05be4c0c2959a6f8963abb877a8a6278f4ab139e1791f1599c9eefc071",
+        "size_bytes": 2573
+      },
+      "checkpoint-000010-e24bcb0354cf/contacts.jsonl": {
+        "sha256": "9c77875773c61fa8b3fbe22358d57bb8373b1a7a2de7a8392704cb5ac81ef98f",
+        "size_bytes": 13222896
+      },
+      "checkpoint-000010-e24bcb0354cf/events.jsonl": {
+        "sha256": "c38888fe627d49f7116ec0d908fc7f7ac09d00f1b7b29bcaa2e06126be704558",
+        "size_bytes": 226416
+      },
+      "checkpoint-000010-e24bcb0354cf/fsm50_telemetry.jsonl": {
+        "sha256": "9138a6826f3981ea978b9b1cad403c37277cafdbb621e0c6e6648fc0c346c789",
+        "size_bytes": 89436079
+      },
+      "checkpoint-000010-e24bcb0354cf/joint_timeseries.jsonl": {
+        "sha256": "365d44a9fa2b1c9524705175adb5bcbc3878303078fbd3dfbc05d6d6f46dbbdd",
+        "size_bytes": 25641889
+      },
+      "checkpoint-000010-e24bcb0354cf/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "550e4b4946d13fbc84c07ef86f53f119221bcbe3b50cdca30984702a5b0b5d0c",
+        "size_bytes": 9764520
+      },
+      "checkpoint-000010-e24bcb0354cf/telemetry_samples.jsonl": {
+        "sha256": "283ed99318d880178f2f5d285a8383ad686ca69a0d0ce831a8b67cafc9b88109",
+        "size_bytes": 10072547
+      },
+      "checkpoint-000010-e24bcb0354cf/wheel_filtered_contacts.jsonl": {
+        "sha256": "b6e5e78b079baab675f5c7ac6859619e5b4af25ce7dc644da58cd16e34242e02",
+        "size_bytes": 9145432
+      },
+      "checkpoint-000011-b92f2c089642/body_com_timeseries.jsonl": {
+        "sha256": "83dd559957479a638d9996f61e889d56e732e368e0e33c08da0965b51619e471",
+        "size_bytes": 9775118
+      },
+      "checkpoint-000011-b92f2c089642/commit.json": {
+        "sha256": "d825e51c9789a7f82f1455d0c2c459520156e2fe377d8ddd90c5b76ceef3226f",
+        "size_bytes": 2572
+      },
+      "checkpoint-000011-b92f2c089642/contacts.jsonl": {
+        "sha256": "a634482ddc6ed71b00d92ea4c7a6c186c78670e60bd2477a3c52f5078468774f",
+        "size_bytes": 13221968
+      },
+      "checkpoint-000011-b92f2c089642/events.jsonl": {
+        "sha256": "64a34b9ed01317dab70a65f32ea583399708b083c95eddc5bd55dcdcd7be6138",
+        "size_bytes": 235979
+      },
+      "checkpoint-000011-b92f2c089642/fsm50_telemetry.jsonl": {
+        "sha256": "27cbcd79650aa584bf23dd33539a027c653023e74eb0d8ef78123a097dd1412b",
+        "size_bytes": 89434429
+      },
+      "checkpoint-000011-b92f2c089642/joint_timeseries.jsonl": {
+        "sha256": "dd1a0507be2f3c88ee379a00795124f42c13949399e1d90cf65924521a2f4d79",
+        "size_bytes": 25638604
+      },
+      "checkpoint-000011-b92f2c089642/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "259489e9e7d61c29950543a6c4c4d393b83021bc6a1237e0882c60af6cf70fc3",
+        "size_bytes": 9763476
+      },
+      "checkpoint-000011-b92f2c089642/telemetry_samples.jsonl": {
+        "sha256": "45d1c3ac06afb8da3462f1b35cfc419a071db475626e08411c227e51e5ca1c58",
+        "size_bytes": 10072509
+      },
+      "checkpoint-000011-b92f2c089642/wheel_filtered_contacts.jsonl": {
+        "sha256": "18ee56f208e149c5ef23f06b6157c611508ca5219d1777aa14b7579ce996b8a0",
+        "size_bytes": 9144504
+      },
+      "checkpoint-000012-08456859f419/body_com_timeseries.jsonl": {
+        "sha256": "9cbd8b232081b3a4b3fd25c2fed0927201d257656e69362e848e17262664edec",
+        "size_bytes": 9775304
+      },
+      "checkpoint-000012-08456859f419/commit.json": {
+        "sha256": "dfcb04db2262544387ec0e8b3afbac73b6272cc7b6b4c747da9d03a7bbc3de2e",
+        "size_bytes": 2572
+      },
+      "checkpoint-000012-08456859f419/contacts.jsonl": {
+        "sha256": "99539fd179565c929b00856d1d05a967c222991b8acebec3f3092bb2b75d685c",
+        "size_bytes": 13221984
+      },
+      "checkpoint-000012-08456859f419/events.jsonl": {
+        "sha256": "c2cc436e35847acebcd8bd85b40f39909a283c2c22657388ce46c5f06afee094",
+        "size_bytes": 234552
+      },
+      "checkpoint-000012-08456859f419/fsm50_telemetry.jsonl": {
+        "sha256": "ccc72f832ec5a6aaef78948afb4120486f3e877e571d551dd637c263ba7a21f8",
+        "size_bytes": 89432336
+      },
+      "checkpoint-000012-08456859f419/joint_timeseries.jsonl": {
+        "sha256": "881804d7496dd95a29040edba4f047e19af01d6057e70b3c0997bd26b0ba736a",
+        "size_bytes": 25637783
+      },
+      "checkpoint-000012-08456859f419/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "b00141c935fca11d317fa7c12aa385dec49790275a001213c0fb0b7044fe1a51",
+        "size_bytes": 9763494
+      },
+      "checkpoint-000012-08456859f419/telemetry_samples.jsonl": {
+        "sha256": "451e52043768cf740b930e2c9721a78779b2bd6ce4903d4a919375d35b0aa0c0",
+        "size_bytes": 10072707
+      },
+      "checkpoint-000012-08456859f419/wheel_filtered_contacts.jsonl": {
+        "sha256": "7815bbbe123e893cf18dfde9ed02f6a026aa43492f1f880a4306606443eda782",
+        "size_bytes": 9144520
+      },
+      "checkpoint-000013-3e9267cba944/body_com_timeseries.jsonl": {
+        "sha256": "7004f300bf454a998486a445b56d66c66959b161b8949ad2963c6b88e02dc058",
+        "size_bytes": 9774897
+      },
+      "checkpoint-000013-3e9267cba944/commit.json": {
+        "sha256": "4af6d32cf26327277d69cb0a6944d14c090879c1a48094b18d343b40fcbfab98",
+        "size_bytes": 2573
+      },
+      "checkpoint-000013-3e9267cba944/contacts.jsonl": {
+        "sha256": "c4ae4e90e99071b4d05168d8ac449e3753fec42a85213fb152deb1994a75d058",
+        "size_bytes": 13221856
+      },
+      "checkpoint-000013-3e9267cba944/events.jsonl": {
+        "sha256": "f105af7f5ba749e9fcedf8f399b0bbbbc82dd0bfa4e120863896662dac69a8e7",
+        "size_bytes": 230169
+      },
+      "checkpoint-000013-3e9267cba944/fsm50_telemetry.jsonl": {
+        "sha256": "5362ef77e80f66b6899db825b736b4c3cccaf9d0bce378c8ffdcfd3b9f8ea225",
+        "size_bytes": 89431555
+      },
+      "checkpoint-000013-3e9267cba944/joint_timeseries.jsonl": {
+        "sha256": "9679a3042febb551deaefbc8d4a6ef701f8fe93622eabcd80d961f2813ba5c70",
+        "size_bytes": 25635574
+      },
+      "checkpoint-000013-3e9267cba944/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "80d4829db89af0794c056e79689c003152d44ccea42148bc9b48db5bef95ecf2",
+        "size_bytes": 9763350
+      },
+      "checkpoint-000013-3e9267cba944/telemetry_samples.jsonl": {
+        "sha256": "a9c3caa4ed0e3b6be832d857a632aa95fee6038dda6986fd07a53b119e6d453c",
+        "size_bytes": 10072544
+      },
+      "checkpoint-000013-3e9267cba944/wheel_filtered_contacts.jsonl": {
+        "sha256": "bd5f7c7a97b7a7a824e737ed396a8256ee69626a8280f9071862e792597334cf",
+        "size_bytes": 9144392
+      },
+      "checkpoint-000014-7264a7388a3a/body_com_timeseries.jsonl": {
+        "sha256": "b6af24b8e07e8b7e91a0ad7b4c11e36997e5453915af6fd1f5a950d9678846ab",
+        "size_bytes": 9775268
+      },
+      "checkpoint-000014-7264a7388a3a/commit.json": {
+        "sha256": "0b6e145c01cd0330146b25f8986f08f2d1e8a3c3057fabcd6a28f9e9563860c7",
+        "size_bytes": 2573
+      },
+      "checkpoint-000014-7264a7388a3a/contacts.jsonl": {
+        "sha256": "14c6d4eaad8440aa6c2b0236844fffba0240f3ada16bac2ce245e0871c3e7c3a",
+        "size_bytes": 13222008
+      },
+      "checkpoint-000014-7264a7388a3a/events.jsonl": {
+        "sha256": "62ccda7e79cac11708b34b67154275c83c6fe61103721649563665221c991596",
+        "size_bytes": 228393
+      },
+      "checkpoint-000014-7264a7388a3a/fsm50_telemetry.jsonl": {
+        "sha256": "0dd8e5b9b475a2aed6ebad8a28c9e177b0510acdf07747fb2a61775d04155a1e",
+        "size_bytes": 89432561
+      },
+      "checkpoint-000014-7264a7388a3a/joint_timeseries.jsonl": {
+        "sha256": "332e9b93269e26f59ef3ef8b259cb433ce0fb337dcd46874d0dc7073f010d4a3",
+        "size_bytes": 25634440
+      },
+      "checkpoint-000014-7264a7388a3a/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "8c7085cfdc1c211825ca48d507b58738e7c3ba7bc4eadaa02bce49922a4dcdfe",
+        "size_bytes": 9763521
+      },
+      "checkpoint-000014-7264a7388a3a/telemetry_samples.jsonl": {
+        "sha256": "235fbca2143de6af672c5322ddaf4130d93de61745d6c5cd7e69f8eef285e00f",
+        "size_bytes": 10073425
+      },
+      "checkpoint-000014-7264a7388a3a/wheel_filtered_contacts.jsonl": {
+        "sha256": "f97e876e1fbec58aa9b5d1f4cb2601901f45a06955f203bacea92d26edaa6354",
+        "size_bytes": 9144544
+      },
+      "checkpoint-000015-9e6846d1e822/body_com_timeseries.jsonl": {
+        "sha256": "4fd67cf32ad07e8bce52741dc1443fc22cb536d5a8b2f31ea638d4c505bc7007",
+        "size_bytes": 9775175
+      },
+      "checkpoint-000015-9e6846d1e822/commit.json": {
+        "sha256": "b5190e0190f3e00675f0493749579a75b3e50ab728c5979898b6eb511b1a4ad2",
+        "size_bytes": 2573
+      },
+      "checkpoint-000015-9e6846d1e822/contacts.jsonl": {
+        "sha256": "0b44724070e428fb45bd64c381f1bd154478e82e198804cccdfb8738bfc91e7e",
+        "size_bytes": 13222016
+      },
+      "checkpoint-000015-9e6846d1e822/events.jsonl": {
+        "sha256": "3298bd95ee0a56a48a224c926753bbe3f2f563f03ff8c9025e108e7f8cdb2ae4",
+        "size_bytes": 226634
+      },
+      "checkpoint-000015-9e6846d1e822/fsm50_telemetry.jsonl": {
+        "sha256": "3825554c2f48cfdfbff44e52c76e1970e103dae4ea94f1b8564ed1799fd5d62c",
+        "size_bytes": 89432070
+      },
+      "checkpoint-000015-9e6846d1e822/joint_timeseries.jsonl": {
+        "sha256": "deb7404335be70736c6adade1e462af752ac2787f7a817a3a9dd141e6e5eeaec",
+        "size_bytes": 25636352
+      },
+      "checkpoint-000015-9e6846d1e822/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "55b41492f17d0d5411e78cba484d3e449b44bb9c5ff5dd6deecc59c33fa9d3f2",
+        "size_bytes": 9763530
+      },
+      "checkpoint-000015-9e6846d1e822/telemetry_samples.jsonl": {
+        "sha256": "00e3b6c82099037e561be6ca82489cd3774bffedec5cf5965cfe2b6e772339af",
+        "size_bytes": 10074225
+      },
+      "checkpoint-000015-9e6846d1e822/wheel_filtered_contacts.jsonl": {
+        "sha256": "2211444b83a510e8bb93a3e5ef9bdd8b37e945cec67bd85a8bb5f28c5bfae06b",
+        "size_bytes": 9144552
+      },
+      "checkpoint-000016-013b7f3a7a6e/body_com_timeseries.jsonl": {
+        "sha256": "c79ab96878df7c449e46ad58b5da94b302405a8c559a07ea7e229d60ebe5aaa0",
+        "size_bytes": 9775284
+      },
+      "checkpoint-000016-013b7f3a7a6e/commit.json": {
+        "sha256": "b9f8f4f960cc295d1d0a6a57855a5527550bba18ac883222653582a0d1de30e4",
+        "size_bytes": 2573
+      },
+      "checkpoint-000016-013b7f3a7a6e/contacts.jsonl": {
+        "sha256": "3361cb7eb576c46d604e7579f771e137272689a5914acb50d27335b44d786738",
+        "size_bytes": 13221968
+      },
+      "checkpoint-000016-013b7f3a7a6e/events.jsonl": {
+        "sha256": "9ad20149c98dbb78fc1fb10ffb213199331d3cc7f94cc47ad8746941548a3247",
+        "size_bytes": 228379
+      },
+      "checkpoint-000016-013b7f3a7a6e/fsm50_telemetry.jsonl": {
+        "sha256": "9f2f8ca96b4e1cab3525e9103d07433bb47a668fad3395727888ec8e8dc5abe6",
+        "size_bytes": 89431550
+      },
+      "checkpoint-000016-013b7f3a7a6e/joint_timeseries.jsonl": {
+        "sha256": "d89a1392898f5718ffe875f70de9f1399642ddc28d714fdbb732a0b9cf5e3a6c",
+        "size_bytes": 25633494
+      },
+      "checkpoint-000016-013b7f3a7a6e/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "39e32077a6de900d813b94b6f954e458b3b7c4dfe3d3d5e8364bb3bf9c89a4dd",
+        "size_bytes": 9763476
+      },
+      "checkpoint-000016-013b7f3a7a6e/telemetry_samples.jsonl": {
+        "sha256": "8091e2bd398db8f94c28be1fb6b869f100a271624f59379d1b3041a9afef8f8e",
+        "size_bytes": 10074265
+      },
+      "checkpoint-000016-013b7f3a7a6e/wheel_filtered_contacts.jsonl": {
+        "sha256": "7012912953139cbb7736786cbc89c464a18c21085487ad3ac7b7f4c818347d14",
+        "size_bytes": 9144504
+      },
+      "checkpoint-000017-33ed81d8b91c/body_com_timeseries.jsonl": {
+        "sha256": "aa58d033eb4133dcefa49a7c979e3fa2db547dfa95338614c6bd42147fdff344",
+        "size_bytes": 7316567
+      },
+      "checkpoint-000017-33ed81d8b91c/commit.json": {
+        "sha256": "86f68e3a9a2ff5bc91d56d1bf8330da022537ce7473309da7a0e4850bee166c4",
+        "size_bytes": 2571
+      },
+      "checkpoint-000017-33ed81d8b91c/contacts.jsonl": {
+        "sha256": "000d743fbf53be7d0349ddb7bdc9ca475fe717f338da637d0ae03f0bb2109d02",
+        "size_bytes": 9896320
+      },
+      "checkpoint-000017-33ed81d8b91c/events.jsonl": {
+        "sha256": "08b9a8de1510d04c639076c61bd9851fda31bfe1e2c0630fb23f32468e7b3789",
+        "size_bytes": 169782
+      },
+      "checkpoint-000017-33ed81d8b91c/fsm50_telemetry.jsonl": {
+        "sha256": "43b14a02f5a89d7de622a0987c11c9edd2e2211eae022502a2e935fec7105618",
+        "size_bytes": 66937260
+      },
+      "checkpoint-000017-33ed81d8b91c/joint_timeseries.jsonl": {
+        "sha256": "18ac2c1d96e876ad5af7e159fea7fbfc856380a8c528a6c262ef0914d20a96bb",
+        "size_bytes": 19188642
+      },
+      "checkpoint-000017-33ed81d8b91c/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "4d7d8ecdd2596afcd75c4119b0521e1833fb1d5bc677e38de6e759b6fdbe1a56",
+        "size_bytes": 7307736
+      },
+      "checkpoint-000017-33ed81d8b91c/telemetry_samples.jsonl": {
+        "sha256": "77d76b3f0262ed4ddccf4828e438c6cc760b1a86998a9dcd4dee7a9e111c4843",
+        "size_bytes": 7540365
+      },
+      "checkpoint-000017-33ed81d8b91c/wheel_filtered_contacts.jsonl": {
+        "sha256": "1b9aa4719caa84c79d731a6f221f2c8cb898f2d7951c942e1bb0d6d2846d29e4",
+        "size_bytes": 6844448
+      },
+      "checkpoint-000018-04a911638d06/body_com_timeseries.jsonl": {
+        "sha256": "9e28632a19daf0012410aca26520470169b80adcf937375a4eabc98022af0e5b",
+        "size_bytes": 347322
+      },
+      "checkpoint-000018-04a911638d06/commit.json": {
+        "sha256": "29ca8369c697ef70a1d063d05111bd2d4a39361de207c5ec4eef31b3a11d32ca",
+        "size_bytes": 2548
+      },
+      "checkpoint-000018-04a911638d06/contacts.jsonl": {
+        "sha256": "dbace82265509587a18e6c370edc56bb172772758c4ebbb1ce3babefed7b91dd",
+        "size_bytes": 469840
+      },
+      "checkpoint-000018-04a911638d06/events.jsonl": {
+        "sha256": "2061392b2bd2a9fcb4ae3b5aeaefd4299374d79a6bac3a85d8a5b15f284c4f63",
+        "size_bytes": 7334
+      },
+      "checkpoint-000018-04a911638d06/fsm50_telemetry.jsonl": {
+        "sha256": "17aeae201bce4c08efe701349e7b9d84ddfa00288d89d86399d140b1aa3f8e81",
+        "size_bytes": 3148074
+      },
+      "checkpoint-000018-04a911638d06/joint_timeseries.jsonl": {
+        "sha256": "e7b79d6828e39257e44551faf9520c2480f62c396522dd1ff57fb2c05929eea8",
+        "size_bytes": 911107
+      },
+      "checkpoint-000018-04a911638d06/nonwheel_obstacle_contacts.jsonl": {
+        "sha256": "fa42e0a548fa5429367e031e079a3c99f87fe1122affd078173f32389a59446c",
+        "size_bytes": 346938
+      },
+      "checkpoint-000018-04a911638d06/telemetry_samples.jsonl": {
+        "sha256": "aac0ebc2f87f42805729ae26edf894adade738a12f135641c5cb7e537d270d11",
+        "size_bytes": 358770
+      },
+      "checkpoint-000018-04a911638d06/wheel_filtered_contacts.jsonl": {
+        "sha256": "b71fe02cb8becf6336027f3e5ddc3ad1469096840591657b48a4e96dce001303",
+        "size_bytes": 324944
+      }
+    },
+    "final_cursors": {
+      "body_com_timeseries": 369512,
+      "contacts": 227392,
+      "events": 10501,
+      "fsm50_telemetry": 28424,
+      "joint_timeseries": 341088,
+      "nonwheel_obstacle_contacts": 255816,
+      "telemetry_samples": 28424,
+      "wheel_filtered_contacts": 227392
+    },
+    "manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0\\v003_20260805_224517_157723_manual\\20260813T123326_258444Z_clean_fast_replay_3c2d2294f1\\20260813_083336_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\.telemetry_journal\\journal_checksums.json",
+    "manifest_sha256": "60e91a34c914748e0bddd24d54905c9cf56c20835396c501816380a88905cc7d",
+    "manifest_size_bytes": 29733,
+    "removed_after_success": true,
+    "schema_version": "telemetry.journal_checksums.v1"
+  },
+  "schema_version": "telemetry.canonical_finalization.v1",
+  "stream_counts": {
+    "body_com_timeseries": 369512,
+    "contacts": 227392,
+    "events": 10501,
+    "fsm50_telemetry": 28424,
+    "joint_timeseries": 341088,
+    "nonwheel_obstacle_contacts": 255816,
+    "telemetry_samples": 28424,
+    "wheel_filtered_contacts": 227392
+  }
+}

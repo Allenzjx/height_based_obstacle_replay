@@ -1345,8 +1345,9 @@ def live_collider_mesh_world_aabb_from_body_pose(adapter: Any, body_path: str, c
     """Build a world AABB from collider mesh points and live articulation body pose.
 
     USD/Fabric world bounds can be stale or sentinel-valued for dynamic articulations.
-    The mesh vertices and local transforms are static, so we convert mesh points into
-    body-local coordinates once per diagnostic call and then apply robot.data body pose.
+    The mesh vertices and local transforms are static, so we cache their validated
+    body-local coordinates per adapter/stage and apply robot.data body pose live on
+    every diagnostic sample.
     """
 
     body_pos = _body_position_w(adapter, body_path)
@@ -1362,7 +1363,12 @@ def live_collider_mesh_world_aabb_from_body_pose(adapter: Any, body_path: str, c
         body_prim = None
     if not _prim_valid(body_prim):
         return _invalid_bound("live_body_mesh_points", f"body prim unavailable: {body_path}")
-    body_local_bound = collider_mesh_body_local_aabb(body_prim, collider_prim)
+    body_local_bound = _cached_collider_mesh_body_local_aabb(
+        adapter,
+        stage,
+        body_prim,
+        collider_prim,
+    )
     if not bool(body_local_bound.get("valid", False)):
         return body_local_bound
     body_points = list(body_local_bound.get("_body_points", []) or [])
@@ -1378,6 +1384,78 @@ def live_collider_mesh_world_aabb_from_body_pose(adapter: Any, body_path: str, c
         info["mesh_point_count"] = int(body_local_bound.get("mesh_point_count", 0) or 0)
         info["mesh_prim_paths"] = list(body_local_bound.get("mesh_prim_paths", []) or [])
     return info
+
+
+def _cached_collider_mesh_body_local_aabb(
+    adapter: Any,
+    stage: Any,
+    body_prim: Any,
+    collider_prim: Any,
+) -> dict[str, Any]:
+    """Return immutable, adapter-local static mesh geometry when available.
+
+    Invalid or fallback geometry is deliberately not cached: a later USD
+    update must be allowed to recover.  The public result is reconstructed on
+    each hit so callers cannot mutate the cache entry.
+    """
+
+    cache = getattr(adapter, "_collider_body_local_geometry_cache", None)
+    if not isinstance(cache, dict):
+        cache = {"stage": stage, "entries": {}}
+        setattr(adapter, "_collider_body_local_geometry_cache", cache)
+    if cache.get("stage") is not stage:
+        cache.clear()
+        cache.update({"stage": stage, "entries": {}})
+    entries = cache.setdefault("entries", {})
+    key = (_prim_path(body_prim), _prim_path(collider_prim))
+    frozen = entries.get(key)
+    if isinstance(frozen, dict):
+        return _thaw_collider_mesh_body_local_aabb(frozen)
+
+    computed = collider_mesh_body_local_aabb(body_prim, collider_prim)
+    if not bool(computed.get("valid", False)) or not bool(computed.get("cacheable_static_mesh_points", False)):
+        return computed
+    points = tuple(
+        tuple(float(value) for value in list(point)[:3])
+        for point in list(computed.get("_body_points", []) or [])
+    )
+    if not points or any(len(point) != 3 or not all(math.isfinite(value) for value in point) for point in points):
+        return computed
+    frozen = {
+        "valid": True,
+        "empty": bool(computed.get("empty", False)),
+        "min": tuple(float(value) for value in list(computed.get("min", []) or [])),
+        "max": tuple(float(value) for value in list(computed.get("max", []) or [])),
+        "extent": tuple(float(value) for value in list(computed.get("extent", []) or [])),
+        "finite": bool(computed.get("finite", False)),
+        "source": str(computed.get("source", "live_body_mesh_points")),
+        "rejection_reason": str(computed.get("rejection_reason", "")),
+        "mesh_point_count": int(computed.get("mesh_point_count", len(points)) or len(points)),
+        "mesh_prim_paths": tuple(str(value) for value in list(computed.get("mesh_prim_paths", []) or [])),
+        "cacheable_static_mesh_points": True,
+        "_body_points": points,
+    }
+    entries[key] = frozen
+    return _thaw_collider_mesh_body_local_aabb(frozen)
+
+
+def _thaw_collider_mesh_body_local_aabb(frozen: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "valid": bool(frozen.get("valid", False)),
+        "empty": bool(frozen.get("empty", False)),
+        "min": list(frozen.get("min", ()) or ()),
+        "max": list(frozen.get("max", ()) or ()),
+        "extent": list(frozen.get("extent", ()) or ()),
+        "finite": bool(frozen.get("finite", False)),
+        "source": str(frozen.get("source", "live_body_mesh_points")),
+        "rejection_reason": str(frozen.get("rejection_reason", "")),
+        "mesh_point_count": int(frozen.get("mesh_point_count", 0) or 0),
+        "mesh_prim_paths": list(frozen.get("mesh_prim_paths", ()) or ()),
+        "cacheable_static_mesh_points": bool(frozen.get("cacheable_static_mesh_points", False)),
+        # A tuple-of-tuples is immutable and remains accepted by the live pose
+        # transform.  Returning it directly avoids a per-tick deep copy.
+        "_body_points": frozen.get("_body_points", ()),
+    }
 
 
 def collider_mesh_body_local_aabb(body_prim: Any, collider_prim: Any) -> dict[str, Any]:
@@ -1397,16 +1475,20 @@ def collider_mesh_body_local_aabb(body_prim: Any, collider_prim: Any) -> dict[st
     body_points: list[list[float]] = []
     mesh_paths: list[str] = []
     source = "live_body_mesh_points"
+    complete_static_mesh_points = True
     for mesh_prim in meshes:
-        points, point_source = _mesh_points_or_extent(mesh_prim, UsdGeom)
+        points, point_source, points_complete = _mesh_points_or_extent(mesh_prim, UsdGeom)
         if not points:
+            complete_static_mesh_points = False
             continue
+        complete_static_mesh_points = complete_static_mesh_points and bool(points_complete)
         mesh_paths.append(_prim_path(mesh_prim))
         if point_source == "prototype_mesh_points":
             source = "prototype_mesh_points"
         try:
             mesh_world = cache.GetLocalToWorldTransform(mesh_prim)
         except Exception:
+            complete_static_mesh_points = False
             continue
         for point in points:
             try:
@@ -1414,6 +1496,7 @@ def collider_mesh_body_local_aabb(body_prim: Any, collider_prim: Any) -> dict[st
                 body_point = body_world_inv.Transform(world_point)
                 body_points.append([float(body_point[0]), float(body_point[1]), float(body_point[2])])
             except Exception:
+                complete_static_mesh_points = False
                 continue
     if not body_points:
         return _invalid_bound(source, f"mesh points unavailable for collider {_prim_path(collider_prim)}")
@@ -1423,6 +1506,11 @@ def collider_mesh_body_local_aabb(body_prim: Any, collider_prim: Any) -> dict[st
     info["mesh_point_count"] = int(len(body_points))
     info["mesh_prim_paths"] = mesh_paths
     info["_body_points"] = body_points
+    info["cacheable_static_mesh_points"] = bool(
+        complete_static_mesh_points
+        and len(mesh_paths) == len(meshes)
+        and bool(body_points)
+    )
     return info
 
 
@@ -1469,31 +1557,31 @@ def _mesh_prims_under(prim: Any, UsdGeom: Any) -> list[Any]:
     return meshes
 
 
-def _mesh_points_or_extent(mesh_prim: Any, UsdGeom: Any) -> tuple[list[list[float]], str]:
-    points = _mesh_points(mesh_prim, UsdGeom)
+def _mesh_points_or_extent(mesh_prim: Any, UsdGeom: Any) -> tuple[list[list[float]], str, bool]:
+    points, complete = _mesh_points(mesh_prim, UsdGeom)
     if points:
-        return points, "live_body_mesh_points"
+        return points, "live_body_mesh_points", complete
     proto = None
     try:
         proto = mesh_prim.GetPrimInPrototype()
     except Exception:
         proto = None
     if _prim_valid(proto):
-        points = _mesh_points(proto, UsdGeom)
+        points, complete = _mesh_points(proto, UsdGeom)
         if points:
-            return points, "prototype_mesh_points"
-    return [], "live_body_mesh_points"
+            return points, "prototype_mesh_points", complete
+    return [], "live_body_mesh_points", False
 
 
-def _mesh_points(mesh_prim: Any, UsdGeom: Any) -> list[list[float]]:
+def _mesh_points(mesh_prim: Any, UsdGeom: Any) -> tuple[list[list[float]], bool]:
     try:
         mesh = UsdGeom.Mesh(mesh_prim)
         raw_points = mesh.GetPointsAttr().Get()
-        points = _points_to_float_lists(raw_points)
+        points, complete = _points_to_float_lists_complete(raw_points)
         if points:
-            return points
+            return points, complete
         extent = mesh.GetExtentAttr().Get()
-        extent_points = _points_to_float_lists(extent)
+        extent_points, _ = _points_to_float_lists_complete(extent)
         if len(extent_points) >= 2:
             mins = extent_points[0]
             maxs = extent_points[1]
@@ -1502,27 +1590,36 @@ def _mesh_points(mesh_prim: Any, UsdGeom: Any) -> list[list[float]]:
                 for x in (mins[0], maxs[0])
                 for y in (mins[1], maxs[1])
                 for z in (mins[2], maxs[2])
-            ]
+            ], False
     except Exception:
-        return []
-    return []
+        return [], False
+    return [], False
 
 
-def _points_to_float_lists(points: Any) -> list[list[float]]:
+def _points_to_float_lists_complete(points: Any) -> tuple[list[list[float]], bool]:
     rows: list[list[float]] = []
     if points is None:
-        return rows
+        return rows, False
     try:
         iterator = list(points)
     except Exception:
-        return rows
+        return rows, False
+    complete = True
     for point in iterator:
         try:
             row = [float(point[0]), float(point[1]), float(point[2])]
         except Exception:
+            complete = False
             continue
         if all(math.isfinite(value) for value in row):
             rows.append(row)
+        else:
+            complete = False
+    return rows, bool(complete and len(rows) == len(iterator))
+
+
+def _points_to_float_lists(points: Any) -> list[list[float]]:
+    rows, _ = _points_to_float_lists_complete(points)
     return rows
 
 

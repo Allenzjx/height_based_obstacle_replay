@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from telemetry.exporters import strict_json_dumps
 
 
 LEG_TO_WHEEL_BODY = {
@@ -439,7 +440,7 @@ class GroundingTraceWriter:
         enriched = enrich_grounding_tick(self.adapter, self.scene_handle, frame)
         self.rows.append(enriched)
         self._stream.write(
-            json.dumps(enriched, ensure_ascii=False, sort_keys=True, default=str)
+            strict_json_dumps(enriched, ensure_ascii=False, sort_keys=True)
             + "\n"
         )
         self._stream.flush()

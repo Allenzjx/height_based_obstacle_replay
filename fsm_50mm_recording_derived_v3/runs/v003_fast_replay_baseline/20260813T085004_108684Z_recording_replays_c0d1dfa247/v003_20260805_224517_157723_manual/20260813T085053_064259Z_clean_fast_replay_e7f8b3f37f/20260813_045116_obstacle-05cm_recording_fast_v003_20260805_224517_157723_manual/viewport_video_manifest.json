@@ -1,0 +1,19 @@
+{
+  "actual_viewport_video": true,
+  "artifact_valid": true,
+  "capture_requested": true,
+  "contact_mode": "formal",
+  "created_utc": "2026-08-13T11:04:46.994642+00:00",
+  "diagnostic_only": false,
+  "error": "",
+  "fps": 15.0,
+  "frame_count": 1370,
+  "frame_directory": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T085004_108684Z_recording_replays_c0d1dfa247\\v003_20260805_224517_157723_manual\\20260813T085053_064259Z_clean_fast_replay_e7f8b3f37f\\20260813_045116_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_frames",
+  "not_camera_video": false,
+  "render_product_path": "/Render/OmniverseKit/HydraTextures/omni_kit_widget_viewport_ViewportTexture_0",
+  "schema_version": "fsm50.recording_viewport_video.v1",
+  "source": "actual_active_isaac_gui_viewport_render_product",
+  "valid": true,
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T085004_108684Z_recording_replays_c0d1dfa247\\v003_20260805_224517_157723_manual\\20260813T085053_064259Z_clean_fast_replay_e7f8b3f37f\\20260813_045116_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\fsm50_viewport.mp4",
+  "video_sha256": "f82b5a8237b33451925e0c9f17de5517e44225851a25cc79adc327acb31f7487"
+}

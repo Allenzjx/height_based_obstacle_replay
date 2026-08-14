@@ -29,6 +29,11 @@ MESSAGE_TYPES = {
     "operation_ack",
     "stop_ack",
     "save_result",
+    "artifact_complete",
+    "artifact_failed",
+    "close_requested",
+    "close_receipt",
+    "close_returned",
 }
 
 

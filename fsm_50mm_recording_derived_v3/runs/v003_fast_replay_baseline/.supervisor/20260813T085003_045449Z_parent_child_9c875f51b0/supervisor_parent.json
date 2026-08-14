@@ -1,0 +1,25 @@
+{
+  "child_pid": 23084,
+  "command": [
+    "C:\\Users\\kskzz\\miniconda3\\envs\\env_isaaclab\\python.exe",
+    "-u",
+    "-m",
+    "fsm_50mm_recording_derived_v3.run_fsm50",
+    "__replay-recordings-child",
+    "--request",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\.supervisor\\20260813T085003_045449Z_parent_child_9c875f51b0\\child_request.json",
+    "--handshake",
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\.supervisor\\20260813T085003_045449Z_parent_child_9c875f51b0\\child_handshake.json",
+    "--token",
+    "60b580f7d5d543ff9919f620fc7854c4",
+    "--parent-pid",
+    "51368"
+  ],
+  "created_utc": "2026-08-13T08:50:03.060538+00:00",
+  "global_run_timeout": null,
+  "parent_pid": 51368,
+  "post_preclose_shutdown_grace_s": 60.0,
+  "schema_version": "fsm50.supervisor_parent.v1",
+  "singleton_lock_path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\fsm50_replay_0ab14a3020e34b71.pid.lock",
+  "token": "60b580f7d5d543ff9919f620fc7854c4"
+}

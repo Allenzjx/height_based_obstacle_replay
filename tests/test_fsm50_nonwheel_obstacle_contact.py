@@ -145,6 +145,32 @@ class _ActiveWithoutPointSensor(_FakeSensor):
             self.data.contact_pos_w[:] = np.nan
 
 
+class _FakeObstacleContactView:
+    filter_count = 1
+
+    def __init__(self, cfg):
+        self.sensor_paths = [cfg.prim_path]
+        self.filter_paths = [list(cfg.filter_prim_paths_expr)]
+        self.max_contact_data_count = 3
+
+    def get_contact_data(self, dt):
+        assert float(dt) > 0.0
+        return (
+            np.zeros((3, 1), dtype=float),
+            np.zeros((3, 3), dtype=float),
+            np.zeros((3, 3), dtype=float),
+            np.asarray([[-0.002], [0.0], [0.0]], dtype=float),
+            np.asarray([[1]], dtype=int),
+            np.asarray([[0]], dtype=int),
+        )
+
+
+class _SeparationSensor(_FakeSensor):
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.contact_physx_view = _FakeObstacleContactView(cfg)
+
+
 class _FakeWheelBank:
     is_filtered_wheel_contact_bank = True
 
@@ -274,6 +300,35 @@ assert not blocked, blocked
         self.assertTrue(all(sensor.update_calls for sensor in bank.sensors.values()))
         bank.reset([0])
         self.assertTrue(all(sensor.reset_calls == [[0]] for sensor in bank.sensors.values()))
+
+    def test_bank_exposes_nonwheel_obstacle_signed_separations(self):
+        bank = _create_bank(_SeparationSensor)
+        bank.update(1.0 / 120.0, force_recompute=True)
+        rows = bank.separation_observations(env_id=0)
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(len({row["pair_id"] for row in rows}), 3)
+        self.assertTrue(all(row["valid"] for row in rows))
+        self.assertTrue(
+            all(row["maximum_penetration_m"] == 0.002 for row in rows)
+        )
+        summary = bank.separation_evidence(env_id=0)
+        self.assertTrue(summary["valid"])
+        self.assertEqual(summary["maximum_by_scope_m"]["nonwheel_obstacle"], 0.002)
+
+    def test_live_physx_sensor_identity_mismatch_is_unknown(self):
+        bank = _create_bank(_SeparationSensor)
+        first = bank.specs[0]
+        bank.sensors[first.prim_path].contact_physx_view.sensor_paths = [
+            "/World/WLRRobot/not_the_expected_body"
+        ]
+        bank.update(1.0 / 120.0, force_recompute=True)
+        rows = bank.separation_observations(env_id=0)
+        first_row = next(
+            row for row in rows if row["body_prim_path"] == first.prim_path
+        )
+        self.assertFalse(first_row["valid"])
+        self.assertIn("sensor identity/order", first_row["error"])
+        self.assertFalse(bank.separation_evidence(env_id=0)["valid"])
 
     def test_wrong_filter_layout_fails_closed(self):
         bank = _create_bank(_TwoFilterSensor)

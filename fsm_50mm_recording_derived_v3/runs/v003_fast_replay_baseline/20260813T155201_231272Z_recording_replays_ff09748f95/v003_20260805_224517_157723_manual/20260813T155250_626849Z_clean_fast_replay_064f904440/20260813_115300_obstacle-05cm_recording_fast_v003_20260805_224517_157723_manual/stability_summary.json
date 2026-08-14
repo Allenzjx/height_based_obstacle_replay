@@ -1,0 +1,27 @@
+{
+  "body_com_sample_count": 6552,
+  "contact_sample_count": 4032,
+  "dropped_samples": 0,
+  "duration_sim_s": 4.191666666666743,
+  "duration_wall_s": 170.1178903579712,
+  "event_count": 77,
+  "event_severity_counts": {
+    "critical": 2,
+    "info": 38,
+    "warning": 37
+  },
+  "joint_sample_count": 6048,
+  "max_contact_force_n": 22.838678404211265,
+  "max_sample_overhead_ms": 153.0334999988554,
+  "max_torque_utilization": 1.0,
+  "mean_sample_overhead_ms": 38.268694047517435,
+  "min_dynamic_margin_m": -0.1784575408463973,
+  "min_equilibrium_margin_m": null,
+  "min_static_margin_m": -0.183977455640486,
+  "sample_count": 504,
+  "stability_state_counts": {
+    "outside": 413,
+    "safe": 89,
+    "warning": 2
+  }
+}

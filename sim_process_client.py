@@ -90,6 +90,7 @@ VALUE_FLAGS = {
     "--output-dir",
     "--telemetry-config",
     "--worker-config-file",
+    "--fsm50-gate-request-path",
 }
 
 
@@ -232,6 +233,9 @@ def build_worker_config(args: Any, *, host: str, port: int) -> dict[str, Any]:
         "obstacle_width": getattr(args, "obstacle_width", OBSTACLE_WIDTH_M),
         "obstacle_length": getattr(args, "obstacle_length", OBSTACLE_LENGTH_M),
         "experience": str(getattr(args, "experience", "") or "").strip(),
+        "fsm50_gate_request_path": str(
+            getattr(args, "fsm50_gate_request_path", "") or ""
+        ).strip(),
     }
     for key, value in optional_values.items():
         if value is not None and value != "":
@@ -582,6 +586,9 @@ class SimProcessClient:
             "traceback": "",
         }
         self.latest_detailed_status: dict[str, Any] = {}
+        self.latest_artifact_ack: dict[str, Any] = {}
+        self.latest_artifact_terminal: dict[str, Any] = {}
+        self.latest_close_ack: dict[str, Any] = {}
         self.start_time = 0.0
         self.last_status_time = 0.0
         self.returncode: int | None = None
@@ -601,6 +608,9 @@ class SimProcessClient:
     def start(self) -> None:
         if self.process is not None and self.process.poll() is None:
             return
+        self.latest_artifact_ack = {}
+        self.latest_artifact_terminal = {}
+        self.latest_close_ack = {}
         self._reset_socket()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -806,6 +816,7 @@ class SimProcessClient:
         generation: int | None = None,
         command_id: str = "",
         requested_wall_time: float = 0.0,
+        reason: str = "",
     ) -> dict[str, Any]:
         if generation is None:
             self.wheel_generation += 1
@@ -819,6 +830,7 @@ class SimProcessClient:
             high_priority=True,
             requested_wall_time=float(requested_wall_time or now),
             enqueued_wall_time=now,
+            reason=str(reason or ""),
         )
         self.pending_messages = [row for row in self.pending_messages if not self._is_ordinary_wheel_message(row)]
         self._send_or_queue(message, high_priority=True)
@@ -832,6 +844,7 @@ class SimProcessClient:
         plan_id: str = "",
         request_id: str = "",
         plan_sha256: str = "",
+        worker_session_id: str = "",
     ) -> None:
         self._send_or_queue(
             make_message(
@@ -840,6 +853,7 @@ class SimProcessClient:
                 plan_id=str(plan_id or ""),
                 request_id=str(request_id or ""),
                 plan_sha256=str(plan_sha256 or dict(plan_payload or {}).get("plan_sha256", "") or ""),
+                worker_session_id=str(worker_session_id or ""),
                 event_count=len(list(dict(plan_payload or {}).get("events", []) or [])),
                 segment_count=len(list(dict(plan_payload or {}).get("segments", []) or [])),
                 start_delay_sim_s=max(0.0, float(start_delay_sim_s)),
@@ -896,19 +910,111 @@ class SimProcessClient:
             return self.launch_plan.display_command
         return str(self.latest_status.get("display_command", "") or "")
 
-    def shutdown(self, *, timeout_s: float = 5.0) -> None:
+    def wait_for_artifact(
+        self,
+        *,
+        timeout_s: float | None = None,
+        request_id: str = "",
+        poll_interval_s: float = 0.02,
+    ) -> dict[str, Any]:
+        """Wait for the worker-owned terminal artifact ACK without writing it."""
+
+        bounded = timeout_s is not None and float(timeout_s) > 0.0
+        deadline = (
+            time.monotonic() + float(timeout_s)
+            if bounded
+            else None
+        )
+        while deadline is None or time.monotonic() <= deadline:
+            self.poll()
+            ack = dict(self.latest_artifact_ack or {})
+            if ack and (
+                not request_id
+                or str(ack.get("request_id", "") or "") == str(request_id)
+            ):
+                return ack
+            if self.process is not None and self.process.poll() is not None:
+                break
+            time.sleep(max(0.001, min(0.1, float(poll_interval_s))))
+        return {
+            "type": "artifact_failed",
+            "operation": "recording_artifact",
+            "phase": "ARTIFACT_ACK_TIMEOUT",
+            "request_id": str(request_id),
+            "accepted": False,
+            "artifact_complete": False,
+            "worker_pid": self.pid,
+            "worker_returncode": (
+                None if self.process is None else self.process.poll()
+            ),
+            "error": "timed out waiting for worker artifact terminal ACK",
+        }
+
+    def request_shutdown(self, *, mode: str = "", request_id: str = "") -> dict[str, Any]:
+        """Send shutdown without waiting or killing; the outer supervisor owns timeout policy."""
+
+        normalized_mode = str(mode or "").strip().lower()
+        payload: dict[str, Any] = {}
+        if normalized_mode:
+            payload["mode"] = normalized_mode
+        if request_id:
+            payload["request_id"] = str(request_id)
+        message = make_message("shutdown", **payload)
+        self._send_or_queue(message, high_priority=True)
+        self._flush_pending()
+        return message
+
+    def shutdown(
+        self,
+        *,
+        timeout_s: float = 5.0,
+        mode: str = "",
+        force_on_timeout: bool = True,
+        request_id: str = "",
+    ) -> dict[str, Any]:
+        pid = self.pid
+        forced = False
+        normalized_mode = str(mode or "").strip().lower()
         try:
             self.stop_wheels()
-            self._send_or_queue(make_message("shutdown"))
-            self._flush_pending()
+            self.request_shutdown(mode=normalized_mode, request_id=request_id)
         except Exception:
             pass
         if self.process is not None and self.process.poll() is None:
-            try:
-                self.process.wait(timeout=max(0.1, float(timeout_s)))
-            except subprocess.TimeoutExpired:
+            deadline = time.monotonic() + max(0.1, float(timeout_s))
+            while self.process.poll() is None and time.monotonic() < deadline:
+                self.poll()
+                time.sleep(0.01)
+            if self.process.poll() is None and force_on_timeout:
+                forced = True
                 self._terminate_process_tree()
-        self.close()
+        # Drain terminal close ACKs that were already in the socket when the
+        # process returned.  No termination policy is hidden in this drain.
+        for _attempt in range(4):
+            try:
+                self.poll()
+            except Exception:
+                break
+            if self.conn is None:
+                break
+            time.sleep(0.005)
+        returncode = None if self.process is None else self.process.poll()
+        outcome = {
+            "pid": pid,
+            "returncode": returncode,
+            "forced_termination": forced,
+            "normal_exit": returncode is not None and not forced,
+            "timed_out": returncode is None,
+            "force_on_timeout": bool(force_on_timeout),
+            "requested_mode": normalized_mode or "normal",
+            "request_id": str(request_id or ""),
+            "close_requested": dict(self.latest_status.get("close_requested_ack", {}) or {}),
+            "close_returned": dict(self.latest_status.get("close_returned_ack", {}) or {}),
+        }
+        self.latest_status["shutdown_outcome"] = dict(outcome)
+        if returncode is not None or force_on_timeout:
+            self.close()
+        return outcome
 
     def close(self) -> None:
         for sock in (self.conn, self.server):
@@ -985,7 +1091,16 @@ class SimProcessClient:
             else:
                 preserved = {
                     key: self.latest_status[key]
-                    for key in ("last_operation_ack", "operation_ack_history", "requested_launch_mode")
+                    for key in (
+                        "last_operation_ack",
+                        "operation_ack_history",
+                        "last_artifact_ack",
+                        "last_artifact_terminal",
+                        "artifact_ack_history",
+                        "close_requested_ack",
+                        "close_returned_ack",
+                        "requested_launch_mode",
+                    )
                     if key in self.latest_status
                 }
                 self.latest_status = {**preserved, **message}
@@ -1009,6 +1124,52 @@ class SimProcessClient:
             history = list(self.latest_status.get("operation_ack_history", []) or [])
             history.append(dict(message))
             self.latest_status["operation_ack_history"] = history[-32:]
+            if str(message.get("operation", "") or "") == "recording_artifact":
+                self.latest_artifact_ack = dict(message)
+                self.latest_status["last_artifact_ack"] = dict(message)
+                artifact_history = list(
+                    self.latest_status.get("artifact_ack_history", []) or []
+                )
+                artifact_history.append(dict(message))
+                self.latest_status["artifact_ack_history"] = artifact_history[-16:]
+        elif message_type in {"artifact_complete", "artifact_failed"}:
+            self.latest_artifact_terminal = dict(message)
+            self.latest_status["last_artifact_terminal"] = dict(message)
+        elif message_type in {"close_requested", "close_returned"}:
+            self.latest_close_ack = dict(message)
+            self.latest_status[f"{message_type}_ack"] = dict(message)
+            # A formal fast-close must not enter Kit's native teardown until
+            # the controller has decoded and durably retained the ordered
+            # shutdown/close event stream.  Echoing the exact close identity
+            # gives the worker an application-level barrier; TCP send success
+            # alone only proves that bytes reached a kernel buffer.
+            receipt = make_message(
+                "close_receipt",
+                close_event_type=str(message_type),
+                received=True,
+                request_id=str(message.get("request_id", "") or ""),
+                mode=str(message.get("mode", "") or ""),
+                accepted=message.get("accepted"),
+                error=str(message.get("error", "") or ""),
+                worker_pid=message.get("worker_pid"),
+                worker_session_id=str(
+                    message.get("worker_session_id", "") or ""
+                ),
+                adapter_runtime_instance_id=str(
+                    message.get("adapter_runtime_instance_id", "") or ""
+                ),
+                artifact_request_id=str(
+                    message.get("artifact_request_id", "") or ""
+                ),
+                root_state_write_count=message.get("root_state_write_count"),
+                close_kwargs=dict(message.get("close_kwargs", {}) or {}),
+                runtime_version=str(message.get("runtime_version", "") or ""),
+                received_wall_time=time.time(),
+            )
+            # Append rather than byte-prepend: pending_send_buffer may contain
+            # the unsent suffix of a JSONL frame and must never be split.
+            self._send_or_queue(receipt)
+            self.latest_status[f"{message_type}_receipt"] = dict(receipt)
         self.latest_status["worker_pid"] = self.pid
         self.latest_status["worker_returncode"] = self.returncode
 
@@ -1251,6 +1412,7 @@ def _append_worker_config_as_cli(command: list[str], config: dict[str, Any]) -> 
         "robot_max_ground_correction_m": "--robot-max-ground-correction-m",
         "livestream": "--livestream",
         "experience": "--experience",
+        "fsm50_gate_request_path": "--fsm50-gate-request-path",
     }
     for key, flag in flag_map.items():
         value = config.get(key)

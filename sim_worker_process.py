@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.metadata
 import json
 import os
 import socket
@@ -55,6 +56,70 @@ from sim_worker_runtime import (
     initialize_adapter_ground_reference,
 )
 from robot_ground_diagnostics import GROUND_OK, default_robot_ground_diagnostics, motion_status_from_worker_status, respawn_status_from_worker_status
+from fsm_50mm_recording_derived_v3.worker_recording_session import (
+    WorkerRecordingSession,
+    configure_scene_for_worker_recording,
+    load_worker_recording_gate_request,
+    validate_worker_plan_binding,
+)
+
+
+def _worker_runtime_version() -> str:
+    for distribution in ("isaacsim", "isaac-sim"):
+        try:
+            return str(importlib.metadata.version(distribution))
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return "unavailable"
+
+
+def _worker_ack_identity(
+    adapter: Any | None,
+    *,
+    worker_session_id: str,
+    artifact_request_id: str,
+    artifact_request: Any | None = None,
+) -> dict[str, Any]:
+    """Return the exact runtime identity required on every Gate-1 ACK."""
+
+    identity = {
+        "worker_pid": os.getpid(),
+        "worker_session_id": str(worker_session_id or ""),
+        "adapter_runtime_instance_id": str(
+            getattr(adapter, "runtime_instance_id", "") or ""
+        ),
+        "artifact_request_id": str(artifact_request_id or ""),
+        "root_state_write_count": int(
+            getattr(adapter, "root_state_write_count", 0) or 0
+        ),
+    }
+    if artifact_request is not None:
+        identity.update(
+            contact_mode=str(getattr(artifact_request, "contact_mode", "") or ""),
+            environment_equivalence_role=str(
+                getattr(artifact_request, "environment_equivalence_role", "") or ""
+            ),
+            diagnostic_role=str(
+                getattr(artifact_request, "diagnostic_role", "") or ""
+            ),
+            qualification_scope=str(
+                getattr(artifact_request, "qualification_scope", "") or ""
+            ),
+            gate1_eligible=bool(
+                getattr(artifact_request, "gate1_eligible", False)
+            ),
+            gate1_physical_qualification_eligible=bool(
+                getattr(
+                    artifact_request,
+                    "gate1_physical_qualification_eligible",
+                    False,
+                )
+            ),
+            environment_equivalence_eligible=bool(
+                getattr(artifact_request, "environment_equivalence_eligible", False)
+            ),
+        )
+    return identity
 
 
 class WorkerIpc:
@@ -92,7 +157,16 @@ class WorkerIpc:
             self.first_status_wall = self.first_status_wall or now
             self.last_status_wall = now
             self.status_enqueued += 1
-        critical = kind in {"error", "stop_ack", "operation_ack", "save_result"}
+        critical = kind in {
+            "error",
+            "stop_ack",
+            "operation_ack",
+            "save_result",
+            "artifact_complete",
+            "artifact_failed",
+            "close_requested",
+            "close_returned",
+        }
         if kind == "status":
             if (
                 self.current_outbound is not None
@@ -138,6 +212,17 @@ class WorkerIpc:
                 self.frames_sent += 1
                 self.current_outbound = None
 
+    def flush_until_empty(self, timeout_s: float = 0.5) -> bool:
+        deadline = time.monotonic() + max(0.0, float(timeout_s))
+        while self.current_outbound is not None or self.outbound:
+            self.flush()
+            if self.current_outbound is None and not self.outbound:
+                return True
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.002)
+        return True
+
     def poll(self) -> list[dict[str, Any]]:
         if self.sock is None:
             return []
@@ -181,6 +266,79 @@ class WorkerIpc:
             except Exception:
                 pass
             self.sock = None
+
+
+def _wait_for_close_receipt(
+    ipc: WorkerIpc,
+    close_event: dict[str, Any],
+    *,
+    timeout_s: float | None = None,
+) -> dict[str, Any]:
+    """Wait until the controller confirms decoding one exact close event.
+
+    Formal fast-close uses no worker-local timeout: the outer supervisor owns
+    the sole 60-second process-tree timeout.  This prevents native Kit teardown
+    from terminating the process before the controller has retained the
+    shutdown ACK and the ordered ``close_requested`` event.
+    """
+
+    deadline = (
+        None
+        if timeout_s is None or float(timeout_s) <= 0.0
+        else time.monotonic() + float(timeout_s)
+    )
+    expected = {
+        "close_event_type": str(close_event.get("type", "") or ""),
+        "request_id": str(close_event.get("request_id", "") or ""),
+        "mode": str(close_event.get("mode", "") or ""),
+        "accepted": close_event.get("accepted"),
+        "error": str(close_event.get("error", "") or ""),
+        "worker_pid": close_event.get("worker_pid"),
+        "worker_session_id": str(
+            close_event.get("worker_session_id", "") or ""
+        ),
+        "adapter_runtime_instance_id": str(
+            close_event.get("adapter_runtime_instance_id", "") or ""
+        ),
+        "artifact_request_id": str(
+            close_event.get("artifact_request_id", "") or ""
+        ),
+        "root_state_write_count": close_event.get("root_state_write_count"),
+        "close_kwargs": dict(close_event.get("close_kwargs", {}) or {}),
+        "runtime_version": str(close_event.get("runtime_version", "") or ""),
+    }
+    while deadline is None or time.monotonic() <= deadline:
+        for message in ipc.poll():
+            if str(message.get("type", "") or "") != "close_receipt":
+                continue
+            if message.get("received") is not True:
+                continue
+            if all(
+                key in message
+                and _strict_json_value_equal(message[key], value)
+                for key, value in expected.items()
+            ):
+                return dict(message)
+        time.sleep(0.002)
+    return {}
+
+
+def _strict_json_value_equal(actual: Any, expected: Any) -> bool:
+    """Compare JSON-shaped values without Python's bool/int coercion."""
+
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(
+            _strict_json_value_equal(actual[key], value)
+            for key, value in expected.items()
+        )
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            _strict_json_value_equal(actual_value, expected_value)
+            for actual_value, expected_value in zip(actual, expected)
+        )
+    return bool(actual == expected)
 
 
 class WorkerLogger:
@@ -628,11 +786,16 @@ def run_worker(args: argparse.Namespace) -> int:
     last_set_height_request_id = ""
     last_set_height_result: dict[str, Any] = {}
     shutdown_requested = False
+    shutdown_mode = ""
+    shutdown_request_id = ""
     worker_error = ""
     smoke_deadline = started_wall + float(args.worker_smoke_test_s) if float(args.worker_smoke_test_s) > 0 else None
     playback_service = SimTimePlaybackService()
     worker_session_id = uuid.uuid4().hex
     last_motion_start_readiness: dict[str, Any] = {}
+    gate_request = None
+    artifact_session: WorkerRecordingSession | None = None
+    artifact_terminal_sent = False
 
     def publish_status(
         *,
@@ -698,6 +861,34 @@ def run_worker(args: argparse.Namespace) -> int:
             compact=not detailed,
         )
         status["worker_session_id"] = worker_session_id
+        status["worker_artifact_session"] = (
+            {"enabled": False}
+            if artifact_session is None
+            else artifact_session.status_dict()
+        )
+        status["worker_artifact_preflight"] = (
+            {"enabled": False}
+            if gate_request is None
+            else gate_request.preflight_payload()
+        )
+        artifact_status = dict(status["worker_artifact_session"] or {})
+        if (
+            artifact_session is not None
+            and artifact_status.get("terminal") is True
+            and str(artifact_status.get("state", "") or "") == "failed"
+        ):
+            status["ready"] = False
+            status["starting"] = False
+            status["error"] = str(
+                artifact_status.get("error", "")
+                or "formal worker artifact session failed"
+            )
+        status["artifact_preflight_ready"] = bool(
+            artifact_status.get("artifact_preflight_ready", False)
+        )
+        status["artifact_request_id"] = str(
+            artifact_status.get("request_id", "") or ""
+        )
         if detailed:
             status["motion_start_readiness"] = copy.deepcopy(
                 last_motion_start_readiness
@@ -771,9 +962,84 @@ def run_worker(args: argparse.Namespace) -> int:
             except Exception:
                 pass
 
+    def send_artifact_terminal(terminal: dict[str, Any]) -> None:
+        """Publish raw diagnostics plus the sole outer-consumable terminal ACK."""
+
+        nonlocal artifact_terminal_sent
+        if artifact_terminal_sent:
+            return
+        ipc.send(dict(terminal))
+        complete = str(terminal.get("type", "") or "") == "artifact_complete"
+        ipc.send(
+            make_message(
+                "operation_ack",
+                operation="recording_artifact",
+                phase="ARTIFACT_COMPLETE" if complete else "ARTIFACT_FAILED",
+                artifact_owner="sim_worker_process",
+                accepted=complete,
+                artifact_complete=complete,
+                **_worker_ack_identity(
+                    adapter,
+                    worker_session_id=worker_session_id,
+                    artifact_request_id=(
+                        ""
+                        if artifact_session is None
+                        else artifact_session.request.request_id
+                    ),
+                    artifact_request=(
+                        None if artifact_session is None else artifact_session.request
+                    ),
+                ),
+                **{
+                    key: value
+                    for key, value in terminal.items()
+                    if key
+                    not in {
+                        "type",
+                        "operation",
+                        "phase",
+                        "artifact_owner",
+                        "accepted",
+                        "artifact_complete",
+                        "worker_pid",
+                        "worker_session_id",
+                        "adapter_runtime_instance_id",
+                        "artifact_request_id",
+                        "root_state_write_count",
+                        "contact_mode",
+                        "environment_equivalence_role",
+                        "diagnostic_role",
+                        "qualification_scope",
+                        "gate1_eligible",
+                        "gate1_physical_qualification_eligible",
+                        "environment_equivalence_eligible",
+                    }
+                },
+            )
+        )
+        artifact_terminal_sent = True
+
     try:
         ipc.send(make_message("hello", pid=os.getpid(), phase=phase, ready=False, starting=True))
         logger.log(f"[worker] pid={os.getpid()} connected; initial height={height_mm}mm")
+
+        gate_request = load_worker_recording_gate_request(
+            getattr(args, "fsm50_gate_request_path", "")
+        )
+        if gate_request is not None:
+            if height_mm != gate_request.height_mm:
+                raise ValueError(
+                    f"worker height {height_mm}mm does not match Gate-1 request "
+                    f"{gate_request.height_mm}mm"
+                )
+            artifact_session = WorkerRecordingSession(
+                gate_request,
+                worker_session_id=worker_session_id,
+            )
+            logger.log(
+                "[worker] FSM50 Gate-1 artifact request accepted pre-scene "
+                f"request_id={gate_request.request_id}"
+            )
 
         set_phase("starting_app")
         logger.log("[worker] starting Isaac SimulationApp")
@@ -783,8 +1049,10 @@ def run_worker(args: argparse.Namespace) -> int:
         logger.log("[worker] SimulationApp created")
 
         logger.log(f"[worker] creating scene for {height_mm}mm")
+        scene_config = config_from_args(args, height_mm)
+        configure_scene_for_worker_recording(scene_config, gate_request)
         scene_handle = create_scene(
-            config_from_args(args, height_mm),
+            scene_config,
             simulation_app=simulation_app,
             phase_callback=lambda name, details=None: set_phase(name, details),
         )
@@ -856,6 +1124,13 @@ def run_worker(args: argparse.Namespace) -> int:
             "obstacle_front_face_x_m": float(scene_handle.config.obstacle_front_x),
             "obstacle_bottom_z_m": float(scene_handle.config.ground_z_m),
         }
+        if artifact_session is not None:
+            artifact_session.prepare_after_grounding(
+                adapter=adapter,
+                scene_handle=scene_handle,
+                startup_ground=ground_init,
+                robot_usd=Path(args.robot_usd),
+            )
         set_phase("adapter_ready")
         publish_status(ready=True, starting=False)
         logger.log("[worker] SimRobotAdapter ready")
@@ -885,6 +1160,32 @@ def run_worker(args: argparse.Namespace) -> int:
         ipc.start_runtime_status_window()
         while not shutdown_requested and scene_handle.app_is_running():
             polled_messages = ipc.poll()
+            if artifact_session is not None and not artifact_session.terminal:
+                rejected_messages = artifact_session.reject_direct_dispatch_messages(
+                    polled_messages
+                )
+                if rejected_messages:
+                    rejected_ids = {id(message) for message in rejected_messages}
+                    polled_messages = [
+                        message
+                        for message in polled_messages
+                        if id(message) not in rejected_ids
+                    ]
+                    rejected_kinds = [
+                        str(message.get("type", "") or "")
+                        for message in rejected_messages
+                    ]
+                    send_artifact_terminal(
+                        artifact_session.fail(
+                            "direct dispatch is forbidden during formal worker recording: "
+                            + ", ".join(rejected_kinds)
+                        )
+                    )
+                    publish_status(
+                        ready=False,
+                        starting=False,
+                        error=artifact_session.error,
+                    )
             # Safety stop is serviced before ordinary FIFO work.  The adapter's
             # generation check then rejects delayed non-zero wheel commands.
             for stop_message in [row for row in polled_messages if str(row.get("type", "")) == "stop_wheels"]:
@@ -900,6 +1201,28 @@ def run_worker(args: argparse.Namespace) -> int:
                     make_message(
                         "stop_ack",
                         command_id=str(stop_message.get("command_id", "") or ""),
+                        reason=str(stop_message.get("reason", "") or ""),
+                        wheel_generation=int(
+                            adapter.wheel_command_status.get(
+                                "wheel_generation",
+                                stop_message.get("wheel_generation", 0),
+                            )
+                            or 0
+                        ),
+                        **_worker_ack_identity(
+                            adapter,
+                            worker_session_id=worker_session_id,
+                            artifact_request_id=(
+                                ""
+                                if artifact_session is None
+                                else artifact_session.request.request_id
+                            ),
+                            artifact_request=(
+                                None
+                                if artifact_session is None
+                                else artifact_session.request
+                            ),
+                        ),
                         received_wall_time=float(adapter.wheel_command_status.get("received_wall_time", time.time())),
                         target_applied_wall_time=float(adapter.wheel_command_status.get("target_applied_wall_time", time.time())),
                         target_applied_sim_time=float(adapter.wheel_command_status.get("target_applied_sim_time", sim_time)),
@@ -913,6 +1236,84 @@ def run_worker(args: argparse.Namespace) -> int:
                 if kind == "stop_wheels":
                     continue
                 if kind == "shutdown":
+                    requested_shutdown_mode = str(message.get("mode", "") or "").strip().lower()
+                    if requested_shutdown_mode == "fast" and artifact_session is None:
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                error="fast shutdown is restricted to an explicit FSM50 Gate-1 artifact worker",
+                            )
+                        )
+                        continue
+                    if (
+                        requested_shutdown_mode == "fast"
+                        and artifact_session is not None
+                        and artifact_session.state != "complete"
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                mode="fast",
+                                error=(
+                                    "fast shutdown requires an ARTIFACT_COMPLETE "
+                                    f"worker session; state={artifact_session.state}"
+                                ),
+                            )
+                        )
+                        continue
+                    if requested_shutdown_mode not in {"", "normal", "fast"}:
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                error=f"unsupported shutdown mode: {requested_shutdown_mode}",
+                            )
+                        )
+                        continue
+                    shutdown_mode = requested_shutdown_mode
+                    shutdown_request_id = str(message.get("request_id", "") or "")
+                    close_kwargs = (
+                        {
+                            "wait_for_replicator": False,
+                            "skip_cleanup": True,
+                        }
+                        if shutdown_mode == "fast"
+                        else {}
+                    )
+                    ipc.send(
+                        make_message(
+                            "operation_ack",
+                            operation="shutdown",
+                            accepted=True,
+                            request_id=shutdown_request_id,
+                            mode=shutdown_mode or "normal",
+                            **_worker_ack_identity(
+                                adapter,
+                                worker_session_id=worker_session_id,
+                                artifact_request_id=(
+                                    ""
+                                    if artifact_session is None
+                                    else artifact_session.request.request_id
+                                ),
+                                artifact_request=(
+                                    None
+                                    if artifact_session is None
+                                    else artifact_session.request
+                                ),
+                            ),
+                            close_kwargs=close_kwargs,
+                            runtime_version=_worker_runtime_version(),
+                            error="",
+                        )
+                    )
                     shutdown_requested = True
                     break
                 if kind == "command":
@@ -959,6 +1360,26 @@ def run_worker(args: argparse.Namespace) -> int:
                         rejection_reasons.append(
                             f"worker playback already active plan={playback_service.plan_id} request={playback_service.request_id}"
                         )
+                    if (
+                        artifact_session is not None
+                        and artifact_session.state != "ready_for_plan"
+                    ):
+                        rejection_reasons.append(
+                            "FSM50 artifact preflight is not ready: "
+                            f"state={artifact_session.state}"
+                        )
+                    if artifact_session is not None:
+                        rejection_reasons.extend(
+                            validate_worker_plan_binding(
+                                artifact_session.request,
+                                request_id=request_id,
+                                plan_id=requested_plan_id,
+                                worker_session_id=str(
+                                    message.get("worker_session_id", "") or ""
+                                ),
+                                expected_worker_session_id=worker_session_id,
+                            )
+                        )
                     current_motion_start_step = int(
                         getattr(adapter, "sim_steps", sim_steps) or sim_steps
                     )
@@ -978,42 +1399,83 @@ def run_worker(args: argparse.Namespace) -> int:
                         rejection_reasons.append(
                             "current physics tick already contains a motion batch"
                         )
+                    request_identity = {
+                        "request_id": request_id,
+                        "plan_id": requested_plan_id,
+                        "plan_sha256": requested_sha,
+                        "validated_plan_sha256": str(
+                            integrity.get("plan_sha256", "") or ""
+                        ),
+                        "event_count": message.get("event_count"),
+                        "validated_event_count": integrity.get("event_count"),
+                        "segment_count": message.get("segment_count"),
+                        "validated_segment_count": integrity.get("segment_count"),
+                        "integrity_ok": integrity.get("ok") is True,
+                        "requested_worker_session_id": str(
+                            message.get("worker_session_id", "") or ""
+                        ),
+                        "source_initial_command_state": copy.deepcopy(
+                            dict(
+                                plan.timing.get("source_initial_command_state", {})
+                                or {}
+                            )
+                        ),
+                        "source_initial_command_state_sha256": str(
+                            plan.timing.get(
+                                "source_initial_command_state_sha256", ""
+                            )
+                            or ""
+                        ),
+                    }
+                    if (
+                        artifact_session is not None
+                        and artifact_session.expected_plan_identity
+                    ):
+                        request_identity = dict(
+                            artifact_session.expected_plan_identity
+                        )
                     last_motion_start_readiness = capture_worker_motion_start_readiness(
                         adapter,
                         runtime_ready=bool(phase == "running"),
                         current_sim_step=current_motion_start_step,
                         worker_session_id=worker_session_id,
-                        request_identity={
-                            "request_id": request_id,
-                            "plan_id": requested_plan_id,
-                            "plan_sha256": requested_sha,
-                            "validated_plan_sha256": str(
-                                integrity.get("plan_sha256", "") or ""
-                            ),
-                            "event_count": message.get("event_count"),
-                            "validated_event_count": integrity.get("event_count"),
-                            "segment_count": message.get("segment_count"),
-                            "validated_segment_count": integrity.get("segment_count"),
-                            "integrity_ok": integrity.get("ok") is True,
-                            "requested_worker_session_id": str(
-                                message.get("worker_session_id", "") or ""
-                            ),
-                            "source_initial_command_state": copy.deepcopy(
-                                dict(
-                                    plan.timing.get(
-                                        "source_initial_command_state", {}
-                                    )
-                                    or {}
-                                )
-                            ),
-                            "source_initial_command_state_sha256": str(
-                                plan.timing.get(
-                                    "source_initial_command_state_sha256", ""
-                                )
-                                or ""
-                            ),
-                        },
+                        request_identity=request_identity,
                     )
+                    if (
+                        artifact_session is not None
+                        and artifact_session.request.diagnostic_role == "U"
+                    ):
+                        physical_motion_start_ready = bool(
+                            last_motion_start_readiness.get(
+                                "motion_start_ready", False
+                            )
+                        )
+                        role_motion_start_ready = (
+                            artifact_session.motion_start_ready_for_role(
+                                artifact_session.motion_start_readiness,
+                                last_motion_start_readiness,
+                            )
+                        )
+                        last_motion_start_readiness = {
+                            **last_motion_start_readiness,
+                            "motion_start_ready": role_motion_start_ready,
+                            "diagnostic_role": "U",
+                            "qualification_scope": (
+                                "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC"
+                            ),
+                            "physical_motion_start_ready": (
+                                physical_motion_start_ready
+                            ),
+                            "physical_motion_start_verdict": "NOT_EVALUABLE",
+                            "sensor_independent_trajectory_admission": (
+                                role_motion_start_ready
+                            ),
+                            "rejection_reason": (
+                                ""
+                                if role_motion_start_ready
+                                else "sensor-independent U trajectory readiness failed"
+                            ),
+                        }
                     if not bool(last_motion_start_readiness.get("motion_start_ready", False)):
                         rejection_reasons.append(
                             "MOTION_START_READY failed: "
@@ -1055,14 +1517,46 @@ def run_worker(args: argparse.Namespace) -> int:
                         if not ok:
                             rejection_reasons.append(playback_service.last_error or "scheduler rejected plan")
                         else:
-                            boundary_ok = playback_service.apply_playback_start_boundary(
-                                adapter,
-                                current_sim_time_s=float(
-                                    getattr(adapter, "sim_time", sim_time)
-                                    or sim_time
-                                ),
-                                current_sim_step=current_motion_start_step,
-                            )
+                            if artifact_session is not None:
+                                try:
+                                    artifact_session.attach_verified_plan(
+                                        plan=plan,
+                                        service=playback_service,
+                                        adapter=adapter,
+                                        scene_handle=scene_handle,
+                                        motion_start_readiness=last_motion_start_readiness,
+                                        robot_usd=Path(args.robot_usd),
+                                    )
+                                except Exception as artifact_exc:
+                                    rejection_reasons.append(
+                                        "FSM50 worker artifact plan admission failed: "
+                                        f"{type(artifact_exc).__name__}: {artifact_exc}"
+                                    )
+                                    playback_service.stop(
+                                        adapter,
+                                        current_sim_time_s=float(
+                                            getattr(adapter, "sim_time", sim_time)
+                                            or sim_time
+                                        ),
+                                        current_wall_time_s=time.time(),
+                                        reason="artifact_plan_admission_failed",
+                                        stop_wheels=True,
+                                    )
+                                    send_artifact_terminal(
+                                        artifact_session.fail(rejection_reasons[-1])
+                                    )
+                                    ok = False
+                            if not ok:
+                                boundary_ok = False
+                            else:
+                                boundary_ok = playback_service.apply_playback_start_boundary(
+                                    adapter,
+                                    current_sim_time_s=float(
+                                        getattr(adapter, "sim_time", sim_time)
+                                        or sim_time
+                                    ),
+                                    current_sim_step=current_motion_start_step,
+                                )
                             last_motion_start_readiness = {
                                 **last_motion_start_readiness,
                                 "requested_start_delay_sim_s": requested_start_delay_s,
@@ -1082,6 +1576,8 @@ def run_worker(args: argparse.Namespace) -> int:
                                     ),
                                 },
                             }
+                            if boundary_ok and artifact_session is not None:
+                                artifact_session.record_start_boundary()
                             if not boundary_ok:
                                 rejection_reasons.append(
                                     "playback zero-wheel start boundary failed: "
@@ -1126,7 +1622,20 @@ def run_worker(args: argparse.Namespace) -> int:
                             input_step_count=int(integrity.get("input_step_count", 0) or 0),
                             represented_step_indices=list(integrity.get("represented_step_indices", []) or []),
                             missing_required_step_indices=list(integrity.get("missing_required_step_indices", []) or []),
-                            worker_session_id=worker_session_id,
+                            **_worker_ack_identity(
+                                adapter,
+                                worker_session_id=worker_session_id,
+                                artifact_request_id=(
+                                    ""
+                                    if artifact_session is None
+                                    else artifact_session.request.request_id
+                                ),
+                                artifact_request=(
+                                    None
+                                    if artifact_session is None
+                                    else artifact_session.request
+                                ),
+                            ),
                             accepted_wall_time=time.time(),
                             motion_start_ready=bool(
                                 last_motion_start_readiness.get(
@@ -1381,38 +1890,62 @@ def run_worker(args: argparse.Namespace) -> int:
                             worker_session_id=worker_session_id,
                             request_identity=identity,
                         )
-                        token_payload = {
-                            "schema_version": (
-                                "production.motion_start_readiness_token.v1"
-                            ),
-                            "worker_session_id": worker_session_id,
-                            "plan_id": playback_service.plan_id,
-                            "request_id": playback_service.request_id,
-                            "plan_sha256": str(
-                                playback_service.plan.plan_sha256
-                                if playback_service.plan is not None
-                                else ""
-                            ),
-                            "boundary_ack": boundary_ack,
-                            "pre_first_readiness": pre_first_readiness,
-                            "pre_first_dispatch_sim_step": current_pre_first_step,
-                        }
-                        readiness_token = hashlib.sha256(
-                            json.dumps(
-                                token_payload,
-                                ensure_ascii=False,
-                                sort_keys=True,
-                                separators=(",", ":"),
-                                default=str,
-                            ).encode("utf-8")
-                        ).hexdigest()
-                        token_bound = bool(
-                            pre_first_readiness.get("motion_start_ready", False)
-                            and playback_service.bind_motion_start_readiness(
-                                readiness_token,
-                                current_sim_step=current_pre_first_step,
+                        if artifact_session is not None:
+                            artifact_pre_first_ready = (
+                                artifact_session.record_pre_first_dispatch(
+                                    {
+                                        **pre_first_readiness,
+                                        "playback_start_boundary": boundary,
+                                        "pre_first_dispatch": True,
+                                        "pre_first_dispatch_sim_step": (
+                                            current_pre_first_step
+                                        ),
+                                    }
+                                )
                             )
-                        )
+                            readiness_token = str(
+                                artifact_session.readiness_token or ""
+                            )
+                            token_bound = bool(
+                                artifact_pre_first_ready and readiness_token
+                            )
+                        else:
+                            token_payload = {
+                                "schema_version": (
+                                    "production.motion_start_readiness_token.v1"
+                                ),
+                                "worker_session_id": worker_session_id,
+                                "plan_id": playback_service.plan_id,
+                                "request_id": playback_service.request_id,
+                                "plan_sha256": str(
+                                    playback_service.plan.plan_sha256
+                                    if playback_service.plan is not None
+                                    else ""
+                                ),
+                                "boundary_ack": boundary_ack,
+                                "pre_first_readiness": pre_first_readiness,
+                                "pre_first_dispatch_sim_step": (
+                                    current_pre_first_step
+                                ),
+                            }
+                            readiness_token = hashlib.sha256(
+                                json.dumps(
+                                    token_payload,
+                                    ensure_ascii=False,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                    default=str,
+                                ).encode("utf-8")
+                            ).hexdigest()
+                            token_bound = bool(
+                                pre_first_readiness.get(
+                                    "motion_start_ready", False
+                                )
+                                and playback_service.bind_motion_start_readiness(
+                                    readiness_token,
+                                    current_sim_step=current_pre_first_step,
+                                )
+                            )
                         last_motion_start_readiness = {
                             **pre_first_readiness,
                             "playback_start_boundary": boundary,
@@ -1423,6 +1956,25 @@ def run_worker(args: argparse.Namespace) -> int:
                             ),
                             "readiness_token_bound": token_bound,
                         }
+                        if artifact_session is not None:
+                            if not artifact_pre_first_ready:
+                                token_bound = False
+                                playback_service.stop(
+                                    adapter,
+                                    current_sim_time_s=float(
+                                        getattr(adapter, "sim_time", sim_time)
+                                        or sim_time
+                                    ),
+                                    current_wall_time_s=time.time(),
+                                    reason="artifact_rich_pre_first_dispatch_failed",
+                                    stop_wheels=True,
+                                )
+                                if not artifact_terminal_sent:
+                                    send_artifact_terminal(
+                                        artifact_session.fail(
+                                            "rich 10-frame pre-first-dispatch readiness failed"
+                                        )
+                                    )
                         if not token_bound:
                             playback_service.stop(
                                 adapter,
@@ -1440,9 +1992,15 @@ def run_worker(args: argparse.Namespace) -> int:
                     current_sim_step=int(getattr(adapter, "sim_steps", sim_steps) or sim_steps),
                     current_wall_time_s=time.time(),
                 )
+                if artifact_session is not None:
+                    artifact_session.before_adapter_step()
                 adapter.step(dt)
                 sim_time = float(getattr(adapter, "sim_time", sim_time + dt))
                 sim_steps = int(getattr(adapter, "sim_steps", sim_steps + 1))
+                if artifact_session is not None:
+                    terminal = artifact_session.after_adapter_step()
+                    if terminal is not None and not artifact_terminal_sent:
+                        send_artifact_terminal(terminal)
             else:
                 time.sleep(min(dt, 0.02))
             now = time.monotonic()
@@ -1461,6 +2019,13 @@ def run_worker(args: argparse.Namespace) -> int:
         tb = traceback.format_exc()
         logger.log(f"[worker] ERROR: {exc}")
         logger.log(tb)
+        if artifact_session is not None and not artifact_terminal_sent:
+            try:
+                send_artifact_terminal(
+                    artifact_session.fail(f"{type(exc).__name__}: {exc}")
+                )
+            except Exception:
+                pass
         try:
             ipc.send(make_message("error", phase=phase, error=str(exc), traceback=tb, ready=False, starting=False))
         except Exception:
@@ -1475,12 +2040,79 @@ def run_worker(args: argparse.Namespace) -> int:
         except Exception:
             pass
         try:
-            if scene_handle is not None:
+            if shutdown_mode == "fast" and artifact_session is not None:
+                close_requested = make_message(
+                    "close_requested",
+                    mode="fast",
+                    accepted=True,
+                    error="",
+                    request_id=shutdown_request_id,
+                    **_worker_ack_identity(
+                        adapter,
+                        worker_session_id=worker_session_id,
+                        artifact_request_id=artifact_session.request.request_id,
+                        artifact_request=artifact_session.request,
+                    ),
+                    close_kwargs={
+                        "wait_for_replicator": False,
+                        "skip_cleanup": True,
+                    },
+                    runtime_version=_worker_runtime_version(),
+                )
+                ipc.send(close_requested)
+                close_receipt = _wait_for_close_receipt(
+                    ipc,
+                    close_requested,
+                    timeout_s=None,
+                )
+                logger.log(
+                    "[worker] formal close_requested receipt accepted "
+                    f"request_id={close_receipt.get('request_id', '')}"
+                )
+                if simulation_app is not None:
+                    simulation_app.close(
+                        wait_for_replicator=False,
+                        skip_cleanup=True,
+                    )
+                ipc.send(
+                    make_message(
+                        "close_returned",
+                        mode="fast",
+                        accepted=True,
+                        error="",
+                        request_id=shutdown_request_id,
+                        **_worker_ack_identity(
+                            adapter,
+                            worker_session_id=worker_session_id,
+                            artifact_request_id=artifact_session.request.request_id,
+                            artifact_request=artifact_session.request,
+                        ),
+                        close_kwargs={
+                            "wait_for_replicator": False,
+                            "skip_cleanup": True,
+                        },
+                        runtime_version=_worker_runtime_version(),
+                    )
+                )
+                ipc.flush_until_empty(0.5)
+            elif scene_handle is not None:
                 scene_handle.close()
             elif simulation_app is not None:
                 simulation_app.close()
-        except Exception:
-            pass
+        except Exception as close_exc:
+            if shutdown_mode == "fast" and artifact_session is not None:
+                try:
+                    logger.log(
+                        "[worker] formal fast close ERROR: "
+                        f"{type(close_exc).__name__}: {close_exc}"
+                    )
+                except Exception:
+                    pass
+                ipc.close()
+                # Override the pending successful return: a Python exception
+                # from receipt handling or SimulationApp.close is a non-zero
+                # worker exit, never a verified native fast-close result.
+                raise
         ipc.close()
 
 
@@ -1659,6 +2291,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Height replay Isaac worker process.")
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--worker-config-file", "--worker_config_file", dest="worker_config_file", type=str, default="")
+    parser.add_argument(
+        "--fsm50-gate-request-path",
+        "--fsm50_gate_request_path",
+        dest="fsm50_gate_request_path",
+        type=str,
+        default="",
+    )
     parser.add_argument("--ipc-host", default="")
     parser.add_argument("--ipc-port", type=int, default=0)
     parser.add_argument("--worker-smoke-test-s", type=float, default=0.0)
@@ -1767,6 +2406,10 @@ def main(argv: list[str] | None = None) -> int:
     args.telemetry_effective_enabled = False
     args.live_viz_effective_enabled = False
     args.equilibrium_region_effective_enabled = False
+    # Every worker enters scene configuration from the ordinary production UI
+    # default.  The validated request hook runs after request loading and is
+    # the sole authority that may enable/configure A1/A2/B sensor plumbing;
+    # U must observe this exact False value and leave it unchanged.
     args.telemetry_contact_sensors_enabled = False
     livestream = max(0, int(getattr(args, "livestream", 0) or 0))
     setattr(args, "livestream", livestream)

@@ -22,6 +22,12 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 import numpy as np
 
+from .physx_contact_separation import (
+    decode_contact_pair_separations,
+    separation_evidence_summary,
+    unknown_contact_pair_rows,
+)
+
 
 ROBOT_PRIM_PATH = "/World/WLRRobot"
 OBSTACLE_PRIM_PATH = "/World/Obstacle"
@@ -293,6 +299,7 @@ class NonWheelObstacleContactSensorBank:
         *,
         obstacle_prim_path: str,
         force_threshold_n: float,
+        max_contact_data_count_per_prim: int = 16,
     ) -> None:
         self.specs = tuple(specs)
         if not self.specs:
@@ -303,8 +310,12 @@ class NonWheelObstacleContactSensorBank:
         self.cfg = SimpleNamespace(
             force_threshold=self.force_threshold_n,
             filter_prim_paths_expr=[self.obstacle_prim_path],
+            max_contact_data_count_per_prim=int(
+                max_contact_data_count_per_prim
+            ),
         )
         self._cached_data: NonWheelObstacleContactBankData | None = None
+        self._cached_separation_rows: list[dict[str, Any]] = []
 
     @property
     def body_names(self) -> list[str]:
@@ -324,11 +335,109 @@ class NonWheelObstacleContactSensorBank:
                 float(dt), force_recompute=bool(force_recompute)
             )
         self._cached_data = self._collect_data()
+        self._cached_separation_rows = self._collect_separation_rows(float(dt))
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         for spec in self.specs:
             self.sensors[spec.prim_path].reset(env_ids)
         self._cached_data = None
+        self._cached_separation_rows = []
+
+    def _collect_separation_rows(self, dt: float) -> list[dict[str, Any]]:
+        env_count = int(self.data.force_matrix_w.shape[0])
+        filters = (("obstacle", self.obstacle_prim_path),)
+        rows: list[dict[str, Any]] = []
+        for spec in self.specs:
+            sensor = self.sensors[spec.prim_path]
+            sensor_cfg = getattr(sensor, "cfg", None)
+            configured_filters = list(
+                getattr(sensor_cfg, "filter_prim_paths_expr", []) or []
+            )
+            view = getattr(sensor, "contact_physx_view", None)
+            view_capacity: int | None = None
+            try:
+                if view is None or not hasattr(view, "get_contact_data"):
+                    raise RuntimeError("ContactSensor.contact_physx_view unavailable")
+                raw_view_capacity = getattr(view, "max_contact_data_count", None)
+                try:
+                    view_capacity = int(raw_view_capacity)
+                except (TypeError, ValueError):
+                    view_capacity = None
+                payload = view.get_contact_data(float(dt))
+                if not isinstance(payload, (tuple, list)) or len(payload) != 6:
+                    raise RuntimeError(
+                        "RigidContactView.get_contact_data did not return six buffers"
+                    )
+                rows.extend(
+                    decode_contact_pair_separations(
+                        dt_s=float(dt),
+                        distances=payload[3],
+                        counts=payload[4],
+                        starts=payload[5],
+                        env_count=env_count,
+                        body_class="nonwheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=filters,
+                        configured_filter_paths=configured_filters,
+                        expected_sensor_paths=[spec.prim_path],
+                        view_sensor_paths=getattr(view, "sensor_paths", None),
+                        view_filter_paths=getattr(view, "filter_paths", None),
+                        view_filter_count=getattr(view, "filter_count", None),
+                        view_max_contact_data_count=raw_view_capacity,
+                    )
+                )
+            except Exception as exc:
+                rows.extend(
+                    unknown_contact_pair_rows(
+                        env_count=env_count,
+                        body_class="nonwheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=filters,
+                        capacity=view_capacity,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
+                )
+        return rows
+
+    def separation_observations(self, *, env_id: int = 0) -> list[dict[str, Any]]:
+        env_count = int(self.data.force_matrix_w.shape[0])
+        if not 0 <= int(env_id) < env_count:
+            raise IndexError(f"env_id={env_id} outside [0, {env_count})")
+        filters = (("obstacle", self.obstacle_prim_path),)
+        if not self._cached_separation_rows:
+            rows: list[dict[str, Any]] = []
+            for spec in self.specs:
+                view = getattr(
+                    self.sensors[spec.prim_path], "contact_physx_view", None
+                )
+                try:
+                    capacity = int(getattr(view, "max_contact_data_count", None))
+                except (TypeError, ValueError):
+                    capacity = None
+                rows.extend(
+                    unknown_contact_pair_rows(
+                        env_count=env_count,
+                        body_class="nonwheel",
+                        body_name=spec.body_name,
+                        body_prim_path=spec.prim_path,
+                        filters=filters,
+                        capacity=capacity,
+                        error="signed-separation view has not been sampled",
+                    )
+                )
+        else:
+            rows = self._cached_separation_rows
+        return [dict(row) for row in rows if int(row["env_id"]) == int(env_id)]
+
+    def separation_evidence(self, *, env_id: int = 0) -> dict[str, Any]:
+        rows = self.separation_observations(env_id=env_id)
+        expected = [
+            f"env={int(env_id)}|body={spec.prim_path}|other={self.obstacle_prim_path}"
+            for spec in self.specs
+        ]
+        return separation_evidence_summary(rows, expected_pair_ids=expected)
 
     @staticmethod
     def _validated_single_body_field(
@@ -555,6 +664,7 @@ def create_nonwheel_obstacle_contact_sensor_bank(
         specs,
         obstacle_prim_path=obstacle_prim_path,
         force_threshold_n=force_threshold_n,
+        max_contact_data_count_per_prim=max_contact_data_count_per_prim,
     )
 
 
@@ -627,6 +737,29 @@ class WheelAndNonWheelContactSensorBank:
 
     def nonwheel_obstacle_observations(self, **kwargs: Any) -> Any:
         return self.nonwheel_bank.observations(**kwargs)
+
+    def separation_observations(self, **kwargs: Any) -> list[dict[str, Any]]:
+        """Combine exact wheel-ground/obstacle and non-wheel-obstacle pairs."""
+
+        return [
+            *self.wheel_bank.separation_observations(**kwargs),
+            *self.nonwheel_bank.separation_observations(**kwargs),
+        ]
+
+    def separation_evidence(self, *, env_id: int = 0) -> dict[str, Any]:
+        rows = self.separation_observations(env_id=env_id)
+        expected = [
+            *[
+                f"env={int(env_id)}|body={spec.prim_path}|other={other_path}"
+                for spec in self.wheel_bank.specs
+                for _surface, other_path in self.wheel_bank.filter_surfaces
+            ],
+            *[
+                f"env={int(env_id)}|body={spec.prim_path}|other={self.nonwheel_bank.obstacle_prim_path}"
+                for spec in self.nonwheel_bank.specs
+            ],
+        ]
+        return separation_evidence_summary(rows, expected_pair_ids=expected)
 
     def observations(self, **kwargs: Any) -> Any:
         """Alias preserving the non-wheel bank observation contract."""

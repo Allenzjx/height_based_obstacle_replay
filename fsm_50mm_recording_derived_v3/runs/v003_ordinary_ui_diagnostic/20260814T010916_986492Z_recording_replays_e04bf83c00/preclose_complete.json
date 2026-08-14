@@ -1,0 +1,86 @@
+{
+  "batch_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00",
+  "child_pid": 2936,
+  "created_utc": "2026-08-14T01:09:38.687626+00:00",
+  "evidence": {
+    "batch_finalization": {
+      "artifact_owner": "formal_worker_batch_controller",
+      "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00",
+      "batch_error": "RuntimeError: formal worker artifact preflight failed: ValueError: ordinary-UI U role requires the incoming production default telemetry_contact_sensors_enabled=false",
+      "close_error": "PENDING_FORMAL_WORKER_CLOSE",
+      "command_success": false,
+      "diagnostic_role": "",
+      "environment_equivalence_diagnostic_complete": false,
+      "environment_equivalence_eligible": false,
+      "environment_equivalence_role": "",
+      "failed": true,
+      "finalization_errors": [],
+      "finalized": false,
+      "gate1_eligible": true,
+      "gate1_physical_qualification_eligible": true,
+      "ordinary_ui_diagnostic_complete": false,
+      "phase": "PRECLOSE_FINALIZED",
+      "qualification_scope": "GATE1_PHYSICAL_QUALIFICATION",
+      "source_integrity": {
+        "added": [],
+        "after_created_utc": "2026-08-14T01:09:38.124778+00:00",
+        "before_created_utc": "2026-08-14T01:09:16.746168+00:00",
+        "changed": [],
+        "equal": true,
+        "missing": []
+      },
+      "strict_success": false,
+      "worker_artifact_result_count": 0
+    },
+    "evidence_files": {
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\batch_finalization.json": {
+        "sha256": "7b92888dd9107a801a4dc6d98e5025fb9a2abfbb8aa77a9b736fe8c6e3f7bc76",
+        "size_bytes": 1251
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\batch_finalization.preclose.json": {
+        "sha256": "7b92888dd9107a801a4dc6d98e5025fb9a2abfbb8aa77a9b736fe8c6e3f7bc76",
+        "size_bytes": 1251
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\batch_request.json": {
+        "sha256": "abb6a6080db3b52bcdcf2a8831adc588147841c5704c675e3b60423ae60a2e5f",
+        "size_bytes": 147889
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\batch_results.json": {
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "size_bytes": 3
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\batch_results.preclose.json": {
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "size_bytes": 3
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\checksums.preclose.sha256": {
+        "sha256": "d232c6d4af87e92e99d4aa7aa341c9eb4b698cead93c92d89fe14b7436368910",
+        "size_bytes": 802
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\checksums.sha256": {
+        "sha256": "d232c6d4af87e92e99d4aa7aa341c9eb4b698cead93c92d89fe14b7436368910",
+        "size_bytes": 802
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\source_integrity.json": {
+        "sha256": "a725a997c03698c29bf355baf0d7c8a68ef2d70bbf920a7cfbeb04c915ed206f",
+        "size_bytes": 188
+      },
+      "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T010916_986492Z_recording_replays_e04bf83c00\\worker_artifact_request.json": {
+        "sha256": "8f6a9e60344e6b7195b2c84d5298be947de9206400b9a3159b0bf6aada6c8d44",
+        "size_bytes": 2411
+      }
+    },
+    "physics_result_count": 0,
+    "source_integrity": {
+      "added": [],
+      "after_created_utc": "2026-08-14T01:09:38.124778+00:00",
+      "before_created_utc": "2026-08-14T01:09:16.746168+00:00",
+      "changed": [],
+      "equal": true,
+      "missing": []
+    }
+  },
+  "parent_pid": 36204,
+  "schema_version": "fsm50.preclose_complete.v1",
+  "token": "0775f53afc57472b8b276c6717f31c5e"
+}

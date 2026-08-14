@@ -1,0 +1,18 @@
+{
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T063312_635794Z_recording_replays_7712b63cb6",
+  "batch_error": "",
+  "close_error": "PENDING_SIMULATION_CLOSE",
+  "failed": true,
+  "finalization_errors": [],
+  "finalized": false,
+  "phase": "PRECLOSE_FINALIZED",
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-13T06:35:37.706515+00:00",
+    "before_created_utc": "2026-08-13T06:33:12.411572+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false
+}

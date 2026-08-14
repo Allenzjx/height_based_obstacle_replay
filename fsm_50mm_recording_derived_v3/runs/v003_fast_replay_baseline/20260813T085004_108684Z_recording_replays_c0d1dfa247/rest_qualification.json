@@ -1,0 +1,10 @@
+{
+  "block_reason": "visual AABB intersects ground while collision AABB is within tolerance; grounded reference rejected: settle did not reach stable frame threshold; grounded reference rejected: stable frames 0/10; grounded reference rejected: final joint velocity exceeds threshold: front_left_hip, front_left_knee, front_right_knee, rear_left_hip, rear_left_knee, rear_right_hip, rear_right_knee; grounded reference rejected: servo joint velocity exceeds threshold",
+  "gate": "REST_QUALIFICATION",
+  "observed_servo_speed_rad_s": 0.06996997445821762,
+  "passed": false,
+  "servo_speed_threshold_rad_s": 0.02,
+  "stable_frames": 0,
+  "stable_frames_required": 10,
+  "status": "FAIL"
+}

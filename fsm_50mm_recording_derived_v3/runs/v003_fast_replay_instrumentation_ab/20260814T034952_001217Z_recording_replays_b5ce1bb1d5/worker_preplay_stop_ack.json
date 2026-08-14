@@ -1,0 +1,23 @@
+{
+  "adapter_runtime_instance_id": "b189dfd4d1544bd4b1507baaa60198e7",
+  "artifact_request_id": "172e9e59ac584abbbb4f7b291a0c83c1",
+  "command_id": "e4d9999e637a43b2966e1ee01c81f0fb",
+  "contact_mode": "formal",
+  "diagnostic_role": "",
+  "environment_equivalence_eligible": true,
+  "environment_equivalence_role": "A1",
+  "error": "",
+  "gate1_eligible": false,
+  "gate1_physical_qualification_eligible": false,
+  "qualification_scope": "TRAJECTORY_COMPARISON",
+  "reason": "playback_start_boundary",
+  "received_wall_time": 1786679477.615728,
+  "root_state_write_count": 0,
+  "target_applied_sim_time": 2.233333333333328,
+  "target_applied_wall_time": 1786679477.6222575,
+  "type": "stop_ack",
+  "wheel_generation": 1,
+  "worker_pid": 48844,
+  "worker_session_id": "fe4b583214f24b879e25e522cc204e60",
+  "zero_target_applied": true
+}

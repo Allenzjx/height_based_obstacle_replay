@@ -23,6 +23,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Mapping
 
+from telemetry.exporters import strict_json_dumps
+
 from .fsm50_controller import ControllerStatus, FSM50Controller
 from .fsm50_observation import FSM50Observation
 from .fsm50_state_model import FSM50StateTable
@@ -30,6 +32,7 @@ from .fsm50_telemetry import FSM50TelemetryCollector
 from .filtered_wheel_contact import make_filtered_wheel_contact_sensor_factory
 from .nonwheel_obstacle_contact import configure_scene_for_wheel_and_nonwheel_contacts
 from .shutdown_contract import validate_shutdown_outcome
+from .viewport_buffer_video import ActiveViewportBufferVideoRecorder
 
 
 def _jsonable(value: Any) -> Any:
@@ -58,8 +61,14 @@ def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
     try:
+        encoded = strict_json_dumps(
+            _jsonable(payload),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
         with temporary.open("w", encoding="utf-8") as stream:
-            json.dump(_jsonable(payload), stream, ensure_ascii=False, indent=2, sort_keys=True)
+            stream.write(encoded)
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
@@ -653,92 +662,55 @@ def _load_environment_gate(path: Path) -> dict[str, Any]:
     return payload
 
 
-class ViewportVideoRecorder:
-    """Capture the actual active viewport render product and encode an MP4."""
+class ViewportVideoRecorder(ActiveViewportBufferVideoRecorder):
+    """Compatibility name for the direct active-render-product recorder."""
 
-    def __init__(self, root: Path, *, enabled: bool, fps: float) -> None:
-        self.root = root
-        self.frames = root / "viewport_frames"
-        self.video_path = root / "fsm50_viewport.mp4"
-        self.enabled = bool(enabled)
-        self.fps = max(1.0, float(fps))
-        self.error = ""
-        self.render_product_path = ""
-        self.started = False
 
-    def start(self) -> None:
-        if not self.enabled:
-            self.error = "viewport capture disabled (headless or --no-video)"
-            return
-        try:
-            self.frames.mkdir(parents=True, exist_ok=False)
-            from omni.kit.viewport.utility import get_active_viewport  # type: ignore
-            import isaacsim.kit.scripts.movie_capture as movie_capture  # type: ignore
+def _finalize_runtime_viewport_video(
+    *,
+    recorder: ViewportVideoRecorder,
+    adapter: Any | None,
+    batch_root: Path,
+    runner: Any,
+    capture_requested: bool,
+) -> dict[str, Any]:
+    """Detach the render observer, finalize bytes, then hard-validate evidence."""
 
-            viewport = get_active_viewport()
-            if viewport is None:
-                raise RuntimeError("active GUI viewport is unavailable")
-            self.render_product_path = str(viewport.render_product_path)
-            movie_capture.basePath = str(self.frames.resolve()).replace("\\", "/")
-            # An explicit fileName makes Isaac 5.1 overwrite the same PNG on
-            # every render.  Empty delegates naming to AOV_FrameNumber so the
-            # capture contains distinct viewport frames.
-            movie_capture.baseFilename = ""
-            movie_capture.inflightFileIO = 4
-            movie_capture.attach_post_process_save_to_disk()
-            self.started = True
-        except Exception as exc:
-            self.error = f"{type(exc).__name__}: {exc}"
-
-    def finalize(self) -> dict[str, Any]:
-        if self.started:
-            try:
-                import omni.kit.renderer_capture  # type: ignore
-
-                omni.kit.renderer_capture.acquire_renderer_capture_interface().wait_async_capture()
-            except Exception as exc:
-                self.error = self.error or f"capture flush failed: {type(exc).__name__}: {exc}"
-        frames = sorted(self.frames.rglob("*.png")) if self.frames.is_dir() else []
-        if len(frames) >= 2:
-            try:
-                import imageio.v2 as imageio  # type: ignore
-
-                writer = imageio.get_writer(
-                    self.video_path,
-                    fps=self.fps,
-                    codec="libx264",
-                    quality=7,
-                    macro_block_size=None,
-                )
-                try:
-                    for frame in frames:
-                        writer.append_data(imageio.imread(frame))
-                finally:
-                    writer.close()
-            except Exception as exc:
-                self.error = self.error or f"video encode failed: {type(exc).__name__}: {exc}"
-        valid = bool(
-            len(frames) >= 2
-            and self.video_path.is_file()
-            and self.video_path.stat().st_size > 0
-            and not self.error
+    detach_error = ""
+    try:
+        if adapter is not None:
+            adapter.detach_artifact_render_observer(recorder)
+    except Exception as exc:
+        detach_error = (
+            "viewport observer detach failed: "
+            f"{type(exc).__name__}: {exc}"
         )
-        manifest = {
-            "schema_version": "fsm50.viewport_video.v1",
-            "created_utc": datetime.now(timezone.utc).isoformat(),
-            "valid": valid,
-            "not_camera_video": False,
+    try:
+        raw = dict(recorder.finalize() or {})
+    except Exception as exc:
+        raw = {
+            "valid": False,
             "source": "actual_active_isaac_gui_viewport_render_product",
-            "render_product_path": self.render_product_path,
-            "frame_directory": str(self.frames),
-            "frame_count": len(frames),
-            "fps": self.fps,
-            "video_path": str(self.video_path),
-            "video_sha256": _sha256(self.video_path) if valid else "",
-            "error": self.error,
+            "video_path": str(Path(batch_root) / "actual_viewport_video.mp4"),
+            "video_sha256": "",
+            "frame_count": 0,
+            "error": (
+                "direct viewport recorder finalize failed: "
+                f"{type(exc).__name__}: {exc}"
+            ),
         }
-        _write_json(self.root / "viewport_video_manifest.json", manifest)
-        return manifest
+    return runner._finalize_recording_viewport_video_contract(
+        Path(batch_root),
+        raw,
+        contact_mode="instrumented_fsm_runtime",
+        capture_requested=bool(capture_requested),
+        disabled_reason=(
+            "headless or --no-video diagnostic mode has no active GUI viewport"
+            if not capture_requested
+            else ""
+        ),
+        capture_error=detach_error,
+    )
 
 
 def _observation_from_latest(
@@ -1017,6 +989,7 @@ def _run_one_controller_episode(
             obstacle=obstacle,
             wheel_radius_m=wheel_radius,
             source_version="fsm50_event_controller",
+            contact_mode="instrumented",
             plan=None,
             plan_rows=[],
             force_threshold_n=2.0,
@@ -1213,6 +1186,14 @@ def _run_one_controller_episode(
                 else "controller or strict physical evidence incomplete"
             ),
             "physical_evidence": physical,
+            "contact_mode": "instrumented",
+            "role_capture_verdict": str(
+                physical.get("role_capture_verdict", "NOT_EVALUABLE")
+            ),
+            "full_physical_verdict": str(
+                physical.get("full_physical_verdict", "NOT_EVALUABLE")
+            ),
+            "telemetry_finalization": collector.telemetry_finalization_status(),
             "state_test_criteria": state_criteria,
             "controller_last_result": (
                 None
@@ -1324,6 +1305,11 @@ def _run_one_controller_episode(
                 else controller.status.value
             ),
             "controller_timeline": [] if controller is None else controller.timeline,
+            "telemetry_finalization": (
+                {}
+                if collector is None
+                else collector.telemetry_finalization_status()
+            ),
             "lifecycle": {"finalized": False, "failed": True},
         }
         if controller is not None:
@@ -1410,6 +1396,7 @@ def _finalize_episode_result(
         run_dir / "fsm50_telemetry.csv",
         run_dir / "fsm50_telemetry.jsonl",
         run_dir / "state_timeline.csv",
+        run_dir / "telemetry_finalization.json",
         run_dir / "fsm_controller_timeline.json",
         run_dir / "fsm_controller_timeline.csv",
         run_dir / "runtime_environment.json",
@@ -1420,11 +1407,13 @@ def _finalize_episode_result(
     )
     missing = [str(path) for path in required_paths if not path.is_file()]
     runner_exception = str(result.get("classification", "")) == "RUNNER_EXCEPTION"
+    telemetry_valid = bool(runner._telemetry_finalization_valid(result))
     artifact_valid = bool(
         not runner_exception
         and source_ok
         and visualization_ok
         and video_valid
+        and telemetry_valid
         and not missing
     )
     result["video"] = episode_video
@@ -1459,6 +1448,8 @@ def _finalize_episode_result(
             reasons.append(
                 str(episode_video.get("error", "actual viewport video unavailable"))
             )
+        if not telemetry_valid:
+            reasons.append("canonical telemetry finalization is incomplete")
         if missing:
             reasons.append("missing required files: " + ", ".join(missing))
         result["artifact_validation_failures"] = reasons
@@ -1576,14 +1567,19 @@ def run_fsm_locked(
     )
     simulation_app = None
     scene_handle = None
+    adapter = None
     results: list[dict[str, Any]] = []
     exit_code = 1
     batch_error = ""
+    capture_requested = bool(
+        not args.headless and not getattr(args, "no_video", False)
+    )
     video = ViewportVideoRecorder(
         batch_root,
-        enabled=bool(not args.headless and not getattr(args, "no_video", False)),
+        enabled=capture_requested,
         fps=float(getattr(args, "video_fps", 15.0)),
     )
+    video_result: dict[str, Any] = {}
     try:
         simulation_app = ensure_simulation_app(args)
         scene_handle = create_scene(scene_config, simulation_app=simulation_app)
@@ -1608,6 +1604,15 @@ def run_fsm_locked(
                 max_ground_correction_m=0.10,
             ),
         )
+        video_started = bool(video.start())
+        if video_started:
+            try:
+                adapter.attach_artifact_render_observer(video)
+            except Exception as exc:
+                video.error = (
+                    "viewport observer attach failed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
         # Formal worker-equivalent path.  Historical environment-lock poses
         # are comparison evidence and are never written before grounding.
         ground = initialize_adapter_ground_reference(adapter)
@@ -1647,7 +1652,6 @@ def run_fsm_locked(
                 "filtered contact instrumentation unavailable: "
                 + str(scene_handle.contact_sensor_error)
             )
-        video.start()
         video_manifest_path = batch_root / "viewport_video_manifest.json"
         for run_index in range(1, run_count + 1):
             result = _run_one_controller_episode(
@@ -1666,7 +1670,13 @@ def run_fsm_locked(
             _write_json(batch_root / "batch_results.json", results)
             if result.get("classification") == "RUNNER_EXCEPTION":
                 break
-        video_result = video.finalize()
+        video_result = _finalize_runtime_viewport_video(
+            recorder=video,
+            adapter=adapter,
+            batch_root=batch_root,
+            runner=runner,
+            capture_requested=capture_requested,
+        )
         source_post = runner._source_freeze(robot_usd=robot_usd)
         source_integrity = runner._compare_source_freezes(source_freeze, source_post)
         for result in results:
@@ -1708,15 +1718,29 @@ def run_fsm_locked(
         )
         exit_code = 1
     finally:
-        if not (batch_root / "viewport_video_manifest.json").is_file():
+        if not video_result:
             try:
-                video_result = video.finalize()
+                video_result = _finalize_runtime_viewport_video(
+                    recorder=video,
+                    adapter=adapter,
+                    batch_root=batch_root,
+                    runner=runner,
+                    capture_requested=capture_requested,
+                )
             except Exception as exc:
-                video_result = {"valid": False, "error": str(exc)}
-        else:
-            video_result = json.loads(
-                (batch_root / "viewport_video_manifest.json").read_text(encoding="utf-8")
-            )
+                video_result = {
+                    "valid": False,
+                    "artifact_valid": False,
+                    "actual_viewport_video": False,
+                    "video_path": str(
+                        batch_root / "actual_viewport_video.mp4"
+                    ),
+                    "error": str(exc),
+                }
+                _write_json(
+                    batch_root / "viewport_video_manifest.json",
+                    video_result,
+                )
         try:
             batch_source_comparison = runner._compare_source_freezes(
                 source_freeze, runner._source_freeze(robot_usd=robot_usd)

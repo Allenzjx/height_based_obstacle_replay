@@ -1,0 +1,17 @@
+{
+  "adapter_runtime_instance_id": "4ad2a1ffcb284ca4ad8c47953f11b997",
+  "artifact_request_id": "00b834b01b5547b0a5bd73209ea75147",
+  "artifact_request_sha256": "83a510ee8d00c24a2be01d08bc3439c8ba1d30f9fb07e84da2b3b6f501f2519f",
+  "batch_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T203256_266975Z_recording_replays_8a05c85769",
+  "child_pid": 38548,
+  "close_error": "RuntimeError: formal worker close_returned ACK is missing",
+  "formal_worker_pid": 52864,
+  "formal_worker_session_id": "736fc04169d446aeaf761fd367be67bc",
+  "parent_pid": 49672,
+  "schema_version": "fsm50.supervisor_handshake.v1",
+  "sequence": 4,
+  "shutdown_mode": "fast",
+  "state": "CLOSE_ERROR",
+  "token": "37499dac56454741a4786018abb3954b",
+  "updated_utc": "2026-08-13T21:32:16.535247+00:00"
+}

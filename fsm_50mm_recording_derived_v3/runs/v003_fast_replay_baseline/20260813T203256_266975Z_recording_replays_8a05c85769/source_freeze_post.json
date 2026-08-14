@@ -1,0 +1,390 @@
+{
+  "created_utc": "2026-08-13T21:32:09.812600+00:00",
+  "files": {
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\__init__.py": {
+      "sha256": "4e19208805886e1e06365ea35adb56e4dadd9f5f3eb82cc90662ec6d879a7b79",
+      "size_bytes": 59
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\capture_selected_run_baseline.py": {
+      "sha256": "09e640fc53d0b252758764df8050dd7861632518ca7a1477942896a4f38fc337",
+      "size_bytes": 2261
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\command_model.py": {
+      "sha256": "70f1e4183fc711f1dcded5d44a45c661960a383634b252c944ca21705c86e905",
+      "size_bytes": 10040
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\environment_reference.yaml": {
+      "sha256": "822c8e47d75de92e2165a99875a2de484425b25cf15e7404481b60cf05f81604",
+      "size_bytes": 414
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\fsm_recording_baseline.yaml": {
+      "sha256": "399e08d6395e7bb82fefaa03542d9829e937113967900c63802ef4ec09cc1ae1",
+      "size_bytes": 6105
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\real_robot_motion_reference.yaml": {
+      "sha256": "143bbb71fe50fcde22360901552f36b397b9d102bde21172213bf3a316333747",
+      "size_bytes": 842
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\telemetry.yaml": {
+      "sha256": "b7e1d5471e873c1f81b1533090ff847b75d6c2557fdb74d61bd3bbc2734dfd6d",
+      "size_bytes": 1256
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\__init__.py": {
+      "sha256": "21ef6584482005cf3b725490b8db1de47c93a31bbfd9cf016688c1f2e3571ca2",
+      "size_bytes": 98
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\com_transfer_primitives.py": {
+      "sha256": "6069b4e7bbc6f25eb164926fbde83fed1ff9a03e9a451240783b6d3904e19fbf",
+      "size_bytes": 56166
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\environment_ab_artifacts.py": {
+      "sha256": "3b9292295f456e2231ed2b4aad742a6a9c06d53c7bf473e7077d34424092ca59",
+      "size_bytes": 123598
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\environment_equivalence.py": {
+      "sha256": "e1beb683b9f823d864e05911ee54a89621f93fffd35e6ff30ca78612bc4519e0",
+      "size_bytes": 31157
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\filtered_wheel_contact.py": {
+      "sha256": "522fa824254cb13aaf59b2f77688e2ba3272406f21b494b84d36542c0ce57c46",
+      "size_bytes": 22981
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_config.yaml": {
+      "sha256": "cbc64f3fa265e60c34f9aaa2fc773a4734920bf1e9a94d8d24226e47d08cb05d",
+      "size_bytes": 34950
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_controller.py": {
+      "sha256": "7d3a791247e1a827d5ff799778d9807520cfdc57697e95bbb28f5488235bcfcb",
+      "size_bytes": 38393
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_executor.py": {
+      "sha256": "451cc36c94ee1a66f6c073ca94cc5ea30b97b4fa370301db89da50120b632730",
+      "size_bytes": 40162
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_guard_registry.py": {
+      "sha256": "d5a1b6d3609d1bebacfea4e13251965c4824cf7202feb1b207ef38f0a246dcf3",
+      "size_bytes": 47455
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_isaac_runtime.py": {
+      "sha256": "12b6b89888e9583a03a4bc7c7803c7e6261b9c2651715f3827b74281133fc286",
+      "size_bytes": 75197
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_observation.py": {
+      "sha256": "e9d91358366f2751c05429afbc4fe699a35aa7a78edfed242df4ce7e8cec0289",
+      "size_bytes": 45203
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_state_model.py": {
+      "sha256": "0dd0eb77a8e7eb9aac997ee6a01ed93d08f2d1c1ff0b9ef10ecda23d11c01b1d",
+      "size_bytes": 35103
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_state_restore.py": {
+      "sha256": "a3bc2f547b14022b3c95543136f27ae4053118201bc862a31a740551c60c20dc",
+      "size_bytes": 21398
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\fsm50_telemetry.py": {
+      "sha256": "7b2ac29640f0bda9449ff0f8cd1f26a72909db44e27cd86b9ed14301ff833fdd",
+      "size_bytes": 98739
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\grounding_diagnostics.py": {
+      "sha256": "c19f3c08fc63eb973e05d9836268d43fe2f1565e6d9467d3a9af6dc5af182d69",
+      "size_bytes": 26288
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\instrumented_physical_gate.py": {
+      "sha256": "9419ec0d2b67639e4f3ed96d1ca6bdbd9762024664be0662f4c4743967eab26a",
+      "size_bytes": 51104
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\kinematics_sign_validation.py": {
+      "sha256": "825cf7d2972adefa05b2e2edf2efd2f87e72d6075657e8034e67b049eeb2817e",
+      "size_bytes": 13297
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\motion_start_readiness.py": {
+      "sha256": "14d527a11f66932e76bf7e403a503b5dc6af3c1d98c7cc681eed58faf516a135",
+      "size_bytes": 24542
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\nonwheel_obstacle_contact.py": {
+      "sha256": "f997b0b4955bfcc606278f303c405eb29168e60b839affaa35a4fb600beb422f",
+      "size_bytes": 34072
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\physx_contact_separation.py": {
+      "sha256": "271714cf2c9dc3af5c9512d266cac221604682e4a0435a77c1667eab0b33ee01",
+      "size_bytes": 21275
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_alignment.py": {
+      "sha256": "e86b092d43babf2b7076c1584b0b51a0b6ce91e733b8999ed7f235711cc0a280",
+      "size_bytes": 37647
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_audit.py": {
+      "sha256": "177bf93c9abf2fb88f3bb750ee47c43b5b38cb2dabd9f6ee223859eaaf3641b5",
+      "size_bytes": 28305
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_corpus_audit.py": {
+      "sha256": "eb02dd4ca708dacec5134671615efab17a40bfa3f9708f729914669597d179d2",
+      "size_bytes": 102900
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\recording_fast_plan.py": {
+      "sha256": "3661860d0b2a901a2b4fb7e6c0e9ae7f35a3aba54348df69fe9747cd04c816e5",
+      "size_bytes": 28328
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\run_fsm50.py": {
+      "sha256": "917eb7e2e74c24e579c46fea8d148e7819224308c91ec98e52e9a6bcf5785602",
+      "size_bytes": 330288
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\shutdown_contract.py": {
+      "sha256": "5629c255eef8a3f13c853d71fa90b19360b7177286ebdbf6a880e9b2ea1e4fc8",
+      "size_bytes": 9702
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\support_classifier.py": {
+      "sha256": "b42a1333fba6cb072be2f483eb911066e8c6919a3349eab9fc491b10bc750fec",
+      "size_bytes": 68694
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\v003_static_provenance.py": {
+      "sha256": "fc7bba8b4dfb5a376168fca5d8b99a6012faa7e9f320cc65632ffc458d5cb304",
+      "size_bytes": 55434
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\viewport_buffer_video.py": {
+      "sha256": "9812b3896b843eda3db20a517856dc45b3637c91894172ffe9def613b6409a2b",
+      "size_bytes": 22374
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\wheel_integral_evidence.py": {
+      "sha256": "60c972ba5d3aa6112455c1bb46a6a3e79bba466d24b7f5d12f76e1a6dc16fd99",
+      "size_bytes": 33333
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\worker_recording_session.py": {
+      "sha256": "060f57c80273a0113f3d48ff79d614f2382f9c0a755f5d5128edeb7a680c613e",
+      "size_bytes": 60811
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\generate_completion_fix_report.py": {
+      "sha256": "6b3980c1a430c6435904207ecc90283e64d2f50aedb8865cd612ed6cb124f136",
+      "size_bytes": 27803
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\generate_fix_50mm_pose_report.py": {
+      "sha256": "e285c20b39df3d71d7a6a8b48b7b2c7042616326f41a80efcd291d138e11f62f",
+      "size_bytes": 30168
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\generate_selected_pose_run_management_report.py": {
+      "sha256": "61a62184b7e1d665ed4a7e542e842dcf6165129fefff19ed08c5869cd915f232",
+      "size_bytes": 26938
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_generate_panel.py": {
+      "sha256": "75de03ffee735f10b96f8865862a7136a51519cb3a738616265f4b6741469f1d",
+      "size_bytes": 12645
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_manifest.py": {
+      "sha256": "2171e80d313b508d2f6750f9dcdbeff67bd716753eadd7da8cfe3970952511d6",
+      "size_bytes": 8202
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_replay_ui.py": {
+      "sha256": "e6302c39a39e92cced3d5ebd86843dd9b9d22dbed613822b3ecb43006863d94d",
+      "size_bytes": 20950
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_sequence_store.py": {
+      "sha256": "37dc67f909fd0481516e3d3004b09aed6f0839075e290105482513315794cd1d",
+      "size_bytes": 5192
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_version_store.py": {
+      "sha256": "be59a279b9b0f030f2d9d6111f5c0e88895010c06fe5e78f2a771c2bae1cf7cb",
+      "size_bytes": 23406
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\height_wheel_servo_batch_replay_completion_e2e.py": {
+      "sha256": "852af537b686437a2fa40e2b7bbc61dc95c17c25f09683d3fbbd5c64a71c55e4",
+      "size_bytes": 33653
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\isaac_launch_preflight.py": {
+      "sha256": "0cf42872bfaaec262e33f05cf80cc9ca42f61e4f6ee95a49106701515f06b40e",
+      "size_bytes": 17957
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\knee_limit_real_e2e.py": {
+      "sha256": "e380e31f7c880085523c1deb561d322e5eba2347c0e2dba78ca1094162ec54c3",
+      "size_bytes": 5352
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\latest_50mm_manual_v2_e2e.py": {
+      "sha256": "7310b859317f5197d378a2c0d7c3ee357e7c3be7a8042dd5a9658f77b5e81bbb",
+      "size_bytes": 21771
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\motion_speed.py": {
+      "sha256": "5e41f5501b841ff7764ee6c2a9975afb256d6c121d22519ffc38842737b49421",
+      "size_bytes": 3973
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\operation_coordinator.py": {
+      "sha256": "8ccbfaa0ac42b66eee91d793f89caa2e5073cdc3db9829e404271f28f64bc681",
+      "size_bytes": 3028
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\play_selected_fast_physical_click_e2e.py": {
+      "sha256": "e1053760b76467b47b9b8da25e4df7f88d75711c6619e16a4e24ab937107b918",
+      "size_bytes": 26815
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback.py": {
+      "sha256": "175ababc98ca7bbfadbab99d8bc12ec71a46ae42b2d275b65d7b16ea18653f99",
+      "size_bytes": 158291
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback_availability.py": {
+      "sha256": "99a09dc630390ed1da51c79f4020ae1aa4f440f2b16585b441c6141b92c7292d",
+      "size_bytes": 2678
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\playback_progress.py": {
+      "sha256": "157b5a200420429b252d2ada7af334ccb2616c39ff449f39df0246c85735076a",
+      "size_bytes": 1413
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\pose_checkpoint_selected_fast_e2e.py": {
+      "sha256": "9f609cc89c9f397d6be2fc7eb4c1fa8d05ca0eaec6e2e718505054a6fd359107",
+      "size_bytes": 27812
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\recording_baseline.py": {
+      "sha256": "20a95cd4465fb65207f3c14fd959cb3817ba20be98c0ed9b65204a3ace982d2f",
+      "size_bytes": 9730
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\recording_baseline_gui_e2e.py": {
+      "sha256": "1a354a3acf4fe4dd2866b13a48211eded83d2c7ae03a5e1a4b45f883346376c6",
+      "size_bytes": 31172
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\robot_ground_diagnostics.py": {
+      "sha256": "2212273dea05e047b92b861cad096eb6b2abd9ff44b4dbb1b4b76f982da6508e",
+      "size_bytes": 79868
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\run_management_gui_e2e.py": {
+      "sha256": "5f2836ae412691d626a6a6643a5c0327341d1f1e857a5a89fffc0b38f22accf6",
+      "size_bytes": 15370
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\selected_step_previous_saved_state_e2e.py": {
+      "sha256": "506a4c48cd273c853dc9426ec5b7024c309230bcd971f6df5614f68e8e03c273",
+      "size_bytes": 22596
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sequence_manager.py": {
+      "sha256": "860711b6c84d98a737256ab21b74d9af1d95d00cb3ddf4fd28f64c983e3776e8",
+      "size_bytes": 7782
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sequence_model.py": {
+      "sha256": "f2d6ffbb6901dd985149154cc3308341a1b8fd0014224dd9f1520c0b769630a0",
+      "size_bytes": 33181
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_ipc_protocol.py": {
+      "sha256": "eb62dd97a2bed68bab82cab12e8fcfcc135a64fca29d984052c6785518e1e4d3",
+      "size_bytes": 2608
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_obstacle_scene.py": {
+      "sha256": "32747b6ee542614529b8f308bf8de09325cea1c70871b967704cb8fede93a745",
+      "size_bytes": 37255
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_process_client.py": {
+      "sha256": "37d90cb4b1c9cc089e0883d6120e4423d9cb58d92d7a5c6c32e951b6f441267f",
+      "size_bytes": 62437
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_robot_adapter.py": {
+      "sha256": "04966b8100eeb33ea55de78eaa5a74bbc3662030f82ba4d458eb429608ed64d4",
+      "size_bytes": 165756
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_state_validation.py": {
+      "sha256": "81b83bdd204fcbbbfad3e2ba3076c423bd7f494e5cd40bbb88dd9b5c769ab3d0",
+      "size_bytes": 11774
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_transport.py": {
+      "sha256": "b482eb32572dc8b3418dd1a408d284a882dfefa8efd66113d584df49bc934d3e",
+      "size_bytes": 10062
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_ui_controller.py": {
+      "sha256": "a9f3d903407319630419051133385f107dc02bfdefb57d6995ad74698b1427e5",
+      "size_bytes": 295362
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_worker_process.py": {
+      "sha256": "99cf00d10c865f090e770c6767fa511f0bc92bf0dc193eb184fc1db63b53e37a",
+      "size_bytes": 112343
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_worker_runtime.py": {
+      "sha256": "375b90c6e217b3e94bb42eee9bd0478b0af20a7a1890616d6afd4580c3224984",
+      "size_bytes": 43287
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\task_separation_gui_e2e.py": {
+      "sha256": "06235e45b63572b6e3e869a53c06fa5f9795ad7155cb3b237149219ca95f898c",
+      "size_bytes": 16735
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\__init__.py": {
+      "sha256": "32f1e64dc531a57cbc0a21ad50d06cf37a2e29719adb529771c081dbf780d798",
+      "size_bytes": 344
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\collector.py": {
+      "sha256": "73d07b35c85c5b6a5e506882c9ced5ac0cc50b69a6f7980b80fb1ec59496a801",
+      "size_bytes": 58475
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\com_metrics.py": {
+      "sha256": "e7d15c004d3a7e81d91f059019d2dff30301d9b74f10e362a0683410b3696135",
+      "size_bytes": 4989
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\config.py": {
+      "sha256": "818c4d6e936bafe2186e5503efc5becaa5b06a8d69f3fc23e1e6bf100f824901",
+      "size_bytes": 9803
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\contact_metrics.py": {
+      "sha256": "8eb17440d820199b82d36ce3972dcaf9c780bd3d458a77d007a83c73915976cf",
+      "size_bytes": 14240
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\data_quality.py": {
+      "sha256": "104256a935f9e6c1641f9897eef9091ad832c84a58ae8eddc95065f6800f6e3a",
+      "size_bytes": 5478
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\event_recorder.py": {
+      "sha256": "f98929751eeba741ee97ade54db8efd53b668c5f3cc969ad079228bc86d2a4ef",
+      "size_bytes": 3263
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\exporters.py": {
+      "sha256": "424410b61f936c4c89fea087a05f0d4c005fdf54f7dfc17ee461d6b9c4bdc904",
+      "size_bytes": 11703
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\joint_metrics.py": {
+      "sha256": "f9eb76add84ea7dd132e4babf32d42483658a7344f031c89167cec541c180ccc",
+      "size_bytes": 9519
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\live_buffer.py": {
+      "sha256": "fc76049daae78942a5362bf66ca4cb748e3ebfa27c4aeae82d34daeb7635c9e2",
+      "size_bytes": 1689
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\live_packet.py": {
+      "sha256": "df4763a00749045ab703a6d1036078da99ccaa07ec4f97240e6d59872f5a294e",
+      "size_bytes": 6041
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\model_audit.py": {
+      "sha256": "e306d271d807972e38415aa002df66f51f77ed32838df54536ac605bd229f6fe",
+      "size_bytes": 8947
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\physical_success.py": {
+      "sha256": "0c8fe5799d10c02d1367ff9b7ba280b565ddf4a4e4691ee45046d35b1b0e1f51",
+      "size_bytes": 15175
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\replay_metrics.py": {
+      "sha256": "39cd3915d4eae5e4385e3e1232953d5195e39749bda13dbac7921d05eb66a63e",
+      "size_bytes": 2407
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\stability_metrics.py": {
+      "sha256": "594b54dcdd14626d9edc829e7225d0fc8162b44cc12c250772885e9b7a43a08b",
+      "size_bytes": 18419
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\__init__.py": {
+      "sha256": "aff8c75b64001374caa14de9a46e205923ad523e53a506cdeecb7870afa2dddd",
+      "size_bytes": 44
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\live_overlay.py": {
+      "sha256": "0ef6b820d86859604a0fe7af952415beb606bc6117310a71cba811a6d148bced",
+      "size_bytes": 5223
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\telemetry\\visualization\\report_generator.py": {
+      "sha256": "426c5a3b5cbcbdb9d13f45dec96d88129ec043e5b452edacf3137ee0878599fc",
+      "size_bytes": 13760
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\ui_motion_speed_height_version_e2e.py": {
+      "sha256": "40e37270bbaccda12da173b64b9866bd5d79ef0254a50d00c449d60fccc187c7",
+      "size_bytes": 53891
+    },
+    "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\worker_startup_diagnostics.py": {
+      "sha256": "fdce05eb1c553f344dad449c6d3bbe6fa0fe9ccce8df66f225942b94309ec3c7",
+      "size_bytes": 7077
+    },
+    "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd": {
+      "sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+      "size_bytes": 45607185
+    }
+  },
+  "git": {
+    "branch": "main",
+    "head": "b3a6446cf743ad4d8d91dc6ea2fdb0bf2b5f752a",
+    "status_porcelain": "M fsm_50mm_recording_derived_v3/environment_ab_artifacts.py\n M fsm_50mm_recording_derived_v3/filtered_wheel_contact.py\n M fsm_50mm_recording_derived_v3/fsm50_isaac_runtime.py\n M fsm_50mm_recording_derived_v3/fsm50_telemetry.py\n M fsm_50mm_recording_derived_v3/grounding_diagnostics.py\n M fsm_50mm_recording_derived_v3/nonwheel_obstacle_contact.py\n M fsm_50mm_recording_derived_v3/reports/environment_lock_50mm.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v003_20260805_224517_157723_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v005_20260805_225441_439112_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v006_20260805_233948_654778_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v007_20260806_190636_100857_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v008_20260806_211408_578700_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v009_20260806_215232_433234_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v010_20260806_220745_363972_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v011_20260806_223621_672618_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/reports/recording_fast_plans/v012_20260806_231025_027004_manual_fast_plan.json\n M fsm_50mm_recording_derived_v3/run_fsm50.py\n M fsm_50mm_recording_derived_v3/shutdown_contract.py\n M fsm_50mm_recording_derived_v3/support_classifier.py\n M fsm_50mm_recording_derived_v3/tests/test_environment_ab_artifacts.py\n M fsm_50mm_recording_derived_v3/tests/test_fsm50_isaac_runtime_contract.py\n M fsm_50mm_recording_derived_v3/tests/test_grounding_diagnostics.py\n M fsm_50mm_recording_derived_v3/tests/test_recording_and_support.py\n M fsm_50mm_recording_derived_v3/tests/test_recording_viewport_video_contract.py\n M fsm_50mm_recording_derived_v3/tests/test_runner_contract.py\n M fsm_50mm_recording_derived_v3/tests/test_shutdown_contract.py\n M playback.py\n M robot_ground_diagnostics.py\n M sim_ipc_protocol.py\n M sim_process_client.py\n M sim_robot_adapter.py\n M sim_transport.py\n M sim_worker_process.py\n M telemetry/collector.py\n M telemetry/event_recorder.py\n M telemetry/exporters.py\n M tests/test_exporters.py\n M tests/test_fsm50_filtered_wheel_contact.py\n M tests/test_fsm50_nonwheel_obstacle_contact.py\n M tests/test_ground_settle_adaptive.py\n M tests/test_height_wheel_servo_batch_replay_completion_fix.py\n M tests/test_telemetry_replay_finish.py\n?? fsm_50mm_recording_derived_v3/instrumented_physical_gate.py\n?? fsm_50mm_recording_derived_v3/physx_contact_separation.py\n?? fsm_50mm_recording_derived_v3/reports/V003_FAST_REPLAY_BASELINE.md\n?? fsm_50mm_recording_derived_v3/runs/v003_fast_replay_baseline/\n?? fsm_50mm_recording_derived_v3/tests/test_fsm50_telemetry_role_evidence.py\n?? fsm_50mm_recording_derived_v3/tests/test_instrumented_physical_gate.py\n?? fsm_50mm_recording_derived_v3/tests/test_physx_contact_separation.py\n?? fsm_50mm_recording_derived_v3/tests/test_viewport_buffer_video.py\n?? fsm_50mm_recording_derived_v3/tests/test_wheel_integral_evidence.py\n?? fsm_50mm_recording_derived_v3/viewport_buffer_video.py\n?? fsm_50mm_recording_derived_v3/wheel_integral_evidence.py\n?? fsm_50mm_recording_derived_v3/worker_recording_session.py\n?? tests/test_live_collider_mesh_cache.py\n?? tests/test_telemetry_checkpoint_journal.py\n?? tests/test_worker_recording_ipc_contract.py"
+  }
+}

@@ -30,7 +30,11 @@ from command_model import (
     split_semicolon_commands,
     validate_motion_command,
 )
-from playback import PlaybackPlan, plan_from_steps
+from playback import (
+    SERVO_COMPLETION_VELOCITY_DEG_S,
+    PlaybackPlan,
+    plan_from_steps,
+)
 from motion_speed import MotionReference, load_motion_reference
 from recording_baseline import WHEEL_PHYSICAL_STOP_NOISE_FLOOR_RAD_S
 from robot_ground_diagnostics import (
@@ -52,6 +56,11 @@ PHYSX_SAFE_LIMIT_MAX_RAD = 2.0 * math.pi
 PHYSX_WRITE_LIMIT_MARGIN_RAD = 1.0e-6
 PHYSX_TARGET_QUANTIZATION_MARGIN_RAD = 1.0e-5
 REAL_MOTION_REFERENCE = load_motion_reference()
+SERVO_TRACKING_CONVERGENCE_BAND_DEG = 0.75
+SERVO_TRACKING_PHASE_DAMP = "DAMP"
+SERVO_TRACKING_PHASE_HOLD = "HOLD"
+SERVO_TRACKING_PHASE_TRACK = "TRACK"
+SERVO_TRACKING_PHASE_INVALID = "INVALID"
 
 
 @dataclass
@@ -165,8 +174,18 @@ class SimRobotAdapter:
         self.root_state_write_events: list[dict[str, Any]] = []
         self.command_state = empty_command_state()
         self.telemetry_collector: Any | None = None
+        self.artifact_render_observer: Any | None = None
+        self.artifact_render_observer_errors: list[str] = []
         self.motion_reference: MotionReference = load_motion_reference()
         self.motion_batch_status: dict[str, Any] = {}
+        # Static collider mesh vertices are immutable for the lifetime of this
+        # adapter/stage.  Ground diagnostics still applies the live body pose
+        # on every sample; only the expensive USD mesh traversal and
+        # mesh-to-body transform are cached.
+        self._collider_body_local_geometry_cache: dict[str, Any] = {
+            "stage": None,
+            "entries": {},
+        }
 
         self.servo_joint_ids = self._resolve_exact_joint_ids(SERVO_JOINT_NAMES)
         self.wheel_joint_ids = self._resolve_exact_joint_ids(WHEEL_JOINT_NAMES)
@@ -202,6 +221,10 @@ class SimRobotAdapter:
         self.servo_tracking_compensation_deg = {name: 0.0 for name in SERVO_JOINT_NAMES}
         self.servo_tracking_active = {name: False for name in SERVO_JOINT_NAMES}
         self.servo_tracking_stable_ticks = {name: 0 for name in SERVO_JOINT_NAMES}
+        self.servo_tracking_feedback_evidence = {
+            name: self._empty_servo_tracking_feedback_evidence()
+            for name in SERVO_JOINT_NAMES
+        }
         self.servo_tracking_feedback_tick = 0
         self.servo_motion_enabled = True
         self.wheel_speeds = {name: 0.0 for name in WHEEL_JOINT_NAMES}
@@ -244,6 +267,59 @@ class SimRobotAdapter:
 
     def attach_telemetry(self, collector: Any | None) -> None:
         self.telemetry_collector = collector
+
+    def attach_artifact_render_observer(self, observer: Any) -> None:
+        """Attach one evidence observer to the adapter's existing renders."""
+
+        if observer is None:
+            raise ValueError("artifact render observer cannot be None")
+        if not callable(getattr(observer, "before_render", None)) or not callable(
+            getattr(observer, "after_render", None)
+        ):
+            raise TypeError(
+                "artifact render observer requires before_render/after_render"
+            )
+        current = getattr(self, "artifact_render_observer", None)
+        if current is not None and current is not observer:
+            raise RuntimeError("another artifact render observer is already attached")
+        self.artifact_render_observer = observer
+
+    def detach_artifact_render_observer(self, observer: Any) -> None:
+        if getattr(self, "artifact_render_observer", None) is observer:
+            self.artifact_render_observer = None
+
+    def _record_artifact_render_error(self, phase: str, exc: Exception) -> None:
+        error = f"{phase}: {type(exc).__name__}: {exc}"
+        errors = getattr(self, "artifact_render_observer_errors", None)
+        if not isinstance(errors, list):
+            errors = []
+            self.artifact_render_observer_errors = errors
+        errors.append(error)
+        observer = getattr(self, "artifact_render_observer", None)
+        if observer is not None and hasattr(observer, "error"):
+            try:
+                if not str(getattr(observer, "error", "") or ""):
+                    setattr(observer, "error", error)
+            except Exception:
+                pass
+
+    def _before_artifact_render(self, *, sim_step: int, sim_time_s: float) -> None:
+        observer = getattr(self, "artifact_render_observer", None)
+        if observer is None:
+            return
+        try:
+            observer.before_render(sim_step=int(sim_step), sim_time_s=float(sim_time_s))
+        except Exception as exc:
+            self._record_artifact_render_error("before_render", exc)
+
+    def _after_artifact_render(self) -> None:
+        observer = getattr(self, "artifact_render_observer", None)
+        if observer is None:
+            return
+        try:
+            observer.after_render()
+        except Exception as exc:
+            self._record_artifact_render_error("after_render", exc)
 
     def _record_root_state_write(self, operation: str) -> None:
         """Audit explicit adapter root-state writes without changing behavior."""
@@ -414,6 +490,7 @@ class SimRobotAdapter:
                 self.servo_tracking_compensation_deg[name] = 0.0
                 self.servo_tracking_active[name] = False
                 self.servo_tracking_stable_ticks[name] = 0
+                self._invalidate_servo_tracking_feedback_evidence(name)
         for name in self.wheel_speeds:
             self.wheel_speeds[name] = 0.0
         self.servo_cmd_targets = self._targets_from_command_angles()
@@ -462,6 +539,7 @@ class SimRobotAdapter:
             self.servo_tracking_compensation_deg[name] = 0.0
             self.servo_tracking_active[name] = False
             self.servo_tracking_stable_ticks[name] = 0
+            self._invalidate_servo_tracking_feedback_evidence(name)
         self.stop_wheels()
         self.servo_cmd_targets = self._targets_from_command_angles()
         self.command_state = self.capture_command_state()
@@ -485,6 +563,10 @@ class SimRobotAdapter:
         self.servo_tracking_compensation_deg = {name: 0.0 for name in SERVO_JOINT_NAMES}
         self.servo_tracking_active = {name: False for name in SERVO_JOINT_NAMES}
         self.servo_tracking_stable_ticks = {name: 0 for name in SERVO_JOINT_NAMES}
+        self.servo_tracking_feedback_evidence = {
+            name: self._empty_servo_tracking_feedback_evidence()
+            for name in SERVO_JOINT_NAMES
+        }
         self.servo_cmd_targets = self._targets_from_command_angles()
         self.command_state = self.capture_command_state()
         self.apply_commands_to_robot()
@@ -741,13 +823,23 @@ class SimRobotAdapter:
             if substeps_per_render > 1:
                 self.sim.step(render=False)
             else:
+                self._before_artifact_render(
+                    sim_step=int(self.sim_steps) + 1,
+                    sim_time_s=float(self.sim_time) + dt,
+                )
                 self.sim.step()
+                self._after_artifact_render()
             self.sim_time += dt
             self.sim_steps += 1
             self.robot.update(dt)
             steps_run += 1
             if substeps_per_render > 1 and ((step_index + 1) % substeps_per_render == 0 or step_index + 1 == configured_steps):
+                self._before_artifact_render(
+                    sim_step=int(self.sim_steps),
+                    sim_time_s=float(self.sim_time),
+                )
                 self.sim.render()
+                self._after_artifact_render()
             root_z = self._current_root_z()
             root_velocity_state = self._ground_root_velocity_snapshot()
             root_velocity = list(root_velocity_state["values"])
@@ -921,6 +1013,26 @@ class SimRobotAdapter:
             else:
                 stable_frames = 0
             frame["stable_count"] = int(stable_frames)
+            final_evidence_render = False
+            if (
+                stable_frames >= stable_required
+                and substeps_per_render > 1
+                and (step_index + 1) % substeps_per_render != 0
+            ):
+                # Early qualification must not leave the final stable physics
+                # state absent from viewport evidence.  This is one render of
+                # the current state only: no app.update and no physics tick.
+                self._before_artifact_render(
+                    sim_step=int(self.sim_steps),
+                    sim_time_s=float(self.sim_time),
+                )
+                self.sim.render()
+                self._after_artifact_render()
+                final_evidence_render = True
+            frame["final_evidence_render"] = bool(final_evidence_render)
+            frame["render_performed"] = bool(
+                frame["render_performed"] or final_evidence_render
+            )
             # Qualification consumes only this canonical adapter-owned frame.
             # A diagnostic observer may enrich its own emitted copy but cannot
             # alter stability counters, rolling evidence, or acceptance.
@@ -1434,7 +1546,12 @@ class SimRobotAdapter:
             if substeps > 1:
                 self.sim.step(render=False)
             else:
+                self._before_artifact_render(
+                    sim_step=int(self.sim_steps) + 1,
+                    sim_time_s=float(self.sim_time) + physics_dt,
+                )
                 self.sim.step()
+                self._after_artifact_render()
             self.sim_time += physics_dt
             self.sim_steps += 1
             self.robot.update(physics_dt)
@@ -1445,7 +1562,12 @@ class SimRobotAdapter:
                 except Exception as exc:
                     print(f"[WARN] Telemetry step failed: {exc}")
         if substeps > 1:
+            self._before_artifact_render(
+                sim_step=int(self.sim_steps),
+                sim_time_s=float(self.sim_time),
+            )
             self.sim.render()
+            self._after_artifact_render()
 
     def _render_step_timing(self) -> tuple[float, int]:
         """Return actual simulation elapsed by one ``sim.step()`` call."""
@@ -1478,6 +1600,85 @@ class SimRobotAdapter:
                 motion_profile="fixed_100_percent",
             )
 
+    @staticmethod
+    def _empty_servo_tracking_feedback_evidence() -> dict[str, Any]:
+        return {
+            "sample_tick": -1,
+            "phase": SERVO_TRACKING_PHASE_INVALID,
+            "sample_valid": False,
+            "actual_error_deg": None,
+            "measured_velocity_deg_s": None,
+            "damping_horizon_s": None,
+        }
+
+    def _invalidate_servo_tracking_feedback_evidence(self, name: str) -> None:
+        evidence = getattr(self, "servo_tracking_feedback_evidence", None)
+        if not isinstance(evidence, dict):
+            evidence = {}
+            self.servo_tracking_feedback_evidence = evidence
+        evidence[name] = self._empty_servo_tracking_feedback_evidence()
+
+    @staticmethod
+    def _servo_tracking_correction_step(
+        *,
+        actual_error_deg: float,
+        measured_velocity_deg_s: float | None,
+        command_sign: float,
+        previous_correction_deg: float,
+        previous_phase: str,
+        maximum_delta_deg: float,
+        gain: float,
+        limit_deg: float,
+        physics_dt_s: float,
+        feedback_interval_ticks: int,
+    ) -> tuple[float, str, float]:
+        """Advance the production UI's historical load-error correction.
+
+        Fast Replay used the same configured gain, correction clamp, and
+        trajectory-rate slew for every finite position sample.  Velocity and
+        phase are accepted here only so the evidence schema can retain them;
+        neither is allowed to alter the drive target.
+        """
+
+        error = float(actual_error_deg)
+        previous = float(previous_correction_deg)
+        limit = max(0.0, float(limit_deg))
+        # Keep these arguments in the stable evidence-facing signature without
+        # permitting them to influence the production control law.
+        _ = (
+            measured_velocity_deg_s,
+            previous_phase,
+            physics_dt_s,
+            feedback_interval_ticks,
+        )
+        desired = clamp(
+            (error / float(command_sign)) * max(0.0, float(gain)),
+            -limit,
+            limit,
+        )
+        delta = clamp(
+            desired - previous,
+            -max(0.0, float(maximum_delta_deg)),
+            max(0.0, float(maximum_delta_deg)),
+        )
+        correction = clamp(previous + delta, -limit, limit)
+        phase = (
+            SERVO_TRACKING_PHASE_HOLD
+            if abs(error) <= SERVO_TRACKING_CONVERGENCE_BAND_DEG
+            and math.isclose(
+                correction,
+                desired,
+                rel_tol=0.0,
+                abs_tol=1.0e-9,
+            )
+            else SERVO_TRACKING_PHASE_TRACK
+        )
+        return (
+            correction,
+            phase,
+            desired,
+        )
+
     def _advance_servo_targets(self, dt: float) -> None:
         """Rate-limit the nominal path, then close bounded load deflection."""
 
@@ -1495,9 +1696,11 @@ class SimRobotAdapter:
             if bool(self.servo_nominal_target_reached.get(name, False)) and bool(self.servo_tracking_active.get(name, False))
         }
         feedback_interval = max(1, int(self.config.servo_tracking_feedback_interval_ticks))
-        sample_feedback = self.servo_tracking_feedback_tick % feedback_interval == 0
+        feedback_sample_tick = int(self.servo_tracking_feedback_tick)
+        sample_feedback = feedback_sample_tick % feedback_interval == 0
         self.servo_tracking_feedback_tick += 1
         measured_by_name: dict[str, float | None] = {}
+        measured_velocity_by_name: dict[str, float | None] = {}
         if feedback_names and sample_feedback:
             try:
                 # Synchronize only while a just-finished nominal target still
@@ -1507,6 +1710,26 @@ class SimRobotAdapter:
             except Exception:
                 measured_by_name = {
                     name: (None if (rad := self._measured_joint_rad(name)) is None else math.degrees(rad))
+                    for name in feedback_names
+                }
+            try:
+                velocities = self.robot.data.joint_vel[0, self.servo_joint_ids].detach().cpu().tolist()
+                measured_velocity_by_name = {
+                    name: math.degrees(float(velocities[index]))
+                    for index, name in enumerate(SERVO_JOINT_NAMES)
+                }
+            except Exception:
+                measured_velocity_by_name = {
+                    name: (
+                        None
+                        if (
+                            velocity_rad_s := self._tensor_joint_scalar(
+                                "joint_vel", self.servo_name_to_id[name]
+                            )
+                        )
+                        is None
+                        else math.degrees(velocity_rad_s)
+                    )
                     for name in feedback_names
                 }
         for name in SERVO_JOINT_NAMES:
@@ -1521,28 +1744,91 @@ class SimRobotAdapter:
                 else:
                     applied += math.copysign(maximum_delta, delta)
                 self.servo_tracking_compensation_deg[name] = 0.0
+                self._invalidate_servo_tracking_feedback_evidence(name)
             elif bool(self.servo_tracking_active.get(name, False)):
                 measured_deg = measured_by_name.get(name)
-                if measured_deg is None:
+                measured_velocity_deg_s = measured_velocity_by_name.get(name)
+                if (
+                    measured_deg is None
+                    or not math.isfinite(float(measured_deg))
+                ):
+                    if sample_feedback:
+                        self.servo_tracking_stable_ticks[name] = 0
+                        self.servo_tracking_feedback_evidence[name] = {
+                            "sample_tick": feedback_sample_tick,
+                            "phase": SERVO_TRACKING_PHASE_INVALID,
+                            "sample_valid": False,
+                            "actual_error_deg": None,
+                            "measured_velocity_deg_s": None,
+                            "damping_horizon_s": None,
+                        }
                     self.servo_applied_command_deg[name] = self._clamp_command_angle_deg(name, applied)
                     continue
+                velocity_sample_valid = bool(
+                    measured_velocity_deg_s is not None
+                    and math.isfinite(float(measured_velocity_deg_s))
+                )
                 logical_actual_deg = self.command_to_actual_target_deg(name, requested)
                 actual_error_deg = logical_actual_deg - measured_deg
                 sign = float(JOINT_COMMAND_SIGN[name])
                 gain = max(0.0, float(self.config.servo_tracking_compensation_gain))
                 limit = max(0.0, float(self.config.servo_tracking_compensation_max_deg))
                 previous_correction = float(self.servo_tracking_compensation_deg.get(name, 0.0))
-                desired_correction = clamp((actual_error_deg / sign) * gain, -limit, limit)
-                correction_delta = clamp(desired_correction - previous_correction, -maximum_delta, maximum_delta)
-                correction = clamp(previous_correction + correction_delta, -limit, limit)
+                previous_feedback = dict(
+                    self.servo_tracking_feedback_evidence.get(name, {}) or {}
+                )
+                correction, feedback_phase, desired_correction = self._servo_tracking_correction_step(
+                    actual_error_deg=actual_error_deg,
+                    measured_velocity_deg_s=(
+                        float(measured_velocity_deg_s)
+                        if velocity_sample_valid
+                        else None
+                    ),
+                    command_sign=sign,
+                    previous_correction_deg=previous_correction,
+                    previous_phase=str(
+                        previous_feedback.get("phase", "") or ""
+                    ),
+                    maximum_delta_deg=maximum_delta,
+                    gain=gain,
+                    limit_deg=limit,
+                    physics_dt_s=float(dt),
+                    feedback_interval_ticks=feedback_interval,
+                )
                 compensated = self._clamp_command_angle_deg(name, requested + correction)
                 correction = compensated - requested
+                if feedback_phase == SERVO_TRACKING_PHASE_HOLD and not math.isclose(
+                    correction,
+                    desired_correction,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                ):
+                    feedback_phase = SERVO_TRACKING_PHASE_TRACK
                 self.servo_tracking_compensation_deg[name] = correction
                 applied = compensated
-                if measured_deg is not None and abs(actual_error_deg) <= 0.75:
+                if abs(actual_error_deg) <= SERVO_TRACKING_CONVERGENCE_BAND_DEG:
                     self.servo_tracking_stable_ticks[name] = int(self.servo_tracking_stable_ticks.get(name, 0)) + 1
                 else:
                     self.servo_tracking_stable_ticks[name] = 0
+                self.servo_tracking_feedback_evidence[name] = {
+                    "sample_tick": feedback_sample_tick,
+                    "phase": feedback_phase,
+                    "sample_valid": True,
+                    "actual_error_deg": float(actual_error_deg),
+                    "measured_velocity_deg_s": (
+                        float(measured_velocity_deg_s)
+                        if velocity_sample_valid
+                        else None
+                    ),
+                    "velocity_sample_valid": velocity_sample_valid,
+                    "velocity_role": "diagnostic_only",
+                    "control_law": "historical_gain_clamp_slew",
+                    "velocity_threshold_deg_s": (
+                        SERVO_COMPLETION_VELOCITY_DEG_S
+                    ),
+                    "damping_horizon_s": None,
+                    "desired_correction_deg": float(desired_correction),
+                }
             self.servo_applied_command_deg[name] = self._clamp_command_angle_deg(name, applied)
 
     def begin_servo_tracking(self, joint_names: Any) -> None:
@@ -1552,13 +1838,140 @@ class SimRobotAdapter:
             name = resolve_servo_name(str(raw_name))
             self.servo_tracking_active[name] = True
             self.servo_tracking_stable_ticks[name] = 0
+            self._invalidate_servo_tracking_feedback_evidence(name)
 
-    def end_servo_tracking(self, joint_names: Any) -> None:
-        """Freeze the converged load bias after the segment completes."""
+    def servo_tracking_completion_evidence(
+        self, joint_names: Any
+    ) -> dict[str, Any]:
+        """Report convergence diagnostics without controlling segment end."""
 
+        rows: dict[str, dict[str, Any]] = {}
+        all_converged = True
+        limit = max(0.0, float(self.config.servo_tracking_compensation_max_deg))
+        feedback_interval = max(
+            1, int(self.config.servo_tracking_feedback_interval_ticks)
+        )
+        latest_feedback_tick = int(
+            getattr(self, "servo_tracking_feedback_tick", 0)
+        ) - 1
+        feedback_by_name = getattr(
+            self, "servo_tracking_feedback_evidence", {}
+        )
         for raw_name in joint_names:
             name = resolve_servo_name(str(raw_name))
+            correction = float(
+                self.servo_tracking_compensation_deg.get(name, 0.0)
+            )
+            saturated = bool(
+                limit > 0.0
+                and (
+                    abs(correction) >= limit
+                    or math.isclose(
+                        abs(correction),
+                        limit,
+                        rel_tol=0.0,
+                        abs_tol=1.0e-9,
+                    )
+                )
+            )
+            nominal_reached = bool(
+                self.servo_nominal_target_reached.get(name, False)
+            )
+            tracking_active = bool(self.servo_tracking_active.get(name, False))
+            stable_ticks = int(self.servo_tracking_stable_ticks.get(name, 0))
+            feedback = dict(
+                feedback_by_name.get(
+                    name, self._empty_servo_tracking_feedback_evidence()
+                )
+            )
+            try:
+                sample_tick = int(feedback.get("sample_tick", -1))
+            except (TypeError, ValueError):
+                sample_tick = -1
+            sample_age_ticks = latest_feedback_tick - sample_tick
+            feedback_phase = str(feedback.get("phase", "") or "")
+            current_feedback_valid = bool(
+                feedback.get("sample_valid") is True
+                and 0 <= sample_age_ticks < feedback_interval
+            )
+            try:
+                sampled_velocity_deg_s = float(
+                    feedback.get("measured_velocity_deg_s")
+                )
+            except (TypeError, ValueError):
+                sampled_velocity_deg_s = float("nan")
+            sampled_velocity_valid = bool(
+                math.isfinite(sampled_velocity_deg_s)
+                and abs(sampled_velocity_deg_s)
+                <= SERVO_COMPLETION_VELOCITY_DEG_S
+            )
+            stable_evidence_valid = bool(
+                current_feedback_valid
+                and feedback_phase == SERVO_TRACKING_PHASE_HOLD
+                and stable_ticks > 0
+                and sampled_velocity_valid
+            )
+            converged = bool(
+                nominal_reached
+                and tracking_active
+                and stable_evidence_valid
+                and not saturated
+            )
+            rows[name] = {
+                "nominal_target_reached": nominal_reached,
+                "tracking_active": tracking_active,
+                "stable_ticks": stable_ticks,
+                "stable_evidence_valid": stable_evidence_valid,
+                "feedback_phase": feedback_phase,
+                "feedback_sample_tick": sample_tick,
+                "feedback_age_ticks": sample_age_ticks,
+                "feedback_interval_ticks": feedback_interval,
+                "current_feedback_valid": current_feedback_valid,
+                "sampled_actual_error_deg": feedback.get("actual_error_deg"),
+                "sampled_velocity_deg_s": (
+                    sampled_velocity_deg_s
+                    if math.isfinite(sampled_velocity_deg_s)
+                    else None
+                ),
+                "sampled_velocity_valid": sampled_velocity_valid,
+                "velocity_threshold_deg_s": (
+                    SERVO_COMPLETION_VELOCITY_DEG_S
+                ),
+                "damping_horizon_s": feedback.get("damping_horizon_s"),
+                "desired_correction_deg": feedback.get(
+                    "desired_correction_deg"
+                ),
+                "convergence_band_deg": SERVO_TRACKING_CONVERGENCE_BAND_DEG,
+                "correction_deg": correction,
+                "correction_limit_deg": limit,
+                "saturated": saturated,
+                "converged": converged,
+            }
+            all_converged = all_converged and converged
+        return {
+            "supported": True,
+            "converged": bool(rows) and all_converged,
+            "completion_role": "diagnostic_only",
+            "current_feedback_valid": bool(rows)
+            and all(
+                bool(row["current_feedback_valid"]) for row in rows.values()
+            ),
+            "joints": rows,
+        }
+
+    def end_servo_tracking(self, joint_names: Any) -> dict[str, Any]:
+        """Freeze the current bias at the production UI segment boundary."""
+
+        names = [resolve_servo_name(str(raw_name)) for raw_name in joint_names]
+        evidence = self.servo_tracking_completion_evidence(names)
+        for name in names:
             self.servo_tracking_active[name] = False
+        return {
+            **evidence,
+            "ended": True,
+            "end_policy": "unconditional_segment_boundary",
+            "convergence_diagnostic_only": True,
+        }
 
     def play_steps_blocking(
         self,
@@ -1977,6 +2390,7 @@ class SimRobotAdapter:
             self.servo_tracking_compensation_deg[name] = 0.0
             self.servo_tracking_active[name] = True
             self.servo_tracking_stable_ticks[name] = 0
+            self._invalidate_servo_tracking_feedback_evidence(name)
         self.joint_command_deg[name] = requested
         return name
 

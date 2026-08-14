@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
+
+import numpy as np
 
 
 MODULE_ROOT = Path(__file__).resolve().parents[1]
@@ -13,11 +16,84 @@ if str(MODULE_ROOT) not in sys.path:
     sys.path.insert(0, str(MODULE_ROOT))
 
 from telemetry.config import RuntimeTelemetryConfig  # noqa: E402
-from telemetry.exporters import create_run_dir, summarize_run, write_csv, write_jsonl, write_metadata, write_npz  # noqa: E402
+from telemetry.exporters import (  # noqa: E402
+    create_run_dir,
+    summarize_run,
+    write_csv,
+    write_json,
+    write_jsonl,
+    write_metadata,
+    write_npz,
+)
 from telemetry.visualization.report_generator import generate_report  # noqa: E402
 
 
 class ExportersTest(unittest.TestCase):
+    def test_json_writers_replace_nonfinite_values_with_null(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            payload = {
+                "valid": False,
+                "reason": "measurement unavailable",
+                "missing": float("nan"),
+                "nested": [
+                    np.float64(float("inf")),
+                    np.asarray([1.0, float("-inf")]),
+                ],
+                "path": root / "evidence.json",
+            }
+            write_json(root / "evidence.json", payload)
+            write_jsonl(root / "evidence.jsonl", [payload])
+
+            json_text = (root / "evidence.json").read_text(encoding="utf-8")
+            jsonl_text = (root / "evidence.jsonl").read_text(encoding="utf-8")
+            self.assertNotIn("NaN", json_text + jsonl_text)
+            self.assertNotIn("Infinity", json_text + jsonl_text)
+            decoded = json.loads(json_text, parse_constant=self._reject_constant)
+            decoded_row = json.loads(
+                jsonl_text.strip(), parse_constant=self._reject_constant
+            )
+            for value in (decoded, decoded_row):
+                self.assertIsNone(value["missing"])
+                self.assertIsNone(value["nested"][0])
+                self.assertIsNone(value["nested"][1][1])
+                self.assertFalse(value["valid"])
+                self.assertEqual(value["reason"], "measurement unavailable")
+
+    def test_json_writers_preserve_existing_file_when_encoding_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, writer, payload in (
+                (
+                    "evidence.json",
+                    write_json,
+                    {1: "numeric", "1": "text"},
+                ),
+                (
+                    "evidence.jsonl",
+                    write_jsonl,
+                    [{"ok": True}, {1: "numeric", "1": "text"}],
+                ),
+            ):
+                path = root / name
+                original = '{"sentinel":true}\n'
+                path.write_text(original, encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "keys collide"):
+                    writer(path, payload)
+                self.assertEqual(path.read_text(encoding="utf-8"), original)
+                self.assertEqual(list(root.glob(f".{name}.*.tmp")), [])
+
+    def test_csv_nonfinite_representation_is_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "values.csv"
+            write_csv(path, [{"value": float("nan")}])
+            value = path.read_text(encoding="utf-8").splitlines()[1]
+            self.assertTrue(math.isnan(float(value)))
+
+    @staticmethod
+    def _reject_constant(value: str) -> None:
+        raise AssertionError(f"non-finite JSON constant {value}")
+
     def test_export_files_and_summary_are_created(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             run_dir = create_run_dir(tmp, height_cm=5, sequence_label="unit test")

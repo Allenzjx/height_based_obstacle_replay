@@ -5,9 +5,12 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import re
 import sys
 import time
+import uuid
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -47,25 +50,150 @@ def write_csv(path: str | Path, rows: list[dict[str, Any]]) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     fields = _field_order(rows)
-    with destination.open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: _csv_value(row.get(key)) for key in fields})
+    temporary = _temporary_path(destination)
+    try:
+        with temporary.open("x", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(
+                stream,
+                fieldnames=fields,
+                extrasaction="ignore",
+            )
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(
+                    {key: _csv_value(row.get(key)) for key in fields}
+                )
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def write_json(path: str | Path, payload: Any) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True, default=_json_default) + "\n", encoding="utf-8")
+    encoded = strict_json_dumps(
+        payload,
+        indent=2,
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    _atomic_write_text(destination, encoded + "\n")
 
 
 def write_jsonl(path: str | Path, rows: list[dict[str, Any]]) -> None:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("w", encoding="utf-8", newline="\n") as stream:
-        for row in rows:
-            stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True, default=_json_default) + "\n")
+    temporary = _temporary_path(destination)
+    try:
+        with temporary.open("x", encoding="utf-8", newline="\n") as stream:
+            for row in rows:
+                stream.write(
+                    strict_json_dumps(
+                        row,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                    + "\n"
+                )
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def finite_json_value(value: Any) -> Any:
+    """Return a recursively JSON-compatible value with no non-finite floats.
+
+    Artifact JSON uses ``null`` for unavailable numeric evidence.  This keeps
+    adjacent validity/status/reason fields intact while ensuring every writer
+    can enable ``allow_nan=False``.  CSV serialization deliberately does not
+    use this function and retains its existing representation.
+    """
+
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, np.ndarray):
+        return finite_json_value(value.tolist())
+    if isinstance(value, np.generic):
+        return finite_json_value(value.item())
+    if isinstance(value, Mapping):
+        result: dict[str, Any] = {}
+        for key, item in value.items():
+            normalized_key = _json_object_key(key)
+            if normalized_key in result:
+                raise ValueError(
+                    "JSON object keys collide after normalization: "
+                    f"{normalized_key!r}"
+                )
+            result[normalized_key] = finite_json_value(item)
+        return result
+    if isinstance(value, (list, tuple)):
+        return [finite_json_value(item) for item in value]
+    return str(value)
+
+
+def strict_json_dumps(
+    payload: Any,
+    *,
+    indent: int | None = None,
+    ensure_ascii: bool = False,
+    sort_keys: bool = True,
+    separators: tuple[str, str] | None = None,
+) -> str:
+    """Serialize artifact JSON using RFC-compliant finite numeric values."""
+
+    options: dict[str, Any] = {
+        "allow_nan": False,
+        "ensure_ascii": bool(ensure_ascii),
+        "indent": indent,
+        "sort_keys": bool(sort_keys),
+    }
+    if separators is not None:
+        options["separators"] = separators
+    return json.dumps(finite_json_value(payload), **options)
+
+
+def _json_object_key(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return str(value) if math.isfinite(value) else "null"
+    if isinstance(value, np.generic):
+        return _json_object_key(value.item())
+    if isinstance(value, Path):
+        return str(value)
+    return str(value)
+
+
+def _temporary_path(destination: Path) -> Path:
+    return destination.with_name(
+        f".{destination.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    )
+
+
+def _atomic_write_text(destination: Path, text: str) -> None:
+    temporary = _temporary_path(destination)
+    try:
+        with temporary.open("x", encoding="utf-8", newline="\n") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def write_npz(path: str | Path, rows: list[dict[str, Any]]) -> None:
@@ -97,7 +225,16 @@ def write_npz(path: str | Path, rows: list[dict[str, Any]]) -> None:
         "sample_overhead_ms",
     ):
         arrays[key] = np.asarray([_float(row.get(key)) for row in rows], dtype=float)
-    np.savez_compressed(destination, **arrays)
+    temporary = destination.with_name(
+        f".{destination.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp.npz"
+    )
+    try:
+        np.savez_compressed(temporary, **arrays)
+        with temporary.open("rb+") as stream:
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def summarize_run(

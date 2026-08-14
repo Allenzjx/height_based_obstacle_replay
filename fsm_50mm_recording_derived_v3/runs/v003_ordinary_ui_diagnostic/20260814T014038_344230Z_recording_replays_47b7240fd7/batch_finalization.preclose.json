@@ -1,0 +1,29 @@
+{
+  "artifact_owner": "formal_worker_batch_controller",
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_ordinary_ui_diagnostic\\20260814T014038_344230Z_recording_replays_47b7240fd7",
+  "batch_error": "",
+  "close_error": "PENDING_FORMAL_WORKER_CLOSE",
+  "command_success": true,
+  "diagnostic_role": "U",
+  "environment_equivalence_diagnostic_complete": false,
+  "environment_equivalence_eligible": false,
+  "environment_equivalence_role": "",
+  "failed": false,
+  "finalization_errors": [],
+  "finalized": true,
+  "gate1_eligible": false,
+  "gate1_physical_qualification_eligible": false,
+  "ordinary_ui_diagnostic_complete": true,
+  "phase": "PRECLOSE_FINALIZED",
+  "qualification_scope": "PRODUCTION_DEFAULT_TRAJECTORY_DIAGNOSTIC",
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-14T02:34:49.674965+00:00",
+    "before_created_utc": "2026-08-14T01:40:38.095907+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false,
+  "worker_artifact_result_count": 1
+}

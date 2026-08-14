@@ -250,6 +250,32 @@ class GroundingDiagnosticsTest(unittest.TestCase):
                 0.0,
             )
 
+    def test_writer_replaces_nonfinite_diagnostic_values_with_null(self) -> None:
+        adapter, scene = fake_runtime()
+        frame = base_frame()
+        frame["rolling_window_metrics"]["unavailable_metric"] = float("nan")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "grounding.jsonl"
+            writer = GroundingTraceWriter(
+                path,
+                adapter=adapter,
+                scene_handle=scene,
+            )
+            writer(frame)
+            writer.close()
+
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("NaN", text)
+            parsed = json.loads(
+                text,
+                parse_constant=lambda value: self.fail(
+                    f"non-finite JSON constant {value}"
+                ),
+            )
+            self.assertIsNone(
+                parsed["rolling_window_metrics"]["unavailable_metric"]
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

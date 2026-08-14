@@ -1,0 +1,16 @@
+{
+  "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+  "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+  "command_id": "2e26a32016294d1bbb690a0b31071cb4",
+  "error": "",
+  "reason": "playback_start_boundary",
+  "received_wall_time": 1786660229.5418532,
+  "root_state_write_count": 0,
+  "target_applied_sim_time": 2.233333333333328,
+  "target_applied_wall_time": 1786660229.5488927,
+  "type": "stop_ack",
+  "wheel_generation": 1,
+  "worker_pid": 22704,
+  "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+  "zero_target_applied": true
+}

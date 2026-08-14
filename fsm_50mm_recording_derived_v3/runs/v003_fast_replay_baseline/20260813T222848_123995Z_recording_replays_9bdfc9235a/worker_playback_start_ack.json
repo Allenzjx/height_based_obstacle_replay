@@ -1,0 +1,1770 @@
+{
+  "accepted": true,
+  "accepted_wall_time": 1786660233.769556,
+  "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+  "artifact_request_id": "7b360000667e452f8a84ad84604b1ea2",
+  "error": "",
+  "event_count": 160,
+  "input_step_count": 24,
+  "missing_required_step_indices": [],
+  "motion_start_readiness": {
+    "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+    "adapter_runtime_instance_id_after": "59a61b6afac447959eb9fa198acf2916",
+    "adapter_runtime_instance_id_before": "59a61b6afac447959eb9fa198acf2916",
+    "adapter_sim_step_after_all": 276,
+    "adapter_sim_step_after_ground": 276,
+    "adapter_sim_step_before": 276,
+    "base_capture_sim_step": 276,
+    "base_evidence": {
+      "adapter_runtime_instance_id": "59a61b6afac447959eb9fa198acf2916",
+      "command_state": {
+        "servos": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "wheels": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        }
+      },
+      "joint_position_by_name": {
+        "front_left_ankle": -0.021867867559194565,
+        "front_left_hip": 0.0037505794316530228,
+        "front_left_knee": -0.005363721866160631,
+        "front_right_ankle": 0.0410609245300293,
+        "front_right_hip": 0.0002082301361951977,
+        "front_right_knee": -0.0023743065539747477,
+        "rear_left_ankle": 0.06864483654499054,
+        "rear_left_hip": -0.00787222757935524,
+        "rear_left_knee": 0.009025909937918186,
+        "rear_right_ankle": -0.07543252408504486,
+        "rear_right_hip": -0.009672626852989197,
+        "rear_right_knee": 0.009645592421293259
+      },
+      "joint_position_target_buffer_by_name": {
+        "front_left_ankle": 0.0,
+        "front_left_hip": 0.0013849460519850254,
+        "front_left_knee": 0.0004685161984525621,
+        "front_right_ankle": 0.0,
+        "front_right_hip": -0.00011773224105127156,
+        "front_right_knee": 0.0021849488839507103,
+        "rear_left_ankle": 0.0,
+        "rear_left_hip": -0.0031315803062170744,
+        "rear_left_knee": 0.0028451455291360617,
+        "rear_right_ankle": 0.0,
+        "rear_right_hip": -0.005637089256197214,
+        "rear_right_knee": 0.0037567163817584515
+      },
+      "joint_position_target_by_name": {
+        "front_left_ankle": 0.0,
+        "front_left_hip": 0.0013849460519850254,
+        "front_left_knee": 0.0004685161984525621,
+        "front_right_ankle": 0.0,
+        "front_right_hip": -0.00011773224105127156,
+        "front_right_knee": 0.0021849488839507103,
+        "rear_left_ankle": 0.0,
+        "rear_left_hip": -0.0031315803062170744,
+        "rear_left_knee": 0.0028451455291360617,
+        "rear_right_ankle": 0.0,
+        "rear_right_hip": -0.005637089256197214,
+        "rear_right_knee": 0.0037567163817584515
+      },
+      "joint_state_evidence_error": "",
+      "joint_state_evidence_valid": true,
+      "joint_target_minus_position_by_name": {
+        "front_left_ankle": 0.021867867559194565,
+        "front_left_hip": -0.0023656333796679974,
+        "front_left_knee": 0.005832238064613193,
+        "front_right_ankle": -0.0410609245300293,
+        "front_right_hip": -0.00032596237724646926,
+        "front_right_knee": 0.004559255437925458,
+        "rear_left_ankle": -0.06864483654499054,
+        "rear_left_hip": 0.0047406472731381655,
+        "rear_left_knee": -0.0061807644087821245,
+        "rear_right_ankle": 0.07543252408504486,
+        "rear_right_hip": 0.004035537596791983,
+        "rear_right_knee": -0.005888876039534807
+      },
+      "joint_velocity_by_name": {
+        "front_left_ankle": -0.010067729279398918,
+        "front_left_hip": -0.032349709421396255,
+        "front_left_knee": 0.04382558912038803,
+        "front_right_ankle": 0.01895938627421856,
+        "front_right_hip": -0.02117086946964264,
+        "front_right_knee": 0.03179805353283882,
+        "rear_left_ankle": 0.0018011038191616535,
+        "rear_left_hip": 0.06909431517124176,
+        "rear_left_knee": -0.060269635170698166,
+        "rear_right_ankle": -0.01419415045529604,
+        "rear_right_hip": 0.04957969859242439,
+        "rear_right_knee": -0.04156503826379776
+      },
+      "joint_velocity_target_buffer_by_name": {
+        "front_left_ankle": -0.0,
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_ankle": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_ankle": -0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_ankle": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "joint_velocity_target_by_name": {
+        "front_left_ankle": -0.0,
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_ankle": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_ankle": -0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_ankle": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "joint_velocity_vector": [
+        -0.032349709421396255,
+        -0.02117086946964264,
+        0.06909431517124176,
+        0.04957969859242439,
+        0.04382558912038803,
+        0.03179805353283882,
+        -0.060269635170698166,
+        -0.04156503826379776,
+        -0.010067729279398918,
+        0.01895938627421856,
+        0.0018011038191616535,
+        -0.01419415045529604
+      ],
+      "physics_dt_s": 0.008333333333333333,
+      "root_state_write_count": 0,
+      "root_state_write_events": [],
+      "root_velocity": [
+        -0.0005683124763891101,
+        -0.000997699797153473,
+        0.006103887688368559,
+        0.003563560312613845,
+        0.006815045140683651,
+        0.0009599256445653737
+      ],
+      "root_velocity_evidence_error": "",
+      "root_velocity_evidence_valid": true,
+      "servo_command_target_by_name": {
+        "front_left_hip": 0.0013849460519850254,
+        "front_left_knee": 0.0004685161984525621,
+        "front_right_hip": -0.00011773224105127156,
+        "front_right_knee": 0.0021849488839507103,
+        "rear_left_hip": -0.0031315803062170744,
+        "rear_left_knee": 0.0028451455291360617,
+        "rear_right_hip": -0.005637089256197214,
+        "rear_right_knee": 0.0037567163817584515
+      },
+      "servo_command_to_readback_error_by_name": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "sim_step": 276,
+      "sim_time_s": 2.2999999999999945,
+      "wheel_target_command_to_readback_error_by_name": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "wheel_target_evidence_error": "",
+      "wheel_target_evidence_valid": true,
+      "wheel_target_readback_velocity_by_name": {
+        "front_left_ankle": -0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": -0.0,
+        "rear_right_ankle": 0.0
+      },
+      "wheel_target_velocity_by_name": {
+        "front_left_ankle": -0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": -0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "current_sim_step": 276,
+    "decision": "PASS",
+    "decision_semantics": "robot_ground_diagnostics.motion_status_from_worker_status",
+    "effective_start_delay_sim_s": 0.008333333333333333,
+    "ground_capture_sim_step": 276,
+    "ground_motion_ready": true,
+    "ground_motion_reason": "",
+    "ground_state": "PASS_WITH_VISUAL_WARNING",
+    "ground_validation_apply_correction": false,
+    "identity": {
+      "errors": [],
+      "event_count": 160,
+      "integrity_ok": true,
+      "plan_id": "fsm50-gate1-v003_20260805_224517_157723_manual-trial2-3ea6050c14",
+      "plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+      "request_id": "7b360000667e452f8a84ad84604b1ea2",
+      "requested_worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+      "segment_count": 112,
+      "source_initial_command_state": {
+        "servos": {
+          "front_left_hip": 0.0,
+          "front_left_knee": 0.0,
+          "front_right_hip": 0.0,
+          "front_right_knee": 0.0,
+          "rear_left_hip": 0.0,
+          "rear_left_knee": 0.0,
+          "rear_right_hip": 0.0,
+          "rear_right_knee": 0.0
+        },
+        "wheels": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        }
+      },
+      "source_initial_command_state_sha256": "00b8b95cc44e677ee116530fc515777b7550e7d62f49b62dbc19a8f665ccaf67",
+      "source_sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394",
+      "source_version": "v003_20260805_224517_157723_manual",
+      "valid": true,
+      "validated_event_count": 160,
+      "validated_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+      "validated_segment_count": 112,
+      "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+    },
+    "live_command_state": {
+      "servos": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "live_command_state_sha256": "00b8b95cc44e677ee116530fc515777b7550e7d62f49b62dbc19a8f665ccaf67",
+    "live_ground": {
+      "checked": true,
+      "classification": "VISUAL_ONLY_INTERSECTION",
+      "correction_applied": false,
+      "correction_z_m": 0.0,
+      "ground_reference_block_reason": "visual AABB intersects ground while collision AABB is within tolerance; grounded reference rejected: settle did not reach stable frame threshold; grounded reference rejected: stable frames 0/10; grounded reference rejected: final joint velocity exceeds threshold: front_left_hip, front_left_knee, front_right_knee, rear_left_hip, rear_left_knee, rear_right_hip, rear_right_knee; grounded reference rejected: servo joint velocity exceeds threshold",
+      "ground_resolution_state": "ok",
+      "ground_state": "PASS_WITH_VISUAL_WARNING",
+      "ground_surface": {
+        "actual_ground_z_m": 0.0,
+        "configured_ground_z_m": 0.0,
+        "ground_collision_prim_path": "/World/defaultGroundPlane/GroundPlane/CollisionPlane",
+        "ground_local_translation": [],
+        "ground_normal_w": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "ground_prim_path": "/World/defaultGroundPlane",
+        "ground_resolution_ok": true,
+        "ground_world_transform": [
+          [
+            0.009999999776482582,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.009999999776482582,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.009999999776482582,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "ground_world_translation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ground_z_delta_m": 0.0,
+        "ground_z_source": "usd_world_transform",
+        "reasons": [],
+        "tolerance_m": 0.0001,
+        "warnings": []
+      },
+      "ground_z_m": 0.0,
+      "grounded_reference_physics_valid": false,
+      "grounded_reference_stable": false,
+      "grounded_reference_visual_valid": false,
+      "grounded_respawn_reference_valid": false,
+      "maximum_collision_penetration_m": 0.001093191587516737,
+      "maximum_joint_position_delta": 0.0,
+      "maximum_joint_velocity_delta": 0.0,
+      "minimum_collision_clearance_m": -0.001093191587516737,
+      "minimum_visual_clearance_m": -0.07984301258800533,
+      "missing_collision_wheels": [],
+      "physical_ground_safe": true,
+      "reasons": [
+        "visual AABB intersects ground while collision AABB is within tolerance"
+      ],
+      "respawn_ready": false,
+      "root_angular_velocity": [
+        0.003563560312613845,
+        0.006815045140683651,
+        0.0009599256445653737
+      ],
+      "root_linear_velocity": [
+        -0.0005683124763891101,
+        -0.000997699797153473,
+        0.006103887688368559
+      ],
+      "root_pose_delta": {},
+      "root_position_w": [
+        -0.00433654710650444,
+        -0.0009932294487953186,
+        0.09892769902944565
+      ],
+      "root_quaternion_w": [
+        0.9999811053276062,
+        -1.612604501133319e-05,
+        -0.005976500920951366,
+        0.001525384490378201
+      ],
+      "root_z_m": 0.09892769902944565,
+      "sim_steps": 276,
+      "sim_steps_delta": 0,
+      "sim_time": 2.2999999999999945,
+      "sim_time_delta": 0.0,
+      "timeline_playing": true,
+      "timestamp": 1786660233.3866613,
+      "unresolved_collision_wheels": [],
+      "visual_ground_safe": false,
+      "warnings": [],
+      "wheel_command_values": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      },
+      "wheels": [
+        {
+          "applied_schemas": [
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_:PhysicsCollisionAPI",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_:PhysicsMeshCollisionAPI",
+            "/World/WLRRobot/front_left_wheel/visuals/front_left_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/front_left_wheel/visuals/front_left_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/front_left_wheel:IsaacLinkAPI",
+            "/World/WLRRobot/front_left_wheel:PhysicsMassAPI",
+            "/World/WLRRobot/front_left_wheel:PhysicsRigidBodyAPI",
+            "/World/WLRRobot/front_left_wheel:PhysxContactReportAPI",
+            "/World/WLRRobot/front_left_wheel:PhysxRigidBodyAPI"
+          ],
+          "body0_path": "/World/WLRRobot/front_left_bot",
+          "body1_path": "/World/WLRRobot/front_left_wheel",
+          "body_name": "front_left_wheel",
+          "body_position_w": [
+            0.24901799857616425,
+            0.07948558032512665,
+            0.04890776053071022
+          ],
+          "body_prim_path": "/World/WLRRobot/front_left_wheel",
+          "bounds_empty": false,
+          "bounds_extent": [
+            0.10001171198724554,
+            0.020297121632701476,
+            0.10000086935194401
+          ],
+          "bounds_finite": true,
+          "bounds_max": [
+            0.2989933498345686,
+            0.09963335159409277,
+            0.09890767776442727
+          ],
+          "bounds_min": [
+            0.19898163784732306,
+            0.0793362299613913,
+            -0.001093191587516737
+          ],
+          "bounds_rejection_reason": "",
+          "bounds_source": "live_body_mesh_points:/World/WLRRobot/front_left_wheel:/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_",
+          "bounds_valid": true,
+          "candidate_body_paths": [
+            "/World/WLRRobot/front_left_wheel",
+            "/World/WLRRobot/front_left_bot",
+            "/World/WLRRobot/front_left_upper",
+            "/World/WLRRobot/joints/front_left_hip",
+            "/World/WLRRobot/joints/front_left_knee",
+            "/World/WLRRobot/joints/front_left_ankle",
+            "/World/WLRRobot/front_left_upper/visuals/front_left_upper",
+            "/World/WLRRobot/front_left_upper/collisions/front_left_upper",
+            "/World/WLRRobot/front_left_bot/visuals/front_left_bot",
+            "/World/WLRRobot/front_left_bot/collisions/front_left_bot",
+            "/World/WLRRobot/front_left_wheel/visuals/front_left_wheel",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel"
+          ],
+          "candidate_body_scores": [
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": true,
+              "path": "/World/WLRRobot/front_left_wheel",
+              "reasons": [
+                "matches joint body1 child target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 125.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_bot/collisions/front_left_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": true,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_bot",
+              "reasons": [
+                "matches joint body0 parent target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 85.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_upper/collisions/front_left_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 75.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_left_hip",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_left_knee",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_left_ankle",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_upper/visuals/front_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_upper/collisions/front_left_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_upper/collisions/front_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_bot/visuals/front_left_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_bot/collisions/front_left_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_bot/collisions/front_left_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_wheel/visuals/front_left_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            }
+          ],
+          "candidate_collision_paths": [
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_"
+          ],
+          "clearance_m": -0.001093191587516737,
+          "collision_aabb_min_z": -0.001093191587516737,
+          "collision_api_present": true,
+          "collision_approximation": "physics:approximation=convexHull",
+          "collision_enabled": true,
+          "collision_ground_clearance_m": -0.001093191587516737,
+          "collision_local_bounds": [],
+          "collision_paths": [
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_"
+          ],
+          "collision_penetration_m": 0.001093191587516737,
+          "collision_prim_paths": [
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_"
+          ],
+          "collision_resolution_state": "OK",
+          "collision_world_min_z": -0.001093191587516737,
+          "contact_state": "penetrating",
+          "contact_with_ground": null,
+          "data_source": "live_body_mesh_points:/World/WLRRobot/front_left_wheel:/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_",
+          "joint_id": 8,
+          "joint_name": "front_left_ankle",
+          "joint_prim_path": "/World/WLRRobot/joints/front_left_ankle",
+          "minimum_collision_z": -0.001093191587516737,
+          "physics_collision_enabled": true,
+          "reasons": [],
+          "resolved_body_path": "/World/WLRRobot/front_left_wheel",
+          "usd_bound_age_or_warning": "",
+          "visual_aabb_min_z": -0.07984301258800533,
+          "visual_ground_clearance_m": -0.07984301258800533,
+          "visual_prim_paths": [
+            "/World/WLRRobot/front_left_wheel/visuals/front_left_wheel/node_STL_BINARY_/mesh",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_/mesh"
+          ],
+          "visual_world_min_z": -0.07984301258800533,
+          "warnings": [
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_: USD world bound invalid (bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m); used live body pose/local bound fallback",
+            "/World/WLRRobot/front_left_wheel/collisions/front_left_wheel/node_STL_BINARY_/mesh: bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m"
+          ],
+          "wheel_name": "front_left_ankle"
+        },
+        {
+          "applied_schemas": [
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_:PhysicsCollisionAPI",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_:PhysicsMeshCollisionAPI",
+            "/World/WLRRobot/front_right_wheel/visuals/front_right_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/front_right_wheel/visuals/front_right_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/front_right_wheel:IsaacLinkAPI",
+            "/World/WLRRobot/front_right_wheel:PhysicsMassAPI",
+            "/World/WLRRobot/front_right_wheel:PhysicsRigidBodyAPI",
+            "/World/WLRRobot/front_right_wheel:PhysxContactReportAPI",
+            "/World/WLRRobot/front_right_wheel:PhysxRigidBodyAPI"
+          ],
+          "body0_path": "/World/WLRRobot/front_right_bot",
+          "body1_path": "/World/WLRRobot/front_right_wheel",
+          "body_name": "front_right_wheel",
+          "body_position_w": [
+            0.2526743412017822,
+            -0.31880539655685425,
+            0.04914180561900139
+          ],
+          "body_prim_path": "/World/WLRRobot/front_right_wheel",
+          "bounds_empty": false,
+          "bounds_extent": [
+            0.10004025249170317,
+            0.020297151621685883,
+            0.0999875946351742
+          ],
+          "bounds_finite": true,
+          "bounds_max": [
+            0.30272571693364725,
+            -0.3186560021307956,
+            0.09913617721709816
+          ],
+          "bounds_min": [
+            0.20268546444194407,
+            -0.3389531537524815,
+            -0.0008514174180760392
+          ],
+          "bounds_rejection_reason": "",
+          "bounds_source": "live_body_mesh_points:/World/WLRRobot/front_right_wheel:/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_",
+          "bounds_valid": true,
+          "candidate_body_paths": [
+            "/World/WLRRobot/front_right_wheel",
+            "/World/WLRRobot/front_right_bot",
+            "/World/WLRRobot/front_right_upper",
+            "/World/WLRRobot/joints/front_right_hip",
+            "/World/WLRRobot/joints/front_right_knee",
+            "/World/WLRRobot/joints/front_right_ankle",
+            "/World/WLRRobot/front_right_upper/visuals/front_right_upper",
+            "/World/WLRRobot/front_right_upper/collisions/front_right_upper",
+            "/World/WLRRobot/front_right_bot/visuals/front_right_bot",
+            "/World/WLRRobot/front_right_bot/collisions/front_right_bot",
+            "/World/WLRRobot/front_right_wheel/visuals/front_right_wheel",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel"
+          ],
+          "candidate_body_scores": [
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": true,
+              "path": "/World/WLRRobot/front_right_wheel",
+              "reasons": [
+                "matches joint body1 child target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 125.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_bot/collisions/front_right_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": true,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_bot",
+              "reasons": [
+                "matches joint body0 parent target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 85.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_upper/collisions/front_right_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 75.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_right_hip",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_right_knee",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/front_right_ankle",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_upper/visuals/front_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_upper/collisions/front_right_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_upper/collisions/front_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_bot/visuals/front_right_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_bot/collisions/front_right_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_bot/collisions/front_right_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_wheel/visuals/front_right_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            }
+          ],
+          "candidate_collision_paths": [
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_"
+          ],
+          "clearance_m": -0.0008514174180760392,
+          "collision_aabb_min_z": -0.0008514174180760392,
+          "collision_api_present": true,
+          "collision_approximation": "physics:approximation=convexHull",
+          "collision_enabled": true,
+          "collision_ground_clearance_m": -0.0008514174180760392,
+          "collision_local_bounds": [],
+          "collision_paths": [
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_"
+          ],
+          "collision_penetration_m": 0.0008514174180760392,
+          "collision_prim_paths": [
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_"
+          ],
+          "collision_resolution_state": "OK",
+          "collision_world_min_z": -0.0008514174180760392,
+          "contact_state": "penetrating",
+          "contact_with_ground": null,
+          "data_source": "live_body_mesh_points:/World/WLRRobot/front_right_wheel:/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_",
+          "joint_id": 9,
+          "joint_name": "front_right_ankle",
+          "joint_prim_path": "/World/WLRRobot/joints/front_right_ankle",
+          "minimum_collision_z": -0.0008514174180760392,
+          "physics_collision_enabled": true,
+          "reasons": [],
+          "resolved_body_path": "/World/WLRRobot/front_right_wheel",
+          "usd_bound_age_or_warning": "",
+          "visual_aabb_min_z": -0.0732428790826927,
+          "visual_ground_clearance_m": -0.0732428790826927,
+          "visual_prim_paths": [
+            "/World/WLRRobot/front_right_wheel/visuals/front_right_wheel/node_STL_BINARY_/mesh",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_/mesh"
+          ],
+          "visual_world_min_z": -0.0732428790826927,
+          "warnings": [
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_: USD world bound invalid (bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m); used live body pose/local bound fallback",
+            "/World/WLRRobot/front_right_wheel/collisions/front_right_wheel/node_STL_BINARY_/mesh: bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m"
+          ],
+          "wheel_name": "front_right_ankle"
+        },
+        {
+          "applied_schemas": [
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_:PhysicsCollisionAPI",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_:PhysicsMeshCollisionAPI",
+            "/World/WLRRobot/rear_left_wheel/visuals/rear_left_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/rear_left_wheel/visuals/rear_left_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/rear_left_wheel:IsaacLinkAPI",
+            "/World/WLRRobot/rear_left_wheel:PhysicsMassAPI",
+            "/World/WLRRobot/rear_left_wheel:PhysicsRigidBodyAPI",
+            "/World/WLRRobot/rear_left_wheel:PhysxContactReportAPI",
+            "/World/WLRRobot/rear_left_wheel:PhysxRigidBodyAPI"
+          ],
+          "body0_path": "/World/WLRRobot/rear_left_bot",
+          "body1_path": "/World/WLRRobot/rear_left_wheel",
+          "body_name": "rear_left_wheel",
+          "body_position_w": [
+            -0.3046504259109497,
+            0.07299652695655823,
+            0.04991301894187927
+          ],
+          "body_prim_path": "/World/WLRRobot/rear_left_wheel",
+          "bounds_empty": false,
+          "bounds_extent": [
+            0.1000104713105901,
+            0.020297355537389608,
+            0.09999960629097539
+          ],
+          "bounds_finite": true,
+          "bounds_max": [
+            -0.254675696198006,
+            0.09314440012869324,
+            0.09991230322486855
+          ],
+          "bounds_min": [
+            -0.3546861675085961,
+            0.07284704459130363,
+            -8.730306610683913e-05
+          ],
+          "bounds_rejection_reason": "",
+          "bounds_source": "live_body_mesh_points:/World/WLRRobot/rear_left_wheel:/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_",
+          "bounds_valid": true,
+          "candidate_body_paths": [
+            "/World/WLRRobot/rear_left_wheel",
+            "/World/WLRRobot/rear_left_bot",
+            "/World/WLRRobot/rear_left_upper",
+            "/World/WLRRobot/joints/rear_left_hip",
+            "/World/WLRRobot/joints/rear_left_knee",
+            "/World/WLRRobot/joints/rear_left_ankle",
+            "/World/WLRRobot/rear_left_upper/visuals/rear_left_upper",
+            "/World/WLRRobot/rear_left_upper/collisions/rear_left_upper",
+            "/World/WLRRobot/rear_left_bot/visuals/rear_left_bot",
+            "/World/WLRRobot/rear_left_bot/collisions/rear_left_bot",
+            "/World/WLRRobot/rear_left_wheel/visuals/rear_left_wheel",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel"
+          ],
+          "candidate_body_scores": [
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": true,
+              "path": "/World/WLRRobot/rear_left_wheel",
+              "reasons": [
+                "matches joint body1 child target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 125.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_bot/collisions/rear_left_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": true,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_bot",
+              "reasons": [
+                "matches joint body0 parent target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 85.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_upper/collisions/rear_left_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 75.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_left_hip",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_left_knee",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_left_ankle",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_upper/visuals/rear_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_upper/collisions/rear_left_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_upper/collisions/rear_left_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_bot/visuals/rear_left_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_bot/collisions/rear_left_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_bot/collisions/rear_left_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_wheel/visuals/rear_left_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            }
+          ],
+          "candidate_collision_paths": [
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_"
+          ],
+          "clearance_m": -8.730306610683913e-05,
+          "collision_aabb_min_z": -8.730306610683913e-05,
+          "collision_api_present": true,
+          "collision_approximation": "physics:approximation=convexHull",
+          "collision_enabled": true,
+          "collision_ground_clearance_m": -8.730306610683913e-05,
+          "collision_local_bounds": [],
+          "collision_paths": [
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_"
+          ],
+          "collision_penetration_m": 8.730306610683913e-05,
+          "collision_prim_paths": [
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_"
+          ],
+          "collision_resolution_state": "OK",
+          "collision_world_min_z": -8.730306610683913e-05,
+          "contact_state": "penetrating",
+          "contact_with_ground": null,
+          "data_source": "live_body_mesh_points:/World/WLRRobot/rear_left_wheel:/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_",
+          "joint_id": 10,
+          "joint_name": "rear_left_ankle",
+          "joint_prim_path": "/World/WLRRobot/joints/rear_left_ankle",
+          "minimum_collision_z": -8.730306610683913e-05,
+          "physics_collision_enabled": true,
+          "reasons": [],
+          "resolved_body_path": "/World/WLRRobot/rear_left_wheel",
+          "usd_bound_age_or_warning": "",
+          "visual_aabb_min_z": -0.06397932360671797,
+          "visual_ground_clearance_m": -0.06397932360671797,
+          "visual_prim_paths": [
+            "/World/WLRRobot/rear_left_wheel/visuals/rear_left_wheel/node_STL_BINARY_/mesh",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_/mesh"
+          ],
+          "visual_world_min_z": -0.06397932360671797,
+          "warnings": [
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_: USD world bound invalid (bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m); used live body pose/local bound fallback",
+            "/World/WLRRobot/rear_left_wheel/collisions/rear_left_wheel/node_STL_BINARY_/mesh: bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m"
+          ],
+          "wheel_name": "rear_left_ankle"
+        },
+        {
+          "applied_schemas": [
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_:PhysicsCollisionAPI",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_:PhysicsMeshCollisionAPI",
+            "/World/WLRRobot/rear_right_wheel/visuals/rear_right_wheel/node_STL_BINARY_/Looks/DefaultMaterial/DefaultMaterial:NodeDefAPI",
+            "/World/WLRRobot/rear_right_wheel/visuals/rear_right_wheel/node_STL_BINARY_/mesh:MaterialBindingAPI",
+            "/World/WLRRobot/rear_right_wheel:IsaacLinkAPI",
+            "/World/WLRRobot/rear_right_wheel:PhysicsMassAPI",
+            "/World/WLRRobot/rear_right_wheel:PhysicsRigidBodyAPI",
+            "/World/WLRRobot/rear_right_wheel:PhysxContactReportAPI",
+            "/World/WLRRobot/rear_right_wheel:PhysxRigidBodyAPI"
+          ],
+          "body0_path": "/World/WLRRobot/rear_right_bot",
+          "body1_path": "/World/WLRRobot/rear_right_wheel",
+          "body_name": "rear_right_wheel",
+          "body_position_w": [
+            -0.30732372403144836,
+            -0.323313444852829,
+            0.04986855015158653
+          ],
+          "body_prim_path": "/World/WLRRobot/rear_right_wheel",
+          "bounds_empty": false,
+          "bounds_extent": [
+            0.10000185227982444,
+            0.020297019643085223,
+            0.09994920710924397
+          ],
+          "bounds_finite": true,
+          "bounds_max": [
+            -0.25729155326067155,
+            -0.32316411049209776,
+            0.09984372608131589
+          ],
+          "bounds_min": [
+            -0.357293405540496,
+            -0.343461130135183,
+            -0.000105481027928081
+          ],
+          "bounds_rejection_reason": "",
+          "bounds_source": "live_body_mesh_points:/World/WLRRobot/rear_right_wheel:/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_",
+          "bounds_valid": true,
+          "candidate_body_paths": [
+            "/World/WLRRobot/rear_right_wheel",
+            "/World/WLRRobot/rear_right_bot",
+            "/World/WLRRobot/rear_right_upper",
+            "/World/WLRRobot/joints/rear_right_hip",
+            "/World/WLRRobot/joints/rear_right_knee",
+            "/World/WLRRobot/joints/rear_right_ankle",
+            "/World/WLRRobot/rear_right_upper/visuals/rear_right_upper",
+            "/World/WLRRobot/rear_right_upper/collisions/rear_right_upper",
+            "/World/WLRRobot/rear_right_bot/visuals/rear_right_bot",
+            "/World/WLRRobot/rear_right_bot/collisions/rear_right_bot",
+            "/World/WLRRobot/rear_right_wheel/visuals/rear_right_wheel",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel"
+          ],
+          "candidate_body_scores": [
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": true,
+              "path": "/World/WLRRobot/rear_right_wheel",
+              "reasons": [
+                "matches joint body1 child target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 125.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_bot/collisions/rear_right_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": true,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_bot",
+              "reasons": [
+                "matches joint body0 parent target",
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 85.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_upper/collisions/rear_right_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": true,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "has RigidBodyAPI",
+                "enabled collider(s) in subtree: 1"
+              ],
+              "score": 75.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_right_hip",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_right_knee",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/joints/rear_right_ankle",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree"
+              ],
+              "score": 15.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_upper/visuals/rear_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_upper/collisions/rear_right_upper/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_upper/collisions/rear_right_upper",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_bot/visuals/rear_right_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_bot/collisions/rear_right_bot/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_bot/collisions/rear_right_bot",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_wheel/visuals/rear_right_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "no enabled collider found in subtree",
+                "candidate is instance proxy"
+              ],
+              "score": 18.0,
+              "valid": true
+            },
+            {
+              "enabled_collider_paths": [
+                "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_"
+              ],
+              "has_rigid_body_api": false,
+              "is_body0": false,
+              "is_body1": false,
+              "path": "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel",
+              "reasons": [
+                "name matches wheel/link token",
+                "RigidBodyAPI not found on candidate",
+                "enabled collider(s) in subtree: 1",
+                "candidate is instance proxy"
+              ],
+              "score": 48.0,
+              "valid": true
+            }
+          ],
+          "candidate_collision_paths": [
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_"
+          ],
+          "clearance_m": -0.000105481027928081,
+          "collision_aabb_min_z": -0.000105481027928081,
+          "collision_api_present": true,
+          "collision_approximation": "physics:approximation=convexHull",
+          "collision_enabled": true,
+          "collision_ground_clearance_m": -0.000105481027928081,
+          "collision_local_bounds": [],
+          "collision_paths": [
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_"
+          ],
+          "collision_penetration_m": 0.000105481027928081,
+          "collision_prim_paths": [
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_"
+          ],
+          "collision_resolution_state": "OK",
+          "collision_world_min_z": -0.000105481027928081,
+          "contact_state": "penetrating",
+          "contact_with_ground": null,
+          "data_source": "live_body_mesh_points:/World/WLRRobot/rear_right_wheel:/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_",
+          "joint_id": 11,
+          "joint_name": "rear_right_ankle",
+          "joint_prim_path": "/World/WLRRobot/joints/rear_right_ankle",
+          "minimum_collision_z": -0.000105481027928081,
+          "physics_collision_enabled": true,
+          "reasons": [],
+          "resolved_body_path": "/World/WLRRobot/rear_right_wheel",
+          "usd_bound_age_or_warning": "",
+          "visual_aabb_min_z": -0.06871143685821617,
+          "visual_ground_clearance_m": -0.06871143685821617,
+          "visual_prim_paths": [
+            "/World/WLRRobot/rear_right_wheel/visuals/rear_right_wheel/node_STL_BINARY_/mesh",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_/mesh"
+          ],
+          "visual_world_min_z": -0.06871143685821617,
+          "warnings": [
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_: USD world bound invalid (bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m); used live body pose/local bound fallback",
+            "/World/WLRRobot/rear_right_wheel/collisions/rear_right_wheel/node_STL_BINARY_/mesh: bound is empty; bound min is greater than max on x; bound min is greater than max on y; bound min is greater than max on z; bound contains FLT_MAX-style sentinel coordinate; bound coordinate exceeds reasonable scene range 1e+03m"
+          ],
+          "wheel_name": "rear_right_ankle"
+        }
+      ]
+    },
+    "live_ground_capture_error": "",
+    "motion_start_ready": true,
+    "playback_start_boundary": {
+      "ack": {
+        "applied_sim_step": 276,
+        "applied_sim_time": 2.2999999999999945,
+        "batch_applied_sim_time": 2.2999999999999945,
+        "batch_applied_wall_time": 1786660233.467889,
+        "batch_id": "playback-playback_start_boundary-fsm50-gate1-v003_20260805_224517_157723_manual-trial2-3ea6050c14-34c93230",
+        "batch_received_wall_time": 1786660233.4643686,
+        "canonical_servo_targets_deg": {},
+        "canonical_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "effective_servo_velocity_deg_s": 150.0,
+        "effective_wheel_velocity_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "error": "",
+        "first_physics_step": 277,
+        "high_priority": false,
+        "motion_profile": "fixed_100_percent",
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 0.008333333333333333,
+        "received_wall_time": 1786660233.4643686,
+        "recording_metadata": {
+          "dispatch_kind": "playback_start_boundary",
+          "plan_id": "fsm50-gate1-v003_20260805_224517_157723_manual-trial2-3ea6050c14"
+        },
+        "requested_servo_velocity_deg_s": 150.0,
+        "servo_applied": false,
+        "servo_motion_start_sim_time": 2.308333333333328,
+        "servo_targets_applied": {},
+        "source": "playback",
+        "wheel_applied": true,
+        "wheel_generation": 1,
+        "wheel_motion_start_sim_time": 2.308333333333328,
+        "wheel_targets_applied": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        }
+      },
+      "applied": true,
+      "error": "",
+      "sim_step": 276
+    },
+    "ready": true,
+    "rejection_reason": "",
+    "rejection_reasons": [],
+    "requested_start_delay_sim_s": 0.0,
+    "root_state_write_count": 0,
+    "root_state_write_count_after": 0,
+    "root_state_write_count_before": 0,
+    "root_state_write_events": [],
+    "runtime_ready": true,
+    "scheduler_accepted": true,
+    "scheduler_plan_id": "fsm50-gate1-v003_20260805_224517_157723_manual-trial2-3ea6050c14",
+    "scheduler_rejection_reason": "",
+    "scheduler_request_id": "7b360000667e452f8a84ad84604b1ea2",
+    "scheduler_worker_session_id": "c8e54958dbda403191f2d8d2f5b64134",
+    "schema_version": "MOTION_START_READY_V1",
+    "source_initial_command_state": {
+      "servos": {
+        "front_left_hip": 0.0,
+        "front_left_knee": 0.0,
+        "front_right_hip": 0.0,
+        "front_right_knee": 0.0,
+        "rear_left_hip": 0.0,
+        "rear_left_knee": 0.0,
+        "rear_right_hip": 0.0,
+        "rear_right_knee": 0.0
+      },
+      "wheels": {
+        "front_left_ankle": 0.0,
+        "front_right_ankle": 0.0,
+        "rear_left_ankle": 0.0,
+        "rear_right_ankle": 0.0
+      }
+    },
+    "source_initial_command_state_sha256": "00b8b95cc44e677ee116530fc515777b7550e7d62f49b62dbc19a8f665ccaf67",
+    "start_boundary_minimum_physics_ticks": 1,
+    "state_writes_performed": false,
+    "strict_rest_context": {
+      "grounded_reference_stable": false,
+      "grounded_reference_valid": false,
+      "last_ground_settle_stable": false,
+      "required_for_motion_start": false
+    },
+    "wheel_stop_boundary": {
+      "captured_sim_step": 276,
+      "command_status": {
+        "applied_target_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "canonical_target_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "command_id": "2e26a32016294d1bbb690a0b31071cb4",
+        "effective_target_rad_s": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "enqueued_wall_time": 1786660226.073565,
+        "generation": 1,
+        "measured_stop_sim_time": 2.2416666666666614,
+        "measured_stop_wall_time": 1786660229.9696295,
+        "measured_velocity_rad_s": {
+          "front_left_ankle": 0.010067729279398918,
+          "front_right_ankle": 0.01895938627421856,
+          "rear_left_ankle": -0.0018011038191616535,
+          "rear_right_ankle": -0.01419415045529604
+        },
+        "motion_profile": "fixed_100_percent",
+        "physically_stopped": true,
+        "received_wall_time": 1786660229.5418532,
+        "requested_wall_time": 1786660226.0730653,
+        "stale_command_rejected": false,
+        "state": "physically_stopped",
+        "stop_command_received": true,
+        "stop_tolerance_rad_s": 0.1,
+        "target_applied_sim_time": 2.233333333333328,
+        "target_applied_wall_time": 1786660229.5488927,
+        "zero_target_applied": true
+      },
+      "errors": [],
+      "measured_velocity_maps": {
+        "command_status_measured": {
+          "front_left_ankle": 0.010067729279398918,
+          "front_right_ankle": 0.01895938627421856,
+          "rear_left_ankle": -0.0018011038191616535,
+          "rear_right_ankle": -0.01419415045529604
+        },
+        "live_joint_velocity": {
+          "front_left_ankle": -0.010067729279398918,
+          "front_right_ankle": 0.01895938627421856,
+          "rear_left_ankle": 0.0018011038191616535,
+          "rear_right_ankle": -0.01419415045529604
+        }
+      },
+      "stop_tolerance_rad_s": 0.1,
+      "valid": true,
+      "wheel_generation": 1,
+      "zero_target_maps": {
+        "command_status_targets": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "ground_command_values": {
+          "front_left_ankle": 0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": 0.0,
+          "rear_right_ankle": 0.0
+        },
+        "logical_targets": {
+          "front_left_ankle": -0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": -0.0,
+          "rear_right_ankle": 0.0
+        },
+        "physx_target_readback": {
+          "front_left_ankle": -0.0,
+          "front_right_ankle": 0.0,
+          "rear_left_ankle": -0.0,
+          "rear_right_ankle": 0.0
+        }
+      }
+    }
+  },
+  "motion_start_ready": true,
+  "operation": "start_playback_plan",
+  "plan_id": "fsm50-gate1-v003_20260805_224517_157723_manual-trial2-3ea6050c14",
+  "plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+  "profile": "motion_only",
+  "rejection_reason": "",
+  "represented_step_indices": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "request_id": "7b360000667e452f8a84ad84604b1ea2",
+  "root_state_write_count": 0,
+  "segment_count": 112,
+  "type": "operation_ack",
+  "worker_pid": 22704,
+  "worker_session_id": "c8e54958dbda403191f2d8d2f5b64134"
+}

@@ -11,6 +11,7 @@ import numpy as np
 
 from fsm_50mm_recording_derived_v3.filtered_wheel_contact import (
     FILTERED_SURFACES,
+    GROUND_CONTACT_PRIM_PATH,
     FilteredContactLayoutError,
     configure_scene_for_filtered_wheel_contacts,
     contact_sensor_config_kwargs,
@@ -25,7 +26,13 @@ from fsm_50mm_recording_derived_v3.fsm50_telemetry import (
     FSM50TelemetryCollector,
     canonical_wheel_values,
 )
-from fsm_50mm_recording_derived_v3.support_classifier import ContactClass, WheelContact
+from fsm_50mm_recording_derived_v3.support_classifier import (
+    ContactClass,
+    ObstacleGeometry,
+    WheelContact,
+    WheelObservation,
+    classify_wheel_contact,
+)
 
 
 class _FakeCfg:
@@ -82,6 +89,34 @@ class _FailingSensor:
         raise RuntimeError("synthetic sensor failure")
 
 
+class _FakeContactView:
+    filter_count = 2
+
+    def __init__(self, cfg):
+        self.sensor_paths = [cfg.prim_path]
+        self.filter_paths = [list(cfg.filter_prim_paths_expr)]
+        self.max_contact_data_count = 4
+
+    def get_contact_data(self, dt):
+        assert float(dt) > 0.0
+        padding = np.zeros((4, 1), dtype=float)
+        padding[0, 0] = -0.001
+        return (
+            np.zeros((4, 1), dtype=float),
+            np.zeros((4, 3), dtype=float),
+            np.zeros((4, 3), dtype=float),
+            padding,
+            np.asarray([[1, 0]], dtype=int),
+            np.asarray([[0, 1]], dtype=int),
+        )
+
+
+class _SeparationSensor(_FakeSensor):
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.contact_physx_view = _FakeContactView(cfg)
+
+
 class FilteredWheelContactTests(unittest.TestCase):
     def test_module_import_does_not_import_isaac_or_omni(self):
         code = """
@@ -123,6 +158,10 @@ assert not blocked, blocked
             kwargs["filter_prim_paths_expr"],
             [path for _name, path in FILTERED_SURFACES],
         )
+        self.assertEqual(
+            kwargs["filter_prim_paths_expr"][0],
+            "/World/defaultGroundPlane/GroundPlane/CollisionPlane",
+        )
         self.assertTrue(kwargs["track_contact_points"])
         self.assertTrue(kwargs["track_friction_forces"])
         self.assertTrue(kwargs["track_air_time"])
@@ -156,7 +195,7 @@ assert not blocked, blocked
         )
         self.assertTrue(fl_ground["active"])
         self.assertEqual(fl_ground["upward_force_n"], 10.0)
-        self.assertEqual(fl_ground["other_prim_path"], "/World/defaultGroundPlane")
+        self.assertEqual(fl_ground["other_prim_path"], GROUND_CONTACT_PRIM_PATH)
         fr_obstacle = next(
             row for row in rows if row["leg"] == "FR" and row["surface"] == "obstacle"
         )
@@ -175,6 +214,66 @@ assert not blocked, blocked
         )
         with self.assertRaises(FilteredContactLayoutError):
             bank.update(1.0 / 120.0, force_recompute=True)
+
+    def test_bank_exposes_exact_physx_signed_separation_pairs(self):
+        bank = create_filtered_wheel_contact_sensor_bank(
+            sensor_cls=_SeparationSensor,
+            sensor_cfg_cls=_FakeCfg,
+        )
+        bank.update(1.0 / 120.0, force_recompute=True)
+        rows = bank.separation_observations(env_id=0)
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(len({row["pair_id"] for row in rows}), 8)
+        self.assertTrue(all(row["valid"] for row in rows))
+        self.assertTrue(
+            all(
+                row["other_prim_path"] == GROUND_CONTACT_PRIM_PATH
+                for row in rows
+                if row["surface"] == "ground"
+            )
+        )
+        self.assertTrue(
+            all(
+                row["maximum_penetration_m"] == 0.001
+                for row in rows
+                if row["surface"] == "ground"
+            )
+        )
+        self.assertTrue(
+            all(
+                row["status"] == "NO_CONTACT"
+                and row["maximum_penetration_m"] == 0.0
+                for row in rows
+                if row["surface"] == "obstacle"
+            )
+        )
+        self.assertTrue(bank.separation_evidence(env_id=0)["valid"])
+
+    def test_missing_physx_view_is_unknown_not_zero(self):
+        bank = create_filtered_wheel_contact_sensor_bank(
+            sensor_cls=_FakeSensor,
+            sensor_cfg_cls=_FakeCfg,
+        )
+        bank.update(1.0 / 120.0)
+        rows = bank.separation_observations(env_id=0)
+        self.assertTrue(all(row["valid"] is False for row in rows))
+        self.assertTrue(all(row["maximum_penetration_m"] is None for row in rows))
+        self.assertFalse(bank.separation_evidence(env_id=0)["valid"])
+
+    def test_live_physx_filter_identity_mismatch_is_unknown(self):
+        bank = create_filtered_wheel_contact_sensor_bank(
+            sensor_cls=_SeparationSensor,
+            sensor_cfg_cls=_FakeCfg,
+        )
+        bank.sensors["FL"].contact_physx_view.filter_paths[0].reverse()
+        bank.update(1.0 / 120.0, force_recompute=True)
+        rows = bank.separation_observations(env_id=0)
+        front_left = [row for row in rows if row["leg"] == "FL"]
+        self.assertTrue(all(row["valid"] is False for row in front_left))
+        self.assertTrue(
+            all("filter identity/order" in row["error"] for row in front_left)
+        )
+        self.assertFalse(bank.separation_evidence(env_id=0)["valid"])
 
     def test_scene_factory_uses_legacy_sensor_error_tuple(self):
         config = SimpleNamespace(
@@ -243,6 +342,101 @@ assert not blocked, blocked
         self.assertTrue(
             all(row["time_s"] == 1.25 for row in collector.contact_rows)
         )
+
+    def test_telemetry_passes_identity_checked_surface_rows_to_classifier(self):
+        bank = create_filtered_wheel_contact_sensor_bank(
+            sensor_cls=_FakeSensor,
+            sensor_cfg_cls=_FakeCfg,
+            force_threshold_n=2.0,
+        )
+        rows = filtered_contact_rows(bank, force_threshold_n=2.0)
+        expected_point = [0.464604914188385, 0.08623979985713959, 0.0016329276841133833]
+        for row in rows:
+            if row["leg"] != "RL":
+                continue
+            if row["surface"] == "ground":
+                row.update(
+                    active=True,
+                    force_valid=True,
+                    contact_point_valid=True,
+                    normal_force_n=12.934568405151484,
+                    total_force_n=12.934568405151484,
+                    contact_point_w=expected_point,
+                )
+            else:
+                row.update(
+                    active=False,
+                    force_valid=True,
+                    contact_point_valid=False,
+                    normal_force_n=0.0,
+                    total_force_n=0.0,
+                    contact_point_w=[float("nan")] * 3,
+                )
+
+        evidence_by_leg = (
+            FSM50TelemetryCollector._exact_filtered_surface_evidence_by_leg(rows)
+        )
+        self.assertIsNotNone(evidence_by_leg)
+        assert evidence_by_leg is not None
+        self.assertTrue(
+            all(
+                row["identity_valid"] is True
+                for evidence in evidence_by_leg.values()
+                for row in evidence.values()
+            )
+        )
+        self.assertTrue(FSM50TelemetryCollector._filtered_layout_valid(rows))
+
+        contact = classify_wheel_contact(
+            WheelObservation(
+                "RL",
+                (0.4593568742275238, 0.07857198268175125, 0.052130326628685),
+                12.934568405151367,
+                12.934568405151484,
+            ),
+            ObstacleGeometry(
+                front_face_x_m=0.5213121734675507,
+                top_z_m=0.05,
+                bottom_z_m=0.0,
+                rear_face_x_m=2.5,
+                width_m=2.0,
+            ),
+            wheel_radius_m=0.04998999834060672,
+            force_threshold_n=2.0,
+            filtered_surface_evidence=evidence_by_leg["RL"],
+        )
+        self.assertEqual(ContactClass.GROUND, contact.contact_class)
+        self.assertTrue(
+            FSM50TelemetryCollector._measured_contact_point_validity(
+                {"RL": contact}, rows
+            )["RL"]
+        )
+        installed = FSM50TelemetryCollector._install_measured_contact_points(
+            {"RL": contact}, rows
+        )
+        self.assertEqual(tuple(expected_point), installed["RL"].contact_point_w)
+
+        wrong_identity_cases = {
+            "other_path": {"other_prim_path": "/World/Obstacle"},
+            "wheel_path": {"wheel_prim_path": "/World/WLRRobot/rear_left_wheel"},
+            "filter_index": {"filter_index": 1},
+            "source": {"source": "aggregate.force"},
+        }
+        for label, mutation in wrong_identity_cases.items():
+            with self.subTest(label=label):
+                wrong_identity = [dict(row) for row in rows]
+                wrong_identity[0].update(mutation)
+                invalid = (
+                    FSM50TelemetryCollector._exact_filtered_surface_evidence_by_leg(
+                        wrong_identity
+                    )
+                )
+                self.assertIsNotNone(invalid)
+                assert invalid is not None
+                self.assertFalse(invalid["FL"]["ground"]["identity_valid"])
+                self.assertFalse(
+                    FSM50TelemetryCollector._filtered_layout_valid(wrong_identity)
+                )
 
     def test_filtered_front_face_force_is_not_counted_as_vertical_support(self):
         rows = [
@@ -398,6 +592,7 @@ assert not blocked, blocked
             "filtered_contact_layout_valid": True,
             "filtered_contact_force_valid": True,
             "filtered_contact_geometry_valid": True,
+            "filtered_contact_consistency_valid": True,
         }
         invalid_force = {**valid, "filtered_contact_force_valid": False}
         available_only = {"filtered_contact_available": True}
@@ -407,6 +602,69 @@ assert not blocked, blocked
         )
         self.assertFalse(
             FSM50TelemetryCollector._filtered_samples_valid([available_only])
+        )
+
+    def test_loaded_common_ground_force_rejects_zero_filtered_pair(self):
+        collector = object.__new__(FSM50TelemetryCollector)
+        collector.force_threshold_n = 1.0
+        rows = [
+            {
+                "leg": leg,
+                "surface": surface,
+                "force_valid": True,
+                "active": False,
+                "normal_force_n": 0.0,
+                "contact_point_valid": False,
+            }
+            for leg in ("FL", "FR", "RL", "RR")
+            for surface in ("ground", "obstacle")
+        ]
+        qualification = {
+            "wheel_contact_classes": {
+                "FL": ContactClass.GROUND.value,
+                "FR": ContactClass.AIR.value,
+                "RL": ContactClass.AIR.value,
+                "RR": ContactClass.GROUND.value,
+            },
+            "wheel_contact_force_up_n": {
+                "FL": 13.6,
+                "FR": 0.0,
+                "RL": 0.0,
+                "RR": 13.5,
+            },
+            "wheel_contact_force_total_n": {
+                "FL": 13.6,
+                "FR": 0.0,
+                "RL": 0.0,
+                "RR": 13.5,
+            },
+        }
+        valid, error = collector._filtered_contact_consistency(qualification, rows)
+        self.assertFalse(valid)
+        self.assertIn("FL/ground", error)
+        self.assertIn("RR/ground", error)
+
+    def test_loaded_obstacle_force_accepts_valid_obstacle_pair(self):
+        collector = object.__new__(FSM50TelemetryCollector)
+        collector.force_threshold_n = 1.0
+        rows = [
+            {
+                "leg": "FR",
+                "surface": "obstacle",
+                "force_valid": True,
+                "active": True,
+                "normal_force_n": 5.0,
+                "contact_point_valid": True,
+            }
+        ]
+        qualification = {
+            "wheel_contact_classes": {"FR": ContactClass.FRONT_FACE.value},
+            "wheel_contact_force_up_n": {"FR": 0.0},
+            "wheel_contact_force_total_n": {"FR": 5.0},
+        }
+        self.assertEqual(
+            collector._filtered_contact_consistency(qualification, rows),
+            (True, ""),
         )
 
     def test_support_geometry_uses_measured_filtered_contact_point(self):

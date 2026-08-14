@@ -1,0 +1,46 @@
+{
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0",
+  "batch_error": "",
+  "close_error": "PRECLOSE_CLOSURE_INVALID",
+  "failed": true,
+  "failure_reason": "PRECLOSE_CLOSURE_INVALID",
+  "finalization_errors": [
+    "preclose_evidence_manifest: RuntimeError: preclose evidence is incomplete; missing required files: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0\\v003_20260805_224517_157723_manual\\20260813T123326_258444Z_clean_fast_replay_3c2d2294f1\\20260813_083336_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_first_frame.png, C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0\\v003_20260805_224517_157723_manual\\20260813T123326_258444Z_clean_fast_replay_3c2d2294f1\\20260813_083336_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_last_frame.png"
+  ],
+  "finalized": false,
+  "phase": "PRECLOSE_CLOSURE_INVALID",
+  "shutdown_outcome": {
+    "child_pid": 34172,
+    "child_returncode": 0,
+    "close_error": "",
+    "close_kwargs": {
+      "skip_cleanup": true,
+      "wait_for_replicator": false
+    },
+    "close_wait_s": 1.0,
+    "created_utc": "2026-08-13T14:57:11.331427+00:00",
+    "elapsed_s": 8681.092999999993,
+    "handshake_state": "FAST_EXIT_REQUESTED",
+    "intended_returncode": 0,
+    "parent_pid": 33568,
+    "preclose_observed": true,
+    "preclose_verification": {
+      "error": "RuntimeError: preclose marker records evidence/snapshot errors",
+      "ok": false
+    },
+    "process_returned_normally": true,
+    "runtime_version": "5.1.0.0",
+    "schema_version": "fsm50.shutdown_outcome.v1",
+    "shutdown_mode": "fast",
+    "status": "PRECLOSE_CLOSURE_INVALID"
+  },
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-13T14:57:03.472178+00:00",
+    "before_created_utc": "2026-08-13T12:32:30.949364+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false
+}

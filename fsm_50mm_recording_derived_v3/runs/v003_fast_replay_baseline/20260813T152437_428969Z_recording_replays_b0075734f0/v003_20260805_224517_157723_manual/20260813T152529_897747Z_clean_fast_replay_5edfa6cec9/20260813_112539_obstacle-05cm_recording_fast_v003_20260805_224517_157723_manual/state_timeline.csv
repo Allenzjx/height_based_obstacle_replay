@@ -1,0 +1,7 @@
+start_time_s,end_time_s,sample_count,source_version,source_fast_segment,source_step,source_event_indices,support_legs,primary_diagonal,wheel_contact_classes
+1.5083333333333304,2.233333333333328,88,v003_20260805_224517_157723_manual,,,[],"[""FL"", ""FR"", ""RL"", ""RR""]",BALANCED,"{""FL"": ""GROUND"", ""FR"": ""GROUND"", ""RL"": ""GROUND"", ""RR"": ""GROUND""}"
+2.2416666666666614,2.2416666666666614,1,v003_20260805_224517_157723_manual,0,1,[0],"[""FL"", ""FR"", ""RL"", ""RR""]",FL_RR,"{""FL"": ""GROUND"", ""FR"": ""GROUND"", ""RL"": ""GROUND"", ""RR"": ""GROUND""}"
+2.2499999999999947,3.033333333333325,95,v003_20260805_224517_157723_manual,0,1,[0],"[""FL"", ""RR""]",FL_RR,"{""FL"": ""GROUND"", ""FR"": ""AIR"", ""RL"": ""AIR"", ""RR"": ""GROUND""}"
+3.0416666666666585,3.049999999999992,2,v003_20260805_224517_157723_manual,0,1,[0],"[""FL"", ""RL"", ""RR""]",FL_RR,"{""FL"": ""GROUND"", ""FR"": ""AIR"", ""RL"": ""GROUND"", ""RR"": ""GROUND""}"
+3.058333333333325,4.700000000000023,198,v003_20260805_224517_157723_manual,0,1,[0],"[""FL"", ""RR""]",FL_RR,"{""FL"": ""GROUND"", ""FR"": ""AIR"", ""RL"": ""AIR"", ""RR"": ""GROUND""}"
+4.708333333333357,5.233333333333383,64,v003_20260805_224517_157723_manual,,,[],"[""FL"", ""RR""]",FL_RR,"{""FL"": ""GROUND"", ""FR"": ""AIR"", ""RL"": ""AIR"", ""RR"": ""GROUND""}"

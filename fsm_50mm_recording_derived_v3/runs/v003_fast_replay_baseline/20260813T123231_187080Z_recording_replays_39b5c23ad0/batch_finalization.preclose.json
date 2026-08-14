@@ -1,0 +1,20 @@
+{
+  "artifact_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0",
+  "batch_error": "",
+  "close_error": "PENDING_SIMULATION_CLOSE",
+  "failed": true,
+  "finalization_errors": [
+    "preclose_evidence_manifest: RuntimeError: preclose evidence is incomplete; missing required files: C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0\\v003_20260805_224517_157723_manual\\20260813T123326_258444Z_clean_fast_replay_3c2d2294f1\\20260813_083336_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_first_frame.png, C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_fast_replay_baseline\\20260813T123231_187080Z_recording_replays_39b5c23ad0\\v003_20260805_224517_157723_manual\\20260813T123326_258444Z_clean_fast_replay_3c2d2294f1\\20260813_083336_obstacle-05cm_recording_fast_v003_20260805_224517_157723_manual\\viewport_last_frame.png"
+  ],
+  "finalized": false,
+  "phase": "PRECLOSE_FINALIZED",
+  "source_integrity": {
+    "added": [],
+    "after_created_utc": "2026-08-13T14:57:03.472178+00:00",
+    "before_created_utc": "2026-08-13T12:32:30.949364+00:00",
+    "changed": [],
+    "equal": true,
+    "missing": []
+  },
+  "strict_success": false
+}
