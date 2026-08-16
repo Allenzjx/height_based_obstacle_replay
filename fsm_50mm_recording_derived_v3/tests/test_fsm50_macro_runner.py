@@ -4,6 +4,7 @@ import argparse
 import copy
 import json
 import math
+import pytest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -11,8 +12,24 @@ from unittest import mock
 from command_model import JOINT_COMMAND_SIGN, SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 from completion_aware_segment import SegmentDecision, SegmentDecisionKind
 from fsm_50mm_recording_derived_v3 import fsm50_macro_runner as runner
-from fsm_50mm_recording_derived_v3.fsm50_macro_controller import build_gate_c_bundle
+from fsm_50mm_recording_derived_v3.fsm50_macro_controller import (
+    FeedbackRecoveryObservation,
+    build_gate_c_bundle,
+)
+from fsm_50mm_recording_derived_v3.fsm50_centroidal_support import (
+    CentroidalAngularMomentumRateMeasurement,
+    CentroidalSupportEvidence,
+    WholeBodyCOMMeasurement,
+    WheelContactMeasurement,
+    assess_contact_wrench_feasibility,
+    assess_primary_diagonal_support,
+    assess_support_region,
+    validate_wheel_contact_frame,
+)
 from fsm_50mm_recording_derived_v3.fsm50_motion_profiles import DEFAULT_PRIMARY_VERSION
+from fsm_50mm_recording_derived_v3.fsm50_macro_state_model import (
+    build_default_macro_graph,
+)
 from fsm_50mm_recording_derived_v3.worker_macro_fsm_session import (
     WorkerMacroFSMSession,
     _source_action_identity,
@@ -26,6 +43,165 @@ _FAKE_ACCEPTED_STEPS_SHA256 = "4" * 64
 _FAKE_PROFILE_ID = "fake-segment-profile"
 _FAKE_OWNER_STATE = "S1_APPROACH_AND_PRE_FR_SHIFT"
 _FAKE_STEP_ID = "fake-step-000"
+
+
+def _synthetic_terminal_telemetry_row(
+    step: int, *, terminal: bool, source_version: str
+) -> dict:
+    """Build a physically closed all-four-TOP telemetry sample."""
+
+    dt = 1.0 / 120.0
+    sim_time = step * dt
+    legs = ("FL", "FR", "RL", "RR")
+    centers = {
+        "FL": (0.70, 0.18, 0.10),
+        "FR": (0.70, -0.18, 0.10),
+        "RL": (0.50, 0.18, 0.10),
+        "RR": (0.50, -0.18, 0.10),
+    }
+    com = WholeBodyCOMMeasurement(
+        com_measurement_available=True,
+        acceleration_available=True,
+        physics_tick=step,
+        sim_time_s=sim_time,
+        physics_dt_s=dt,
+        body_names=("synthetic_body",),
+        body_masses_kg=(10.0,),
+        total_mass_kg=10.0,
+        position_w_m=(0.60, 0.0, 0.20),
+        velocity_w_m_s=(0.0, 0.0, 0.0),
+        acceleration_w_m_s2=(0.0, 0.0, 0.0),
+        source="runner_test.synthetic_whole_body_com",
+    )
+    angular = CentroidalAngularMomentumRateMeasurement(
+        available=True,
+        physics_tick=step,
+        sim_time_s=sim_time,
+        body_names=("synthetic_body",),
+        angular_momentum_rate_w_nm=(0.0, 0.0, 0.0),
+        source="runner_test.synthetic_angular_rate",
+        errors=(),
+    )
+    measurements = []
+    for leg in legs:
+        point = centers[leg]
+        measurements.append(
+            WheelContactMeasurement(
+                leg=leg,
+                wheel_body_name={
+                    "FL": "front_left_wheel",
+                    "FR": "front_right_wheel",
+                    "RL": "rear_left_wheel",
+                    "RR": "rear_right_wheel",
+                }[leg],
+                physics_tick=step,
+                sim_time_s=sim_time,
+                surface_kind="OBSTACLE_TOP",
+                surface_height_m=0.10,
+                surface_normal_w=(0.0, 0.0, 1.0),
+                active=True,
+                contact_point_w_m=point,
+                normal_force_w_n=(0.0, 0.0, 24.525),
+                friction_force_w_n=(0.0, 0.0, 0.0),
+                contact_moment_w_nm=(0.0, 0.0, 0.0),
+                contact_moment_model="MEASURED",
+                dwell_s=0.50,
+                surface_dwell_verified=True,
+                slip_speed_m_s=0.0,
+                contact_drift_speed_m_s=0.0,
+                friction_coefficient=0.8,
+                finite_patch_radius_m=0.03,
+                source="runner_test.synthetic_contact",
+            )
+        )
+    contacts = validate_wheel_contact_frame(
+        measurements,
+        physics_tick=step,
+        sim_time_s=sim_time,
+        physics_dt_s=dt,
+    )
+    support = assess_support_region(com, contacts)
+    wrench = assess_contact_wrench_feasibility(
+        com, contacts, angular_momentum_rate=angular
+    )
+    diagonal = assess_primary_diagonal_support(
+        com,
+        contacts,
+        active_swing_leg="",
+        wrench_feasibility=wrench,
+    )
+    centroidal = CentroidalSupportEvidence.create(
+        sim_step=step,
+        physics_time_s=sim_time,
+        physics_dt_s=dt,
+        whole_body_com=com,
+        centroidal_angular_momentum_rate=angular,
+        wheel_contacts=contacts,
+        support_region=support,
+        contact_wrench_feasibility=wrench,
+        diagonal_support=diagonal,
+    )
+    servo_zero = {name: 0.0 for name in SERVO_JOINT_NAMES}
+    wheel_zero = {name: 0.0 for name in WHEEL_JOINT_NAMES}
+    feedback = FeedbackRecoveryObservation.create(
+        sim_step=step,
+        physics_time_s=sim_time,
+        observed_command_epoch=0,
+        n_plus_one_verified=False,
+        verified_command_epoch=None,
+        readback_servo_targets_deg=servo_zero,
+        readback_wheel_targets_rad_s=wheel_zero,
+        measured_servo_positions_deg=servo_zero,
+        measured_servo_velocities_deg_s=servo_zero,
+        joint_limit_margin_deg={name: 20.0 for name in SERVO_JOINT_NAMES},
+        base_position_m=(0.60, 0.0, 0.20),
+        base_roll_rad=0.0,
+        base_pitch_rad=0.0,
+        base_angular_velocity_rad_s=(0.0, 0.0, 0.0),
+        wheel_center_w_m=centers,
+        wheel_front_face_clearance_m={leg: centers[leg][0] - 0.50 for leg in legs},
+        wheel_top_clearance_m={leg: 0.0 for leg in legs},
+        obstacle_front_face_x_m=0.50,
+        obstacle_top_z_m=0.10,
+        body_crossed_front_face=True,
+        final_recoverable=True,
+        posture_complete=True,
+    )
+    all_joint_names = tuple(SERVO_JOINT_NAMES) + tuple(WHEEL_JOINT_NAMES)
+    return {
+        "schema_version": runner.TELEMETRY_SCHEMA,
+        "source_version": source_version,
+        "sim_step": step,
+        "sim_time_s": sim_time,
+        "centroidal_support_evidence": centroidal.to_mapping(),
+        "feedback_recovery_observation": feedback.to_mapping(),
+        "base_position_m": {"x": 0.60, "y": 0.0, "z": 0.20},
+        "base_roll_rad": 0.0,
+        "base_pitch_rad": 0.0,
+        "root_angular_velocity_w": [0.0, 0.0, 0.0],
+        "joint_position_rad": {name: 0.0 for name in all_joint_names},
+        "joint_velocity_rad_s": {name: 0.0 for name in all_joint_names},
+        "wheel_center_w_m": {leg: list(centers[leg]) for leg in legs},
+        "obstacle_front_face_x_m": 0.50,
+        "obstacle_top_z_m": 0.10,
+        "body_crossed_front_face": True,
+        "final_recoverable": True,
+        "posture_complete": True,
+        "macro_state": "SUCCESS" if terminal else "S10_POSTURE_RECOVERY",
+        "subphase": "COMPLETE" if terminal else "SETTLE",
+        "profile_id": "",
+        "profile_source_version": "",
+        "profile_strategy": "",
+        "phase_elapsed_s": 0.0,
+        "profile_fraction": 1.0,
+        "command_epoch": 0,
+        "transition_events": [],
+        "controller_terminal": terminal,
+        "controller_terminal_outcome": "TASK_SUCCESS" if terminal else "RUNNING",
+        "feedback_recovery_stage": "COMPLETE" if terminal else "SETTLE",
+        "feedback_recovery_action_count": 0,
+        "feedback_recovery_exhaustion_reason": "",
+    }
 
 
 def _fake_completion_spec() -> dict:
@@ -240,6 +416,7 @@ def _synthetic_retained_source_consumption_row(
     source_action_index: int,
     sim_step: int,
     runtime_instance_id: str,
+    boundary_batch_id: str,
 ) -> dict:
     """Build one canonical same-target source-consumption row for runner tests."""
 
@@ -256,7 +433,7 @@ def _synthetic_retained_source_consumption_row(
     pre_action_readback = {
         "sim_step": sim_step,
         "command_epoch": 0,
-        "batch_id": "synthetic-start-boundary",
+        "batch_id": boundary_batch_id,
         "canonical_servo_targets_deg": dict(
             expected_action["servo_targets_deg"]
         ),
@@ -299,7 +476,9 @@ def _synthetic_retained_source_consumption_row(
         "servo_targets_deg": dict(expected_action["servo_targets_deg"]),
         "wheel_targets_rad_s": dict(expected_action["wheel_targets_rad_s"]),
         "target_changed": False,
-        "dispatch_epoch": source_action_index + 1,
+        # A retained same-target source action consumes source identity without
+        # inventing a new physical/controller epoch.
+        "dispatch_epoch": 0,
         "physical_dispatch_required": False,
         "physical_dispatch_applied": False,
         "physical_dispatch_index": None,
@@ -326,6 +505,12 @@ def _valid_environment_identity() -> dict:
 
 class _FakeGraph:
     graph_id = "fake-graph"
+    _graph = build_default_macro_graph()
+    initial_state = _graph.initial_state
+    success_state = _graph.success_state
+
+    def get(self, state):
+        return self._graph.get(state)
 
 
 class _FakeProfiles:
@@ -530,6 +715,8 @@ class _FakeClient:
             run_dir / "macro_feedback_recovery_action_ledger.jsonl"
         )
         dispatch_ledger = run_dir / "macro_dispatch_ledger.jsonl"
+        transition_ledger = run_dir / "macro_transition_evidence.jsonl"
+        telemetry_ledger = run_dir / "minimal_macro_telemetry.jsonl"
         video = run_dir / "actual_viewport_video.mp4"
         if request["bundle_sha256"] == _FakeBundle.bundle_sha256:
             ledger_bundle = _FakeBundle(request["source_version"])
@@ -548,6 +735,7 @@ class _FakeClient:
             _synthetic_segment_completion_row(
                 expected,
                 index,
+                start_step=109 + index * 100000,
                 physical_start=False,
             )
             for index, expected in enumerate(expected_starts)
@@ -559,9 +747,24 @@ class _FakeClient:
                 source_action_index=index,
                 sim_step=109 + index * 100000,
                 runtime_instance_id=f"adapter-{self.pid}",
+                boundary_batch_id=f"{request['request_id']}:start-boundary",
             )
             for index, expected in enumerate(expected_starts)
         ]
+        for segment, source in zip(segment_rows, source_rows):
+            pre_action = source["pre_action_verified_readback"]
+            segment.update(
+                start_command_epoch=source["dispatch_epoch"],
+                start_sim_step=source["sim_step"],
+                start_sim_time_s=source["sim_time_s"],
+                pre_action_canonical_servo_targets_deg=dict(
+                    pre_action["canonical_servo_targets_deg"]
+                ),
+                start_readback_verified_sim_step=pre_action["sim_step"],
+                start_readback_sha256=source[
+                    "pre_action_verified_readback_sha256"
+                ],
+            )
         command_transform = dict(
             source_rows[0]["pre_action_verified_readback"][
                 "servo_command_transform"
@@ -569,7 +772,7 @@ class _FakeClient:
         )
         command_transform_sha256 = runner._sha256_mapping(command_transform)
         boundary_ack = {
-            "batch_id": "synthetic-start-boundary",
+            "batch_id": f"{request['request_id']}:start-boundary",
             "source": "fsm50_macro_start_boundary",
             "error": "",
             "applied_sim_step": 100,
@@ -652,6 +855,179 @@ class _FakeClient:
         feedback_recovery_sha256 = runner.sha256_file(feedback_recovery)
         dispatch_ledger.write_text("", encoding="utf-8")
         dispatch_ledger_sha256 = runner.sha256_file(dispatch_ledger)
+        graph = _FakeGraph._graph
+        ordered_states = []
+        state = graph.initial_state
+        while True:
+            ordered_states.append(state.value)
+            if state == graph.success_state:
+                break
+            state = graph.get(state).next_state
+        owned_steps_by_state: dict[str, list[int]] = {
+            state_id: [] for state_id in ordered_states
+        }
+        for row in source_rows:
+            owned_steps_by_state.setdefault(str(row["macro_state"]), []).append(
+                int(row["sim_step"])
+            )
+        for row in segment_rows:
+            owned_steps_by_state.setdefault(str(row["owner_state"]), []).extend(
+                (int(row["start_sim_step"]), int(row["terminal_sim_step"]))
+            )
+        profiles_by_state = {
+            str(profile["state_id"]): profile
+            for profile in ledger_bundle.profiles.to_mapping()["profiles"]
+            if str(profile["source_version"]) == request["source_version"]
+        }
+        transition_steps = [int(boundary_ack["first_physics_step"])]
+        for index in range(1, len(ordered_states)):
+            prior_state = ordered_states[index - 1]
+            target_state = ordered_states[index]
+            prior_owned = owned_steps_by_state.get(prior_state, [])
+            target_owned = owned_steps_by_state.get(target_state, [])
+            minimum_step = transition_steps[-1] + 1
+            if prior_owned:
+                # Leave deterministic room for completion-control actions that
+                # a ledger-tamper test injects after the original fake capture.
+                minimum_step = max(minimum_step, max(prior_owned) + 32)
+            if target_owned:
+                minimum_step = min(minimum_step, min(target_owned))
+            if minimum_step <= transition_steps[-1] or (
+                prior_owned and minimum_step <= max(prior_owned)
+            ):
+                raise AssertionError(
+                    "synthetic transition schedule cannot separate state owners"
+                )
+            transition_steps.append(minimum_step)
+        transition_rows = []
+        for index, to_state in enumerate(ordered_states):
+            step = transition_steps[index]
+            from_state = "" if index == 0 else ordered_states[index - 1]
+            profile = profiles_by_state.get(to_state)
+            profiled = profile is not None
+            transition_rows.append(
+                {
+                    "schema_version": runner.TRANSITION_SCHEMA,
+                    "transition_index": index,
+                    "sim_time_s": step / 120.0,
+                    "sim_step": step,
+                    "from_state": from_state,
+                    "to_state": to_state,
+                    "subphase": (
+                        "COMPLETE" if to_state == "SUCCESS" else "PRELOAD"
+                    ),
+                    "profile_id": str(profile["profile_id"]) if profiled else "",
+                    "profile_source_version": (
+                        str(profile["source_version"]) if profiled else ""
+                    ),
+                    "profile_strategy": (
+                        str(profile["strategy"]) if profiled else ""
+                    ),
+                    "command_epoch": 0,
+                    "phase_elapsed_s": 0.0,
+                    "profile_fraction": (
+                        0.0 if profiled else 1.0
+                    ),
+                    "events": (
+                        [f"RESET:{to_state}"]
+                        if index == 0
+                        else [
+                            f"EXIT:{from_state}",
+                            f"ENTER:{to_state}",
+                        ]
+                    ),
+                    "reason": "synthetic runner transition",
+                    "guard_evidence": {},
+                    "retry_count": 0,
+                    "observation_sha256": f"{(index + 7) % 10}" * 64,
+                }
+            )
+        transition_ledger.write_text(
+            "".join(
+                json.dumps(
+                    row,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                + "\n"
+                for row in transition_rows
+            ),
+            encoding="utf-8",
+        )
+        transition_sha256 = runner.sha256_file(transition_ledger)
+        telemetry_rows = [
+            _synthetic_terminal_telemetry_row(
+                step,
+                terminal=True,
+                source_version=request["source_version"],
+            )
+            for step in (
+                transition_steps[-1] + 8,
+                transition_steps[-1] + 16,
+                transition_steps[-1] + 24,
+                transition_steps[-1] + 32,
+                transition_steps[-1] + 40,
+            )
+        ]
+        telemetry_ledger.write_text(
+            "".join(
+                json.dumps(
+                    row,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                + "\n"
+                for row in telemetry_rows
+            ),
+            encoding="utf-8",
+        )
+        telemetry_sha256 = runner.sha256_file(telemetry_ledger)
+        final_raw_sha256 = runner._sha256_mapping(telemetry_rows[-1])
+        terminal_auditor = WorkerMacroFSMSession(
+            load_worker_macro_fsm_request(
+                Path(self.worker_args.fsm50_macro_request_path)
+            ),
+            worker_session_id="synthetic-terminal-auditor",
+        )
+        terminal_auditor.rows = copy.deepcopy(telemetry_rows)
+        terminal_auditor.durable_servo_command_transform = copy.deepcopy(
+            command_transform
+        )
+        terminal_auditor.controller_terminal_outcome = "TASK_SUCCESS"
+        settle_assessment = (
+            terminal_auditor._feedback_recovery_terminal_settle_assessment(
+                outcome="TASK_SUCCESS"
+            )
+        )
+        assert settle_assessment["complete"] is True
+        recovery_closure_core = {
+            "schema_version": runner.TERMINAL_RECOVERY_CLOSURE_SCHEMA,
+            "outcome": "TASK_SUCCESS",
+            "telemetry_jsonl_path": str(telemetry_ledger),
+            "telemetry_jsonl_sha256": telemetry_sha256,
+            "telemetry_sample_count": len(telemetry_rows),
+            "final_raw_telemetry_row_sha256": final_raw_sha256,
+            "settle_assessment": settle_assessment,
+        }
+        recovery_closure = {
+            **recovery_closure_core,
+            "closure_sha256": runner._sha256_mapping(recovery_closure_core),
+        }
+        transition_claim = {
+            "transition_evidence_path": str(transition_ledger),
+            "transition_evidence_sha256": transition_sha256,
+            "transition_count": len(transition_rows),
+        }
+        telemetry_claim = {
+            "telemetry_jsonl_path": str(telemetry_ledger),
+            "telemetry_jsonl_sha256": telemetry_sha256,
+            "telemetry_sample_count": len(telemetry_rows),
+            "final_raw_telemetry_row_sha256": final_raw_sha256,
+        }
         source_claim = {
             "source_action_consumption_path": str(source_consumption),
             "source_action_consumption_sha256": source_sha256,
@@ -695,12 +1071,20 @@ class _FakeClient:
                 **source_claim,
                 **ledger_claim,
                 **feedback_claim,
+                **transition_claim,
+                **telemetry_claim,
+                "controller_terminal_outcome": "TASK_SUCCESS",
+                "terminal_recovery_closure": recovery_closure,
                 "dispatch_complete": True,
                 "scheduler_complete": True,
                 "macro_controller": {
                     **source_claim,
                     **ledger_claim,
                     **feedback_claim,
+                    **transition_claim,
+                    **telemetry_claim,
+                    "terminal_outcome": "TASK_SUCCESS",
+                    "terminal_recovery_closure": recovery_closure,
                 },
             },
             "physical_evidence": {
@@ -715,7 +1099,7 @@ class _FakeClient:
                     "UNAVAILABLE_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
                 ),
             },
-            "final_telemetry_row": {},
+            "final_telemetry_row": copy.deepcopy(telemetry_rows[-1]),
         }
         runner.atomic_write_json(task_inputs, task_payload)
         runner.atomic_write_json(
@@ -752,6 +1136,10 @@ class _FakeClient:
                 **source_claim,
                 **ledger_claim,
                 **feedback_claim,
+                **transition_claim,
+                **telemetry_claim,
+                "controller_terminal_outcome": "TASK_SUCCESS",
+                "terminal_recovery_closure": recovery_closure,
             },
         )
         video.write_bytes(b"video")
@@ -814,6 +1202,10 @@ class _FakeClient:
             **source_claim,
             **ledger_claim,
             **feedback_claim,
+            **transition_claim,
+            **telemetry_claim,
+            "controller_terminal_outcome": "TASK_SUCCESS",
+            "terminal_recovery_closure": recovery_closure,
         }
         self.latest_macro_fsm_terminal = terminal
         self._history.append(
@@ -1144,7 +1536,7 @@ def _successful_review_document(attempt: runner.MacroAttempt) -> dict:
         body_crossed_front_face=True,
         required_leg_lift_completed=True,
         final_recoverable=True,
-        posture_incomplete=True,
+        posture_incomplete=False,
         robot_fell=False,
         body_stuck=False,
         wheel_drive_up_without_required_lift=False,
@@ -1168,9 +1560,7 @@ def _review_success(attempt: runner.MacroAttempt) -> None:
             run_dir=attempt.run_dir,
             verdict_path=verdict_path,
         )
-    assert result["manual_review_status"] == (
-        "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
-    )
+    assert result["manual_review_status"] == "MACRO_FSM_TASK_SUCCESS"
 
 
 def _gate_d_review_attempt(
@@ -1470,6 +1860,13 @@ def test_segment_completion_ledger_rejects_self_consistent_row_tampering(
         row["start_readback_verified_sim_step"] = row["start_sim_step"] - 1
         row["retained_epoch_same_target"] = True
 
+    def source_start_epoch(rows):
+        rows[0]["start_command_epoch"] += 1
+
+    def source_start_tick(rows):
+        rows[0]["start_sim_step"] += 1
+        rows[0]["start_sim_time_s"] = rows[0]["start_sim_step"] / 120.0
+
     def tracking_lifecycle(rows):
         rows[0]["tracking_end_count"] = 0
 
@@ -1519,6 +1916,8 @@ def test_segment_completion_ledger_rejects_self_consistent_row_tampering(
             completion_spec,
             effective_duration,
             retained_old_readback,
+            source_start_epoch,
+            source_start_tick,
             tracking_lifecycle,
             decision_schema,
             planned_decision_missing_feedback,
@@ -1646,6 +2045,96 @@ def test_macro_start_ack_requires_render8_outer_cadence(tmp_path: Path):
     assert len(StaleRender2Client.instances) == 1
     assert StaleRender2Client.instances[0].process.poll() == 0
     assert StaleRender2Client.instances[0].closed is True
+
+
+def test_start_boundary_ack_is_independently_validated_and_manifest_bound():
+    request = {
+        "request_id": "request",
+        "graph_sha256": "a" * 64,
+        "profile_library_sha256": "b" * 64,
+        "bundle_sha256": "c" * 64,
+    }
+    worker_binding = {
+        "worker_pid": 401,
+        "worker_session_id": "worker-401",
+        "adapter_runtime_instance_id": "adapter-401",
+    }
+    boundary = {
+        "batch_id": "request:start-boundary",
+        "source": "fsm50_macro_start_boundary",
+        "error": "",
+        "applied_sim_step": 100,
+        "first_physics_step": 101,
+        "motion_start_skew_s": 0.0,
+        "physics_dt_s": 1.0 / 120.0,
+        "servo_applied": True,
+        "wheel_applied": True,
+        "servo_targets_applied": {name: 0.0 for name in SERVO_JOINT_NAMES},
+        "wheel_targets_applied": {name: 0.0 for name in WHEEL_JOINT_NAMES},
+        "recording_metadata": {},
+    }
+    acknowledgement = {
+        "type": "operation_ack",
+        "operation": "start_macro_fsm",
+        "request_id": "request",
+        "accepted": True,
+        "error": "",
+        "worker_pid": 401,
+        "worker_session_id": "worker-401",
+        "adapter_runtime_instance_id": "adapter-401",
+        "artifact_request_id": "",
+        "root_state_write_count": 0,
+        "physics_dt_s": 1.0 / 120.0,
+        "graph_sha256": "a" * 64,
+        "profile_library_sha256": "b" * 64,
+        "bundle_sha256": "c" * 64,
+        "start_boundary_ack": boundary,
+        "first_controller_tick_physics_step": 101,
+        "earliest_profile_dispatch_physics_step": 108,
+        "earliest_profile_actuation_physics_step": 109,
+    }
+    validated = runner._validate_macro_start_ack(
+        acknowledgement,
+        request=request,
+        worker_binding=worker_binding,
+        expected_boundary_ack=boundary,
+    )
+    assert validated["start_boundary_ack"] == boundary
+
+    for key, forged in (
+        ("source", "forged-source"),
+        ("motion_start_skew_s", 0.5),
+        ("physics_dt_s", 0.5),
+    ):
+        tampered = copy.deepcopy(acknowledgement)
+        tampered["start_boundary_ack"][key] = forged
+        with pytest_raises(runner.MacroRunnerContractError):
+            runner._validate_macro_start_ack(
+                tampered,
+                request=request,
+                worker_binding=worker_binding,
+                expected_boundary_ack=tampered["start_boundary_ack"],
+            )
+
+    different_persisted = copy.deepcopy(acknowledgement)
+    different_persisted["start_boundary_ack"]["batch_id"] = "other-boundary"
+    with pytest_raises(runner.MacroRunnerContractError):
+        runner._validate_macro_start_ack(
+            different_persisted,
+            request=request,
+            worker_binding=worker_binding,
+            expected_boundary_ack=boundary,
+        )
+
+    coherently_forged = copy.deepcopy(acknowledgement)
+    coherently_forged["start_boundary_ack"]["batch_id"] = "forged-boundary"
+    with pytest_raises(runner.MacroRunnerContractError):
+        runner._validate_macro_start_ack(
+            coherently_forged,
+            request=request,
+            worker_binding=worker_binding,
+            expected_boundary_ack=coherently_forged["start_boundary_ack"],
+        )
 
 
 def test_real_gate_a_gate_b_bundle_rebuild_and_request_are_sha_bound(tmp_path: Path):
@@ -1799,6 +2288,153 @@ def test_baseline_then_three_repeats_use_four_fresh_serial_workers(tmp_path: Pat
         assert manifest["shutdown_outcome"]["close_returned_receipt"][
             "close_event_type"
         ] == "close_returned"
+
+
+def test_transition_telemetry_and_machine_outcome_are_not_self_asserted(
+    tmp_path: Path,
+):
+    _FakeClient.instances.clear()
+    args = _args(tmp_path)
+    attempt = runner.run_trials(
+        args,
+        trial_kind="baseline",
+        count=1,
+        client_factory=_FakeClient,
+        bundle_builder=lambda *_args, **_kwargs: _FakeBundle(),
+        lock_factory=_Lock,
+        process_snapshot_fn=lambda: [],
+        conflict_detector=lambda _rows: [],
+        environment_lock_validator=_valid_environment_identity,
+    )[0]
+    run = attempt.run_dir
+    transition_rows = runner._strict_jsonl_load(
+        run / "macro_transition_evidence.jsonl"
+    )
+    source_rows = runner._strict_jsonl_load(
+        run / "macro_source_action_consumption.jsonl"
+    )
+    segment_rows = runner._strict_jsonl_load(
+        run / "macro_segment_completion_ledger.jsonl"
+    )
+    dispatch_rows = []
+    runner._validate_transition_rows(
+        transition_rows,
+        bundle=_FakeBundle(),
+        source_rows=source_rows,
+        dispatch_rows=dispatch_rows,
+        segment_rows=segment_rows,
+        boundary_first_physics_step=101,
+        source_version=args.source_version,
+    )
+    for mutate in (
+        lambda rows: rows[0].__setitem__("subphase", {}),
+        lambda rows: rows[0].__setitem__("phase_elapsed_s", -9.0),
+        lambda rows: rows[1].__setitem__("profile_id", "forged"),
+    ):
+        changed = copy.deepcopy(transition_rows)
+        mutate(changed)
+        with pytest.raises(runner.MacroRunnerContractError):
+            runner._validate_transition_rows(
+                changed,
+                bundle=_FakeBundle(),
+                source_rows=source_rows,
+                dispatch_rows=dispatch_rows,
+                segment_rows=segment_rows,
+                boundary_first_physics_step=101,
+                source_version=args.source_version,
+            )
+    appended = copy.deepcopy(transition_rows)
+    extra = copy.deepcopy(appended[-1])
+    extra.update(
+        transition_index=len(appended),
+        sim_step=extra["sim_step"] + 1,
+        sim_time_s=(extra["sim_step"] + 1) / 120.0,
+        from_state="SUCCESS",
+        to_state="SUCCESS",
+        events=["RETRY:SUCCESS:0"],
+    )
+    appended.append(extra)
+    with pytest.raises(runner.MacroRunnerContractError):
+        runner._validate_transition_rows(
+            appended,
+            bundle=_FakeBundle(),
+            source_rows=source_rows,
+            dispatch_rows=dispatch_rows,
+            segment_rows=segment_rows,
+            boundary_first_physics_step=101,
+            source_version=args.source_version,
+        )
+
+    telemetry_rows = runner._strict_jsonl_load(
+        run / "minimal_macro_telemetry.jsonl"
+    )
+    runner._validate_telemetry_chronology(
+        telemetry_rows, source_version=args.source_version
+    )
+    missing_source = copy.deepcopy(telemetry_rows)
+    missing_source[0].pop("source_version")
+    with pytest.raises(runner.MacroRunnerContractError):
+        runner._validate_telemetry_chronology(
+            missing_source, source_version=args.source_version
+        )
+    post_success_regression = copy.deepcopy(telemetry_rows)
+    regressed = copy.deepcopy(post_success_regression[0])
+    regressed_step = transition_rows[-1]["sim_step"] + 1
+    regressed.update(
+        sim_step=regressed_step,
+        sim_time_s=regressed_step / 120.0,
+        macro_state="S10_POSTURE_RECOVERY",
+        controller_terminal=False,
+        controller_terminal_outcome="RUNNING",
+    )
+    post_success_regression.insert(0, regressed)
+    with pytest.raises(runner.MacroRunnerContractError):
+        runner._validate_telemetry_chronology(
+            post_success_regression,
+            source_version=args.source_version,
+            terminal_transition=transition_rows[-1],
+            success_state="SUCCESS",
+            terminal_outcome="TASK_SUCCESS",
+        )
+
+    request = load_worker_macro_fsm_request(
+        run / "worker_macro_fsm_request.json"
+    )
+    auditor = WorkerMacroFSMSession(
+        request, worker_session_id="terminal-row-test"
+    )
+    durable = runner.strict_json_load(run / "worker_macro_fsm_result.json")
+    auditor.durable_servo_command_transform = durable[
+        "servo_command_transform"
+    ]
+    good = auditor._feedback_recovery_terminal_row_assessment(
+        row=telemetry_rows[-1], outcome="TASK_SUCCESS"
+    )
+    assert good["valid"] is True
+    missing_wheel = copy.deepcopy(telemetry_rows[-1])
+    missing_wheel["joint_position_rad"].pop(WHEEL_JOINT_NAMES[0])
+    bad = auditor._feedback_recovery_terminal_row_assessment(
+        row=missing_wheel, outcome="TASK_SUCCESS"
+    )
+    assert bad["valid"] is False
+    assert "kinematic row" in bad["error"]
+
+    document = _successful_review_document(attempt)
+    document["verdict"]["posture_incomplete"] = False
+    machine_incomplete = copy.deepcopy(
+        runner.strict_json_load(run / runner.RUNNER_MANIFEST_NAME)["terminal"]
+    )
+    machine_incomplete["controller_terminal_outcome"] = (
+        "TASK_SUCCESS_POSTURE_INCOMPLETE"
+    )
+    assert runner._validate_manual_verdict_document(
+        document,
+        request=runner.strict_json_load(
+            run / "worker_macro_fsm_request.json"
+        ),
+        terminal=machine_incomplete,
+        run=run,
+    ) == "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
 
 
 def test_gate_d_sources_each_use_explicit_cross_version_contract(tmp_path: Path):
@@ -1965,7 +2601,7 @@ def test_gate_d_sources_each_use_explicit_cross_version_contract(tmp_path: Path)
             "trial_index": 3,
             "controller_complete": True,
             "shutdown_verified": True,
-            "manual_review_status": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+                "manual_review_status": "MACRO_FSM_TASK_SUCCESS",
         },
     )
     with pytest_raises(runner.MacroRunnerContractError):
@@ -1987,9 +2623,7 @@ def test_gate_d_review_revalidates_full_attempt_before_binding(tmp_path: Path):
             run_dir=attempt.run_dir,
             verdict_path=verdict_path,
         )
-    assert result["manual_review_status"] == (
-        "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
-    )
+    assert result["manual_review_status"] == "MACRO_FSM_TASK_SUCCESS"
     closure_validator.assert_called_once()
     manifest = runner.strict_json_load(attempt.manifest_path)
     bound = attempt.run_dir / runner.MANUAL_VERDICT_NAME
@@ -2024,9 +2658,7 @@ def test_gate_c_review_remains_compatible_with_current_rebuilt_bundle(
         run_dir=attempt.run_dir,
         verdict_path=verdict_path,
     )
-    assert result["manual_review_status"] == (
-        "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
-    )
+    assert result["manual_review_status"] == "MACRO_FSM_TASK_SUCCESS"
 
 
 def test_gate_d_review_rejects_manifest_runtime_chain_tampering(tmp_path: Path):
@@ -2266,7 +2898,7 @@ def test_fast_close_requires_every_bound_row_and_validates_optional_returned_pai
             )
 
 
-def test_posture_incomplete_success_is_repeat_eligible_and_review_exit_zero(
+def test_posture_incomplete_success_is_not_repeat_eligible_but_review_exit_zero(
     tmp_path: Path,
 ):
     _FakeClient.instances.clear()
@@ -2315,10 +2947,11 @@ def test_posture_incomplete_success_is_repeat_eligible_and_review_exit_zero(
         "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
     )
     args.baseline_run_dir = attempt.run_dir
-    with mock.patch.object(
-        runner, "build_gate_c_bundle", return_value=_FakeBundle()
-    ):
-        runner._validate_repeat_baseline(args)
+    with pytest_raises(runner.MacroRunnerContractError):
+        with mock.patch.object(
+            runner, "build_gate_c_bundle", return_value=_FakeBundle()
+        ):
+            runner._validate_repeat_baseline(args)
     bound_verdict = attempt.run_dir / runner.MANUAL_VERDICT_NAME
     bound_verdict.write_text("{}\n", encoding="utf-8")
     with pytest_raises(runner.MacroRunnerContractError):

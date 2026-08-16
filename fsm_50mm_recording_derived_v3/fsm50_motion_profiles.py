@@ -852,6 +852,65 @@ def _canonical_full_plan_payload(plan: Any) -> dict[str, Any]:
     return payload
 
 
+def _legacy_v1_plan_fingerprint(plan: Any) -> str:
+    """Rebuild the exact pre-execution-semantics Gate-A v1 plan identity."""
+
+    payload = {
+        "final_time_s": round(float(plan.final_time_s), 9),
+        "profile": plan.profile,
+        "total_steps": int(plan.total_steps),
+        "events": [
+            {
+                "time_s": round(float(event.time_s), 9),
+                "command": str(event.command),
+                "source_step": event.source_step,
+                "source_step_id": event.source_step_id,
+                "command_index_in_step": event.command_index_in_step,
+                "commands_in_step": event.commands_in_step,
+                "global_command_index": event.global_command_index,
+                "base_command": event.base_command,
+                "base_duration_s": round(float(event.base_duration_s), 9),
+                "planned_duration_s": round(float(event.planned_duration_s), 9),
+                "segment_index": int(event.segment_index),
+                "channel": event.channel,
+                "dispatch_command": bool(event.dispatch_command),
+            }
+            for event in plan.events
+        ],
+        "segments": [
+            {
+                "segment_index": int(segment.segment_index),
+                "source_step": int(segment.source_step),
+                "event_start_index": int(segment.event_start_index),
+                "event_count": int(segment.event_count),
+                "servo_tolerance_deg": round(
+                    float(segment.servo_tolerance_deg), 9
+                ),
+                "recorded_servo_residual_deg": {
+                    name: round(float(value), 9)
+                    for name, value in sorted(
+                        segment.recorded_servo_residual_deg.items()
+                    )
+                },
+                "legacy_missing_endpoint": bool(
+                    segment.legacy_missing_endpoint
+                ),
+            }
+            for segment in plan.segments
+        ],
+    }
+    return _stable_sha256(payload)
+
+
+def _legacy_v1_full_plan_payload(plan: Any, *, plan_sha256: str) -> dict[str, Any]:
+    payload = _canonical_full_plan_payload(plan)
+    if payload.get("execution_semantics") != "recorded_timeline_open_loop_v1":
+        raise ValueError("legacy Gate-A v1 compatibility requires Fast open-loop content")
+    payload.pop("execution_semantics")
+    payload["plan_sha256"] = plan_sha256
+    return payload
+
+
 def _validate_fast_export_against_full_plan(
     document: Mapping[str, Any], full_payload: Mapping[str, Any]
 ) -> None:
@@ -931,15 +990,33 @@ def _load_gate_a_full_plan_binding(
         sequence_total_steps=len(steps),
     )
     expected_plan_sha = str(request.get("plan_sha256", "")).lower()
-    if rebuilt.plan_sha256 != expected_plan_sha:
-        raise ValueError("Gate-A rebuilt plan SHA differs from request")
+    request_has_semantics = "execution_semantics" in request
+    export_has_semantics = "execution_semantics" in exported_document
+    if request_has_semantics != export_has_semantics:
+        raise ValueError("Gate-A request/export execution semantics presence differs")
+    if request_has_semantics:
+        expected_semantics = str(request.get("execution_semantics", "") or "")
+        if (
+            expected_semantics != rebuilt.execution_semantics
+            or str(exported_document.get("execution_semantics", "") or "")
+            != expected_semantics
+            or rebuilt.plan_sha256 != expected_plan_sha
+        ):
+            raise ValueError("Gate-A rebuilt plan semantics/SHA differs from request")
+        full_payload = _canonical_full_plan_payload(rebuilt)
+    else:
+        legacy_plan_sha = _legacy_v1_plan_fingerprint(rebuilt)
+        if legacy_plan_sha != expected_plan_sha:
+            raise ValueError("Gate-A rebuilt legacy-v1 plan SHA differs from request")
+        full_payload = _legacy_v1_full_plan_payload(
+            rebuilt, plan_sha256=legacy_plan_sha
+        )
     if expected_plan_sha != str(exported_document.get("plan_sha256", "")).lower():
         raise ValueError("Gate-A request plan SHA differs from Fast export")
     if len(rebuilt.events) != int(request.get("plan_event_count", -1)):
         raise ValueError("Gate-A rebuilt event count differs from request")
     if len(rebuilt.segments) != int(request.get("plan_segment_count", -1)):
         raise ValueError("Gate-A rebuilt segment count differs from request")
-    full_payload = _canonical_full_plan_payload(rebuilt)
     _validate_fast_export_against_full_plan(exported_document, full_payload)
     return (
         request_path,

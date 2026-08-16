@@ -22,11 +22,16 @@ from fsm_50mm_recording_derived_v3.fsm50_motion_profiles import (
     PhaseWindow,
     RecordingSegmentOwnership,
     RecordingProfileSource,
+    _legacy_v1_plan_fingerprint,
+    _load_gate_a_full_plan_binding,
     build_profile_library,
     discover_successful_gate_a_sources,
     load_phase_spans,
     load_recording_phase_profile,
 )
+from motion_speed import load_motion_reference
+from playback import plan_from_steps
+from sequence_model import load_steps_jsonl
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -46,6 +51,46 @@ class MotionProfileTests(unittest.TestCase):
         )
         self.assertTrue(all(source.plan_sha256 for source in self.sources))
         self.assertTrue(all(source.video_sha256 for source in self.sources))
+
+    def test_legacy_v1_gate_a_identity_is_rebuilt_without_semantics_bypass(
+        self,
+    ) -> None:
+        reference = load_motion_reference()
+        for source in self.sources:
+            request = json.loads(
+                source.worker_request_path.read_text(encoding="utf-8-sig")
+            )
+            export = json.loads(source.plan_path.read_text(encoding="utf-8-sig"))
+            steps = load_steps_jsonl(source.accepted_steps_path)
+            rebuilt = plan_from_steps(
+                steps,
+                profile="fast",
+                max_wheel_speed=reference.wheel_velocity_limit_rad_s,
+                label=(
+                    f"50 mm {source.source_version} full completion binding"
+                ),
+                sequence_total_steps=len(steps),
+            )
+            with self.subTest(source=source.source_version):
+                self.assertNotIn("execution_semantics", request)
+                self.assertNotIn("execution_semantics", export)
+                self.assertEqual(
+                    _legacy_v1_plan_fingerprint(rebuilt), source.plan_sha256
+                )
+                self.assertNotEqual(rebuilt.plan_sha256, source.plan_sha256)
+                self.assertNotIn(
+                    "execution_semantics", source.full_plan_payload
+                )
+                forged_export = dict(export)
+                forged_export["execution_semantics"] = (
+                    "recorded_timeline_open_loop_v1"
+                )
+                with self.assertRaisesRegex(ValueError, "presence differs"):
+                    _load_gate_a_full_plan_binding(
+                        source_version=source.source_version,
+                        run_dir=source.gate_a_run_dir,
+                        exported_document=forged_export,
+                    )
 
     def test_real_v003_merged_s1_preserves_global_segment_order(self) -> None:
         profile = self.library.get(

@@ -68,6 +68,7 @@ from fsm_50mm_recording_derived_v3.worker_macro_fsm_session import (
     CANONICAL_GATE_C_SOURCE_VERSION,
     GATE_D_TRIAL_KIND,
     REQUEST_SCHEMA,
+    TELEMETRY_SCHEMA,
     WorkerMacroFSMSession,
     configure_scene_for_macro_fsm,
     load_worker_macro_fsm_request,
@@ -4066,6 +4067,25 @@ def test_physics_tick_control_atomic_epochs_boundary_and_15hz_evidence(tmp_path:
     )
 
 
+def test_forced_final_sample_replaces_same_tick_tail_instead_of_duplicating(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, _adapter, _controller = _runtime(request)
+    payload = {
+        "schema_version": TELEMETRY_SCHEMA,
+        "sim_step": 24,
+        "sim_time_s": 24.0 / 120.0,
+        "marker": "before",
+    }
+    session._sample(payload, decision=None, force=True)
+    payload["marker"] = "final"
+    session._sample(payload, decision=None, force=True)
+    assert len(session.rows) == 1
+    assert session.rows[0]["sim_step"] == 24
+    assert session.rows[0]["marker"] == "final"
+
+
 def test_changed_epoch_ack_mismatch_fails_closed(tmp_path: Path):
     request, _payload = _load_request(tmp_path)
     session, adapter, _controller = _runtime(request)
@@ -4266,12 +4286,75 @@ def test_same_target_source_action_is_consumed_without_physical_dispatch(
     )
     assert other._source_action_coverage_errors() == []
     assert other._dispatch_ownership_errors() == []
+
+    saved_boundary_step = other.boundary_readback["sim_step"]
+    other.boundary_readback["sim_step"] = physical_row["sim_step"]
+    assert any(
+        "start-boundary N+1" in error
+        for error in other._source_action_coverage_errors()
+    )
+    other.boundary_readback["sim_step"] = saved_boundary_step
+
+    saved_dispatch_epoch = physical_row["dispatch_epoch"]
+    physical_row["dispatch_epoch"] = 999
+    assert any(
+        "verified pre-action epoch" in error
+        for error in other._source_action_coverage_errors()
+    )
+    physical_row["dispatch_epoch"] = saved_dispatch_epoch
+
+    dispatch = other.dispatch_rows[0]
+    saved_ack = json.loads(json.dumps(dispatch["ack"]))
+    for mutate in (
+        lambda ack: ack.__setitem__("source", "forged-source"),
+        lambda ack: ack.__setitem__("motion_start_skew_s", 0.5),
+        lambda ack: ack["servo_targets_applied"].__setitem__(
+            SERVO_JOINT_NAMES[0], 88.0
+        ),
+        lambda ack: ack["recording_metadata"].__setitem__(
+            "source_plan_sha256", "0" * 64
+        ),
+    ):
+        dispatch["ack"] = json.loads(json.dumps(saved_ack))
+        mutate(dispatch["ack"])
+        assert other._dispatch_ownership_errors()
+    dispatch["ack"] = saved_ack
+
+    saved_dispatch_readback = json.loads(
+        json.dumps(dispatch["n_plus_one_readback"])
+    )
+    dispatch["n_plus_one_readback"]["canonical_servo_targets_deg"][
+        SERVO_JOINT_NAMES[0]
+    ] = 88.0
+    dispatch["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        dispatch["n_plus_one_readback"]
+    )
+    physical_row["n_plus_one_readback_sha256"] = dispatch[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in other._dispatch_ownership_errors()
+    )
+    dispatch["n_plus_one_readback"] = saved_dispatch_readback
+    dispatch["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        saved_dispatch_readback
+    )
+    physical_row["n_plus_one_readback_sha256"] = dispatch[
+        "n_plus_one_readback_sha256"
+    ]
+    assert other._dispatch_ownership_errors() == []
     phantom = json.loads(json.dumps(other.dispatch_rows[0]))
     phantom["dispatch_index"] = 0
+    phantom["n_plus_one_verified_sim_step"] = 2
     session.dispatch_rows.append(phantom)
     session.command_dispatch_count = 1
     assert any(
-        "exact source-action consumption" in error
+        "first source action is preceded" in error
+        for error in session._source_action_coverage_errors()
+    )
+    assert any(
+        "core physical/N+1 identity is invalid" in error
         for error in session._dispatch_ownership_errors()
     )
 

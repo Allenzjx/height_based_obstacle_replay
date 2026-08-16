@@ -87,6 +87,28 @@ FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA = (
     "fsm50.feedback_recovery_action_ledger.v2"
 )
 TERMINAL_RECOVERY_CLOSURE_SCHEMA = "fsm50.terminal_recovery_closure.v1"
+TRANSITION_ROW_KEYS = frozenset(
+    {
+        "schema_version",
+        "transition_index",
+        "sim_time_s",
+        "sim_step",
+        "from_state",
+        "to_state",
+        "subphase",
+        "profile_id",
+        "profile_source_version",
+        "profile_strategy",
+        "command_epoch",
+        "phase_elapsed_s",
+        "profile_fraction",
+        "events",
+        "reason",
+        "guard_evidence",
+        "retry_count",
+        "observation_sha256",
+    }
+)
 DEFAULT_TELEMETRY_HZ = 15.0
 DEFAULT_VIDEO_FPS = 15.0
 DEFAULT_POST_SETTLE_S = 0.5
@@ -1308,6 +1330,7 @@ class WorkerMacroFSMSession:
         }
         self.controller_terminal_outcome = ""
         self.controller_terminal_reason = ""
+        self.terminal_recovery_closure: dict[str, Any] = {}
         self.controller_tick_count = 0
         self.command_dispatch_count = 0
         self.last_batch_attempt_sim_step: int | None = None
@@ -3479,10 +3502,12 @@ class WorkerMacroFSMSession:
             ):
                 errors.append(f"{label} tick/time identity is invalid")
             if prior_source_sim_step is not None and (
-                sim_step < prior_source_sim_step
+                sim_step <= prior_source_sim_step
                 or float(sim_time) < float(prior_source_sim_time_s)
             ):
-                errors.append(f"{label} source-action chronology regressed")
+                errors.append(
+                    f"{label} source-action chronology is not strictly increasing"
+                )
             prior_source_sim_step = sim_step
             prior_source_sim_time_s = float(sim_time)
 
@@ -3498,7 +3523,23 @@ class WorkerMacroFSMSession:
                 if type(candidate.get("n_plus_one_verified_sim_step")) is int
                 and candidate.get("n_plus_one_verified_sim_step") <= sim_step
             ]
-            if prior_dispatches:
+            if index == 0:
+                if prior_dispatches:
+                    errors.append(
+                        "first source action is preceded by an unauthorized "
+                        "controller physical dispatch"
+                    )
+                anchor = self.boundary_ack
+                anchor_servos = anchor.get("servo_targets_applied", {})
+                anchor_wheels = anchor.get("wheel_targets_applied", {})
+                anchor_epoch = 0
+                anchor_batch_id = anchor.get("batch_id")
+                boundary_step = self.boundary_readback.get("sim_step")
+                if type(boundary_step) is not int or boundary_step >= sim_step:
+                    errors.append(
+                        f"{label} does not follow the verified start-boundary N+1 readback"
+                    )
+            elif prior_dispatches:
                 anchor = max(
                     prior_dispatches,
                     key=lambda candidate: (
@@ -3516,6 +3557,11 @@ class WorkerMacroFSMSession:
                 anchor_wheels = anchor.get("wheel_targets_applied", {})
                 anchor_epoch = 0
                 anchor_batch_id = anchor.get("batch_id")
+                boundary_step = self.boundary_readback.get("sim_step")
+                if type(boundary_step) is not int or boundary_step >= sim_step:
+                    errors.append(
+                        f"{label} does not follow the verified start-boundary N+1 readback"
+                    )
             readback_errors = self._durable_target_readback_errors(
                 readback=pre_action_readback,
                 readback_sha256=str(
@@ -3529,6 +3575,19 @@ class WorkerMacroFSMSession:
                 label=f"{label} pre-action",
             )
             errors.extend(readback_errors)
+            pre_action_epoch = pre_action_readback.get("command_epoch")
+            expected_dispatch_epoch = (
+                pre_action_epoch + 1
+                if target_changed is True and type(pre_action_epoch) is int
+                else pre_action_epoch
+            )
+            if (
+                type(pre_action_epoch) is not int
+                or dispatch_epoch != expected_dispatch_epoch
+            ):
+                errors.append(
+                    f"{label} dispatch epoch does not follow its verified pre-action epoch"
+                )
             pre_action_servos = pre_action_readback.get(
                 "canonical_servo_targets_deg"
             )
@@ -4349,8 +4408,15 @@ class WorkerMacroFSMSession:
                         reference_dispatch.get("wheel_targets_rad_s", {}),
                     )
                     or not isinstance(reference_provenance, Mapping)
-                    or reference_provenance.get("kind")
-                    == "FEEDBACK_RECOVERY"
+                    or reference_provenance.get("kind") != "SOURCE_ACTION"
+                    or reference_dispatch.get("macro_state")
+                    != "S10_POSTURE_RECOVERY"
+                    or reference_dispatch.get("profile_id")
+                    != configuration_payload.get("reference_profile_id")
+                    or reference_dispatch.get("profile_source_version")
+                    != configuration_payload.get(
+                        "reference_profile_source_version"
+                    )
                     or not isinstance(reference_ack_metadata, Mapping)
                     or not _strict_json_equal(
                         reference_ack_metadata.get("command_provenance"),
@@ -4362,6 +4428,18 @@ class WorkerMacroFSMSession:
                     != self.request.source_version
                     or reference_ack_metadata.get("bundle_sha256")
                     != self.request.bundle_sha256
+                    or reference_ack_metadata.get("macro_state")
+                    != "S10_POSTURE_RECOVERY"
+                    or reference_ack_metadata.get("profile_id")
+                    != configuration_payload.get("reference_profile_id")
+                    or reference_ack_metadata.get("profile_source_version")
+                    != configuration_payload.get(
+                        "reference_profile_source_version"
+                    )
+                    or reference_ack_metadata.get("source_plan_sha256")
+                    != configuration_payload.get(
+                        "reference_profile_source_plan_sha256"
+                    )
                     or reference_verified_step > sim_step
                     or not reference_dispatch.get("n_plus_one_readback_sha256")
                     or not self._feedback_target_maps_equal(
@@ -4699,6 +4777,11 @@ class WorkerMacroFSMSession:
             "joint_velocity_settled": False,
             "body_angular_velocity_settled": False,
             "outcome_predicate_satisfied": False,
+            "controller_terminal": False,
+            "controller_terminal_outcome": "",
+            "macro_state": "",
+            "feedback_recovery_stage": "",
+            "feedback_recovery_exhaustion_reason": "",
         }
         try:
             centroidal = CentroidalSupportEvidence.from_mapping(
@@ -4742,9 +4825,11 @@ class WorkerMacroFSMSession:
                 not isinstance(row_base, Mapping)
                 or set(row_base) != {"x", "y", "z"}
                 or not isinstance(row_joint_q, Mapping)
-                or set(row_joint_q) != set(SERVO_JOINT_NAMES)
+                or set(row_joint_q)
+                != set(SERVO_JOINT_NAMES) | set(WHEEL_JOINT_NAMES)
                 or not isinstance(row_joint_qd, Mapping)
-                or set(row_joint_qd) != set(SERVO_JOINT_NAMES)
+                or set(row_joint_qd)
+                != set(SERVO_JOINT_NAMES) | set(WHEEL_JOINT_NAMES)
                 or not isinstance(row_angular, (list, tuple))
                 or len(row_angular) != 3
                 or not isinstance(row_centers, Mapping)
@@ -4923,6 +5008,17 @@ class WorkerMacroFSMSession:
                 joint_velocity_settled=joint_settled,
                 body_angular_velocity_settled=angular_settled,
                 outcome_predicate_satisfied=outcome_closed,
+                controller_terminal=row.get("controller_terminal") is True,
+                controller_terminal_outcome=str(
+                    row.get("controller_terminal_outcome", "") or ""
+                ),
+                macro_state=str(row.get("macro_state", "") or ""),
+                feedback_recovery_stage=str(
+                    row.get("feedback_recovery_stage", "") or ""
+                ),
+                feedback_recovery_exhaustion_reason=str(
+                    row.get("feedback_recovery_exhaustion_reason", "") or ""
+                ),
             )
         except Exception as exc:
             result["error"] = f"{type(exc).__name__}: {exc}"
@@ -5000,6 +5096,25 @@ class WorkerMacroFSMSession:
             settle_duration_s=duration,
             final_assessment=dict(end),
         )
+        expected_stage = (
+            "COMPLETE"
+            if outcome == "TASK_SUCCESS"
+            else "POSTURE_INCOMPLETE"
+        )
+        if (
+            end.get("controller_terminal") is not True
+            or end.get("controller_terminal_outcome") != outcome
+            or end.get("macro_state") != MacroStateId.SUCCESS.value
+            or end.get("feedback_recovery_stage") != expected_stage
+            or (
+                outcome == "TASK_SUCCESS_POSTURE_INCOMPLETE"
+                and not end.get("feedback_recovery_exhaustion_reason")
+            )
+        ):
+            result["error"] = (
+                "terminal telemetry controller outcome/stage is inconsistent"
+            )
+            return result
         if duration + 1.0e-9 < required_dwell:
             result["error"] = "terminal recovery settling dwell is incomplete"
             return result
@@ -5007,9 +5122,19 @@ class WorkerMacroFSMSession:
         return result
 
     def _feedback_recovery_terminal_errors(self) -> list[str]:
+        # Narrow synthetic worker fixtures without an S10-owned source profile
+        # exercise scheduler/ACK mechanics only.  Every production Gate-C/D
+        # bundle contains an explicit S10 owner and must pass the physical
+        # terminal closure below.
+        if not any(
+            row.get("owner_state")
+            == MacroStateId.S10_POSTURE_RECOVERY.value
+            for row in self.expected_source_actions
+        ):
+            return []
         outcome = str(self.controller_terminal_outcome or "")
         if not outcome:
-            return []
+            return ["terminal recovery outcome is absent"]
         assessment = self._feedback_recovery_terminal_settle_assessment(
             outcome=outcome
         )
@@ -5019,6 +5144,34 @@ class WorkerMacroFSMSession:
             "terminal recovery physical/settling closure failed: "
             + str(assessment.get("error", "invalid terminal recovery") or "invalid terminal recovery")
         ]
+
+    def _terminal_recovery_closure_mapping(
+        self,
+        *,
+        telemetry_jsonl_path: Path,
+        telemetry_jsonl_sha256: str,
+        final_raw_telemetry_row_sha256: str,
+    ) -> dict[str, Any]:
+        """Bind the existing telemetry ledger to its recomputed terminal class."""
+
+        assessment = self._feedback_recovery_terminal_settle_assessment(
+            outcome=str(self.controller_terminal_outcome or "")
+        )
+        core = {
+            "schema_version": TERMINAL_RECOVERY_CLOSURE_SCHEMA,
+            "outcome": str(self.controller_terminal_outcome or ""),
+            "telemetry_jsonl_path": str(telemetry_jsonl_path),
+            "telemetry_jsonl_sha256": str(telemetry_jsonl_sha256),
+            "telemetry_sample_count": len(self.rows),
+            "final_raw_telemetry_row_sha256": str(
+                final_raw_telemetry_row_sha256
+            ),
+            "settle_assessment": dict(_jsonable(assessment)),
+        }
+        return {
+            **core,
+            "closure_sha256": _canonical_json_sha256(core),
+        }
 
     def _feedback_recovery_durable_sequence_errors(self) -> list[str]:
         """Replay the bounded probe/return/increment protocol from ledger rows."""
@@ -5318,36 +5471,241 @@ class WorkerMacroFSMSession:
                     str(wheel_stop["batch_id"]), []
                 ).append(wheel_stop)
         seen_batches: set[str] = set()
+        previous_n_plus_one_step: int | None = None
+        prior_verified_servos = dict(
+            self.boundary_readback.get("canonical_servo_targets_deg", {})
+        )
+        prior_verified_wheels = dict(
+            self.boundary_readback.get("canonical_wheel_targets_rad_s", {})
+        )
+        prior_verified_command_epoch = 0
         for index, dispatch in enumerate(self.dispatch_rows):
             label = f"physical dispatch row {index}"
             batch_id = dispatch.get("batch_id")
             provenance = dispatch.get("command_provenance")
             ack = dispatch.get("ack")
+            sim_step = dispatch.get("sim_step")
+            sim_time_s = dispatch.get("sim_time_s")
+            command_epoch = dispatch.get("command_epoch")
+            expected_batch_id = (
+                f"{self.request.request_id}:residual:"
+                f"{int(dispatch.get('physical_command_epoch', -1)):06d}"
+                if self.residual_enabled
+                and dispatch.get("dispatch_cause") == "RESIDUAL_ONLY"
+                and type(dispatch.get("physical_command_epoch")) is int
+                else (
+                    f"{self.request.request_id}:macro:{command_epoch:06d}"
+                    if type(command_epoch) is int
+                    else ""
+                )
+            )
             if (
                 dispatch.get("schema_version") != DISPATCH_SCHEMA
                 or type(dispatch.get("dispatch_index")) is not int
                 or dispatch.get("dispatch_index") != index
                 or type(batch_id) is not str
                 or not batch_id
+                or batch_id != expected_batch_id
                 or batch_id in seen_batches
-                or type(dispatch.get("sim_step")) is not int
-                or type(dispatch.get("command_epoch")) is not int
+                or type(sim_step) is not int
+                or sim_step < 0
+                or type(sim_time_s) not in (int, float)
+                or type(sim_time_s) is bool
+                or not math.isfinite(float(sim_time_s))
+                or not math.isclose(
+                    float(sim_time_s),
+                    float(sim_step) * EXPECTED_PHYSICS_DT_S,
+                    rel_tol=0.0,
+                    abs_tol=max(1.0e-9, EXPECTED_PHYSICS_DT_S * 1.0e-6),
+                )
+                or type(command_epoch) is not int
+                or command_epoch < 0
                 or dispatch.get("n_plus_one_verified") is not True
                 or dispatch.get("n_plus_one_verified_sim_step")
-                != dispatch.get("sim_step") + 1
+                != sim_step + 1
                 or not isinstance(ack, Mapping)
                 or ack.get("batch_id") != batch_id
-                or ack.get("applied_sim_step") != dispatch.get("sim_step")
+                or ack.get("applied_sim_step") != sim_step
                 or ack.get("first_physics_step")
                 != dispatch.get("n_plus_one_verified_sim_step")
                 or not isinstance(provenance, Mapping)
             ):
                 errors.append(f"{label} core physical/N+1 identity is invalid")
                 continue
+            if previous_n_plus_one_step is not None and sim_step < previous_n_plus_one_step:
+                errors.append(
+                    f"{label} was applied before the prior dispatch N+1 readback"
+                )
+            previous_n_plus_one_step = sim_step + 1
+            ack_metadata = ack.get("recording_metadata")
+            base_metadata_keys = {
+                "source_version",
+                "profile_id",
+                "profile_source_version",
+                "profile_strategy",
+                "macro_state",
+                "subphase",
+                "command_epoch",
+                "bundle_sha256",
+                "command_provenance",
+                "segment_completion_control",
+                "source_plan_sha256",
+                "source_action_consumption_index",
+            }
+            residual_metadata_keys = {
+                "nominal_command_epoch",
+                "physical_command_epoch",
+                "nominal_target_changed",
+                "applied_target_changed",
+                "dispatch_cause",
+                "nominal_servo_targets_deg",
+                "nominal_wheel_targets_rad_s",
+                "residual_policy_id",
+                "residual_policy_sha256",
+                "residual_transform_sha256",
+                "residual_evidence_sha256",
+            }
+            expected_metadata_keys = (
+                base_metadata_keys | residual_metadata_keys
+                if self.residual_enabled
+                else base_metadata_keys
+            )
+            expected_metadata_fields = {
+                "source_version": self.request.source_version,
+                "profile_id": dispatch.get("profile_id"),
+                "profile_source_version": dispatch.get("profile_source_version"),
+                "profile_strategy": dispatch.get("profile_strategy"),
+                "macro_state": dispatch.get("macro_state"),
+                "subphase": dispatch.get("subphase"),
+                "command_epoch": command_epoch,
+                "bundle_sha256": self.request.bundle_sha256,
+                "command_provenance": provenance,
+                "source_action_consumption_index": dispatch.get(
+                    "source_action_consumption_index"
+                ),
+            }
+            if self.residual_enabled:
+                residual_transform = dict(
+                    dispatch.get("residual_transform", {}) or {}
+                )
+                expected_metadata_fields.update(
+                    {
+                        "nominal_command_epoch": dispatch.get(
+                            "nominal_command_epoch"
+                        ),
+                        "physical_command_epoch": dispatch.get(
+                            "physical_command_epoch"
+                        ),
+                        "nominal_target_changed": dispatch.get(
+                            "nominal_target_changed"
+                        ),
+                        "applied_target_changed": dispatch.get(
+                            "applied_target_changed"
+                        ),
+                        "dispatch_cause": dispatch.get("dispatch_cause"),
+                        "nominal_servo_targets_deg": dict(
+                            dispatch.get("nominal_servo_targets_deg", {})
+                        ),
+                        "nominal_wheel_targets_rad_s": dict(
+                            dispatch.get("nominal_wheel_targets_rad_s", {})
+                        ),
+                        "residual_policy_id": self.residual_policy_id,
+                        "residual_policy_sha256": self.residual_policy_sha256,
+                        "residual_transform_sha256": str(
+                            residual_transform.get("core_transform_sha256", "")
+                        ),
+                        "residual_evidence_sha256": str(
+                            residual_transform.get("evidence_sha256", "")
+                        ),
+                    }
+                )
+            if (
+                set(ack) != _DURABLE_MOTION_BATCH_ACK_KEYS
+                or not isinstance(ack_metadata, Mapping)
+                or set(ack_metadata) != expected_metadata_keys
+                or any(
+                    not _strict_json_equal(ack_metadata.get(key), value)
+                    for key, value in expected_metadata_fields.items()
+                )
+            ):
+                errors.append(f"{label} durable ACK metadata identity is invalid")
+            else:
+                try:
+                    completion_control, _ = self._validated_completion_control(
+                        {
+                            "segment_completion_control": ack_metadata[
+                                "segment_completion_control"
+                            ]
+                        }
+                    )
+                    self._validate_batch_ack(
+                        ack,
+                        batch_id=batch_id,
+                        servo_targets=dispatch.get("servo_targets_deg", {}),
+                        wheel_targets=dispatch.get("wheel_targets_rad_s", {}),
+                        expected_sim_step=sim_step,
+                        expected_physics_dt_s=EXPECTED_PHYSICS_DT_S,
+                        expected_source="fsm50_macro_controller",
+                        expected_recording_metadata=ack_metadata,
+                    )
+                    if not _strict_json_equal(
+                        completion_control,
+                        ack_metadata["segment_completion_control"],
+                    ):
+                        raise RuntimeError(
+                            "segment completion control normalization drifted"
+                        )
+                except Exception as exc:
+                    errors.append(f"{label} durable atomic ACK is invalid: {exc}")
+            errors.extend(
+                self._durable_target_readback_errors(
+                    readback=dispatch.get("n_plus_one_readback", {}),
+                    readback_sha256=str(
+                        dispatch.get("n_plus_one_readback_sha256", "") or ""
+                    ),
+                    expected_servo_targets=dispatch.get("servo_targets_deg", {}),
+                    expected_wheel_targets=dispatch.get("wheel_targets_rad_s", {}),
+                    expected_sim_step=sim_step + 1,
+                    expected_command_epoch=command_epoch,
+                    expected_batch_id=batch_id,
+                    label=f"{label} N+1",
+                )
+            )
             seen_batches.add(batch_id)
             kind = provenance.get("kind")
             source_index = dispatch.get("source_action_consumption_index")
             feedback_owners = feedback_rows_by_dispatch.get(index, [])
+            if (
+                not self.residual_enabled
+                and command_epoch != prior_verified_command_epoch + 1
+            ):
+                errors.append(
+                    f"{label} command epoch does not advance its prior verified batch"
+                )
+            if (
+                not self.residual_enabled
+                and kind
+                in {
+                    "BOUNDARY_ZERO_WHEELS",
+                    "HOLD_ZERO_WHEELS",
+                    "SAFE_STOP_ZERO_WHEELS",
+                    "SUCCESS_ZERO_WHEELS",
+                    "COMPLETION_WHEEL_STOP",
+                }
+                and (
+                    not _strict_json_equal(
+                        dispatch.get("servo_targets_deg"),
+                        prior_verified_servos,
+                    )
+                    or not _strict_json_equal(
+                        dispatch.get("wheel_targets_rad_s"),
+                        {name: 0.0 for name in WHEEL_JOINT_NAMES},
+                    )
+                )
+            ):
+                errors.append(
+                    f"{label} non-source stop/hold map does not preserve the prior 8-servo authority"
+                )
             if kind == "SOURCE_ACTION":
                 source_row = source_rows.get(source_index)
                 if (
@@ -5383,40 +5741,314 @@ class WorkerMacroFSMSession:
                     errors.append(
                         f"{label} is not owned by its exact source-action consumption"
                     )
+                elif isinstance(ack_metadata, Mapping):
+                    expected_action = self.expected_source_actions[source_index]
+                    dispatch_kind = provenance.get("dispatch_kind")
+                    control = ack_metadata.get("segment_completion_control")
+                    metadata_source_ok = bool(
+                        ack_metadata.get("source_plan_sha256")
+                        == expected_action["source_plan_sha256"]
+                        and ack_metadata.get("source_action_consumption_index")
+                        == source_index
+                    )
+                    control_ok = False
+                    if isinstance(control, Mapping) and dispatch_kind == "segment_start":
+                        binding = expected_action.get("segment_completion_binding")
+                        expected_control = {
+                            "schema_version": SEGMENT_COMPLETION_CONTROL_SCHEMA_VERSION,
+                            "kind": "START",
+                            "profile_id": expected_action["profile_id"],
+                            "profile_source_version": expected_action[
+                                "profile_source_version"
+                            ],
+                            "owner_state": expected_action["owner_state"],
+                            "source_plan_sha256": expected_action[
+                                "source_plan_sha256"
+                            ],
+                            "source_plan_payload_sha256": (
+                                binding.get("source_plan_payload_sha256")
+                                if isinstance(binding, Mapping)
+                                else None
+                            ),
+                            "accepted_steps_sha256": (
+                                binding.get("accepted_steps_sha256")
+                                if isinstance(binding, Mapping)
+                                else None
+                            ),
+                            "source_segment_index": provenance.get(
+                                "source_segment_index"
+                            ),
+                            "source_step_index": provenance.get(
+                                "source_step_index"
+                            ),
+                            "source_step_id": (
+                                binding.get("completion_spec", {}).get(
+                                    "source_step_id"
+                                )
+                                if isinstance(binding, Mapping)
+                                else None
+                            ),
+                            "start_command_epoch": command_epoch,
+                            "completion_spec": (
+                                binding.get("completion_spec")
+                                if isinstance(binding, Mapping)
+                                else None
+                            ),
+                            "source_action_identity": provenance.get(
+                                "source_action_identity"
+                            ),
+                            "source_action": True,
+                            "completion_token_sha256": "",
+                        }
+                        control_ok = _strict_json_equal(control, expected_control)
+                    elif (
+                        isinstance(control, Mapping)
+                        and dispatch_kind == "wheel_channel_completion_stop"
+                    ):
+                        matching_segments = [
+                            completion
+                            for completion in self.segment_completion_rows
+                            if completion.get("source_segment_index")
+                            == provenance.get("source_segment_index")
+                        ]
+                        completion = (
+                            matching_segments[0]
+                            if len(matching_segments) == 1
+                            else None
+                        )
+                        wheel_stop = (
+                            completion.get("wheel_stop")
+                            if isinstance(completion, Mapping)
+                            else None
+                        )
+                        expected_control = {
+                            "schema_version": SEGMENT_COMPLETION_CONTROL_SCHEMA_VERSION,
+                            "kind": "WHEEL_STOP",
+                            "profile_id": completion.get("profile_id")
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "profile_source_version": completion.get(
+                                "profile_source_version"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "owner_state": completion.get("owner_state")
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_plan_sha256": completion.get(
+                                "source_plan_sha256"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_plan_payload_sha256": completion.get(
+                                "source_plan_payload_sha256"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "accepted_steps_sha256": completion.get(
+                                "accepted_steps_sha256"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_segment_index": completion.get(
+                                "source_segment_index"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_step_index": completion.get("source_step_index")
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_step_id": completion.get("source_step_id")
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "start_command_epoch": completion.get(
+                                "start_command_epoch"
+                            )
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "completion_spec": completion.get("completion_spec")
+                            if isinstance(completion, Mapping)
+                            else None,
+                            "source_action_identity": provenance.get(
+                                "source_action_identity"
+                            ),
+                            "source_action": True,
+                            "completion_token_sha256": wheel_stop.get(
+                                "completion_token_sha256"
+                            )
+                            if isinstance(wheel_stop, Mapping)
+                            else None,
+                        }
+                        control_ok = bool(
+                            isinstance(wheel_stop, Mapping)
+                            and wheel_stop.get("batch_id") == batch_id
+                            and _strict_json_equal(control, expected_control)
+                        )
+                    if not metadata_source_ok or not control_ok:
+                        errors.append(
+                            f"{label} source ACK metadata/completion authority drifted"
+                        )
             elif kind == "FEEDBACK_RECOVERY":
                 if source_index is not None or len(feedback_owners) != 1:
                     errors.append(
                         f"{label} is not owned by exactly one feedback action"
                     )
-            elif kind == "NONE":
-                metadata = ack.get("recording_metadata")
+            elif kind == "COMPLETION_WHEEL_STOP":
                 completion_control = (
-                    metadata.get("segment_completion_control")
-                    if isinstance(metadata, Mapping)
+                    ack_metadata.get("segment_completion_control")
+                    if isinstance(ack_metadata, Mapping)
                     else None
                 )
-                generated_stop_owner = bool(
-                    isinstance(completion_control, Mapping)
-                    and completion_control.get("kind") == "WHEEL_STOP"
-                    and completion_control.get("source_action") is False
-                    and len(generated_wheel_stops_by_batch.get(batch_id, [])) == 1
+                owners = generated_wheel_stops_by_batch.get(batch_id, [])
+                owner = owners[0] if len(owners) == 1 else None
+                matching_segments = [
+                    completion
+                    for completion in self.segment_completion_rows
+                    if isinstance(owner, Mapping)
+                    and completion.get("wheel_stop") is owner
+                ]
+                completion = (
+                    matching_segments[0] if len(matching_segments) == 1 else None
                 )
-                residual_only_owner = bool(
-                    self.residual_enabled
-                    and dispatch.get("dispatch_cause") == "RESIDUAL_ONLY"
-                    and isinstance(completion_control, Mapping)
-                    and completion_control.get("kind") == "NONE"
-                )
+                expected_control = {
+                    "schema_version": SEGMENT_COMPLETION_CONTROL_SCHEMA_VERSION,
+                    "kind": "WHEEL_STOP",
+                    "profile_id": completion.get("profile_id")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "profile_source_version": completion.get(
+                        "profile_source_version"
+                    )
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "owner_state": completion.get("owner_state")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_plan_sha256": completion.get("source_plan_sha256")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_plan_payload_sha256": completion.get(
+                        "source_plan_payload_sha256"
+                    )
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "accepted_steps_sha256": completion.get(
+                        "accepted_steps_sha256"
+                    )
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_segment_index": completion.get("source_segment_index")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_step_index": completion.get("source_step_index")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_step_id": completion.get("source_step_id")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "start_command_epoch": completion.get("start_command_epoch")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "completion_spec": completion.get("completion_spec")
+                    if isinstance(completion, Mapping)
+                    else None,
+                    "source_action_identity": "",
+                    "source_action": False,
+                    "completion_token_sha256": owner.get(
+                        "completion_token_sha256"
+                    )
+                    if isinstance(owner, Mapping)
+                    else None,
+                }
                 if (
                     source_index is not None
                     or feedback_owners
-                    or generated_stop_owner is residual_only_owner
+                    or len(owners) != 1
+                    or not isinstance(completion_control, Mapping)
+                    or not _strict_json_equal(completion_control, expected_control)
+                    or ack_metadata.get("source_plan_sha256") != ""
+                    or ack_metadata.get("source_action_consumption_index") is not None
                 ):
                     errors.append(
-                        f"{label} lacks exactly one generated-stop or residual-only owner"
+                        f"{label} lacks its exact generated completion-wheel-stop owner"
+                    )
+            elif kind in {
+                "BOUNDARY_ZERO_WHEELS",
+                "HOLD_ZERO_WHEELS",
+                "SAFE_STOP_ZERO_WHEELS",
+                "SUCCESS_ZERO_WHEELS",
+            }:
+                candidates = [
+                    row
+                    for row in self.transition_rows
+                    if row.get("sim_step") == sim_step
+                    and row.get("to_state") == dispatch.get("macro_state")
+                    and row.get("command_epoch") == command_epoch
+                ]
+                transition = candidates[0] if len(candidates) == 1 else None
+                events = (
+                    list(transition.get("events", []) or [])
+                    if isinstance(transition, Mapping)
+                    else []
+                )
+                from_state = (
+                    str(transition.get("from_state", "") or "")
+                    if isinstance(transition, Mapping)
+                    else ""
+                )
+                to_state = str(dispatch.get("macro_state", "") or "")
+                expected_events = {
+                    "BOUNDARY_ZERO_WHEELS": [
+                        f"EXIT:{from_state}",
+                        f"ENTER:{to_state}",
+                    ],
+                    "HOLD_ZERO_WHEELS": [f"HOLD:{to_state}"],
+                    "SAFE_STOP_ZERO_WHEELS": [f"SAFE_STOP:{from_state}"],
+                    "SUCCESS_ZERO_WHEELS": [
+                        f"EXIT:{from_state}",
+                        "ENTER:SUCCESS",
+                    ],
+                }[kind]
+                if (
+                    source_index is not None
+                    or feedback_owners
+                    or transition is None
+                    or events != expected_events
+                    or not _strict_json_equal(
+                        ack_metadata.get("segment_completion_control"),
+                        _EMPTY_SEGMENT_COMPLETION_CONTROL,
+                    )
+                    or ack_metadata.get("source_plan_sha256") != ""
+                    or ack_metadata.get("source_action_consumption_index") is not None
+                ):
+                    errors.append(
+                        f"{label} lacks its exact transition-ledger owner"
+                    )
+            elif kind == "NONE":
+                residual_only_owner = bool(
+                    self.residual_enabled
+                    and dispatch.get("dispatch_cause") == "RESIDUAL_ONLY"
+                    and _strict_json_equal(
+                        ack_metadata.get("segment_completion_control"),
+                        _EMPTY_SEGMENT_COMPLETION_CONTROL,
+                    )
+                    and ack_metadata.get("source_plan_sha256") == ""
+                    and ack_metadata.get("source_action_consumption_index") is None
+                )
+                if source_index is not None or feedback_owners or not residual_only_owner:
+                    errors.append(
+                        f"{label} lacks its exact residual-only non-source owner"
                     )
             else:
                 errors.append(f"{label} has an unsupported provenance kind")
+            if not self.residual_enabled:
+                prior_verified_servos = dict(
+                    dispatch.get("servo_targets_deg", {})
+                )
+                prior_verified_wheels = dict(
+                    dispatch.get("wheel_targets_rad_s", {})
+                )
+                prior_verified_command_epoch = int(command_epoch)
         for source_index, source_row in source_rows.items():
             applied = source_row.get("physical_dispatch_applied")
             dispatch_index = source_row.get("physical_dispatch_index")
@@ -5447,6 +6079,7 @@ class WorkerMacroFSMSession:
             *self._segment_completion_coverage_errors(),
             *self._feedback_recovery_coverage_errors(),
             *self._dispatch_ownership_errors(),
+            *self._feedback_recovery_terminal_errors(),
         ]
 
     def _root_and_joint_state(
@@ -7022,6 +7655,7 @@ class WorkerMacroFSMSession:
             dispatch_row["n_plus_one_verified"] = True
             dispatch_row["n_plus_one_verified_sim_step"] = expected_step
             dispatch_row["n_plus_one_readback_sha256"] = readback_sha256
+            dispatch_row["n_plus_one_readback"] = dict(_jsonable(evidence))
             feedback_action_index = pending.get(
                 "feedback_recovery_action_index"
             )
@@ -11084,6 +11718,7 @@ class WorkerMacroFSMSession:
                 "n_plus_one_verified": False,
                 "n_plus_one_verified_sim_step": None,
                 "n_plus_one_readback_sha256": "",
+                "n_plus_one_readback": {},
             }
             if self.residual_enabled:
                 dispatch_row.update(
@@ -11349,6 +11984,9 @@ class WorkerMacroFSMSession:
         period = 1.0 / self.request.telemetry_hz
         self.next_sample_sim_time_s = max(self.next_sample_sim_time_s + period, sim_time + period)
         mapping = self._decision_mapping(decision) if decision is not None else self.last_decision_mapping
+        controller_status = dict(
+            _attribute(self.controller, "status", {}) or {}
+        )
         state = str(mapping.get("macro_state", self.last_macro_state) or self.last_macro_state)
         active_leg = ""
         try:
@@ -11374,17 +12012,36 @@ class WorkerMacroFSMSession:
             "controller_terminal_outcome": mapping.get("terminal_outcome", ""),
             "controller_reason": mapping.get("reason", ""),
             "guard_evidence": dict(mapping.get("guard_evidence", {}) or {}),
-            "feedback_recovery_stage": mapping.get(
+            "feedback_recovery_stage": controller_status.get(
                 "feedback_recovery_stage", ""
             ),
-            "feedback_recovery_action_count": mapping.get(
+            "feedback_recovery_action_count": controller_status.get(
                 "feedback_recovery_action_count", 0
             ),
-            "feedback_recovery_exhaustion_reason": mapping.get(
+            "feedback_recovery_exhaustion_reason": controller_status.get(
                 "feedback_recovery_exhaustion_reason", ""
             ),
         }
-        self.rows.append(dict(_jsonable(row)))
+        durable_row = dict(_jsonable(row))
+        if (
+            force
+            and self.rows
+            and type(durable_row.get("sim_step")) is int
+            and self.rows[-1].get("sim_step") == durable_row["sim_step"]
+            and type(durable_row.get("sim_time_s")) in (int, float)
+            and not isinstance(durable_row.get("sim_time_s"), bool)
+            and type(self.rows[-1].get("sim_time_s")) in (int, float)
+            and not isinstance(self.rows[-1].get("sim_time_s"), bool)
+            and math.isclose(
+                float(self.rows[-1]["sim_time_s"]),
+                float(durable_row["sim_time_s"]),
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, EXPECTED_PHYSICS_DT_S * 1.0e-6),
+            )
+        ):
+            self.rows[-1] = durable_row
+        else:
+            self.rows.append(durable_row)
 
     def _trusted_servo_hold(self, adapter: Any) -> dict[str, float]:
         for candidate, label in (
@@ -11609,6 +12266,9 @@ class WorkerMacroFSMSession:
 
     def _task_inputs(self, *, success: bool, error: str) -> dict[str, Any]:
         final = dict(self.rows[-1] if self.rows else {})
+        source_consumption_path = (
+            self.request.run_dir / "macro_source_action_consumption.jsonl"
+        )
         segment_completion_path = (
             self.request.run_dir / "macro_segment_completion_ledger.jsonl"
         )
@@ -11616,6 +12276,13 @@ class WorkerMacroFSMSession:
             self.request.run_dir / "macro_feedback_recovery_action_ledger.jsonl"
         )
         dispatch_path = self.request.run_dir / "macro_dispatch_ledger.jsonl"
+        transition_path = self.request.run_dir / "macro_transition_evidence.jsonl"
+        telemetry_path = self.request.run_dir / "minimal_macro_telemetry.jsonl"
+        source_consumption_sha256 = (
+            _sha256_file(source_consumption_path)
+            if source_consumption_path.is_file()
+            else ""
+        )
         segment_completion_sha256 = (
             _sha256_file(segment_completion_path)
             if segment_completion_path.is_file()
@@ -11628,6 +12295,15 @@ class WorkerMacroFSMSession:
         )
         dispatch_sha256 = (
             _sha256_file(dispatch_path) if dispatch_path.is_file() else ""
+        )
+        transition_sha256 = (
+            _sha256_file(transition_path) if transition_path.is_file() else ""
+        )
+        telemetry_sha256 = (
+            _sha256_file(telemetry_path) if telemetry_path.is_file() else ""
+        )
+        final_raw_row_sha256 = (
+            _canonical_json_sha256(final) if final else ""
         )
         feedback_recovery_errors = self._feedback_recovery_coverage_errors()
         feedback_recovery_complete = not feedback_recovery_errors
@@ -11722,6 +12398,7 @@ class WorkerMacroFSMSession:
         )
         completed_result = {
             "source_version": self.request.source_version,
+            "controller_terminal_outcome": self.controller_terminal_outcome,
             "step_count": completed_step_count,
             "expected_step_count": expected_step_count,
             "fast_segment_count": expected_segment_count,
@@ -11733,6 +12410,9 @@ class WorkerMacroFSMSession:
             "segment_completion_count": completed_segment_count,
             "source_action_coverage_complete": source_coverage_complete,
             "source_action_coverage_errors": coverage_errors,
+            "source_action_consumption_count": completed_source_action_count,
+            "source_action_consumption_path": str(source_consumption_path),
+            "source_action_consumption_sha256": source_consumption_sha256,
             "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
             "start_boundary_readback": boundary_readback,
             "start_boundary_readback_sha256": boundary_readback_sha256,
@@ -11769,6 +12449,16 @@ class WorkerMacroFSMSession:
             "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
             "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
             "feedback_recovery_dispatch_count": len(self.dispatch_rows),
+            "transition_evidence_path": str(transition_path),
+            "transition_evidence_sha256": transition_sha256,
+            "transition_count": len(self.transition_rows),
+            "telemetry_jsonl_path": str(telemetry_path),
+            "telemetry_jsonl_sha256": telemetry_sha256,
+            "telemetry_sample_count": len(self.rows),
+            "final_raw_telemetry_row_sha256": final_raw_row_sha256,
+            "terminal_recovery_closure": dict(
+                _jsonable(self.terminal_recovery_closure)
+            ),
             "consumed_segment_start_count": consumed_segment_start_count,
             "physical_command_dispatch_count": self.command_dispatch_count,
             "dispatch_complete": dispatch_complete,
@@ -11819,6 +12509,9 @@ class WorkerMacroFSMSession:
                 "expected_source_action_count": expected_source_action_count,
                 "source_action_consumption_count": completed_source_action_count,
                 "source_action_coverage_complete": source_coverage_complete,
+                "source_action_coverage_errors": coverage_errors,
+                "source_action_consumption_path": str(source_consumption_path),
+                "source_action_consumption_sha256": source_consumption_sha256,
                 "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
                 "start_boundary_readback": boundary_readback,
                 "start_boundary_readback_sha256": boundary_readback_sha256,
@@ -11864,6 +12557,15 @@ class WorkerMacroFSMSession:
                 "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
                 "feedback_recovery_dispatch_count": len(self.dispatch_rows),
                 "transition_count": len(self.transition_rows),
+                "transition_evidence_path": str(transition_path),
+                "transition_evidence_sha256": transition_sha256,
+                "telemetry_jsonl_path": str(telemetry_path),
+                "telemetry_jsonl_sha256": telemetry_sha256,
+                "telemetry_sample_count": len(self.rows),
+                "final_raw_telemetry_row_sha256": final_raw_row_sha256,
+                "terminal_recovery_closure": dict(
+                    _jsonable(self.terminal_recovery_closure)
+                ),
             },
             "deployment_safety_evidence": self.deployment_safety_evidence,
         }
@@ -12283,6 +12985,20 @@ class WorkerMacroFSMSession:
         segment_completion_sha256 = _sha256_file(segment_completion_path)
         feedback_recovery_sha256 = _sha256_file(feedback_recovery_path)
         dispatch_sha256 = _sha256_file(dispatch_path)
+        transition_sha256 = _sha256_file(transitions_path)
+        telemetry_sha256 = _sha256_file(telemetry_jsonl)
+        final_raw_telemetry_row_sha256 = (
+            _canonical_json_sha256(self.rows[-1]) if self.rows else ""
+        )
+        self.terminal_recovery_closure = (
+            self._terminal_recovery_closure_mapping(
+                telemetry_jsonl_path=telemetry_jsonl,
+                telemetry_jsonl_sha256=telemetry_sha256,
+                final_raw_telemetry_row_sha256=(
+                    final_raw_telemetry_row_sha256
+                ),
+            )
+        )
         timeline = list(_attribute(self.controller, "timeline", []) or [])
         _atomic_write_json(timeline_path, {"timeline": timeline})
         inputs = self._task_inputs(success=success, error=self.error)
@@ -12340,6 +13056,7 @@ class WorkerMacroFSMSession:
                 self.source_action_consumption_rows
             ),
             "source_action_coverage_complete": not self._source_action_coverage_errors(),
+            "source_action_coverage_errors": self._source_action_coverage_errors(),
             "source_action_consumption_path": str(source_consumption_path),
             "source_action_consumption_sha256": source_consumption_sha256,
             "segment_completion_count": sum(
@@ -12387,8 +13104,14 @@ class WorkerMacroFSMSession:
             "transition_count": len(self.transition_rows),
             "telemetry_sample_count": len(self.rows),
             "telemetry_jsonl_path": str(telemetry_jsonl),
+            "telemetry_jsonl_sha256": telemetry_sha256,
+            "final_raw_telemetry_row_sha256": final_raw_telemetry_row_sha256,
+            "terminal_recovery_closure": dict(
+                _jsonable(self.terminal_recovery_closure)
+            ),
             "telemetry_csv_path": str(telemetry_csv),
             "transition_evidence_path": str(transitions_path),
+            "transition_evidence_sha256": transition_sha256,
             "dispatch_ledger_path": str(dispatch_path),
             "controller_timeline_path": str(timeline_path),
             "task_inputs_path": str(inputs_path),
@@ -12439,6 +13162,13 @@ class WorkerMacroFSMSession:
             "start_boundary_readback_sha256": (
                 durable_boundary_readback_sha256
             ),
+            "source_action_consumption_count": len(
+                self.source_action_consumption_rows
+            ),
+            "source_action_coverage_complete": not self._source_action_coverage_errors(),
+            "source_action_coverage_errors": self._source_action_coverage_errors(),
+            "source_action_consumption_path": str(source_consumption_path),
+            "source_action_consumption_sha256": source_consumption_sha256,
             "source_version": self.request.source_version,
             "profile_id": self.request.profile_id,
             **self.bundle_identity,
@@ -12477,6 +13207,16 @@ class WorkerMacroFSMSession:
             "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
             "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
             "feedback_recovery_dispatch_count": len(self.dispatch_rows),
+            "transition_count": len(self.transition_rows),
+            "transition_evidence_path": str(transitions_path),
+            "transition_evidence_sha256": transition_sha256,
+            "telemetry_sample_count": len(self.rows),
+            "telemetry_jsonl_path": str(telemetry_jsonl),
+            "telemetry_jsonl_sha256": telemetry_sha256,
+            "final_raw_telemetry_row_sha256": final_raw_telemetry_row_sha256,
+            "terminal_recovery_closure": dict(
+                _jsonable(self.terminal_recovery_closure)
+            ),
             "segment_completion_count": sum(
                 row.get("terminal_kind") == SegmentDecisionKind.COMPLETE.value
                 for row in self.segment_completion_rows

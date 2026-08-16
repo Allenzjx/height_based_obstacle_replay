@@ -46,6 +46,10 @@ from .worker_macro_fsm_session import (
     SEGMENT_COMPLETION_SCHEMA,
     SESSION_SCHEMA,
     TASK_INPUTS_SCHEMA,
+    TELEMETRY_SCHEMA,
+    TERMINAL_RECOVERY_CLOSURE_SCHEMA,
+    TRANSITION_ROW_KEYS,
+    TRANSITION_SCHEMA,
     WorkerMacroFSMSession,
     load_worker_macro_fsm_request,
 )
@@ -68,6 +72,22 @@ MANUAL_VERDICT_SCHEMA = "fsm50.manual_macro_video_verdict.v1"
 GATE_C_CLOSURE_EVIDENCE_SCHEMA = "fsm50.gate_c_closure_evidence.v1"
 
 _LOWER_SHA256 = frozenset("0123456789abcdef")
+_START_BOUNDARY_ACK_KEYS = frozenset(
+    {
+        "batch_id",
+        "source",
+        "error",
+        "applied_sim_step",
+        "first_physics_step",
+        "motion_start_skew_s",
+        "physics_dt_s",
+        "servo_applied",
+        "wheel_applied",
+        "servo_targets_applied",
+        "wheel_targets_applied",
+        "recording_metadata",
+    }
+)
 _SEGMENT_LEDGER_BINDING_KEYS = (
     "segment_completion_ledger_path",
     "segment_completion_ledger_sha256",
@@ -88,6 +108,36 @@ _FEEDBACK_LEDGER_BINDING_KEYS = (
     "feedback_recovery_dispatch_ledger_path",
     "feedback_recovery_dispatch_ledger_sha256",
     "feedback_recovery_dispatch_count",
+)
+_SOURCE_LEDGER_BINDING_KEYS = (
+    "source_action_consumption_path",
+    "source_action_consumption_sha256",
+    "source_action_consumption_count",
+    "source_action_coverage_complete",
+    "source_action_coverage_errors",
+)
+_TRANSITION_LEDGER_BINDING_KEYS = (
+    "transition_evidence_path",
+    "transition_evidence_sha256",
+    "transition_count",
+)
+_TELEMETRY_BINDING_KEYS = (
+    "telemetry_jsonl_path",
+    "telemetry_jsonl_sha256",
+    "telemetry_sample_count",
+    "final_raw_telemetry_row_sha256",
+)
+_TERMINAL_RECOVERY_CLOSURE_KEYS = frozenset(
+    {
+        "schema_version",
+        "outcome",
+        "telemetry_jsonl_path",
+        "telemetry_jsonl_sha256",
+        "telemetry_sample_count",
+        "final_raw_telemetry_row_sha256",
+        "settle_assessment",
+        "closure_sha256",
+    }
 )
 _FEEDBACK_RECOVERY_ACTION_ROW_KEYS = frozenset(
     {
@@ -442,6 +492,137 @@ def _is_lower_sha256(value: Any) -> bool:
         and len(value) == 64
         and set(value).issubset(_LOWER_SHA256)
     )
+
+
+def _validate_start_boundary_ack(
+    acknowledgement: Mapping[str, Any],
+    *,
+    request_id: str,
+    readback: Mapping[str, Any] | None = None,
+    readback_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Rebuild the exact zero-wheel start authority from durable fields."""
+
+    if not isinstance(acknowledgement, Mapping):
+        raise MacroRunnerContractError("Macro start boundary ACK is missing")
+    result = dict(acknowledgement)
+    if set(result) != _START_BOUNDARY_ACK_KEYS:
+        raise MacroRunnerContractError("Macro start boundary ACK keys are not exact")
+    applied_step = result.get("applied_sim_step")
+    first_step = result.get("first_physics_step")
+    skew = result.get("motion_start_skew_s")
+    physics_dt_s = result.get("physics_dt_s")
+    servos = result.get("servo_targets_applied")
+    wheels = result.get("wheel_targets_applied")
+    metadata = result.get("recording_metadata")
+    if (
+        type(request_id) is not str
+        or not request_id
+        or result.get("batch_id") != f"{request_id}:start-boundary"
+        or result.get("source") != "fsm50_macro_start_boundary"
+        or result.get("error") != ""
+        or type(applied_step) is not int
+        or applied_step < 0
+        or type(first_step) is not int
+        or first_step != applied_step + 1
+        or type(skew) not in (int, float)
+        or type(skew) is bool
+        or not math.isfinite(float(skew))
+        or float(skew) != 0.0
+        or type(physics_dt_s) not in (int, float)
+        or type(physics_dt_s) is bool
+        or not math.isfinite(float(physics_dt_s))
+        or not math.isclose(
+            float(physics_dt_s), 1.0 / 120.0, rel_tol=0.0, abs_tol=1.0e-12
+        )
+        or result.get("servo_applied") is not True
+        or result.get("wheel_applied") is not True
+        or not isinstance(servos, Mapping)
+        or set(servos) != set(SERVO_JOINT_NAMES)
+        or not isinstance(wheels, Mapping)
+        or set(wheels) != set(WHEEL_JOINT_NAMES)
+        or any(
+            type(value) not in (int, float)
+            or type(value) is bool
+            or not math.isfinite(float(value))
+            for value in [*servos.values(), *wheels.values()]
+        )
+        or not _strict_json_equal(
+            dict(wheels), {name: 0.0 for name in WHEEL_JOINT_NAMES}
+        )
+        or not isinstance(metadata, Mapping)
+        or not _strict_json_equal(dict(metadata), {})
+    ):
+        raise MacroRunnerContractError("Macro zero-wheel start boundary ACK is invalid")
+    if readback is not None:
+        if (
+            not isinstance(readback, Mapping)
+            or not _is_lower_sha256(readback_sha256)
+            or _sha256_mapping(readback) != readback_sha256
+            or readback.get("sim_step") != first_step
+            or readback.get("command_epoch") != 0
+            or readback.get("batch_id") != result["batch_id"]
+            or not _strict_json_equal(
+                readback.get("canonical_servo_targets_deg"), dict(servos)
+            )
+            or not _strict_json_equal(
+                readback.get("canonical_wheel_targets_rad_s"), dict(wheels)
+            )
+        ):
+            raise MacroRunnerContractError(
+                "Macro start boundary ACK/readback external binding is invalid"
+            )
+    return result
+
+
+def _validate_macro_start_ack(
+    acknowledgement: Mapping[str, Any],
+    *,
+    request: Mapping[str, Any],
+    worker_binding: Mapping[str, Any],
+    expected_boundary_ack: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate the live or persisted start ACK through one contract path."""
+
+    result = dict(acknowledgement)
+    for key, expected in {
+        "type": "operation_ack",
+        "operation": "start_macro_fsm",
+        "request_id": request["request_id"],
+        "accepted": True,
+        "error": "",
+        "worker_pid": worker_binding["worker_pid"],
+        "worker_session_id": worker_binding["worker_session_id"],
+        "adapter_runtime_instance_id": worker_binding["adapter_runtime_instance_id"],
+        "artifact_request_id": "",
+        "root_state_write_count": 0,
+        "physics_dt_s": 1.0 / 120.0,
+        "graph_sha256": request["graph_sha256"],
+        "profile_library_sha256": request["profile_library_sha256"],
+        "bundle_sha256": request["bundle_sha256"],
+    }.items():
+        if not _strict_json_equal(result.get(key), expected):
+            raise MacroRunnerContractError(f"Macro start ACK {key} mismatch")
+    boundary = _validate_start_boundary_ack(
+        result.get("start_boundary_ack"),
+        request_id=str(request["request_id"]),
+    )
+    if expected_boundary_ack is not None and not _strict_json_equal(
+        boundary, expected_boundary_ack
+    ):
+        raise MacroRunnerContractError(
+            "persisted Macro start ACK differs from terminal boundary authority"
+        )
+    first_step = boundary["first_physics_step"]
+    if (
+        result.get("first_controller_tick_physics_step") != first_step
+        or result.get("earliest_profile_dispatch_physics_step")
+        != first_step + EXPECTED_RENDER_SUBSTEPS - 1
+        or result.get("earliest_profile_actuation_physics_step")
+        != first_step + EXPECTED_RENDER_SUBSTEPS
+    ):
+        raise MacroRunnerContractError("Macro start ACK outer cadence is invalid")
+    return result
 
 
 def _environment_lock_dependencies() -> tuple[
@@ -979,6 +1160,380 @@ def _successful_feedback_ledger_claim(
     return claim
 
 
+def _successful_source_ledger_claim(
+    mapping: Mapping[str, Any], *, label: str
+) -> dict[str, Any]:
+    claim = {key: _jsonable(mapping.get(key)) for key in _SOURCE_LEDGER_BINDING_KEYS}
+    if (
+        type(claim["source_action_consumption_count"]) is not int
+        or claim["source_action_consumption_count"] <= 0
+        or claim["source_action_coverage_complete"] is not True
+        or claim["source_action_coverage_errors"] != []
+        or not _is_lower_sha256(claim["source_action_consumption_sha256"])
+        or type(claim["source_action_consumption_path"]) is not str
+        or not claim["source_action_consumption_path"]
+    ):
+        raise MacroRunnerContractError(
+            f"{label} does not claim exact successful source-action coverage"
+        )
+    return claim
+
+
+def _successful_transition_ledger_claim(
+    mapping: Mapping[str, Any], *, label: str
+) -> dict[str, Any]:
+    claim = {
+        key: _jsonable(mapping.get(key)) for key in _TRANSITION_LEDGER_BINDING_KEYS
+    }
+    if (
+        type(claim["transition_count"]) is not int
+        or claim["transition_count"] <= 0
+        or not _is_lower_sha256(claim["transition_evidence_sha256"])
+        or type(claim["transition_evidence_path"]) is not str
+        or not claim["transition_evidence_path"]
+    ):
+        raise MacroRunnerContractError(
+            f"{label} does not claim a complete transition ledger"
+        )
+    return claim
+
+
+def _successful_telemetry_claim(
+    mapping: Mapping[str, Any], *, label: str
+) -> dict[str, Any]:
+    claim = {key: _jsonable(mapping.get(key)) for key in _TELEMETRY_BINDING_KEYS}
+    if (
+        type(claim["telemetry_sample_count"]) is not int
+        or claim["telemetry_sample_count"] <= 0
+        or not _is_lower_sha256(claim["telemetry_jsonl_sha256"])
+        or not _is_lower_sha256(claim["final_raw_telemetry_row_sha256"])
+        or type(claim["telemetry_jsonl_path"]) is not str
+        or not claim["telemetry_jsonl_path"]
+    ):
+        raise MacroRunnerContractError(
+            f"{label} does not claim complete canonical telemetry"
+        )
+    return claim
+
+
+def _successful_terminal_recovery_closure(
+    mapping: Mapping[str, Any], *, label: str
+) -> dict[str, Any]:
+    raw = mapping.get("terminal_recovery_closure")
+    if not isinstance(raw, Mapping) or set(raw) != _TERMINAL_RECOVERY_CLOSURE_KEYS:
+        raise MacroRunnerContractError(
+            f"{label} terminal recovery closure is absent or malformed"
+        )
+    closure = dict(_jsonable(raw))
+    core = {
+        key: value
+        for key, value in closure.items()
+        if key != "closure_sha256"
+    }
+    assessment = closure.get("settle_assessment")
+    if (
+        closure.get("schema_version") != TERMINAL_RECOVERY_CLOSURE_SCHEMA
+        or closure.get("outcome")
+        not in {"TASK_SUCCESS", "TASK_SUCCESS_POSTURE_INCOMPLETE"}
+        or not isinstance(assessment, Mapping)
+        or assessment.get("complete") is not True
+        or closure.get("closure_sha256") != _sha256_mapping(core)
+    ):
+        raise MacroRunnerContractError(
+            f"{label} terminal recovery closure is not successful"
+        )
+    return closure
+
+
+def _state_text(value: Any) -> str:
+    return str(getattr(value, "value", value) or "")
+
+
+def _validate_transition_rows(
+    rows: list[dict[str, Any]],
+    *,
+    bundle: MacroControllerBundle,
+    source_rows: list[dict[str, Any]],
+    dispatch_rows: list[dict[str, Any]],
+    segment_rows: list[dict[str, Any]],
+    boundary_first_physics_step: int,
+    source_version: str,
+) -> None:
+    if not rows:
+        raise MacroRunnerContractError("transition ledger is empty")
+    graph = bundle.graph
+    initial_state = _state_text(graph.initial_state)
+    success_state = _state_text(graph.success_state)
+    previous_to = ""
+    previous_step: int | None = None
+    previous_time: float | None = None
+    previous_epoch: int | None = None
+    for index, row in enumerate(rows):
+        label = f"transition ledger row {index}"
+        if set(row) != TRANSITION_ROW_KEYS:
+            raise MacroRunnerContractError(f"{label} keys are not exact")
+        step = row.get("sim_step")
+        sample_time = row.get("sim_time_s")
+        epoch = row.get("command_epoch")
+        from_state = row.get("from_state")
+        to_state = row.get("to_state")
+        events = row.get("events")
+        if (
+            row.get("schema_version") != TRANSITION_SCHEMA
+            or type(row.get("transition_index")) is not int
+            or row["transition_index"] != index
+            or type(step) is not int
+            or step < 0
+            or type(sample_time) not in (int, float)
+            or isinstance(sample_time, bool)
+            or not math.isfinite(float(sample_time))
+            or not math.isclose(
+                float(sample_time),
+                float(step) / 120.0,
+                rel_tol=0.0,
+                abs_tol=2.0e-8,
+            )
+            or type(epoch) is not int
+            or epoch < 0
+            or type(from_state) is not str
+            or type(to_state) is not str
+            or not to_state
+            or not isinstance(events, list)
+            or not events
+            or any(type(event) is not str or not event for event in events)
+            or not isinstance(row.get("guard_evidence"), Mapping)
+            or type(row.get("retry_count")) is not int
+            or row["retry_count"] < 0
+            or type(row.get("subphase")) is not str
+            or not row["subphase"]
+            or type(row.get("profile_id")) is not str
+            or type(row.get("profile_source_version")) is not str
+            or type(row.get("profile_strategy")) is not str
+            or type(row.get("reason")) is not str
+            or not row["reason"]
+            or type(row.get("phase_elapsed_s")) not in (int, float)
+            or isinstance(row.get("phase_elapsed_s"), bool)
+            or not math.isfinite(float(row["phase_elapsed_s"]))
+            or float(row["phase_elapsed_s"]) < 0.0
+            or type(row.get("profile_fraction")) not in (int, float)
+            or isinstance(row.get("profile_fraction"), bool)
+            or not math.isfinite(float(row["profile_fraction"]))
+            or not 0.0 <= float(row["profile_fraction"]) <= 1.0
+            or not _is_lower_sha256(row.get("observation_sha256"))
+        ):
+            raise MacroRunnerContractError(f"{label} scalar identity is invalid")
+        if previous_step is not None and (
+            step <= previous_step
+            or float(sample_time) <= float(previous_time)
+            or epoch < int(previous_epoch)
+        ):
+            raise MacroRunnerContractError(
+                f"{label} chronology is not strictly increasing"
+            )
+        if index == 0:
+            if (
+                from_state != ""
+                or to_state != initial_state
+                or events != [f"RESET:{initial_state}"]
+                or step != boundary_first_physics_step
+            ):
+                raise MacroRunnerContractError(
+                    "transition ledger does not start at the graph initial state"
+                )
+        else:
+            if from_state != previous_to:
+                raise MacroRunnerContractError(
+                    f"{label} does not continue the prior state"
+                )
+            if from_state == to_state:
+                if from_state == success_state:
+                    raise MacroRunnerContractError(
+                        "transition ledger appends evidence after SUCCESS"
+                    )
+                valid_same_state_events = {
+                    (f"HOLD:{to_state}",),
+                    (f"RETRY:{to_state}:{row['retry_count']}",),
+                }
+                if tuple(events) not in valid_same_state_events:
+                    raise MacroRunnerContractError(
+                        f"{label} same-state event is not an explicit hold"
+                    )
+                if events[0].startswith("RETRY:"):
+                    maximum = int(
+                        graph.get(to_state).retry_policy.maximum_retries
+                    )
+                    if not 1 <= row["retry_count"] <= maximum:
+                        raise MacroRunnerContractError(
+                            f"{label} retry count exceeds its state policy"
+                        )
+            else:
+                expected_next = _state_text(graph.get(from_state).next_state)
+                if (
+                    to_state != expected_next
+                    or events
+                    != [f"EXIT:{from_state}", f"ENTER:{to_state}"]
+                ):
+                    raise MacroRunnerContractError(
+                        f"{label} is not the declared graph edge"
+                    )
+        previous_to = to_state
+        previous_step = step
+        previous_time = float(sample_time)
+        previous_epoch = epoch
+        profile_tuple = (
+            row["profile_id"],
+            row["profile_source_version"],
+            row["profile_strategy"],
+        )
+        expected_profiles = {
+            (
+                str(action["profile_id"]),
+                str(action["source_version"]),
+                str(action["strategy"]),
+            )
+            for action in getattr(bundle.profiles, "to_mapping")()["profiles"]
+            if str(action.get("state_id", "")) == to_state
+            and str(action.get("source_version", "")) == source_version
+        }
+        if (
+            expected_profiles
+            and profile_tuple not in expected_profiles
+        ) or (not expected_profiles and profile_tuple != ("", "", "")):
+            raise MacroRunnerContractError(
+                f"{label} profile identity is not owned by its state"
+            )
+    if previous_to != success_state:
+        raise MacroRunnerContractError(
+            "successful transition ledger does not terminate in SUCCESS"
+        )
+
+    def state_at(step: int) -> str:
+        active = ""
+        for row in rows:
+            if int(row["sim_step"]) > step:
+                break
+            active = str(row["to_state"])
+        return active
+
+    for label, ledger_rows in (
+        ("source action", source_rows),
+        ("physical dispatch", dispatch_rows),
+    ):
+        for index, row in enumerate(ledger_rows):
+            step = row.get("sim_step")
+            state = row.get("macro_state")
+            if (
+                type(step) is not int
+                or type(state) is not str
+                or state_at(step) != state
+            ):
+                raise MacroRunnerContractError(
+                    f"{label} row {index} is not owned by its transition state"
+                )
+    for index, row in enumerate(segment_rows):
+        owner = row.get("owner_state")
+        start_step = row.get("start_sim_step")
+        terminal_step = row.get("terminal_sim_step")
+        if (
+            type(owner) is not str
+            or type(start_step) is not int
+            or type(terminal_step) is not int
+            or state_at(start_step) != owner
+        ):
+            raise MacroRunnerContractError(
+                f"segment completion row {index} start is not transition-owned"
+            )
+        terminal_states = {state_at(terminal_step)}
+        terminal_states.update(
+            str(transition[edge])
+            for transition in rows
+            if transition["sim_step"] == terminal_step
+            for edge in ("from_state", "to_state")
+        )
+        if owner not in terminal_states:
+            raise MacroRunnerContractError(
+                f"segment completion row {index} terminal is not transition-owned"
+            )
+
+    epoch_events = [(0, 0)]
+    epoch_events.extend(
+        (int(row["sim_step"]), int(row["dispatch_epoch"]))
+        for row in source_rows
+        if type(row.get("sim_step")) is int
+        and type(row.get("dispatch_epoch")) is int
+    )
+    epoch_events.extend(
+        (int(row["sim_step"]), int(row["command_epoch"]))
+        for row in dispatch_rows
+        if type(row.get("sim_step")) is int
+        and type(row.get("command_epoch")) is int
+    )
+    for index, row in enumerate(rows):
+        expected_epoch = max(
+            epoch for step, epoch in epoch_events if step <= row["sim_step"]
+        )
+        if row["command_epoch"] != expected_epoch:
+            raise MacroRunnerContractError(
+                f"transition ledger row {index} command epoch is not ledger-bound"
+            )
+
+
+def _validate_telemetry_chronology(
+    rows: list[dict[str, Any]],
+    *,
+    source_version: str,
+    terminal_transition: Mapping[str, Any] | None = None,
+    success_state: str = "",
+    terminal_outcome: str = "",
+) -> None:
+    previous_step: int | None = None
+    previous_time: float | None = None
+    for index, row in enumerate(rows):
+        step = row.get("sim_step")
+        sample_time = row.get("sim_time_s")
+        if (
+            row.get("schema_version") != TELEMETRY_SCHEMA
+            or row.get("source_version") != source_version
+            or type(step) is not int
+            or step < 0
+            or type(sample_time) not in (int, float)
+            or isinstance(sample_time, bool)
+            or not math.isfinite(float(sample_time))
+            or not math.isclose(
+                float(sample_time),
+                float(step) / 120.0,
+                rel_tol=0.0,
+                abs_tol=2.0e-8,
+            )
+            or (
+                previous_step is not None
+                and (
+                    step <= previous_step
+                    or float(sample_time) <= float(previous_time)
+                )
+            )
+        ):
+            raise MacroRunnerContractError(
+                f"telemetry row {index} chronology/schema is invalid"
+            )
+        if (
+            terminal_transition is not None
+            and step > terminal_transition.get("sim_step", -1)
+            and (
+                row.get("macro_state") != success_state
+                or row.get("controller_terminal") is not True
+                or row.get("controller_terminal_outcome") != terminal_outcome
+                or row.get("command_epoch")
+                != terminal_transition.get("command_epoch")
+            )
+        ):
+            raise MacroRunnerContractError(
+                f"telemetry row {index} regresses after the terminal transition"
+            )
+        previous_step = step
+        previous_time = float(sample_time)
+
+
 def _validate_feedback_recovery_action_row(
     row: Mapping[str, Any],
     *,
@@ -1168,6 +1723,106 @@ def _validate_feedback_recovery_action_row(
         or response.get("n_plus_one_response_verified") is not True
     ):
         raise MacroRunnerContractError(f"{label} physical response shape is invalid")
+
+
+def _validate_segment_source_cross_bindings(
+    segment_rows: Sequence[Mapping[str, Any]],
+    source_rows: Sequence[Mapping[str, Any]],
+) -> None:
+    """Bind each durable segment start to its consumed source action authority."""
+
+    for row_index, segment in enumerate(segment_rows):
+        label = f"segment completion ledger row {row_index}"
+        source_index = segment.get("source_action_consumption_index")
+        if (
+            type(source_index) is not int
+            or source_index < 0
+            or source_index >= len(source_rows)
+        ):
+            raise MacroRunnerContractError(
+                f"{label} has no exact source-action consumption owner"
+            )
+        source = source_rows[source_index]
+        provenance = source.get("command_provenance")
+        pre_action = source.get("pre_action_verified_readback")
+        if not isinstance(provenance, Mapping) or not isinstance(
+            pre_action, Mapping
+        ):
+            raise MacroRunnerContractError(
+                f"{label} source-action authority is incomplete"
+            )
+        exact = {
+            "start_source_action_identity": provenance.get(
+                "source_action_identity"
+            ),
+            "start_command_epoch": source.get("dispatch_epoch"),
+            "start_sim_step": source.get("sim_step"),
+            "start_sim_time_s": source.get("sim_time_s"),
+            "pre_action_canonical_servo_targets_deg": pre_action.get(
+                "canonical_servo_targets_deg"
+            ),
+        }
+        if any(
+            not _strict_json_equal(segment.get(key), expected)
+            for key, expected in exact.items()
+        ):
+            raise MacroRunnerContractError(
+                f"{label} start identity differs from its source consumption"
+            )
+
+        physical = source.get("physical_dispatch_applied") is True
+        if physical:
+            physical_exact = {
+                "start_physical_dispatch": True,
+                "start_batch_id": source.get("batch_id"),
+                "start_first_physics_step": source.get(
+                    "n_plus_one_verified_sim_step"
+                ),
+                "start_readback_verified": True,
+                "start_readback_verified_sim_step": source.get(
+                    "n_plus_one_verified_sim_step"
+                ),
+                "start_readback_sha256": source.get(
+                    "n_plus_one_readback_sha256"
+                ),
+                "retained_epoch_same_target": False,
+            }
+            if (
+                source.get("target_changed") is not True
+                or source.get("physical_dispatch_required") is not True
+                or source.get("n_plus_one_verified") is not True
+            ):
+                raise MacroRunnerContractError(
+                    f"{label} physical source owner lacks its verified N+1 chain"
+                )
+        else:
+            physical_exact = {
+                "start_physical_dispatch": False,
+                "start_batch_id": "",
+                "start_first_physics_step": None,
+                "start_readback_verified": True,
+                "start_readback_verified_sim_step": pre_action.get("sim_step"),
+                "start_readback_sha256": source.get(
+                    "pre_action_verified_readback_sha256"
+                ),
+                "retained_epoch_same_target": True,
+            }
+            if (
+                source.get("target_changed") is not False
+                or source.get("physical_dispatch_required") is not False
+                or source.get("batch_id") != ""
+                or source.get("n_plus_one_verified") is not False
+            ):
+                raise MacroRunnerContractError(
+                    f"{label} retained source owner invents a physical dispatch"
+                )
+        if any(
+            not _strict_json_equal(segment.get(key), expected)
+            for key, expected in physical_exact.items()
+        ):
+            raise MacroRunnerContractError(
+                f"{label} readback identity differs from its source consumption"
+            )
 
 
 def _validate_segment_completion_row(
@@ -1619,6 +2274,12 @@ def _validate_successful_segment_completion_ledger(
         raise MacroRunnerContractError(
             "zero-wheel boundary readback SHA is stale"
         )
+    _validate_start_boundary_ack(
+        boundary_claim["start_boundary_ack"],
+        request_id=str(request["request_id"]),
+        readback=boundary_claim["start_boundary_readback"],
+        readback_sha256=boundary_claim["start_boundary_readback_sha256"],
+    )
     claims = [
         _successful_ledger_claim(terminal, label="raw terminal", require_aliases=True),
         _successful_ledger_claim(
@@ -1719,6 +2380,107 @@ def _validate_successful_feedback_recovery_ledger(
         boundary_claim["start_boundary_readback"]
     ):
         raise MacroRunnerContractError("zero-wheel boundary readback SHA is stale")
+    _validate_start_boundary_ack(
+        boundary_claim["start_boundary_ack"],
+        request_id=str(request["request_id"]),
+        readback=boundary_claim["start_boundary_readback"],
+        readback_sha256=boundary_claim["start_boundary_readback_sha256"],
+    )
+    source_claims = [
+        _successful_source_ledger_claim(container, label=label)
+        for container, label in (
+            (terminal, "raw terminal"),
+            (durable_result, "durable worker result"),
+            (completed, "task_inputs.completed_result"),
+            (controller, "task_inputs.completed_result.macro_controller"),
+        )
+    ]
+    if any(
+        not _strict_json_equal(candidate, source_claims[0])
+        for candidate in source_claims[1:]
+    ):
+        raise MacroRunnerContractError(
+            "source-action ledger claims differ across terminal/result/task_inputs"
+        )
+    source_claim = source_claims[0]
+    transition_claims = [
+        _successful_transition_ledger_claim(container, label=label)
+        for container, label in (
+            (terminal, "raw terminal"),
+            (durable_result, "durable worker result"),
+            (completed, "task_inputs.completed_result"),
+            (controller, "task_inputs.completed_result.macro_controller"),
+        )
+    ]
+    if any(
+        not _strict_json_equal(candidate, transition_claims[0])
+        for candidate in transition_claims[1:]
+    ):
+        raise MacroRunnerContractError(
+            "transition ledger claims differ across terminal/result/task_inputs"
+        )
+    transition_claim = transition_claims[0]
+    telemetry_claims = [
+        _successful_telemetry_claim(container, label=label)
+        for container, label in (
+            (terminal, "raw terminal"),
+            (durable_result, "durable worker result"),
+            (completed, "task_inputs.completed_result"),
+            (controller, "task_inputs.completed_result.macro_controller"),
+        )
+    ]
+    if any(
+        not _strict_json_equal(candidate, telemetry_claims[0])
+        for candidate in telemetry_claims[1:]
+    ):
+        raise MacroRunnerContractError(
+            "telemetry claims differ across terminal/result/task_inputs"
+        )
+    telemetry_claim = telemetry_claims[0]
+    recovery_closures = [
+        _successful_terminal_recovery_closure(container, label=label)
+        for container, label in (
+            (terminal, "raw terminal"),
+            (durable_result, "durable worker result"),
+            (completed, "task_inputs.completed_result"),
+            (controller, "task_inputs.completed_result.macro_controller"),
+        )
+    ]
+    if any(
+        not _strict_json_equal(candidate, recovery_closures[0])
+        for candidate in recovery_closures[1:]
+    ):
+        raise MacroRunnerContractError(
+            "terminal recovery closures differ across terminal/result/task_inputs"
+        )
+    recovery_closure = recovery_closures[0]
+    for closure_key, telemetry_key in (
+        ("telemetry_jsonl_path", "telemetry_jsonl_path"),
+        ("telemetry_jsonl_sha256", "telemetry_jsonl_sha256"),
+        ("telemetry_sample_count", "telemetry_sample_count"),
+        (
+            "final_raw_telemetry_row_sha256",
+            "final_raw_telemetry_row_sha256",
+        ),
+    ):
+        if not _strict_json_equal(
+            recovery_closure.get(closure_key),
+            telemetry_claim.get(telemetry_key),
+        ):
+            raise MacroRunnerContractError(
+                "terminal recovery closure is not bound to canonical telemetry"
+            )
+    outcome_values = (
+        terminal.get("controller_terminal_outcome"),
+        durable_result.get("controller_terminal_outcome"),
+        completed.get("controller_terminal_outcome"),
+        controller.get("terminal_outcome"),
+        recovery_closure.get("outcome"),
+    )
+    if any(value != outcome_values[0] for value in outcome_values[1:]):
+        raise MacroRunnerContractError(
+            "machine terminal outcome differs across durable evidence"
+        )
     claims = [
         _successful_feedback_ledger_claim(
             terminal, label="raw terminal"
@@ -1864,14 +2626,14 @@ def _validate_successful_feedback_recovery_ledger(
         auditor.feedback_recovery_action_rows = [dict(row) for row in rows]
         auditor.feedback_recovery_verified_action_count = len(rows)
         auditor.dispatch_rows = [dict(row) for row in dispatch_rows]
-        source_consumption_path = (
-            run_dir / "macro_source_action_consumption.jsonl"
-        ).resolve()
+        source_consumption_path = _path_in_run(
+            str(source_claim["source_action_consumption_path"] or ""), run_dir
+        )
         if (
-            durable_result.get("source_action_consumption_path")
-            != str(source_consumption_path)
+            source_consumption_path
+            != (run_dir / "macro_source_action_consumption.jsonl").resolve()
             or not source_consumption_path.is_file()
-            or durable_result.get("source_action_consumption_sha256")
+            or source_claim["source_action_consumption_sha256"]
             != sha256_file(source_consumption_path)
         ):
             raise RuntimeError(
@@ -1879,8 +2641,7 @@ def _validate_successful_feedback_recovery_ledger(
             )
         source_rows = _strict_jsonl_load(source_consumption_path)
         if (
-            durable_result.get("source_action_consumption_count")
-            != len(source_rows)
+            source_claim["source_action_consumption_count"] != len(source_rows)
         ):
             raise RuntimeError(
                 "durable source-action consumption count is invalid"
@@ -1899,22 +2660,116 @@ def _validate_successful_feedback_recovery_ledger(
             if segment_path.read_bytes() == b""
             else _strict_jsonl_load(segment_path)
         )
+        _validate_segment_source_cross_bindings(segment_rows, source_rows)
+        transition_path = _path_in_run(
+            str(transition_claim["transition_evidence_path"] or ""), run_dir
+        )
+        if (
+            transition_path
+            != (run_dir / "macro_transition_evidence.jsonl").resolve()
+            or not transition_path.is_file()
+            or transition_claim["transition_evidence_sha256"]
+            != sha256_file(transition_path)
+        ):
+            raise RuntimeError("durable transition ledger binding is invalid")
+        transition_rows = _strict_jsonl_load(transition_path)
+        if len(transition_rows) != transition_claim["transition_count"]:
+            raise RuntimeError("durable transition ledger count is invalid")
+        telemetry_path = _path_in_run(
+            str(telemetry_claim["telemetry_jsonl_path"] or ""), run_dir
+        )
+        if (
+            telemetry_path
+            != (run_dir / "minimal_macro_telemetry.jsonl").resolve()
+            or not telemetry_path.is_file()
+            or telemetry_claim["telemetry_jsonl_sha256"]
+            != sha256_file(telemetry_path)
+        ):
+            raise RuntimeError("durable telemetry ledger binding is invalid")
+        telemetry_rows = _strict_jsonl_load(telemetry_path)
+        if len(telemetry_rows) != telemetry_claim["telemetry_sample_count"]:
+            raise RuntimeError("durable telemetry sample count is invalid")
+        if (
+            not telemetry_rows
+            or _sha256_mapping(telemetry_rows[-1])
+            != telemetry_claim["final_raw_telemetry_row_sha256"]
+        ):
+            raise RuntimeError("durable final raw telemetry row is invalid")
+        if any(
+            not isinstance(row, Mapping)
+            or row.get("schema_version") != TELEMETRY_SCHEMA
+            for row in telemetry_rows
+        ):
+            raise RuntimeError("durable telemetry rows have an invalid schema")
+        _validate_transition_rows(
+            transition_rows,
+            bundle=bundle,
+            source_rows=source_rows,
+            dispatch_rows=dispatch_rows,
+            segment_rows=segment_rows,
+            boundary_first_physics_step=int(
+                boundary_claim["start_boundary_ack"]["first_physics_step"]
+            ),
+            source_version=str(request["source_version"]),
+        )
+        _validate_telemetry_chronology(
+            telemetry_rows,
+            source_version=str(request["source_version"]),
+            terminal_transition=transition_rows[-1],
+            success_state=_state_text(bundle.graph.success_state),
+            terminal_outcome=str(outcome_values[0]),
+        )
+        final_telemetry = telemetry_rows[-1]
+        if (
+            final_telemetry.get("macro_state")
+            != _state_text(bundle.graph.success_state)
+            or final_telemetry.get("controller_terminal") is not True
+            or final_telemetry.get("controller_terminal_outcome")
+            != outcome_values[0]
+            or final_telemetry.get("command_epoch")
+            != transition_rows[-1].get("command_epoch")
+            or final_telemetry.get("sim_step")
+            < transition_rows[-1].get("sim_step")
+        ):
+            raise RuntimeError(
+                "final telemetry is not bound to the terminal transition"
+            )
         auditor.source_action_consumption_rows = [
             dict(row) for row in source_rows
         ]
         auditor.next_source_action_index = len(source_rows)
         auditor.segment_completion_rows = [dict(row) for row in segment_rows]
+        auditor.transition_rows = [dict(row) for row in transition_rows]
         auditor.command_dispatch_count = int(
             durable_result.get("command_dispatch_count", -1)
         )
         final_telemetry_row = task_inputs.get("final_telemetry_row")
         if not isinstance(final_telemetry_row, Mapping):
             raise RuntimeError("task_inputs final telemetry row is missing")
-        auditor.rows = [dict(final_telemetry_row)]
+        if any(
+            key not in final_telemetry_row
+            or not _strict_json_equal(final_telemetry_row[key], value)
+            for key, value in telemetry_rows[-1].items()
+        ):
+            raise RuntimeError(
+                "task_inputs final telemetry row does not preserve the raw tail"
+            )
+        auditor.rows = [dict(row) for row in telemetry_rows]
+        auditor.controller_terminal_outcome = str(outcome_values[0] or "")
+        rebuilt_settle = auditor._feedback_recovery_terminal_settle_assessment(
+            outcome=auditor.controller_terminal_outcome
+        )
+        if not _strict_json_equal(
+            rebuilt_settle, recovery_closure["settle_assessment"]
+        ):
+            raise RuntimeError(
+                "terminal recovery closure differs from telemetry replay"
+            )
         closure_errors = [
             *auditor._source_action_coverage_errors(),
             *auditor._feedback_recovery_coverage_errors(),
             *auditor._dispatch_ownership_errors(),
+            *auditor._feedback_recovery_terminal_errors(),
         ]
     except Exception as exc:
         raise MacroRunnerContractError(
@@ -2343,45 +3198,11 @@ def run_one_macro(
             request_id=request_id,
             timeout_s=cli_args.operation_timeout_s,
         )
-        for key, expected in {
-            "type": "operation_ack",
-            "operation": "start_macro_fsm",
-            "request_id": request_id,
-            "accepted": True,
-            "worker_pid": worker_binding["worker_pid"],
-            "worker_session_id": worker_binding["worker_session_id"],
-            "adapter_runtime_instance_id": worker_binding["adapter_runtime_instance_id"],
-            "artifact_request_id": "",
-            "root_state_write_count": 0,
-            "physics_dt_s": 1.0 / 120.0,
-            "graph_sha256": request["graph_sha256"],
-            "profile_library_sha256": request["profile_library_sha256"],
-            "bundle_sha256": request["bundle_sha256"],
-        }.items():
-            if start_ack.get(key) != expected:
-                raise MacroRunnerContractError(f"Macro start ACK {key} mismatch")
-        boundary = start_ack.get("start_boundary_ack")
-        if not isinstance(boundary, Mapping):
-            raise MacroRunnerContractError("Macro start boundary ACK is missing")
-        applied_step = boundary.get("applied_sim_step")
-        first_step = boundary.get("first_physics_step")
-        if (
-            type(applied_step) is not int
-            or type(first_step) is not int
-            or first_step != applied_step + 1
-            or boundary.get("motion_start_skew_s") != 0.0
-            or boundary.get("physics_dt_s") != 1.0 / 120.0
-            or set(dict(boundary.get("servo_targets_applied", {}) or {}))
-            != set(SERVO_JOINT_NAMES)
-            or dict(boundary.get("wheel_targets_applied", {}) or {})
-            != {name: 0.0 for name in WHEEL_JOINT_NAMES}
-            or start_ack.get("first_controller_tick_physics_step") != first_step
-            or start_ack.get("earliest_profile_dispatch_physics_step")
-            != first_step + EXPECTED_RENDER_SUBSTEPS - 1
-            or start_ack.get("earliest_profile_actuation_physics_step")
-            != first_step + EXPECTED_RENDER_SUBSTEPS
-        ):
-            raise MacroRunnerContractError("Macro zero-wheel start boundary ACK is invalid")
+        start_ack = _validate_macro_start_ack(
+            start_ack,
+            request=request,
+            worker_binding=worker_binding,
+        )
         terminal = validate_macro_terminal(
             wait_for_macro_terminal(
                 client,
@@ -2392,6 +3213,12 @@ def run_one_macro(
             run_dir=paths.run_dir,
             worker_binding=worker_binding,
             bundle=bundle,
+        )
+        _validate_macro_start_ack(
+            start_ack,
+            request=request,
+            worker_binding=worker_binding,
+            expected_boundary_ack=terminal.get("start_boundary_ack"),
         )
         segment_completion_binding = {
             "segment_completion_schema_version": SEGMENT_COMPLETION_SCHEMA,
@@ -2694,9 +3521,22 @@ def _validate_manual_verdict_document(
     )
     if not success:
         return "MACRO_FSM_TASK_FAIL"
+    machine_outcome = str(
+        terminal.get("controller_terminal_outcome", "") or ""
+    )
+    if machine_outcome not in {
+        "TASK_SUCCESS",
+        "TASK_SUCCESS_POSTURE_INCOMPLETE",
+    }:
+        raise MacroRunnerContractError(
+            "manual verdict lacks a bound machine task-success outcome"
+        )
     return (
         "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE"
-        if verdict["posture_incomplete"]
+        if (
+            machine_outcome == "TASK_SUCCESS_POSTURE_INCOMPLETE"
+            or verdict["posture_incomplete"]
+        )
         else "MACRO_FSM_TASK_SUCCESS"
     )
 
@@ -2804,6 +3644,12 @@ def review_run(*, run_dir: str | Path, verdict_path: str | Path) -> dict[str, An
         run_dir=run,
         worker_binding=worker_binding,
         bundle=rebuilt_bundle,
+    )
+    _validate_macro_start_ack(
+        dict(manifest.get("start_ack", {}) or {}),
+        request=request,
+        worker_binding=worker_binding,
+        expected_boundary_ack=terminal.get("start_boundary_ack"),
     )
     if terminal.get("type") != "macro_fsm_complete":
         raise MacroRunnerContractError("run terminal is not successful")
@@ -2959,10 +3805,7 @@ def _validate_repeat_baseline(args: argparse.Namespace) -> None:
         or baseline.get("source_version") != args.source_version
         or baseline.get("shutdown_verified") is not True
         or baseline.get("manual_review_status")
-        not in {
-            "MACRO_FSM_TASK_SUCCESS",
-            "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
-        }
+        != "MACRO_FSM_TASK_SUCCESS"
     ):
         raise MacroRunnerContractError(
             "repeat requires a reviewed-success baseline with verified shutdown"
@@ -3007,11 +3850,7 @@ def _validate_repeat_baseline(args: argparse.Namespace) -> None:
     )
     if (
         classification != baseline.get("manual_review_status")
-        or classification
-        not in {
-            "MACRO_FSM_TASK_SUCCESS",
-            "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
-        }
+        or classification != "MACRO_FSM_TASK_SUCCESS"
     ):
         raise MacroRunnerContractError(
             "baseline manual verdict does not prove task success"
@@ -3056,10 +3895,7 @@ def _validate_reviewed_gate_c_attempt(
         )
     manifest_path = run / RUNNER_MANIFEST_NAME
     manifest = strict_json_load(manifest_path)
-    accepted_statuses = {
-        "MACRO_FSM_TASK_SUCCESS",
-        "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
-    }
+    accepted_statuses = {"MACRO_FSM_TASK_SUCCESS"}
     if (
         manifest.get("schema_version") != RUNNER_MANIFEST_SCHEMA
         or manifest.get("run_dir") != str(run)
@@ -3132,6 +3968,12 @@ def _validate_reviewed_gate_c_attempt(
         run_dir=run,
         worker_binding=worker_binding,
         bundle=rebuilt_bundle,
+    )
+    _validate_macro_start_ack(
+        dict(manifest.get("start_ack", {}) or {}),
+        request=request,
+        worker_binding=worker_binding,
+        expected_boundary_ack=terminal.get("start_boundary_ack"),
     )
     if terminal.get("type") != "macro_fsm_complete":
         raise MacroRunnerContractError("Gate-C closure terminal is not successful")
@@ -3264,10 +4106,7 @@ def _validate_gate_c_closure(
             and candidate.get("controller_complete") is True
             and candidate.get("shutdown_verified") is True
             and candidate.get("manual_review_status")
-            in {
-                "MACRO_FSM_TASK_SUCCESS",
-                "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
-            }
+            == "MACRO_FSM_TASK_SUCCESS"
         ):
             accepted_repeat_dirs.append(manifest_path.parent.resolve())
     if len(accepted_repeat_dirs) != 3:

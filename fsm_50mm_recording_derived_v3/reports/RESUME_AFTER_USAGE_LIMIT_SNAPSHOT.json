@@ -1,0 +1,78 @@
+{
+  "schema_version": "fsm50.resume_after_usage_limit_snapshot.v1",
+  "captured_utc": "2026-08-16T17:05:48.5731388Z",
+  "project_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay",
+  "resume_request": {
+    "path": "C:\\Users\\kskzz\\.codex\\attachments\\5cd0f4c7-ff66-4b8a-bc85-91fab2e67ec3\\pasted-text.txt",
+    "bytes": 26754,
+    "line_count": 1401,
+    "sha256": "8d0e04e97379adede126d11973501a1f4e9f69c1874d4b1386405291ca325b9d"
+  },
+  "git": {
+    "branch": "main",
+    "head": "551f868ca827a39a451d7777b33a647cd5aa353f",
+    "worktree_status_short": [],
+    "worktree_clean_at_capture": true,
+    "recent_commits": [
+      {
+        "commit": "551f868ca827a39a451d7777b33a647cd5aa353f",
+        "committed_at": "2026-08-16T12:29:07-04:00",
+        "subject": "Update latest Codex obstacle replay FSM implementation"
+      },
+      {
+        "commit": "2acd2852ee73e1d378de26df1abb0b86845ae4a1",
+        "committed_at": "2026-08-15T23:57:56-04:00",
+        "subject": "Update latest obstacle replay FSM code and validation artifacts"
+      },
+      {
+        "commit": "1e07d41cdda73811326978f7b9e109adf0ee552b",
+        "committed_at": "2026-08-14T16:44:33-04:00",
+        "subject": "Update 50mm FSM V003 physical diagnostics and validation artifacts"
+      }
+    ]
+  },
+  "process_snapshot": {
+    "project_runtime_match_rule": "python/pythonw/kit/isaac-sim process names, or non-shell process command lines containing the project, fsm_50mm_recording_derived_v3, IsaacLab, or isaaclab.bat",
+    "project_runtime_processes": [],
+    "project_runtime_process_count": 0,
+    "codex_processes": [
+      {
+        "pid": 36404,
+        "parent_pid": 19516,
+        "name": "codex.exe",
+        "creation_date": "2026-08-14T18:30:48-04:00"
+      },
+      {
+        "pid": 58184,
+        "parent_pid": 54312,
+        "name": "codex.exe",
+        "creation_date": "2026-08-15T23:56:13-04:00"
+      }
+    ]
+  },
+  "singleton": {
+    "path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\fsm50_replay_0ab14a3020e34b71.pid.lock",
+    "exists": false
+  },
+  "preserved_prior_ppo_checkpoint": {
+    "physical_promotion": false,
+    "retraining_paused": true,
+    "checkpoint": {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint.pt",
+      "bytes": 3128101,
+      "sha256": "582df8517f26bd6c1820e54625621813882ca132964b20519ac26b989665d8a0"
+    },
+    "checkpoint_manifest": {
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint_manifest.json",
+      "bytes": 26673,
+      "sha256": "1058d431000877fbde7d49cb25d4480c610aad466aff191fa9f37c21a6b5ac3a"
+    }
+  },
+  "resume_decision": {
+    "status": "SAFE_TO_CONTINUE_OFFLINE_LEDGER_CLOSURE_ONLY",
+    "isaac_launch_authorized_now": false,
+    "updated_v003_launch_authorized_now": false,
+    "ppo_launch_authorized": false,
+    "next_gate": "Complete ledger external anchoring, tests, one source-lock reseal, and two stable read-only verifications before launching exactly one updated v003 FSM run."
+  }
+}
