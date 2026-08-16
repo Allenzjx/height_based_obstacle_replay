@@ -16,18 +16,29 @@ import math
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
-from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from command_model import (
+    SERVO_JOINT_NAMES,
+    WHEEL_JOINT_NAMES,
+    command_limits_for_servo,
+)
 from completion_aware_segment import SegmentCompletionSpec, SegmentDecision
 
 from .fsm50_macro_state_model import (
+    FINAL_RECOVERY_FEEDBACK_LIMITS,
     MacroFSMGraph,
     MacroGuardKind,
     MacroStateId,
     MacroStateSpec,
     MacroSubphase,
     build_default_macro_graph,
+)
+from .fsm50_centroidal_support import (
+    CentroidalSupportEvidence,
+    EvidenceStatus,
+    SupportModel,
 )
 from .fsm50_motion_profiles import (
     DEFAULT_PRIMARY_VERSION,
@@ -40,6 +51,12 @@ from .fsm50_motion_profiles import (
 
 
 LEGS = ("FL", "FR", "RL", "RR")
+LEG_SERVO_JOINTS: Mapping[str, tuple[str, str]] = {
+    "FL": ("front_left_hip", "front_left_knee"),
+    "FR": ("front_right_hip", "front_right_knee"),
+    "RL": ("rear_left_hip", "rear_left_knee"),
+    "RR": ("rear_right_hip", "rear_right_knee"),
+}
 
 
 def _stable_sha256(payload: Mapping[str, Any]) -> str:
@@ -183,12 +200,400 @@ def _leg_class_map(values: Any) -> dict[str, str]:
     return result
 
 
+FEEDBACK_RECOVERY_OBSERVATION_SCHEMA = "fsm50.feedback_recovery_observation.v1"
+FEEDBACK_RECOVERY_OBSERVATION_PAYLOAD_KEYS = frozenset(
+    {
+        "sim_step",
+        "physics_time_s",
+        "observed_command_epoch",
+        "n_plus_one_verified",
+        "verified_command_epoch",
+        "readback_servo_targets_deg",
+        "readback_wheel_targets_rad_s",
+        "measured_servo_positions_deg",
+        "measured_servo_velocities_deg_s",
+        "joint_limit_margin_deg",
+        "base_position_m",
+        "base_roll_rad",
+        "base_pitch_rad",
+        "base_angular_velocity_rad_s",
+        "wheel_center_w_m",
+        "wheel_front_face_clearance_m",
+        "wheel_top_clearance_m",
+        "obstacle_front_face_x_m",
+        "obstacle_top_z_m",
+        "body_crossed_front_face",
+        "final_recoverable",
+        "posture_complete",
+    }
+)
+
+
+@dataclass(frozen=True)
+class FeedbackRecoveryObservation:
+    """Strict worker-injected readback for one current physics observation.
+
+    Centroidal/support truth remains in :class:`CentroidalSupportEvidence`.
+    This companion binds command N+1/readback and articulation values needed
+    by the S10 diagnostic feedback loop; it must identify the same tick.
+    """
+
+    schema_version: str
+    sim_step: int
+    physics_time_s: float
+    observed_command_epoch: int
+    n_plus_one_verified: bool
+    verified_command_epoch: int | None
+    readback_servo_targets_deg: Mapping[str, float]
+    readback_wheel_targets_rad_s: Mapping[str, float]
+    measured_servo_positions_deg: Mapping[str, float]
+    measured_servo_velocities_deg_s: Mapping[str, float]
+    joint_limit_margin_deg: Mapping[str, float]
+    base_position_m: tuple[float, float, float]
+    base_roll_rad: float
+    base_pitch_rad: float
+    base_angular_velocity_rad_s: tuple[float, float, float]
+    wheel_center_w_m: Mapping[str, tuple[float, float, float]]
+    wheel_front_face_clearance_m: Mapping[str, float]
+    wheel_top_clearance_m: Mapping[str, float]
+    obstacle_front_face_x_m: float
+    obstacle_top_z_m: float
+    body_crossed_front_face: bool
+    final_recoverable: bool
+    posture_complete: bool
+    payload_sha256: str
+
+    def __post_init__(self) -> None:
+        if self.schema_version != FEEDBACK_RECOVERY_OBSERVATION_SCHEMA:
+            raise ValueError("feedback recovery observation schema mismatch")
+        if type(self.sim_step) is not int or self.sim_step < 0:
+            raise ValueError("feedback recovery sim_step must be an exact non-negative int")
+        physics_time = _finite_scalar(
+            self.physics_time_s, label="feedback_recovery.physics_time_s"
+        )
+        if physics_time < 0.0:
+            raise ValueError("feedback recovery physics_time_s must be non-negative")
+        if type(self.observed_command_epoch) is not int or self.observed_command_epoch < 0:
+            raise ValueError("observed_command_epoch must be an exact non-negative int")
+        if type(self.n_plus_one_verified) is not bool:
+            raise ValueError("n_plus_one_verified must be an exact bool")
+        if self.verified_command_epoch is not None and (
+            type(self.verified_command_epoch) is not int
+            or self.verified_command_epoch < 0
+        ):
+            raise ValueError("verified_command_epoch must be None or an exact non-negative int")
+        if self.n_plus_one_verified != (self.verified_command_epoch is not None):
+            raise ValueError("N+1 verification flag/epoch are inconsistent")
+        for label, value in (
+            ("body_crossed_front_face", self.body_crossed_front_face),
+            ("final_recoverable", self.final_recoverable),
+            ("posture_complete", self.posture_complete),
+        ):
+            if type(value) is not bool:
+                raise ValueError(f"feedback_recovery.{label} must be an exact bool")
+        readback = _target_map(
+            self.readback_servo_targets_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.readback_servo_targets_deg",
+            require_complete=True,
+        )
+        readback_wheels = _target_map(
+            self.readback_wheel_targets_rad_s,
+            WHEEL_JOINT_NAMES,
+            label="feedback_recovery.readback_wheel_targets_rad_s",
+            require_complete=True,
+        )
+        measured = _target_map(
+            self.measured_servo_positions_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.measured_servo_positions_deg",
+            require_complete=True,
+        )
+        velocities = _target_map(
+            self.measured_servo_velocities_deg_s,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.measured_servo_velocities_deg_s",
+            require_complete=True,
+        )
+        margins = _target_map(
+            self.joint_limit_margin_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.joint_limit_margin_deg",
+            require_complete=True,
+        )
+        if any(value < 0.0 for value in margins.values()):
+            raise ValueError("joint_limit_margin_deg values must be non-negative")
+        base_position = _strict_vector(
+            self.base_position_m, 3, label="feedback_recovery.base_position_m"
+        )
+        base_roll = _finite_scalar(
+            self.base_roll_rad, label="feedback_recovery.base_roll_rad"
+        )
+        base_pitch = _finite_scalar(
+            self.base_pitch_rad, label="feedback_recovery.base_pitch_rad"
+        )
+        angular_velocity = _strict_vector(
+            self.base_angular_velocity_rad_s,
+            3,
+            label="feedback_recovery.base_angular_velocity_rad_s",
+        )
+        centers = _leg_vector_map(self.wheel_center_w_m)
+        front_clearance = _leg_scalar_map(
+            self.wheel_front_face_clearance_m,
+            label="feedback_recovery.wheel_front_face_clearance_m",
+            require_all=True,
+            allow_none=False,
+        )
+        top_clearance = _leg_scalar_map(
+            self.wheel_top_clearance_m,
+            label="feedback_recovery.wheel_top_clearance_m",
+            require_all=True,
+            allow_none=False,
+        )
+        obstacle_front = _finite_scalar(
+            self.obstacle_front_face_x_m,
+            label="feedback_recovery.obstacle_front_face_x_m",
+        )
+        obstacle_top = _finite_scalar(
+            self.obstacle_top_z_m,
+            label="feedback_recovery.obstacle_top_z_m",
+        )
+        object.__setattr__(self, "physics_time_s", physics_time)
+        object.__setattr__(
+            self, "readback_servo_targets_deg", MappingProxyType(readback)
+        )
+        object.__setattr__(
+            self, "readback_wheel_targets_rad_s", MappingProxyType(readback_wheels)
+        )
+        object.__setattr__(
+            self, "measured_servo_positions_deg", MappingProxyType(measured)
+        )
+        object.__setattr__(
+            self, "measured_servo_velocities_deg_s", MappingProxyType(velocities)
+        )
+        object.__setattr__(
+            self, "joint_limit_margin_deg", MappingProxyType(margins)
+        )
+        object.__setattr__(self, "base_position_m", base_position)
+        object.__setattr__(self, "base_roll_rad", base_roll)
+        object.__setattr__(self, "base_pitch_rad", base_pitch)
+        object.__setattr__(self, "base_angular_velocity_rad_s", angular_velocity)
+        object.__setattr__(self, "wheel_center_w_m", MappingProxyType(centers))
+        object.__setattr__(
+            self,
+            "wheel_front_face_clearance_m",
+            MappingProxyType({leg: float(front_clearance[leg]) for leg in LEGS}),
+        )
+        object.__setattr__(
+            self,
+            "wheel_top_clearance_m",
+            MappingProxyType({leg: float(top_clearance[leg]) for leg in LEGS}),
+        )
+        object.__setattr__(self, "obstacle_front_face_x_m", obstacle_front)
+        object.__setattr__(self, "obstacle_top_z_m", obstacle_top)
+        if (
+            type(self.payload_sha256) is not str
+            or len(self.payload_sha256) != 64
+            or any(ch not in "0123456789abcdef" for ch in self.payload_sha256)
+            or self.payload_sha256 != _stable_sha256(self._payload_mapping())
+        ):
+            raise ValueError("feedback recovery payload SHA mismatch")
+
+    def _payload_mapping(self) -> dict[str, Any]:
+        return {
+            "sim_step": self.sim_step,
+            "physics_time_s": self.physics_time_s,
+            "observed_command_epoch": self.observed_command_epoch,
+            "n_plus_one_verified": self.n_plus_one_verified,
+            "verified_command_epoch": self.verified_command_epoch,
+            "readback_servo_targets_deg": dict(self.readback_servo_targets_deg),
+            "readback_wheel_targets_rad_s": dict(
+                self.readback_wheel_targets_rad_s
+            ),
+            "measured_servo_positions_deg": dict(self.measured_servo_positions_deg),
+            "measured_servo_velocities_deg_s": dict(self.measured_servo_velocities_deg_s),
+            "joint_limit_margin_deg": dict(self.joint_limit_margin_deg),
+            "base_position_m": list(self.base_position_m),
+            "base_roll_rad": self.base_roll_rad,
+            "base_pitch_rad": self.base_pitch_rad,
+            "base_angular_velocity_rad_s": list(self.base_angular_velocity_rad_s),
+            "wheel_center_w_m": {
+                leg: list(self.wheel_center_w_m[leg]) for leg in LEGS
+            },
+            "wheel_front_face_clearance_m": dict(
+                self.wheel_front_face_clearance_m
+            ),
+            "wheel_top_clearance_m": dict(self.wheel_top_clearance_m),
+            "obstacle_front_face_x_m": self.obstacle_front_face_x_m,
+            "obstacle_top_z_m": self.obstacle_top_z_m,
+            "body_crossed_front_face": self.body_crossed_front_face,
+            "final_recoverable": self.final_recoverable,
+            "posture_complete": self.posture_complete,
+        }
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        sim_step: int,
+        physics_time_s: float,
+        observed_command_epoch: int,
+        n_plus_one_verified: bool,
+        verified_command_epoch: int | None,
+        readback_servo_targets_deg: Mapping[str, float],
+        readback_wheel_targets_rad_s: Mapping[str, float],
+        measured_servo_positions_deg: Mapping[str, float],
+        measured_servo_velocities_deg_s: Mapping[str, float],
+        joint_limit_margin_deg: Mapping[str, float],
+        base_position_m: Sequence[float],
+        base_roll_rad: float,
+        base_pitch_rad: float,
+        base_angular_velocity_rad_s: Sequence[float],
+        wheel_center_w_m: Mapping[str, Sequence[float]],
+        wheel_front_face_clearance_m: Mapping[str, float],
+        wheel_top_clearance_m: Mapping[str, float],
+        obstacle_front_face_x_m: float,
+        obstacle_top_z_m: float,
+        body_crossed_front_face: bool,
+        final_recoverable: bool,
+        posture_complete: bool,
+    ) -> "FeedbackRecoveryObservation":
+        readback = _target_map(
+            readback_servo_targets_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.readback_servo_targets_deg",
+            require_complete=True,
+        )
+        readback_wheels = _target_map(
+            readback_wheel_targets_rad_s,
+            WHEEL_JOINT_NAMES,
+            label="feedback_recovery.readback_wheel_targets_rad_s",
+            require_complete=True,
+        )
+        measured = _target_map(
+            measured_servo_positions_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.measured_servo_positions_deg",
+            require_complete=True,
+        )
+        velocities = _target_map(
+            measured_servo_velocities_deg_s,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.measured_servo_velocities_deg_s",
+            require_complete=True,
+        )
+        margins = _target_map(
+            joint_limit_margin_deg,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.joint_limit_margin_deg",
+            require_complete=True,
+        )
+        centers = _leg_vector_map(wheel_center_w_m)
+        front = _leg_scalar_map(
+            wheel_front_face_clearance_m,
+            label="feedback_recovery.wheel_front_face_clearance_m",
+            require_all=True,
+            allow_none=False,
+        )
+        top = _leg_scalar_map(
+            wheel_top_clearance_m,
+            label="feedback_recovery.wheel_top_clearance_m",
+            require_all=True,
+            allow_none=False,
+        )
+        payload = {
+            "sim_step": sim_step,
+            "physics_time_s": _finite_scalar(
+                physics_time_s, label="feedback_recovery.physics_time_s"
+            ),
+            "observed_command_epoch": observed_command_epoch,
+            "n_plus_one_verified": n_plus_one_verified,
+            "verified_command_epoch": verified_command_epoch,
+            "readback_servo_targets_deg": readback,
+            "readback_wheel_targets_rad_s": readback_wheels,
+            "measured_servo_positions_deg": measured,
+            "measured_servo_velocities_deg_s": velocities,
+            "joint_limit_margin_deg": margins,
+            "base_position_m": list(
+                _strict_vector(
+                    base_position_m, 3, label="feedback_recovery.base_position_m"
+                )
+            ),
+            "base_roll_rad": _finite_scalar(
+                base_roll_rad, label="feedback_recovery.base_roll_rad"
+            ),
+            "base_pitch_rad": _finite_scalar(
+                base_pitch_rad, label="feedback_recovery.base_pitch_rad"
+            ),
+            "base_angular_velocity_rad_s": list(
+                _strict_vector(
+                    base_angular_velocity_rad_s,
+                    3,
+                    label="feedback_recovery.base_angular_velocity_rad_s",
+                )
+            ),
+            "wheel_center_w_m": {
+                leg: list(centers[leg]) for leg in LEGS
+            },
+            "wheel_front_face_clearance_m": {
+                leg: float(front[leg]) for leg in LEGS
+            },
+            "wheel_top_clearance_m": {leg: float(top[leg]) for leg in LEGS},
+            "obstacle_front_face_x_m": _finite_scalar(
+                obstacle_front_face_x_m,
+                label="feedback_recovery.obstacle_front_face_x_m",
+            ),
+            "obstacle_top_z_m": _finite_scalar(
+                obstacle_top_z_m, label="feedback_recovery.obstacle_top_z_m"
+            ),
+            "body_crossed_front_face": body_crossed_front_face,
+            "final_recoverable": final_recoverable,
+            "posture_complete": posture_complete,
+        }
+        return cls(
+            schema_version=FEEDBACK_RECOVERY_OBSERVATION_SCHEMA,
+            payload_sha256=_stable_sha256(payload),
+            **payload,
+        )
+
+    def to_mapping(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "payload_sha256": self.payload_sha256,
+            "payload": self._payload_mapping(),
+        }
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "FeedbackRecoveryObservation":
+        if not isinstance(value, Mapping) or set(value) != {
+            "schema_version", "payload_sha256", "payload"
+        }:
+            raise ValueError("feedback recovery observation root keys are not exact")
+        if value["schema_version"] != FEEDBACK_RECOVERY_OBSERVATION_SCHEMA:
+            raise ValueError("feedback recovery observation schema mismatch")
+        payload = value["payload"]
+        if (
+            not isinstance(payload, Mapping)
+            or set(payload) != FEEDBACK_RECOVERY_OBSERVATION_PAYLOAD_KEYS
+        ):
+            raise ValueError("feedback recovery observation payload keys are not exact")
+        if value["payload_sha256"] != _stable_sha256(payload):
+            raise ValueError("feedback recovery payload SHA mismatch")
+        return cls(
+            schema_version=FEEDBACK_RECOVERY_OBSERVATION_SCHEMA,
+            payload_sha256=str(value["payload_sha256"]),
+            **payload,
+        )
+
+
 @dataclass(frozen=True)
 class MacroObservation:
     """Deployment-available subset consumed by the Macro FSM.
 
-    Exact COM is optional.  When absent, the controller labels body-position
-    displacement as a proxy; it never reports that proxy as measured COM.
+    COM/support guards consume exactly one SHA-bound current-tick centroidal
+    envelope.  ``base_position_m`` and the legacy optional ``com_position_m``
+    remain telemetry/body-progress fields only; neither can satisfy a COM or
+    physical-support guard.
     """
 
     robot_state_finite: bool
@@ -219,6 +624,8 @@ class MacroObservation:
     body_crossed_front_face: bool
     final_recoverable: bool
     posture_complete: bool
+    centroidal_support_evidence: CentroidalSupportEvidence | Mapping[str, Any]
+    feedback_recovery_observation: FeedbackRecoveryObservation | Mapping[str, Any]
 
     def __post_init__(self) -> None:
         for label, value in (
@@ -303,6 +710,77 @@ class MacroObservation:
             self.obstacle_top_z_m,
             label="obstacle_top_z_m",
         )
+        centroidal = (
+            self.centroidal_support_evidence
+            if isinstance(self.centroidal_support_evidence, CentroidalSupportEvidence)
+            else CentroidalSupportEvidence.from_mapping(
+                self.centroidal_support_evidence
+            )
+        )
+        feedback = (
+            self.feedback_recovery_observation
+            if isinstance(
+                self.feedback_recovery_observation,
+                FeedbackRecoveryObservation,
+            )
+            else FeedbackRecoveryObservation.from_mapping(
+                self.feedback_recovery_observation
+            )
+        )
+        tolerance = max(1.0e-9, centroidal.physics_dt_s * 1.0e-6)
+        if (
+            feedback.sim_step != centroidal.sim_step
+            or not math.isclose(
+                feedback.physics_time_s,
+                centroidal.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=tolerance,
+            )
+        ):
+            raise ValueError(
+                "feedback recovery observation and centroidal evidence are not the same tick"
+            )
+        feedback_cross_checks = {
+            "servo target readback": (
+                servo_targets == dict(feedback.readback_servo_targets_deg)
+            ),
+            "wheel target readback": (
+                wheel_targets == dict(feedback.readback_wheel_targets_rad_s)
+            ),
+            "base position": base_position == feedback.base_position_m,
+            "base roll": base_roll == feedback.base_roll_rad,
+            "base pitch": base_pitch == feedback.base_pitch_rad,
+            "base angular velocity": (
+                angular_velocity == feedback.base_angular_velocity_rad_s
+            ),
+            "wheel centers": wheel_centers == dict(feedback.wheel_center_w_m),
+            "front-face clearances": (
+                front_clearances
+                == dict(feedback.wheel_front_face_clearance_m)
+            ),
+            "top clearances": (
+                top_clearances == dict(feedback.wheel_top_clearance_m)
+            ),
+            "obstacle front face": (
+                obstacle_front == feedback.obstacle_front_face_x_m
+            ),
+            "obstacle top": obstacle_top == feedback.obstacle_top_z_m,
+            "body crossed": (
+                self.body_crossed_front_face == feedback.body_crossed_front_face
+            ),
+            "final recoverable": (
+                self.final_recoverable == feedback.final_recoverable
+            ),
+            "posture complete": self.posture_complete == feedback.posture_complete,
+        }
+        failed_cross_checks = sorted(
+            label for label, matches in feedback_cross_checks.items() if not matches
+        )
+        if failed_cross_checks:
+            raise ValueError(
+                "macro observation disagrees with SHA-bound feedback fields: "
+                + ", ".join(failed_cross_checks)
+            )
 
         # The dataclass is frozen for controller callers.  Canonical copies
         # also prevent later mutation of caller-owned dictionaries from
@@ -312,15 +790,21 @@ class MacroObservation:
         object.__setattr__(self, "base_pitch_rad", base_pitch)
         object.__setattr__(self, "base_angular_velocity_rad_s", angular_velocity)
         object.__setattr__(self, "com_position_m", com_position)
-        object.__setattr__(self, "servo_targets_deg", servo_targets)
-        object.__setattr__(self, "wheel_targets_rad_s", wheel_targets)
-        object.__setattr__(self, "wheel_center_w_m", wheel_centers)
-        object.__setattr__(self, "wheel_contact_classes", wheel_classes)
-        object.__setattr__(self, "wheel_contact_load_n", wheel_loads)
-        object.__setattr__(self, "wheel_front_face_clearance_m", front_clearances)
-        object.__setattr__(self, "wheel_top_clearance_m", top_clearances)
+        object.__setattr__(self, "servo_targets_deg", MappingProxyType(servo_targets))
+        object.__setattr__(self, "wheel_targets_rad_s", MappingProxyType(wheel_targets))
+        object.__setattr__(self, "wheel_center_w_m", MappingProxyType(wheel_centers))
+        object.__setattr__(self, "wheel_contact_classes", MappingProxyType(wheel_classes))
+        object.__setattr__(self, "wheel_contact_load_n", MappingProxyType(wheel_loads))
+        object.__setattr__(
+            self, "wheel_front_face_clearance_m", MappingProxyType(front_clearances)
+        )
+        object.__setattr__(
+            self, "wheel_top_clearance_m", MappingProxyType(top_clearances)
+        )
         object.__setattr__(self, "obstacle_front_face_x_m", obstacle_front)
         object.__setattr__(self, "obstacle_top_z_m", obstacle_top)
+        object.__setattr__(self, "centroidal_support_evidence", centroidal)
+        object.__setattr__(self, "feedback_recovery_observation", feedback)
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, Any]) -> "MacroObservation":
@@ -351,6 +835,8 @@ class MacroObservation:
             "body_crossed_front_face",
             "final_recoverable",
             "posture_complete",
+            "centroidal_support_evidence",
+            "feedback_recovery_observation",
         ):
             if required not in values:
                 raise ValueError(f"macro observation is missing required field {required}")
@@ -471,42 +957,63 @@ class MacroObservation:
             ),
             final_recoverable=_required_exact_bool(values, "final_recoverable"),
             posture_complete=_required_exact_bool(values, "posture_complete"),
+            centroidal_support_evidence=CentroidalSupportEvidence.from_mapping(
+                values["centroidal_support_evidence"]
+            )
+            if not isinstance(
+                values["centroidal_support_evidence"],
+                CentroidalSupportEvidence,
+            )
+            else values["centroidal_support_evidence"],
+            feedback_recovery_observation=FeedbackRecoveryObservation.from_mapping(
+                values["feedback_recovery_observation"]
+            )
+            if not isinstance(
+                values["feedback_recovery_observation"],
+                FeedbackRecoveryObservation,
+            )
+            else values["feedback_recovery_observation"],
         )
 
-    def body_or_com_position(self) -> tuple[tuple[float, float, float], str]:
-        if self.com_position_m is not None:
-            return self.com_position_m, "MEASURED_COM"
-        return self.base_position_m, "BASE_POSITION_PROXY"
+    def true_com_position(self) -> tuple[float, float, float] | None:
+        measurement = self.centroidal_support_evidence.whole_body_com
+        return measurement.position_w_m if measurement.available else None
 
     def leg_crossed(self, leg: str) -> bool:
-        clearance = self.wheel_front_face_clearance_m.get(leg)
-        if clearance is not None:
-            return float(clearance) > 0.0
-        center = self.wheel_center_w_m.get(leg)
         return bool(
-            center is not None
-            and self.obstacle_front_face_x_m is not None
-            and float(center[0]) > float(self.obstacle_front_face_x_m)
+            self.feedback_recovery_observation.wheel_front_face_clearance_m[leg]
+            > 0.0
         )
 
     def leg_airborne(self, leg: str) -> bool:
-        top_clearance = self.wheel_top_clearance_m.get(leg)
+        row = self.centroidal_support_evidence.wheel_contacts.by_leg()[leg]
+        top_clearance = (
+            self.feedback_recovery_observation.wheel_top_clearance_m[leg]
+        )
         return bool(
-            self.wheel_contact_classes.get(leg) == "AIR"
-            or (top_clearance is not None and float(top_clearance) >= 0.003)
+            (
+                row.evidence_available
+                and not row.measurement.active
+                and row.measurement.surface_kind == "AIR"
+            )
+            or top_clearance >= 0.003
         )
 
     def leg_top(self, leg: str) -> bool:
-        # Geometry classification alone can label a wheel TOP while it is
-        # still behind the front plane.  Crossing is an independent event.
-        return self.wheel_contact_classes.get(leg) == "TOP" and self.leg_crossed(leg)
+        row = self.centroidal_support_evidence.wheel_contacts.by_leg()[leg]
+        return bool(
+            row.evidence_available
+            and row.measurement.active
+            and row.measurement.surface_kind == "OBSTACLE_TOP"
+            and self.leg_crossed(leg)
+        )
 
     def leg_support_candidate(self, leg: str) -> bool:
-        contact_class = self.wheel_contact_classes.get(leg, "UNKNOWN")
-        load = self.wheel_contact_load_n.get(leg)
-        if load is not None:
-            return float(load) > 0.0
-        return contact_class in {"GROUND", "TOP"}
+        return bool(
+            self.centroidal_support_evidence.wheel_contacts.by_leg()[
+                leg
+            ].support_qualified
+        )
 
 
 class MacroTerminalOutcome(str, Enum):
@@ -514,6 +1021,32 @@ class MacroTerminalOutcome(str, Enum):
     TASK_SUCCESS = "TASK_SUCCESS"
     TASK_SUCCESS_POSTURE_INCOMPLETE = "TASK_SUCCESS_POSTURE_INCOMPLETE"
     SAFE_STOP = "SAFE_STOP"
+
+
+class FeedbackRecoveryStage(str, Enum):
+    REFERENCE_PROFILE = "REFERENCE_PROFILE"
+    OBSERVE_AIR = "OBSERVE_AIR"
+    SAFE_PROBE = "SAFE_PROBE"
+    RETURN_TO_REFERENCE = "RETURN_TO_REFERENCE"
+    SELECT_DESCENT = "SELECT_DESCENT"
+    INCREMENT = "INCREMENT"
+    CONTACT_DWELL = "CONTACT_DWELL"
+    SETTLE = "SETTLE"
+    COMPLETE = "COMPLETE"
+    POSTURE_INCOMPLETE = "POSTURE_INCOMPLETE"
+
+
+class FeedbackRecoveryAction(str, Enum):
+    CONSERVATIVE_DIAGNOSTIC_PROBE = "CONSERVATIVE_DIAGNOSTIC_PROBE"
+    RETURN_TO_IMMUTABLE_REFERENCE = "RETURN_TO_IMMUTABLE_REFERENCE"
+    BOUNDED_DESCENT_INCREMENT = "BOUNDED_DESCENT_INCREMENT"
+
+
+FEEDBACK_RECOVERY_EVIDENCE_BINDING_SCHEMA = (
+    "fsm50.feedback_recovery_evidence_binding.v1"
+)
+FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA = "fsm50.feedback_recovery_configuration.v1"
+FEEDBACK_RECOVERY_TARGET_MAP_SCHEMA = "fsm50.feedback_recovery_target_map.v1"
 
 
 SOURCE_ACTION_IDENTITY_SCHEMA_VERSION = "fsm50.source_action_identity.v1"
@@ -531,6 +1064,7 @@ COMMAND_PROVENANCE_KINDS = frozenset(
         "HOLD_ZERO_WHEELS",
         "SAFE_STOP_ZERO_WHEELS",
         "SUCCESS_ZERO_WHEELS",
+        "FEEDBACK_RECOVERY",
     }
 )
 
@@ -575,6 +1109,17 @@ _COMMAND_PROVENANCE_KEYS = frozenset(
         "commands",
         "dispatch_kind",
         "sequence_index",
+        "recovery_stage",
+        "recovery_action",
+        "recovery_evidence_sha256",
+        "recovery_centroidal_evidence_sha256",
+        "recovery_feedback_observation_sha256",
+        "recovery_target_map_sha256",
+        "recovery_direction_sign",
+        "recovery_attempt",
+        "recovery_leg",
+        "recovery_joint",
+        "recovery_configuration_sha256",
     }
 )
 
@@ -625,6 +1170,106 @@ def _canonical_command_provenance(values: Mapping[str, Any]) -> dict[str, Any]:
     if type(kind) is not str or kind not in COMMAND_PROVENANCE_KINDS:
         raise ValueError("decision.command_provenance.kind is invalid")
 
+    recovery_keys = {
+        "recovery_stage": "",
+        "recovery_action": "",
+        "recovery_evidence_sha256": "",
+        "recovery_centroidal_evidence_sha256": "",
+        "recovery_feedback_observation_sha256": "",
+        "recovery_target_map_sha256": "",
+        "recovery_direction_sign": None,
+        "recovery_attempt": None,
+        "recovery_leg": "",
+        "recovery_joint": "",
+        "recovery_configuration_sha256": "",
+    }
+    if kind == "FEEDBACK_RECOVERY":
+        expected_empty = {
+            "source_action_identity": "",
+            "source_version": "",
+            "source_segment_index": None,
+            "source_step_index": None,
+            "source_time_s": None,
+            "source_event_indices": (),
+            "commands": (),
+            "dispatch_kind": "",
+            "sequence_index": None,
+        }
+        for key, expected in expected_empty.items():
+            actual = values[key]
+            if key in {"source_event_indices", "commands"}:
+                if not isinstance(actual, Sequence) or isinstance(actual, (str, bytes)):
+                    raise ValueError(f"decision.command_provenance.{key} must be empty")
+                actual = tuple(actual)
+            if actual != expected:
+                raise ValueError(f"{key} must be empty for FEEDBACK_RECOVERY")
+        stage, action = values["recovery_stage"], values["recovery_action"]
+        leg, joint = values["recovery_leg"], values["recovery_joint"]
+        evidence = values["recovery_evidence_sha256"]
+        centroidal_evidence = values["recovery_centroidal_evidence_sha256"]
+        feedback_evidence = values["recovery_feedback_observation_sha256"]
+        target_map = values["recovery_target_map_sha256"]
+        direction_sign = values["recovery_direction_sign"]
+        configuration = values["recovery_configuration_sha256"]
+        attempt = values["recovery_attempt"]
+        stage_action = {
+            FeedbackRecoveryStage.SAFE_PROBE.value:
+                FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE.value,
+            FeedbackRecoveryStage.RETURN_TO_REFERENCE.value:
+                FeedbackRecoveryAction.RETURN_TO_IMMUTABLE_REFERENCE.value,
+            FeedbackRecoveryStage.INCREMENT.value:
+                FeedbackRecoveryAction.BOUNDED_DESCENT_INCREMENT.value,
+        }
+        if stage not in stage_action or action != stage_action[stage]:
+            raise ValueError("FEEDBACK_RECOVERY stage/action pair is invalid")
+        if (
+            leg not in LEGS
+            or joint not in SERVO_JOINT_NAMES
+            or joint not in LEG_SERVO_JOINTS[leg]
+        ):
+            raise ValueError("FEEDBACK_RECOVERY leg/joint identity is invalid")
+        for label, digest in (
+            ("recovery_evidence_sha256", evidence),
+            ("recovery_centroidal_evidence_sha256", centroidal_evidence),
+            ("recovery_feedback_observation_sha256", feedback_evidence),
+            ("recovery_target_map_sha256", target_map),
+            ("recovery_configuration_sha256", configuration),
+        ):
+            if (
+                type(digest) is not str
+                or len(digest) != 64
+                or any(ch not in "0123456789abcdef" for ch in digest)
+            ):
+                raise ValueError(f"{label} must be a lowercase SHA-256")
+        expected_evidence = _stable_sha256(
+            {
+                "schema_version": FEEDBACK_RECOVERY_EVIDENCE_BINDING_SCHEMA,
+                "centroidal_support_evidence_sha256": centroidal_evidence,
+                "feedback_recovery_observation_sha256": feedback_evidence,
+            }
+        )
+        if evidence != expected_evidence:
+            raise ValueError("FEEDBACK_RECOVERY composite evidence SHA mismatch")
+        if direction_sign not in {-1, 1} or type(direction_sign) is not int:
+            raise ValueError("FEEDBACK_RECOVERY direction sign must be exact -1/+1")
+        if type(attempt) is not int or attempt <= 0:
+            raise ValueError("FEEDBACK_RECOVERY attempt must be positive")
+        return {
+            "kind": kind,
+            **expected_empty,
+            "recovery_stage": stage,
+            "recovery_action": action,
+            "recovery_evidence_sha256": evidence,
+            "recovery_centroidal_evidence_sha256": centroidal_evidence,
+            "recovery_feedback_observation_sha256": feedback_evidence,
+            "recovery_target_map_sha256": target_map,
+            "recovery_direction_sign": direction_sign,
+            "recovery_attempt": attempt,
+            "recovery_leg": leg,
+            "recovery_joint": joint,
+            "recovery_configuration_sha256": configuration,
+        }
+
     if kind != "SOURCE_ACTION":
         expected_empty = {
             "source_action_identity": "",
@@ -636,6 +1281,7 @@ def _canonical_command_provenance(values: Mapping[str, Any]) -> dict[str, Any]:
             "commands": (),
             "dispatch_kind": "",
             "sequence_index": None,
+            **recovery_keys,
         }
         for key, expected in expected_empty.items():
             actual = values[key]
@@ -660,6 +1306,7 @@ def _canonical_command_provenance(values: Mapping[str, Any]) -> dict[str, Any]:
             "commands": (),
             "dispatch_kind": "",
             "sequence_index": None,
+            **recovery_keys,
         }
 
     source_version = values["source_version"]
@@ -726,6 +1373,9 @@ def _canonical_command_provenance(values: Mapping[str, Any]) -> dict[str, Any]:
     )
     if identity != expected_identity:
         raise ValueError("source_action_identity does not match its canonical payload")
+    for key, expected in recovery_keys.items():
+        if values[key] != expected:
+            raise ValueError(f"decision.command_provenance.{key} must be empty for SOURCE_ACTION")
     return {
         "kind": kind,
         "source_action_identity": identity,
@@ -737,6 +1387,7 @@ def _canonical_command_provenance(values: Mapping[str, Any]) -> dict[str, Any]:
         "commands": commands,
         "dispatch_kind": dispatch_kind,
         "sequence_index": sequence_index,
+        **recovery_keys,
     }
 
 
@@ -753,6 +1404,17 @@ def _empty_command_provenance(kind: str = "NONE") -> dict[str, Any]:
             "commands": (),
             "dispatch_kind": "",
             "sequence_index": None,
+            "recovery_stage": "",
+            "recovery_action": "",
+            "recovery_evidence_sha256": "",
+            "recovery_centroidal_evidence_sha256": "",
+            "recovery_feedback_observation_sha256": "",
+            "recovery_target_map_sha256": "",
+            "recovery_direction_sign": None,
+            "recovery_attempt": None,
+            "recovery_leg": "",
+            "recovery_joint": "",
+            "recovery_configuration_sha256": "",
         }
     )
 
@@ -1204,6 +1866,21 @@ class MacroDecision:
         completion_control = _canonical_segment_completion_control(
             self.segment_completion_control
         )
+        if provenance["kind"] == "FEEDBACK_RECOVERY":
+            expected_target_map_sha256 = _stable_sha256(
+                {
+                    "schema_version": FEEDBACK_RECOVERY_TARGET_MAP_SCHEMA,
+                    "servo_targets_deg": servo_targets,
+                    "wheel_targets_rad_s": wheel_targets,
+                }
+            )
+            if (
+                provenance["recovery_target_map_sha256"]
+                != expected_target_map_sha256
+            ):
+                raise ValueError(
+                    "FEEDBACK_RECOVERY target-map SHA does not match decision 8+4 map"
+                )
         if self.command_changed != self.target_changed:
             raise ValueError("command_changed must exactly equal target_changed")
         if self.command_changed and self.command_epoch == 0:
@@ -1409,6 +2086,49 @@ def _non_source_command_event(kind: str, *, target_changed: bool) -> _CommandEve
     )
 
 
+def _feedback_recovery_command_event(
+    *,
+    stage: FeedbackRecoveryStage,
+    action: FeedbackRecoveryAction,
+    centroidal_evidence_sha256: str,
+    feedback_observation_sha256: str,
+    target_map_sha256: str,
+    direction_sign: int,
+    attempt: int,
+    leg: str,
+    joint: str,
+    configuration_sha256: str,
+) -> _CommandEvent:
+    evidence_sha256 = _stable_sha256(
+        {
+            "schema_version": FEEDBACK_RECOVERY_EVIDENCE_BINDING_SCHEMA,
+            "centroidal_support_evidence_sha256": centroidal_evidence_sha256,
+            "feedback_recovery_observation_sha256": feedback_observation_sha256,
+        }
+    )
+    provenance = dict(_empty_command_provenance())
+    provenance.update(
+        kind="FEEDBACK_RECOVERY",
+        recovery_stage=stage.value,
+        recovery_action=action.value,
+        recovery_evidence_sha256=evidence_sha256,
+        recovery_centroidal_evidence_sha256=centroidal_evidence_sha256,
+        recovery_feedback_observation_sha256=feedback_observation_sha256,
+        recovery_target_map_sha256=target_map_sha256,
+        recovery_direction_sign=direction_sign,
+        recovery_attempt=attempt,
+        recovery_leg=leg,
+        recovery_joint=joint,
+        recovery_configuration_sha256=configuration_sha256,
+    )
+    return _CommandEvent(
+        False,
+        True,
+        True,
+        _canonical_command_provenance(provenance),
+    )
+
+
 class MacroFSMController:
     """One graph, selectable recording profiles, and live-event transitions."""
 
@@ -1460,8 +2180,41 @@ class MacroFSMController:
         self._current_servo_targets = {name: 0.0 for name in SERVO_JOINT_NAMES}
         self._current_wheel_targets = {name: 0.0 for name in WHEEL_JOINT_NAMES}
         self._entry_body_position = (0.0, 0.0, 0.0)
-        self._entry_position_source = "BASE_POSITION_PROXY"
+        self._entry_position_source = "BASE_POSITION_BODY_PROGRESS_ONLY"
+        self._entry_true_com_position: tuple[float, float, float] | None = None
         self._target_com_unit_xy: tuple[float, float] | None = None
+        self._last_centroidal_sim_step: int | None = None
+        self._centroidal_body_identity: tuple[
+            tuple[str, ...], tuple[float, ...], float
+        ] | None = None
+        self._s8_release_open = False
+        self._s8_release_baseline_com_position: tuple[float, float, float] | None = None
+        self._s8_release_baseline_evidence_sha256 = ""
+        self._feedback_stage = FeedbackRecoveryStage.REFERENCE_PROFILE
+        self._feedback_pending_epoch: int | None = None
+        self._feedback_pending_sim_step: int | None = None
+        self._feedback_pending_action = ""
+        self._feedback_pending_leg = ""
+        self._feedback_pending_joint = ""
+        self._feedback_pending_sign = 0
+        self._feedback_reference_targets: dict[str, float] = {}
+        self._feedback_configuration_sha256 = ""
+        self._feedback_active_leg = ""
+        self._feedback_joint_index = 0
+        self._feedback_probe_sign = 1
+        self._feedback_probe_results: dict[tuple[str, str, int, str], dict[str, Any]] = {}
+        self._feedback_selected_signs: dict[tuple[str, str, str], int] = {}
+        self._feedback_selected_joint = ""
+        self._feedback_selected_sign = 0
+        self._feedback_baseline: dict[str, Any] = {}
+        self._feedback_action_count = 0
+        self._feedback_increment_count = 0
+        self._feedback_increment_count_by_leg = {leg: 0 for leg in LEGS}
+        self._feedback_contact_started_at_s: float | None = None
+        self._feedback_settle_started_at_s: float | None = None
+        self._feedback_settle_window_started_at_s: float | None = None
+        self._feedback_settle_posture_incomplete = False
+        self._feedback_exhaustion_reason = ""
         self._episode_airborne_before_crossing = {leg: False for leg in LEGS}
         self._episode_crossed_seen = {leg: False for leg in LEGS}
         self._episode_top_seen = {leg: False for leg in LEGS}
@@ -1517,6 +2270,10 @@ class MacroFSMController:
             ),
             "completed_profile_segment_count": len(self._completed_segment_indices),
             "last_completion_token_sha256": self._last_completion_token_sha256,
+            "feedback_recovery_stage": self._feedback_stage.value,
+            "feedback_recovery_pending_epoch": self._feedback_pending_epoch,
+            "feedback_recovery_action_count": self._feedback_action_count,
+            "feedback_recovery_exhaustion_reason": self._feedback_exhaustion_reason,
         }
 
     def reset(
@@ -1542,6 +2299,7 @@ class MacroFSMController:
             raise ValueError("source_version is not a Gate-A success")
         if not math.isfinite(float(sim_time_s)):
             raise ValueError("sim_time_s must be finite")
+        self._require_current_evidence(observation, float(sim_time_s), reset=True)
         self._started = True
         self._source_version = requested_source
         self._strategy = str(strategy or "").upper()
@@ -1584,6 +2342,10 @@ class MacroFSMController:
             return self._safe_stop(observed, self._last_time_s, "non-finite simulation time")
         if now + 1.0e-12 < self._last_time_s:
             return self._safe_stop(observed, now, "simulation time moved backwards")
+        try:
+            self._require_current_evidence(observed, now, reset=False)
+        except ValueError as exc:
+            return self._safe_stop(observed, now, f"centroidal/feedback evidence failure: {exc}")
         if type(source_cursor_permit) is not bool:
             return self._safe_stop(
                 observed, now, "source_cursor_permit must be an exact bool"
@@ -1621,6 +2383,7 @@ class MacroFSMController:
                 )
             command_event = self._advance_profile(
                 now,
+                observation=observed,
                 segment_completion_token=token,
                 source_cursor_permit=source_cursor_permit,
             )
@@ -1654,6 +2417,82 @@ class MacroFSMController:
                 reason=self._last_reason,
             )
 
+        if state.state_id == MacroStateId.S10_POSTURE_RECOVERY and timeline_complete:
+            try:
+                feedback_event, feedback_reason = self._advance_feedback_recovery(
+                    observed,
+                    sim_time_s=now,
+                    source_cursor_permit=source_cursor_permit,
+                )
+            except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+                return self._safe_stop(
+                    observed,
+                    now,
+                    f"feedback recovery contract/safety failure: {exc}",
+                )
+            self._last_reason = feedback_reason
+            guard = self._evaluate_guard(
+                state, observed, timeline_complete=timeline_complete
+            )
+            self._last_guard_evidence = guard.evidence
+            if feedback_event.target_changed:
+                return self._decision(
+                    observed,
+                    sim_time_s=now,
+                    command_event=feedback_event,
+                    transition_events=(),
+                    reason=feedback_reason,
+                )
+            if self._feedback_stage == FeedbackRecoveryStage.POSTURE_INCOMPLETE:
+                support = self._physical_support_snapshot(observed)
+                feedback = observed.feedback_recovery_observation
+                velocities_settled = bool(
+                    max(
+                        abs(value)
+                        for value in feedback.measured_servo_velocities_deg_s.values()
+                    )
+                    <= float(
+                        FINAL_RECOVERY_FEEDBACK_LIMITS[
+                            "maximum_abs_joint_velocity_deg_s"
+                        ]
+                    )
+                    and max(
+                        abs(value)
+                        for value in feedback.base_angular_velocity_rad_s
+                    )
+                    <= float(
+                        FINAL_RECOVERY_FEEDBACK_LIMITS[
+                            "maximum_abs_body_angular_velocity_rad_s"
+                        ]
+                    )
+                )
+                if (
+                    feedback.final_recoverable
+                    and feedback.body_crossed_front_face
+                    and support["support_viable"]
+                    and support["support_wrench_proven"]
+                    and velocities_settled
+                ):
+                    return self._finish_success(
+                        observed,
+                        now,
+                        state.state_id,
+                        force_posture_incomplete=True,
+                    )
+                return self._safe_stop(
+                    observed,
+                    now,
+                    "feedback recovery exhausted without a recoverable supported posture",
+                )
+            if self._feedback_stage != FeedbackRecoveryStage.COMPLETE:
+                return self._decision(
+                    observed,
+                    sim_time_s=now,
+                    command_event=_no_command_event(),
+                    transition_events=(),
+                    reason=feedback_reason,
+                )
+
         if guard.satisfied:
             old = state.state_id
             next_state = state.next_state
@@ -1679,7 +2518,7 @@ class MacroFSMController:
                 and not boundary_changed
             ):
                 try:
-                    transition_command_event = self._start_next_segment()
+                    transition_command_event = self._start_next_segment(observed)
                 except (KeyError, TypeError, ValueError, RuntimeError) as exc:
                     return self._safe_stop(
                         observed,
@@ -1775,6 +2614,46 @@ class MacroFSMController:
             failures.append("wheel-only drive-up without required lift")
         return "; ".join(failures)
 
+    def _require_current_evidence(
+        self,
+        observation: MacroObservation,
+        sim_time_s: float,
+        *,
+        reset: bool,
+    ) -> None:
+        evidence = observation.centroidal_support_evidence
+        feedback = observation.feedback_recovery_observation
+        tolerance = max(1.0e-9, evidence.physics_dt_s * 1.0e-6)
+        if not math.isclose(
+            evidence.physics_time_s,
+            sim_time_s,
+            rel_tol=0.0,
+            abs_tol=tolerance,
+        ):
+            raise ValueError("centroidal evidence sim_time does not match controller callback")
+        if feedback.sim_step != evidence.sim_step or not math.isclose(
+            feedback.physics_time_s,
+            sim_time_s,
+            rel_tol=0.0,
+            abs_tol=tolerance,
+        ):
+            raise ValueError("feedback evidence does not match the current centroidal tick")
+        com = evidence.whole_body_com
+        identity = (
+            tuple(com.body_names),
+            tuple(float(value) for value in com.body_masses_kg),
+            float(com.total_mass_kg) if com.total_mass_kg is not None else 0.0,
+        )
+        if reset:
+            self._centroidal_body_identity = identity
+        elif self._centroidal_body_identity != identity:
+            raise ValueError("whole-body COM identity/masses changed across controller ticks")
+        if not reset and self._last_centroidal_sim_step is not None and (
+            evidence.sim_step <= self._last_centroidal_sim_step
+        ):
+            raise ValueError("centroidal evidence sim_step is stale or duplicated")
+        self._last_centroidal_sim_step = evidence.sim_step
+
     @staticmethod
     def _nullable_safety_evidence(
         observation: MacroObservation,
@@ -1816,6 +2695,17 @@ class MacroFSMController:
                 "commands": frame.commands,
                 "dispatch_kind": frame.dispatch_kind,
                 "sequence_index": frame.sequence_index,
+                "recovery_stage": "",
+                "recovery_action": "",
+                "recovery_evidence_sha256": "",
+                "recovery_centroidal_evidence_sha256": "",
+                "recovery_feedback_observation_sha256": "",
+                "recovery_target_map_sha256": "",
+                "recovery_direction_sign": None,
+                "recovery_attempt": None,
+                "recovery_leg": "",
+                "recovery_joint": "",
+                "recovery_configuration_sha256": "",
             }
         )
 
@@ -1933,12 +2823,26 @@ class MacroFSMController:
         self._state_crossed_seen = {leg: False for leg in LEGS}
         self._state_top_seen = {leg: False for leg in LEGS}
         self._seed_state_entry_event(self.graph.get(state_id), observation)
-        position, source = observation.body_or_com_position()
-        self._entry_body_position = position
-        self._entry_position_source = source
+        self._entry_body_position = observation.base_position_m
+        self._entry_position_source = "BASE_POSITION_BODY_PROGRESS_ONLY"
+        self._entry_true_com_position = observation.true_com_position()
         self._target_com_unit_xy = self._target_direction_unit(
-            self.graph.get(state_id), observation, position
+            self.graph.get(state_id),
+            observation,
+            self._entry_true_com_position,
         )
+        if state_id == MacroStateId.S7_PRE_RL_SUPPORT_SETUP:
+            self._s8_release_baseline_com_position = observation.true_com_position()
+            self._s8_release_baseline_evidence_sha256 = (
+                observation.centroidal_support_evidence.payload_sha256
+            )
+        if state_id == MacroStateId.S8_RL_COM_SHIFT_AND_TRAVERSE:
+            self._s8_release_open = False
+        if state_id == MacroStateId.S10_POSTURE_RECOVERY:
+            self._feedback_stage = FeedbackRecoveryStage.REFERENCE_PROFILE
+            self._feedback_settle_started_at_s = None
+            self._feedback_settle_window_started_at_s = None
+            self._feedback_settle_posture_incomplete = False
         if self._boundary_to_state == state_id:
             dx = (
                 self._boundary_transition_position[0]
@@ -1965,7 +2869,7 @@ class MacroFSMController:
     ) -> None:
         """Snapshot only the immediate predecessor's causal boundary evidence."""
 
-        position, _ = observation.body_or_com_position()
+        position = observation.base_position_m
         self._boundary_from_state = from_state
         self._boundary_to_state = to_state
         self._boundary_episode_crossed_seen = dict(self._episode_crossed_seen)
@@ -2019,12 +2923,12 @@ class MacroFSMController:
     def _target_direction_unit(
         state: MacroStateSpec,
         observation: MacroObservation,
-        position: tuple[float, float, float],
+        position: tuple[float, float, float] | None,
     ) -> tuple[float, float] | None:
         leg = state.completion_guard.target_com_leg
-        if not leg:
+        if not leg or position is None:
             return None
-        target = observation.wheel_center_w_m.get(leg)
+        target = observation.feedback_recovery_observation.wheel_center_w_m.get(leg)
         if target is None:
             return None
         dx, dy = float(target[0]) - position[0], float(target[1]) - position[1]
@@ -2116,7 +3020,7 @@ class MacroFSMController:
         self._last_completion_decision = copy.deepcopy(dict(token.decision))
         return binding
 
-    def _start_next_segment(self) -> _CommandEvent:
+    def _start_next_segment(self, observation: MacroObservation) -> _CommandEvent:
         profile = self._active_profile
         if profile is None or self._active_segment_binding is not None:
             return _no_command_event()
@@ -2128,6 +3032,42 @@ class MacroFSMController:
             raise ValueError(
                 "completion-aware cursor reached a wheel stop without an active segment"
             )
+        if (
+            self._state_id == MacroStateId.S8_RL_COM_SHIFT_AND_TRAVERSE
+            and frame.physical_phase
+            == self.graph.get(self._state_id).completion_guard.release_physical_phase
+            and not self._s8_release_open
+        ):
+            projected, source = self._s8_release_progress(observation)
+            support = self._physical_support_snapshot(observation)
+            release = bool(
+                source == "WHOLE_BODY_COM_FROM_S7_ENTRY_CURRENT_TICK"
+                and projected
+                >= self.graph.get(self._state_id).completion_guard.minimum_com_displacement_m
+                and self._measured_leg_unloaded(observation, "RL")
+                and support["support_viable"]
+                and support["support_wrench_proven"]
+            )
+            self._last_guard_evidence.update(
+                s8_release_phase=frame.physical_phase,
+                s8_release_true_com_projected_displacement_m=projected,
+                s8_release_com_baseline_evidence_sha256=(
+                    self._s8_release_baseline_evidence_sha256
+                ),
+                s8_release_rl_measured_unloaded=self._measured_leg_unloaded(
+                    observation, "RL"
+                ),
+                s8_release_support_viable=support["support_viable"],
+                s8_release_wrench_proven=support["support_wrench_proven"],
+                s8_release_open=release,
+                s8_release_body_root_proxy_eligible=False,
+            )
+            if not release:
+                changed = self._zero_wheels_for_boundary()
+                return _non_source_command_event(
+                    "HOLD_ZERO_WHEELS", target_changed=changed
+                )
+            self._s8_release_open = True
         binding = profile.segment_binding(frame.source_segment_index)
         if binding.source_step != frame.source_step_index:
             raise ValueError("source action step differs from completion segment")
@@ -2256,6 +3196,7 @@ class MacroFSMController:
         self,
         sim_time_s: float,
         *,
+        observation: MacroObservation,
         segment_completion_token: MacroSegmentCompletionToken | None,
         source_cursor_permit: bool,
     ) -> _CommandEvent:
@@ -2287,7 +3228,7 @@ class MacroFSMController:
             return _no_command_event()
         if self._active_segment_binding is not None:
             return _no_command_event()
-        return self._start_next_segment()
+        return self._start_next_segment(observation)
 
     def _profile_complete(self, sim_time_s: float) -> bool:
         del sim_time_s
@@ -2324,14 +3265,167 @@ class MacroFSMController:
             self._state_top_seen[leg] = self._state_top_seen[leg] or top_now
 
     def _position_progress(self, observation: MacroObservation) -> tuple[float, float, str]:
-        current, source = observation.body_or_com_position()
+        current = observation.base_position_m
+        source = "BASE_POSITION_BODY_PROGRESS_ONLY"
         forward = current[0] - self._entry_body_position[0]
         projected = 0.0
-        if self._target_com_unit_xy is not None:
-            dx = current[0] - self._entry_body_position[0]
-            dy = current[1] - self._entry_body_position[1]
+        true_com = observation.true_com_position()
+        if (
+            self._target_com_unit_xy is not None
+            and self._entry_true_com_position is not None
+            and true_com is not None
+        ):
+            dx = true_com[0] - self._entry_true_com_position[0]
+            dy = true_com[1] - self._entry_true_com_position[1]
             projected = dx * self._target_com_unit_xy[0] + dy * self._target_com_unit_xy[1]
+            source = "WHOLE_BODY_COM_CURRENT_TICK"
         return forward, projected, source
+
+    def _s8_release_progress(
+        self, observation: MacroObservation
+    ) -> tuple[float, str]:
+        baseline = self._s8_release_baseline_com_position
+        current = observation.true_com_position()
+        target = (
+            observation.feedback_recovery_observation.wheel_center_w_m.get("FR")
+        )
+        if baseline is None or current is None or target is None:
+            return 0.0, "UNAVAILABLE"
+        tx, ty = target[0] - baseline[0], target[1] - baseline[1]
+        norm = math.hypot(tx, ty)
+        if norm <= 1.0e-9:
+            return 0.0, "UNAVAILABLE"
+        dx, dy = current[0] - baseline[0], current[1] - baseline[1]
+        return (
+            dx * tx / norm + dy * ty / norm,
+            "WHOLE_BODY_COM_FROM_S7_ENTRY_CURRENT_TICK",
+        )
+
+    @staticmethod
+    def _physical_support_snapshot(
+        observation: MacroObservation,
+    ) -> dict[str, Any]:
+        evidence = observation.centroidal_support_evidence
+        by_leg = evidence.wheel_contacts.by_leg()
+        qualified = tuple(
+            leg for leg in LEGS if by_leg[leg].support_qualified
+        )
+        region = evidence.support_region
+        validated = tuple(region.support_legs)
+        support_set_bound = bool(validated == qualified)
+        wrench = evidence.contact_wrench_feasibility
+        wrench_proven = bool(
+            wrench.status == EvidenceStatus.PROVEN
+            and wrench.proven_feasible
+            and wrench.physics_tick == evidence.sim_step
+        )
+        hull_viable = bool(
+            support_set_bound
+            and len(validated) in {3, 4}
+            and region.status == EvidenceStatus.PROVEN
+            and region.model == SupportModel.STRICT_COPLANAR_CONVEX_HULL
+            and region.signed_margin_m is not None
+            and region.signed_margin_m >= 0.0
+        )
+        diagonal_viable = bool(
+            support_set_bound
+            and len(validated) == 2
+            and frozenset(validated)
+            in {frozenset(("FL", "RR")), frozenset(("FR", "RL"))}
+            and region.status == EvidenceStatus.PROVEN
+            and region.model == SupportModel.DIAGONAL_LINE_SEGMENT
+            and region.diagonal
+            == ("FL_RR" if frozenset(validated) == frozenset(("FL", "RR")) else "FR_RL")
+            and region.between_contacts is True
+            and region.finite_patch_approximation
+            and region.corridor_signed_margin_m is not None
+            and region.corridor_signed_margin_m >= 0.0
+        )
+        multi_height_wrench_viable = bool(
+            support_set_bound
+            and len(validated) in {3, 4}
+            and region.status == EvidenceStatus.NOT_PROVEN
+            and region.model == SupportModel.MULTI_HEIGHT_OR_DYNAMIC_WRENCH_REQUIRED
+            and wrench_proven
+        )
+        support_margin = (
+            region.signed_margin_m
+            if hull_viable
+            else region.corridor_signed_margin_m
+            if diagonal_viable
+            else None
+        )
+        return {
+            "centroidal_evidence_sha256": evidence.payload_sha256,
+            "centroidal_sim_step": evidence.sim_step,
+            "whole_body_com_available": evidence.whole_body_com.available,
+            "support_region_status": evidence.support_region.status.value,
+            "support_model": evidence.support_region.model.value,
+            "validated_support_legs": list(validated),
+            "support_qualified_legs": list(qualified),
+            "support_set_bound_to_current_qualified_contacts": support_set_bound,
+            "support_viable": bool(
+                evidence.whole_body_com.available
+                and len(qualified) >= 2
+                and (hull_viable or diagonal_viable or multi_height_wrench_viable)
+            ),
+            "support_hull_viable": hull_viable,
+            "support_diagonal_corridor_viable": diagonal_viable,
+            "support_multi_height_wrench_viable": multi_height_wrench_viable,
+            "support_stability_margin_m": support_margin,
+            "support_wrench_proven": wrench_proven,
+            "wrench_force_residual_norm_n": (
+                evidence.contact_wrench_feasibility.force_residual_norm_n
+            ),
+            "wrench_moment_residual_norm_nm": (
+                evidence.contact_wrench_feasibility.moment_residual_norm_nm
+            ),
+            "wrench_maximum_friction_utilization": (
+                evidence.contact_wrench_feasibility.maximum_friction_utilization
+            ),
+            "primary_diagonal": evidence.diagonal_support.primary_diagonal,
+            "primary_diagonal_status": evidence.diagonal_support.status.value,
+            "per_leg_normal_load_n": {
+                leg: by_leg[leg].normal_load_n for leg in LEGS
+            },
+            "per_leg_support_qualified": {
+                leg: by_leg[leg].support_qualified for leg in LEGS
+            },
+        }
+
+    @staticmethod
+    def _measured_leg_unloaded(
+        observation: MacroObservation, leg: str
+    ) -> bool:
+        evidence = observation.centroidal_support_evidence
+        row = evidence.wheel_contacts.by_leg()[leg]
+        maximum = evidence.wheel_contacts.thresholds.maximum_active_leg_load_n
+        return bool(
+            row.evidence_available
+            and row.normal_load_n is not None
+            and row.normal_load_n <= maximum
+        )
+
+    @staticmethod
+    def _four_top_contacts_ready(observation: MacroObservation) -> bool:
+        evidence = observation.centroidal_support_evidence
+        dwell_required = float(FINAL_RECOVERY_FEEDBACK_LIMITS["contact_dwell_s"])
+        for leg, row in evidence.wheel_contacts.by_leg().items():
+            measurement = row.measurement
+            if not (
+                row.evidence_available
+                and row.support_qualified
+                and measurement.active
+                and measurement.surface_kind == "OBSTACLE_TOP"
+                and measurement.surface_dwell_verified
+                and measurement.dwell_s is not None
+                and measurement.dwell_s >= dwell_required
+                and row.normal_load_n is not None
+                and row.normal_load_n
+                >= evidence.wheel_contacts.thresholds.minimum_normal_force_n
+            ):
+                return False
+        return True
 
     def _evaluate_guard(
         self,
@@ -2371,6 +3465,7 @@ class MacroFSMController:
                 self._boundary_inherited_projected_displacement_m
             ),
             **self._nullable_safety_evidence(observation),
+            **self._physical_support_snapshot(observation),
         }
         if guard.profile_must_complete and not timeline_complete:
             return _GuardResult(False, evidence, "phase-local profile timeline is still active")
@@ -2386,34 +3481,27 @@ class MacroFSMController:
         elif kind == MacroGuardKind.COM_SHIFT_OR_UNLOAD:
             active_unloaded = bool(
                 guard.active_leg
-                and self._state_airborne_before_crossing[guard.active_leg]
+                and self._measured_leg_unloaded(observation, guard.active_leg)
             )
-            inherited_fresh = bool(
-                state.state_id == MacroStateId.S5_PRE_RR_COM_SHIFT
-                and self._boundary_carry_is_fresh(
-                    state.state_id, MacroStateId.S4_FRONT_PAIR_ADVANCE
-                )
+            com_available = observation.true_com_position() is not None
+            displacement_ready = bool(
+                com_available
+                and position_source == "WHOLE_BODY_COM_CURRENT_TICK"
+                and projected >= guard.minimum_com_displacement_m
             )
-            inherited_projected = (
-                self._boundary_inherited_projected_displacement_m
-                if inherited_fresh
-                else 0.0
-            )
-            displacement_ready = max(projected, inherited_projected) >= (
-                guard.minimum_com_displacement_m
-            )
+            viable_support = bool(evidence["support_viable"])
             evidence.update(
-                active_leg_unloaded=active_unloaded,
+                active_leg_measured_unloaded=active_unloaded,
                 minimum_com_displacement_m=guard.minimum_com_displacement_m,
-                displacement_ready=displacement_ready,
-                inherited_target_direction_displacement_m=inherited_projected,
-                inherited_displacement_fresh=inherited_fresh,
+                true_com_displacement_ready=displacement_ready,
+                viable_current_support=viable_support,
+                body_root_proxy_guard_eligible=False,
             )
-            physical = active_unloaded or displacement_ready
+            physical = bool((active_unloaded or displacement_ready) and viable_support)
             reason = (
-                "active leg unloaded or body/COM moved toward target support region"
+                "true COM shifted or active leg measured unloaded with viable current support"
                 if physical
-                else "neither unload nor target-direction displacement observed"
+                else "strict COM/unload and viable-support guard is not proven"
             )
         elif kind == MacroGuardKind.LEG_TRAVERSED:
             leg = guard.active_leg
@@ -2491,17 +3579,33 @@ class MacroFSMController:
             )
             reason = "front pair top and rear/body approach event observed" if physical else reason
         elif kind == MacroGuardKind.SUPPORT_SETUP:
-            support = {
-                leg: observation.leg_support_candidate(leg)
-                for leg in guard.required_support_legs
-            }
-            physical = all(support.values())
-            evidence.update(
-                candidate_support_legs=list(guard.required_support_legs),
-                candidate_support_evidence=support,
-                support_claim="candidate geometry/load only; not an anchored-support claim",
+            diagonal = observation.centroidal_support_evidence.diagonal_support
+            primary = bool(
+                diagonal.status == EvidenceStatus.PROVEN
+                and diagonal.primary_diagonal
+                == "_".join(guard.required_primary_diagonal)
+                and diagonal.active_swing_leg == guard.active_leg
+                and evidence["support_viable"]
             )
-            reason = "candidate support geometry observed" if physical else reason
+            qualified = set(evidence["support_qualified_legs"])
+            validated = set(evidence["validated_support_legs"])
+            required = set(guard.required_support_legs)
+            alternate = bool(
+                evidence["support_viable"]
+                and len(validated) >= 3
+                and required.issubset(validated)
+                and validated.issubset(qualified)
+            )
+            wrench = bool(evidence["support_wrench_proven"])
+            physical = bool((primary or alternate) and wrench)
+            evidence.update(
+                required_primary_diagonal=list(guard.required_primary_diagonal),
+                required_support_legs=list(guard.required_support_legs),
+                required_primary_diagonal_proven=primary,
+                declaratively_validated_alternate_support=alternate,
+                geometry_only_support_eligible=False,
+            )
+            reason = "validated support set/primary diagonal and wrench are proven" if physical else "strict support/diagonal/wrench proof unavailable"
         elif kind == MacroGuardKind.FINAL_ADVANCED:
             progress_ready = forward >= guard.minimum_body_progress_m
             carry_fresh = self._boundary_carry_is_fresh(
@@ -2541,18 +3645,803 @@ class MacroFSMController:
             )
             reason = "body and major wheel group crossed with recovery workspace" if physical else reason
         elif kind == MacroGuardKind.POSTURE_RECOVERED:
-            body_crossed = observation.body_crossed_front_face
+            feedback = observation.feedback_recovery_observation
+            body_crossed = feedback.body_crossed_front_face
+            contacts_ready = self._four_top_contacts_ready(observation)
+            qd_settled = max(
+                abs(value) for value in feedback.measured_servo_velocities_deg_s.values()
+            ) <= float(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_abs_joint_velocity_deg_s"])
+            angular_settled = max(
+                abs(value) for value in feedback.base_angular_velocity_rad_s
+            ) <= float(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_abs_body_angular_velocity_rad_s"])
             physical = bool(
-                observation.final_recoverable
+                feedback.final_recoverable
                 and (body_crossed if guard.require_body_crossed else True)
+                and contacts_ready
+                and evidence["support_viable"]
+                and evidence["support_wrench_proven"]
+                and qd_settled
+                and angular_settled
+                and self._feedback_stage == FeedbackRecoveryStage.COMPLETE
             )
             evidence.update(
                 body_crossed_front_face=body_crossed,
-                final_recoverable=observation.final_recoverable,
-                posture_complete=observation.posture_complete,
+                final_recoverable=feedback.final_recoverable,
+                posture_complete=feedback.posture_complete,
+                four_top_load_dwell_contacts=contacts_ready,
+                joint_velocity_settled=qd_settled,
+                body_angular_velocity_settled=angular_settled,
+                feedback_recovery_stage=self._feedback_stage.value,
             )
             reason = "task crossed and final state is recoverable" if physical else reason
         return _GuardResult(physical, evidence, reason)
+
+    def _recovery_configuration_identity(
+        self, observation: MacroObservation, leg: str
+    ) -> str:
+        feedback = observation.feedback_recovery_observation
+        profile = self._active_profile
+        return _stable_sha256(
+            {
+                "schema_version": FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA,
+                "leg": leg,
+                "macro_state": self._state_id.value,
+                "selected_source_version": self._source_version,
+                "reference_profile_id": "" if profile is None else profile.profile_id,
+                "reference_profile_source_version": (
+                    "" if profile is None else profile.source_version
+                ),
+                "reference_profile_source_plan_sha256": (
+                    "" if profile is None else profile.source_plan_sha256
+                ),
+                "centroidal_evidence_sha256": (
+                    observation.centroidal_support_evidence.payload_sha256
+                ),
+                "feedback_observation_sha256": feedback.payload_sha256,
+                "servo_reference_targets_deg": dict(
+                    self._feedback_reference_targets
+                ),
+                "measured_servo_positions_deg": dict(
+                    feedback.measured_servo_positions_deg
+                ),
+                "wheel_center_w_m": {
+                    item: list(feedback.wheel_center_w_m[item]) for item in LEGS
+                },
+                "body_crossed_front_face": feedback.body_crossed_front_face,
+                "final_recoverable": feedback.final_recoverable,
+                "posture_complete": feedback.posture_complete,
+            }
+        )
+
+    def _recovery_safety_failure(
+        self, observation: MacroObservation
+    ) -> str:
+        state = self.graph.get(MacroStateId.S10_POSTURE_RECOVERY)
+        support = self._physical_support_snapshot(observation)
+        feedback = observation.feedback_recovery_observation
+        failures: list[str] = []
+        if (
+            abs(feedback.base_roll_rad)
+            > state.completion_guard.maximum_abs_roll_rad
+            or abs(feedback.base_pitch_rad)
+            > state.completion_guard.maximum_abs_pitch_rad
+        ):
+            failures.append("feedback recovery attitude safety bound exceeded")
+        if not support["support_viable"] or not support["support_wrench_proven"]:
+            failures.append("feedback recovery lost proven support/wrench feasibility")
+        minimum_margin = min(feedback.joint_limit_margin_deg.values())
+        required_margin = float(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"]
+        )
+        if minimum_margin < required_margin:
+            failures.append("feedback recovery joint-limit margin is unsafe")
+        return "; ".join(failures)
+
+    def _probe_preserves_baseline(
+        self, observation: MacroObservation, joint: str
+    ) -> tuple[bool, tuple[str, ...]]:
+        if not self._feedback_baseline:
+            return False, ("immutable feedback baseline is unavailable",)
+        support = self._physical_support_snapshot(observation)
+        feedback = observation.feedback_recovery_observation
+        reasons: list[str] = []
+        baseline_support = set(self._feedback_baseline["support_qualified_legs"])
+        current_support = set(support["support_qualified_legs"])
+        if not (baseline_support - {self._feedback_active_leg}).issubset(
+            current_support
+        ):
+            reasons.append("qualified support set worsened")
+        if (
+            abs(feedback.base_roll_rad)
+            > self._feedback_baseline["abs_roll_rad"] + 1.0e-9
+            or abs(feedback.base_pitch_rad)
+            > self._feedback_baseline["abs_pitch_rad"] + 1.0e-9
+        ):
+            reasons.append("body attitude worsened")
+        if (
+            feedback.joint_limit_margin_deg[joint] + 1.0e-9
+            < self._feedback_baseline["joint_limit_margin_deg"][joint]
+        ):
+            reasons.append("probed-joint limit margin worsened")
+        baseline_margin = self._feedback_baseline["support_stability_margin_m"]
+        current_margin = support["support_stability_margin_m"]
+        if (
+            baseline_margin is not None
+            and current_margin is not None
+            and current_margin + 1.0e-9 < baseline_margin
+        ):
+            reasons.append("support-region stability margin worsened")
+        for key, label in (
+            ("wrench_force_residual_norm_n", "force residual"),
+            ("wrench_moment_residual_norm_nm", "moment residual"),
+            ("wrench_maximum_friction_utilization", "friction utilization"),
+        ):
+            baseline_value = self._feedback_baseline[key]
+            current_value = support[key]
+            if (
+                baseline_value is not None
+                and current_value is not None
+                and current_value > baseline_value + 1.0e-9
+            ):
+                reasons.append(f"contact-wrench {label} worsened")
+        return not reasons, tuple(reasons)
+
+    def _recovery_candidate_legs(
+        self, observation: MacroObservation
+    ) -> tuple[str, ...]:
+        by_leg = observation.centroidal_support_evidence.wheel_contacts.by_leg()
+        centers = observation.feedback_recovery_observation.wheel_center_w_m
+        candidates: list[str] = []
+        for leg in ("FR", "FL", "RR", "RL"):
+            row = by_leg[leg]
+            landed = bool(
+                row.support_qualified
+                and row.measurement.active
+                and row.measurement.surface_kind == "OBSTACLE_TOP"
+            )
+            if landed:
+                continue
+            feedback = observation.feedback_recovery_observation
+            crossed = centers[leg][0] > feedback.obstacle_front_face_x_m
+            near_top = centers[leg][2] >= feedback.obstacle_top_z_m - 0.02
+            if (
+                row.evidence_available
+                and not row.measurement.active
+                and row.measurement.surface_kind == "AIR"
+                and crossed
+                and near_top
+            ):
+                candidates.append(leg)
+        return tuple(candidates)
+
+    def _begin_recovery_leg(
+        self, observation: MacroObservation, leg: str
+    ) -> None:
+        self._feedback_active_leg = leg
+        self._feedback_joint_index = 0
+        self._feedback_probe_sign = 1
+        self._feedback_increment_count = 0
+        self._feedback_reference_targets = dict(self._current_servo_targets)
+        # Candidate discovery and permit cadence can precede the first physical
+        # probe by several observations.  Do not claim a configuration identity
+        # until a probe is actually dispatched from a worker-visible current
+        # observation.  The reference target map remains immutable meanwhile.
+        self._feedback_configuration_sha256 = ""
+        self._feedback_baseline = {}
+        self._feedback_stage = FeedbackRecoveryStage.SAFE_PROBE
+
+    def _freeze_recovery_configuration(
+        self, observation: MacroObservation
+    ) -> None:
+        if self._feedback_configuration_sha256 or self._feedback_baseline:
+            raise RuntimeError("feedback recovery configuration was already frozen")
+        if self._feedback_active_leg not in LEGS:
+            raise RuntimeError("feedback recovery active-leg identity is unavailable")
+        _target_map(
+            self._feedback_reference_targets,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.reference_targets",
+            require_complete=True,
+        )
+        feedback = observation.feedback_recovery_observation
+        support = self._physical_support_snapshot(observation)
+        configuration_sha256 = self._recovery_configuration_identity(
+            observation, self._feedback_active_leg
+        )
+        self._feedback_configuration_sha256 = configuration_sha256
+        self._feedback_baseline = {
+            "configuration_sha256": configuration_sha256,
+            "wheel_z_m": feedback.wheel_center_w_m[self._feedback_active_leg][2],
+            "measured_servo_positions_deg": dict(
+                feedback.measured_servo_positions_deg
+            ),
+            "support_qualified_legs": tuple(support["support_qualified_legs"]),
+            "support_stability_margin_m": support["support_stability_margin_m"],
+            "wrench_force_residual_norm_n": support[
+                "wrench_force_residual_norm_n"
+            ],
+            "wrench_moment_residual_norm_nm": support[
+                "wrench_moment_residual_norm_nm"
+            ],
+            "wrench_maximum_friction_utilization": support[
+                "wrench_maximum_friction_utilization"
+            ],
+            "abs_roll_rad": abs(feedback.base_roll_rad),
+            "abs_pitch_rad": abs(feedback.base_pitch_rad),
+            "joint_limit_margin_deg": dict(feedback.joint_limit_margin_deg),
+        }
+
+    def _clear_feedback_pending(self) -> None:
+        self._feedback_pending_epoch = None
+        self._feedback_pending_sim_step = None
+        self._feedback_pending_action = ""
+        self._feedback_pending_leg = ""
+        self._feedback_pending_joint = ""
+        self._feedback_pending_sign = 0
+
+    def _advance_probe_cursor(self, sign: int) -> None:
+        if sign > 0:
+            self._feedback_probe_sign = -1
+            self._feedback_stage = FeedbackRecoveryStage.SAFE_PROBE
+        elif self._feedback_joint_index + 1 < len(
+            LEG_SERVO_JOINTS[self._feedback_active_leg]
+        ):
+            self._feedback_joint_index += 1
+            self._feedback_probe_sign = 1
+            self._feedback_stage = FeedbackRecoveryStage.SAFE_PROBE
+        else:
+            self._feedback_stage = FeedbackRecoveryStage.SELECT_DESCENT
+
+    def _begin_feedback_settle(
+        self,
+        *,
+        sim_time_s: float,
+        posture_incomplete: bool,
+        reason: str = "",
+    ) -> None:
+        self._feedback_stage = FeedbackRecoveryStage.SETTLE
+        self._feedback_settle_started_at_s = None
+        self._feedback_settle_window_started_at_s = sim_time_s
+        self._feedback_settle_posture_incomplete = posture_incomplete
+        if posture_incomplete and reason:
+            self._feedback_exhaustion_reason = reason
+
+    @staticmethod
+    def _top_contact_load_seen(observation: MacroObservation, leg: str) -> bool:
+        row = observation.centroidal_support_evidence.wheel_contacts.by_leg()[leg]
+        return bool(
+            row.evidence_available
+            and row.measurement.active
+            and row.measurement.surface_kind == "OBSTACLE_TOP"
+            and row.normal_load_n is not None
+            and row.normal_load_n
+            >= observation.centroidal_support_evidence.wheel_contacts.thresholds.minimum_normal_force_n
+        )
+
+    @staticmethod
+    def _feedback_targets_within_limits(
+        targets: Mapping[str, float],
+    ) -> tuple[bool, str]:
+        margin = float(FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"])
+        for name, target in targets.items():
+            lower, upper = command_limits_for_servo(name)
+            if not lower + margin <= target <= upper - margin:
+                return False, f"{name} target violates command-limit margin"
+        return True, ""
+
+    def _feedback_acknowledge_pending(
+        self, observation: MacroObservation
+    ) -> None:
+        if self._feedback_pending_epoch is None:
+            return
+        feedback = observation.feedback_recovery_observation
+        expected_step = (
+            None
+            if self._feedback_pending_sim_step is None
+            else self._feedback_pending_sim_step + 1
+        )
+        if (
+            not feedback.n_plus_one_verified
+            or feedback.verified_command_epoch != self._feedback_pending_epoch
+            or feedback.observed_command_epoch != self._feedback_pending_epoch
+            or expected_step is None
+            or feedback.sim_step != expected_step
+            or dict(feedback.readback_servo_targets_deg)
+            != self._current_servo_targets
+            or dict(feedback.readback_wheel_targets_rad_s)
+            != self._current_wheel_targets
+        ):
+            raise ValueError(
+                "feedback recovery requires exact issued-step+1 epoch/full-map readback"
+            )
+        safety = self._recovery_safety_failure(observation)
+        if safety:
+            raise RuntimeError(safety)
+        action = self._feedback_pending_action
+        joint = self._feedback_pending_joint
+        sign = self._feedback_pending_sign
+        if action == FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE.value:
+            baseline_q = self._feedback_baseline[
+                "measured_servo_positions_deg"
+            ][joint]
+            current_q = feedback.measured_servo_positions_deg[joint]
+            dz = (
+                feedback.wheel_center_w_m[self._feedback_active_leg][2]
+                - self._feedback_baseline["wheel_z_m"]
+            )
+            dq = current_q - baseline_q
+            sign_response_valid = bool(
+                abs(dq) >= 0.02 and (dq > 0.0) == (sign > 0)
+            )
+            baseline_preserved, unsafe_reasons = self._probe_preserves_baseline(
+                observation, joint
+            )
+            key = (
+                self._feedback_active_leg,
+                joint,
+                sign,
+                self._feedback_configuration_sha256,
+            )
+            self._feedback_probe_results[key] = {
+                "dz_m": dz,
+                "dq_deg": dq,
+                "sign_response_valid": sign_response_valid,
+                "baseline_preserved": baseline_preserved,
+                "unsafe_reasons": unsafe_reasons,
+                "centroidal_evidence_sha256": (
+                    observation.centroidal_support_evidence.payload_sha256
+                ),
+                "feedback_observation_sha256": feedback.payload_sha256,
+            }
+            self._feedback_stage = FeedbackRecoveryStage.RETURN_TO_REFERENCE
+        elif action == FeedbackRecoveryAction.RETURN_TO_IMMUTABLE_REFERENCE.value:
+            baseline_q = self._feedback_baseline[
+                "measured_servo_positions_deg"
+            ][joint]
+            if abs(feedback.measured_servo_positions_deg[joint] - baseline_q) > 0.2:
+                raise RuntimeError(
+                    "feedback probe failed to return to immutable reference"
+                )
+            self._advance_probe_cursor(sign)
+        elif action == FeedbackRecoveryAction.BOUNDED_DESCENT_INCREMENT.value:
+            baseline_preserved, reasons = self._probe_preserves_baseline(
+                observation, joint
+            )
+            if not baseline_preserved:
+                raise RuntimeError(
+                    "selected descent degraded its proven baseline: "
+                    + "; ".join(reasons)
+                )
+            if self._top_contact_load_seen(observation, self._feedback_active_leg):
+                self._feedback_contact_started_at_s = feedback.physics_time_s
+                self._feedback_stage = FeedbackRecoveryStage.CONTACT_DWELL
+            elif self._feedback_increment_count_by_leg[
+                self._feedback_active_leg
+            ] >= int(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_increments_per_leg"]):
+                self._begin_feedback_settle(
+                    sim_time_s=feedback.physics_time_s,
+                    posture_incomplete=True,
+                    reason=(
+                        f"{self._feedback_active_leg} bounded descent increments exhausted"
+                    ),
+                )
+            else:
+                self._feedback_stage = FeedbackRecoveryStage.INCREMENT
+        else:
+            raise ValueError("pending feedback action is invalid")
+        self._clear_feedback_pending()
+
+    def _issue_feedback_target(
+        self,
+        observation: MacroObservation,
+        *,
+        targets: Mapping[str, float],
+        stage: FeedbackRecoveryStage,
+        action: FeedbackRecoveryAction,
+        joint: str,
+        sign: int,
+    ) -> _CommandEvent:
+        canonical = _target_map(
+            targets,
+            SERVO_JOINT_NAMES,
+            label="feedback_recovery.targets",
+            require_complete=True,
+        )
+        within_limits, limit_reason = self._feedback_targets_within_limits(canonical)
+        if not within_limits:
+            raise RuntimeError(limit_reason)
+        wheels = {name: 0.0 for name in WHEEL_JOINT_NAMES}
+        if canonical == self._current_servo_targets and wheels == self._current_wheel_targets:
+            raise RuntimeError("feedback recovery target map did not change")
+        maximum_actions = int(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_feedback_actions"]
+        )
+        if self._feedback_action_count >= maximum_actions:
+            raise RuntimeError("feedback action bound was not preflighted")
+        target_map_sha256 = _stable_sha256(
+            {
+                "schema_version": FEEDBACK_RECOVERY_TARGET_MAP_SCHEMA,
+                "servo_targets_deg": canonical,
+                "wheel_targets_rad_s": wheels,
+            }
+        )
+        self._current_servo_targets = canonical
+        self._current_wheel_targets = wheels
+        self._command_epoch += 1
+        self._feedback_action_count += 1
+        self._feedback_pending_epoch = self._command_epoch
+        self._feedback_pending_sim_step = (
+            observation.centroidal_support_evidence.sim_step
+        )
+        self._feedback_pending_action = action.value
+        self._feedback_pending_leg = self._feedback_active_leg
+        self._feedback_pending_joint = joint
+        self._feedback_pending_sign = sign
+        return _feedback_recovery_command_event(
+            stage=stage,
+            action=action,
+            centroidal_evidence_sha256=(
+                observation.centroidal_support_evidence.payload_sha256
+            ),
+            feedback_observation_sha256=(
+                observation.feedback_recovery_observation.payload_sha256
+            ),
+            target_map_sha256=target_map_sha256,
+            direction_sign=sign,
+            attempt=self._feedback_action_count,
+            leg=self._feedback_active_leg,
+            joint=joint,
+            configuration_sha256=self._feedback_configuration_sha256,
+        )
+
+    def _advance_feedback_recovery(
+        self,
+        observation: MacroObservation,
+        *,
+        sim_time_s: float,
+        source_cursor_permit: bool,
+    ) -> tuple[_CommandEvent, str]:
+        if self._feedback_stage == FeedbackRecoveryStage.REFERENCE_PROFILE:
+            self._feedback_stage = FeedbackRecoveryStage.OBSERVE_AIR
+        if self._feedback_pending_epoch is not None:
+            self._feedback_acknowledge_pending(observation)
+        feedback = observation.feedback_recovery_observation
+        if (
+            feedback.observed_command_epoch != self._command_epoch
+            or dict(feedback.readback_servo_targets_deg)
+            != self._current_servo_targets
+            or dict(feedback.readback_wheel_targets_rad_s)
+            != self._current_wheel_targets
+        ):
+            raise ValueError(
+                "feedback recovery observation is not bound to the current "
+                "command epoch/full 8+4 readback"
+            )
+        safety = self._recovery_safety_failure(observation)
+        if safety:
+            raise RuntimeError(safety)
+        # A newly measured load-bearing top contact is itself the feedback
+        # event we were seeking.  Latch it before a permitted INCREMENT can
+        # deepen the target, then hold the exact current 8+4 map while the
+        # independent contact dwell/qualification evidence accrues.
+        if (
+            self._feedback_stage == FeedbackRecoveryStage.INCREMENT
+            and self._feedback_active_leg
+            and self._top_contact_load_seen(observation, self._feedback_active_leg)
+        ):
+            self._feedback_contact_started_at_s = (
+                observation.feedback_recovery_observation.physics_time_s
+            )
+            self._feedback_stage = FeedbackRecoveryStage.CONTACT_DWELL
+        if self._feedback_stage == FeedbackRecoveryStage.OBSERVE_AIR:
+            candidates = self._recovery_candidate_legs(observation)
+            if not candidates:
+                if self._four_top_contacts_ready(observation):
+                    self._begin_feedback_settle(
+                        sim_time_s=sim_time_s,
+                        posture_incomplete=False,
+                    )
+                else:
+                    self._begin_feedback_settle(
+                        sim_time_s=sim_time_s,
+                        posture_incomplete=True,
+                        reason=(
+                            "no safe crossed/top-height AIR leg is eligible for feedback"
+                        ),
+                    )
+            else:
+                self._begin_recovery_leg(observation, candidates[0])
+        if self._feedback_stage == FeedbackRecoveryStage.SELECT_DESCENT:
+            choices: list[tuple[float, str, int]] = []
+            for joint in LEG_SERVO_JOINTS[self._feedback_active_leg]:
+                for sign in (1, -1):
+                    key = (
+                        self._feedback_active_leg,
+                        joint,
+                        sign,
+                        self._feedback_configuration_sha256,
+                    )
+                    result = self._feedback_probe_results.get(key)
+                    if (
+                        result
+                        and result["sign_response_valid"]
+                        and result["baseline_preserved"]
+                        and result["dz_m"]
+                        <= -float(
+                            FINAL_RECOVERY_FEEDBACK_LIMITS["minimum_descent_m"]
+                        )
+                    ):
+                        choices.append((float(result["dz_m"]), joint, sign))
+            if not choices:
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason=(
+                        f"{self._feedback_active_leg} has no safe measured descent sign"
+                    ),
+                )
+            else:
+                _dz, joint, sign = min(choices)
+                cache_key = (
+                    self._feedback_active_leg,
+                    joint,
+                    self._feedback_configuration_sha256,
+                )
+                self._feedback_selected_signs[cache_key] = sign
+                self._feedback_selected_joint = joint
+                self._feedback_selected_sign = sign
+                self._feedback_increment_count = 0
+                self._feedback_stage = FeedbackRecoveryStage.INCREMENT
+        if self._feedback_stage == FeedbackRecoveryStage.CONTACT_DWELL:
+            row = observation.centroidal_support_evidence.wheel_contacts.by_leg()[
+                self._feedback_active_leg
+            ]
+            dwell = row.measurement.dwell_s
+            contact_present = self._top_contact_load_seen(
+                observation, self._feedback_active_leg
+            )
+            contact_qualified = bool(
+                contact_present
+                and row.support_qualified
+                and row.measurement.surface_kind == "OBSTACLE_TOP"
+                and row.measurement.surface_dwell_verified
+            )
+            if contact_qualified and dwell is not None and dwell >= float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS["contact_dwell_s"]
+            ):
+                self._feedback_reference_targets = dict(self._current_servo_targets)
+                self._feedback_baseline = {}
+                self._feedback_active_leg = ""
+                self._feedback_contact_started_at_s = None
+                self._feedback_stage = FeedbackRecoveryStage.OBSERVE_AIR
+            elif contact_present:
+                if self._feedback_contact_started_at_s is None:
+                    self._feedback_contact_started_at_s = sim_time_s
+                if sim_time_s - self._feedback_contact_started_at_s > float(
+                    FINAL_RECOVERY_FEEDBACK_LIMITS[
+                        "maximum_contact_dwell_wait_s"
+                    ]
+                ):
+                    self._begin_feedback_settle(
+                        sim_time_s=sim_time_s,
+                        posture_incomplete=True,
+                        reason=(
+                            f"{self._feedback_active_leg} contact dwell did not verify"
+                        ),
+                    )
+            elif (
+                row.evidence_available
+                and not row.measurement.active
+                and row.measurement.surface_kind == "AIR"
+            ):
+                self._feedback_contact_started_at_s = None
+                if self._feedback_increment_count_by_leg[
+                    self._feedback_active_leg
+                ] >= int(
+                    FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_increments_per_leg"]
+                ):
+                    self._begin_feedback_settle(
+                        sim_time_s=sim_time_s,
+                        posture_incomplete=True,
+                        reason=(
+                            f"{self._feedback_active_leg} bounded descent increments exhausted"
+                        ),
+                    )
+                else:
+                    self._feedback_stage = FeedbackRecoveryStage.INCREMENT
+            else:
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason=(
+                        f"{self._feedback_active_leg} contact evidence became unavailable"
+                    ),
+                )
+        if self._feedback_stage == FeedbackRecoveryStage.SETTLE:
+            feedback = observation.feedback_recovery_observation
+            support = self._physical_support_snapshot(observation)
+            base_settled = bool(
+                feedback.final_recoverable
+                and feedback.body_crossed_front_face
+                and support["support_viable"]
+                and support["support_wrench_proven"]
+                and max(
+                    abs(value)
+                    for value in feedback.measured_servo_velocities_deg_s.values()
+                )
+                <= float(
+                    FINAL_RECOVERY_FEEDBACK_LIMITS[
+                        "maximum_abs_joint_velocity_deg_s"
+                    ]
+                )
+                and max(abs(value) for value in feedback.base_angular_velocity_rad_s)
+                <= float(
+                    FINAL_RECOVERY_FEEDBACK_LIMITS[
+                        "maximum_abs_body_angular_velocity_rad_s"
+                    ]
+                )
+            )
+            settled = bool(
+                base_settled
+                and (
+                    self._feedback_settle_posture_incomplete
+                    or self._four_top_contacts_ready(observation)
+                )
+            )
+            if not settled:
+                self._feedback_settle_started_at_s = None
+            elif self._feedback_settle_started_at_s is None:
+                self._feedback_settle_started_at_s = sim_time_s
+            elif sim_time_s - self._feedback_settle_started_at_s >= float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS["settle_dwell_s"]
+            ):
+                self._feedback_stage = (
+                    FeedbackRecoveryStage.POSTURE_INCOMPLETE
+                    if self._feedback_settle_posture_incomplete
+                    else FeedbackRecoveryStage.COMPLETE
+                )
+            if (
+                self._feedback_stage == FeedbackRecoveryStage.SETTLE
+                and self._feedback_settle_window_started_at_s is not None
+                and sim_time_s - self._feedback_settle_window_started_at_s
+                > float(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_settle_wait_s"])
+            ):
+                raise RuntimeError("feedback recovery settle bound exhausted")
+        if self._feedback_stage in {
+            FeedbackRecoveryStage.COMPLETE,
+            FeedbackRecoveryStage.POSTURE_INCOMPLETE,
+            FeedbackRecoveryStage.CONTACT_DWELL,
+            FeedbackRecoveryStage.SETTLE,
+        }:
+            return _no_command_event(), f"feedback recovery {self._feedback_stage.value.lower()}"
+        if not source_cursor_permit:
+            return _no_command_event(), "feedback recovery holds unchanged off 15 Hz permit boundary"
+        maximum_actions = int(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_feedback_actions"]
+        )
+        delta = float(FINAL_RECOVERY_FEEDBACK_LIMITS["probe_delta_deg"])
+        if self._feedback_stage == FeedbackRecoveryStage.SAFE_PROBE:
+            joint = LEG_SERVO_JOINTS[self._feedback_active_leg][
+                self._feedback_joint_index
+            ]
+            sign = self._feedback_probe_sign
+            targets = dict(self._feedback_reference_targets)
+            targets[joint] += sign * delta
+            within_limits, limit_reason = self._feedback_targets_within_limits(
+                targets
+            )
+            remaining = maximum_actions - self._feedback_action_count
+            if not within_limits:
+                # A pre-dispatch skip has no configuration SHA: there is no
+                # physical probe baseline for the worker to reconstruct yet.
+                # Once a prior probe has frozen the leg configuration, retain
+                # later unsafe-sign diagnostics under that exact identity.
+                if self._feedback_configuration_sha256:
+                    key = (
+                        self._feedback_active_leg,
+                        joint,
+                        sign,
+                        self._feedback_configuration_sha256,
+                    )
+                    self._feedback_probe_results[key] = {
+                        "dz_m": 0.0,
+                        "dq_deg": 0.0,
+                        "sign_response_valid": False,
+                        "baseline_preserved": False,
+                        "unsafe_reasons": (limit_reason,),
+                        "centroidal_evidence_sha256": (
+                            observation.centroidal_support_evidence.payload_sha256
+                        ),
+                        "feedback_observation_sha256": (
+                            observation.feedback_recovery_observation.payload_sha256
+                        ),
+                    }
+                self._advance_probe_cursor(sign)
+                return _no_command_event(), "unsafe probe sign skipped without dispatch"
+            if remaining < 2:
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason="feedback action bound cannot reserve probe return",
+                )
+                return _no_command_event(), "bounded feedback actions exhausted"
+            if not self._feedback_configuration_sha256:
+                self._freeze_recovery_configuration(observation)
+            return self._issue_feedback_target(
+                observation,
+                targets=targets,
+                stage=FeedbackRecoveryStage.SAFE_PROBE,
+                action=FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE,
+                joint=joint,
+                sign=sign,
+            ), "issued one conservative diagnostic probe map"
+        if self._feedback_stage == FeedbackRecoveryStage.RETURN_TO_REFERENCE:
+            joint = self._feedback_pending_joint or LEG_SERVO_JOINTS[
+                self._feedback_active_leg
+            ][self._feedback_joint_index]
+            sign = self._feedback_probe_sign
+            return self._issue_feedback_target(
+                observation,
+                targets=self._feedback_reference_targets,
+                stage=FeedbackRecoveryStage.RETURN_TO_REFERENCE,
+                action=FeedbackRecoveryAction.RETURN_TO_IMMUTABLE_REFERENCE,
+                joint=joint,
+                sign=sign,
+            ), "returning to immutable reference before next probe"
+        if self._feedback_stage == FeedbackRecoveryStage.INCREMENT:
+            joint = self._feedback_selected_joint
+            sign = self._feedback_selected_sign
+            cache_key = (
+                self._feedback_active_leg,
+                joint,
+                self._feedback_configuration_sha256,
+            )
+            if self._feedback_selected_signs.get(cache_key) != sign:
+                raise RuntimeError("selected feedback sign cache identity mismatch")
+            if self._feedback_action_count >= maximum_actions:
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason="feedback action bound exhausted before descent increment",
+                )
+                return _no_command_event(), "bounded feedback actions exhausted"
+            if self._feedback_increment_count_by_leg[
+                self._feedback_active_leg
+            ] >= int(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_increments_per_leg"]):
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason=(
+                        f"{self._feedback_active_leg} cumulative increment bound exhausted"
+                    ),
+                )
+                return _no_command_event(), "bounded leg increments exhausted"
+            self._feedback_increment_count += 1
+            targets = dict(self._feedback_reference_targets)
+            targets[joint] += sign * float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS["increment_delta_deg"]
+            ) * self._feedback_increment_count
+            within_limits, limit_reason = self._feedback_targets_within_limits(
+                targets
+            )
+            if not within_limits:
+                self._feedback_increment_count -= 1
+                self._begin_feedback_settle(
+                    sim_time_s=sim_time_s,
+                    posture_incomplete=True,
+                    reason=limit_reason,
+                )
+                return _no_command_event(), "descent target limit bound reached"
+            self._feedback_increment_count_by_leg[self._feedback_active_leg] += 1
+            return self._issue_feedback_target(
+                observation,
+                targets=targets,
+                stage=FeedbackRecoveryStage.INCREMENT,
+                action=FeedbackRecoveryAction.BOUNDED_DESCENT_INCREMENT,
+                joint=joint,
+                sign=sign,
+            ), "issued one bounded selected-sign descent increment"
+        return _no_command_event(), "feedback recovery observation-only stage"
 
     def _retry_safe(self, state: MacroStateSpec, observation: MacroObservation) -> bool:
         if not state.retry_policy.retry_requires_safe_attitude:
@@ -2592,6 +4481,8 @@ class MacroFSMController:
         observation: MacroObservation,
         sim_time_s: float,
         previous: MacroStateId,
+        *,
+        force_posture_incomplete: bool = False,
     ) -> MacroDecision:
         changed = any(abs(value) > 1.0e-12 for value in self._current_wheel_targets.values())
         self._current_wheel_targets = {name: 0.0 for name in WHEEL_JOINT_NAMES}
@@ -2601,7 +4492,10 @@ class MacroFSMController:
         self._active_profile = None
         self._terminal_outcome = (
             MacroTerminalOutcome.TASK_SUCCESS
-            if observation.posture_complete
+            if (
+                observation.feedback_recovery_observation.posture_complete
+                and not force_posture_incomplete
+            )
             else MacroTerminalOutcome.TASK_SUCCESS_POSTURE_INCOMPLETE
         )
         self._last_reason = "50 mm traversal complete; posture classified independently"
@@ -2695,6 +4589,15 @@ class MacroFSMController:
             )
             fraction = 1.0
             profile_id = ""
+        elif (
+            self._state_id == MacroStateId.S10_POSTURE_RECOVERY
+            and self._feedback_stage != FeedbackRecoveryStage.REFERENCE_PROFILE
+        ):
+            subphase = MacroSubphase.FEEDBACK_RECOVERY
+            fraction = 1.0
+            profile_id = (
+                "" if self._active_profile is None else self._active_profile.profile_id
+            )
         elif self._hold_started_at_s is not None:
             subphase = MacroSubphase.HOLD
             fraction = 1.0

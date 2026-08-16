@@ -1082,6 +1082,33 @@ class WorkerRecordingIpcContractTest(unittest.TestCase):
                 f"{ack_kind} is missing closure contract fields",
             )
 
+    def test_playback_start_ack_explicitly_carries_execution_semantics(self) -> None:
+        tree = ast.parse(
+            (MODULE_ROOT / "sim_worker_process.py").read_text(encoding="utf-8")
+        )
+        start_ack_calls = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Name) or node.func.id != "make_message":
+                continue
+            operation = next(
+                (
+                    keyword.value.value
+                    for keyword in node.keywords
+                    if keyword.arg == "operation"
+                    and isinstance(keyword.value, ast.Constant)
+                ),
+                "",
+            )
+            if operation == "start_playback_plan":
+                start_ack_calls.append(node)
+        self.assertEqual(len(start_ack_calls), 1)
+        self.assertIn(
+            "execution_semantics",
+            {keyword.arg for keyword in start_ack_calls[0].keywords},
+        )
+
     def test_wrong_or_missing_worker_session_binding_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             request_path, _artifact = self._request(Path(tmp))

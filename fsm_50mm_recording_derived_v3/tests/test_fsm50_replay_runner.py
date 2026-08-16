@@ -46,9 +46,15 @@ def _write_recording(root: Path, version: str, *, step_count: int = 1) -> runner
     )
 
 
-def _plan(*, profile: str = "motion_only", digest: str = "a" * 64):
+def _plan(
+    *,
+    profile: str = "motion_only",
+    digest: str = "a" * 64,
+    execution_semantics: str = runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+):
     return SimpleNamespace(
         profile=profile,
+        execution_semantics=execution_semantics,
         plan_sha256=digest,
         events=[SimpleNamespace()],
         segments=[SimpleNamespace()],
@@ -176,6 +182,14 @@ def test_prepare_replay_calls_production_signature_and_rejects_wrong_profile(
             plan_builder=lambda *_args, **_kwargs: _plan(profile="fast"),
             max_wheel_speed_rad_s=2.0,
         )
+    with pytest.raises(runner.RunnerContractError, match="execution_semantics"):
+        runner.prepare_replay(
+            recording,
+            plan_builder=lambda *_args, **_kwargs: _plan(
+                execution_semantics="measured_endpoint_v1"
+            ),
+            max_wheel_speed_rad_s=2.0,
+        )
 
 
 def test_request_schema_and_output_directory_are_exact(tmp_path: Path) -> None:
@@ -203,6 +217,7 @@ def test_request_schema_and_output_directory_are_exact(tmp_path: Path) -> None:
         "request_id",
         "plan_id",
         "plan_sha256",
+        "execution_semantics",
         "plan_event_count",
         "plan_segment_count",
         "source_version",
@@ -220,6 +235,10 @@ def test_request_schema_and_output_directory_are_exact(tmp_path: Path) -> None:
     }
     assert request["schema_version"] == runner.REQUEST_SCHEMA
     assert request["execution_mode"] == "normal_development"
+    assert (
+        request["execution_semantics"]
+        == runner.RECORDED_TIMELINE_OPEN_LOOP_V1
+    )
     assert request["filtered_contact_bank_enabled"] is False
     assert request["telemetry_hz"] == 15.0
     assert request["video_fps"] == 15.0
@@ -328,6 +347,8 @@ def _ready_status(request: dict[str, object]) -> dict[str, object]:
             "schema_version",
             "request_id",
             "plan_id",
+            "plan_sha256",
+            "execution_semantics",
             "source_version",
             "height_mm",
             "step_count",
@@ -355,6 +376,9 @@ def _ready_status(request: dict[str, object]) -> dict[str, object]:
             "enabled": True,
             "execution_mode": "normal_development",
             "request_id": request["request_id"],
+            "plan_id": request["plan_id"],
+            "plan_sha256": request["plan_sha256"],
+            "execution_semantics": request["execution_semantics"],
             "source_version": request["source_version"],
             "state": "ready_for_plan",
             "filtered_contact_bank_enabled": False,
@@ -369,6 +393,8 @@ def test_startup_binding_rejects_missing_task_request_passthrough(tmp_path: Path
         "schema_version": runner.REQUEST_SCHEMA,
         "request_id": "request",
         "plan_id": "plan",
+        "plan_sha256": "a" * 64,
+        "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
         "source_version": "v003_fixture",
         "height_mm": 50,
         "step_count": 1,
@@ -395,6 +421,10 @@ def _terminal(run_dir: Path, *, complete: bool = True) -> dict[str, object]:
         "task_replay_complete": complete,
         "request_id": "request",
         "plan_id": "plan",
+        "plan_sha256": "a" * 64,
+        "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+        "plan_event_count": 1,
+        "plan_segment_count": 1,
         "source_version": "v003_fixture",
         "run_dir": str(run_dir.resolve()),
         "task_inputs_path": str((run_dir / "task_inputs.json").resolve()),
@@ -411,6 +441,10 @@ def test_raw_terminal_and_separate_operation_ack_are_exact(tmp_path: Path) -> No
         terminal,
         request_id="request",
         plan_id="plan",
+        plan_sha256="a" * 64,
+        execution_semantics=runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+        plan_event_count=1,
+        plan_segment_count=1,
         source_version="v003_fixture",
         run_dir=tmp_path,
     )
@@ -434,6 +468,10 @@ def test_raw_terminal_and_separate_operation_ack_are_exact(tmp_path: Path) -> No
         terminal=terminal,
         request_id="request",
         plan_id="plan",
+        plan_sha256="a" * 64,
+        execution_semantics=runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+        plan_event_count=1,
+        plan_segment_count=1,
         source_version="v003_fixture",
         run_dir=tmp_path,
         worker_binding=binding,
@@ -445,6 +483,10 @@ def test_raw_terminal_and_separate_operation_ack_are_exact(tmp_path: Path) -> No
             terminal=terminal,
             request_id="request",
             plan_id="plan",
+            plan_sha256="a" * 64,
+            execution_semantics=runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+            plan_event_count=1,
+            plan_segment_count=1,
             source_version="v003_fixture",
             run_dir=tmp_path,
             worker_binding=binding,
@@ -651,6 +693,7 @@ def test_runner_manifest_persists_exact_validated_worker_protocol_payloads(
             "request_id": "request",
             "accepted": True,
             "error": "",
+            "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
             "nested_wire_payload": {"indices": [1, 2, 3]},
         },
         operation="start_playback_plan",
@@ -660,6 +703,10 @@ def test_runner_manifest_persists_exact_validated_worker_protocol_payloads(
         _terminal(run_dir),
         request_id="request",
         plan_id="plan",
+        plan_sha256="a" * 64,
+        execution_semantics=runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+        plan_event_count=1,
+        plan_segment_count=1,
         source_version="v003_fixture",
         run_dir=run_dir,
     )
@@ -676,6 +723,10 @@ def test_runner_manifest_persists_exact_validated_worker_protocol_payloads(
         terminal=terminal,
         request_id="request",
         plan_id="plan",
+        plan_sha256="a" * 64,
+        execution_semantics=runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+        plan_event_count=1,
+        plan_segment_count=1,
         source_version="v003_fixture",
         run_dir=run_dir,
         worker_binding=ready,
@@ -700,6 +751,10 @@ def test_runner_manifest_persists_exact_validated_worker_protocol_payloads(
     assert persisted["worker_playback_start_ack"] == start_ack
     assert persisted["worker_task_replay_terminal"] == terminal
     assert persisted["worker_task_replay_ack"] == task_ack
+    assert (
+        persisted["execution_semantics"]
+        == runner.RECORDED_TIMELINE_OPEN_LOOP_V1
+    )
 
 
 def test_run_selected_holds_one_worker_at_a_time_and_writes_no_empty_report(
@@ -782,6 +837,7 @@ def test_resume_uses_bound_terminal_artifacts_not_csv(
         "accepted_steps_path": str(recording.accepted_steps_path),
         "accepted_steps_sha256": source_sha,
         "plan_sha256": plan_sha,
+        "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
         "request_id": "request",
         "plan_id": "plan",
         "run_dir": str(run_dir),
@@ -793,6 +849,8 @@ def test_resume_uses_bound_terminal_artifacts_not_csv(
     classifier_inputs = {
         "completed_result": {
             "source_version": recording.version_id,
+            "plan_sha256": plan_sha,
+            "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
             "plan_event_count": 1,
             "plan_segment_count": 1,
             "second_simulator_process_detected": False,
@@ -807,6 +865,10 @@ def test_resume_uses_bound_terminal_artifacts_not_csv(
             "source_version": recording.version_id,
             "request_id": "request",
             "plan_id": "plan",
+            "plan_sha256": plan_sha,
+            "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
+            "plan_event_count": 1,
+            "plan_segment_count": 1,
             "run_dir": str(run_dir),
             "task_inputs_path": str(task_inputs_path),
             "video_writer_quiesced": True,
@@ -821,6 +883,7 @@ def test_resume_uses_bound_terminal_artifacts_not_csv(
         "source_version": recording.version_id,
         "accepted_steps_sha256": source_sha,
         "plan_sha256": plan_sha,
+        "execution_semantics": runner.RECORDED_TIMELINE_OPEN_LOOP_V1,
         "request_id": "request",
         "plan_id": "plan",
         "run_dir": str(run_dir),

@@ -25,10 +25,12 @@ from completion_aware_segment import SegmentDecisionKind
 from sim_ipc_protocol import MACRO_FAST_CLOSE_SCHEMA
 
 from .fsm50_macro_controller import (
+    FeedbackRecoveryObservation,
     MacroControllerBundle,
     MacroSegmentCompletionToken,
     build_gate_c_bundle,
 )
+from .fsm50_centroidal_support import CentroidalSupportEvidence
 from .worker_macro_fsm_session import (
     AUTHORIZED_GATE_D_SOURCE_VERSIONS,
     CANONICAL_GATE_C_SOURCE_VERSION,
@@ -36,6 +38,8 @@ from .worker_macro_fsm_session import (
     DEFAULT_POST_SETTLE_S,
     DEFAULT_TELEMETRY_HZ,
     DEFAULT_VIDEO_FPS,
+    FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA,
+    FEEDBACK_RECOVERY_ACTION_SCHEMA,
     GATE_D_TRIAL_KIND,
     EXPECTED_RENDER_SUBSTEPS,
     REQUEST_SCHEMA,
@@ -71,6 +75,55 @@ _SEGMENT_LEDGER_BINDING_KEYS = (
     "expected_segment_completion_count",
     "segment_completion_coverage_complete",
     "segment_completion_coverage_errors",
+)
+_FEEDBACK_LEDGER_BINDING_KEYS = (
+    "feedback_recovery_action_ledger_schema_version",
+    "feedback_recovery_action_count",
+    "feedback_recovery_verified_action_count",
+    "feedback_recovery_physical_response_verified_action_count",
+    "feedback_recovery_action_coverage_complete",
+    "feedback_recovery_action_coverage_errors",
+    "feedback_recovery_action_ledger_path",
+    "feedback_recovery_action_ledger_sha256",
+    "feedback_recovery_dispatch_ledger_path",
+    "feedback_recovery_dispatch_ledger_sha256",
+    "feedback_recovery_dispatch_count",
+)
+_FEEDBACK_RECOVERY_ACTION_ROW_KEYS = frozenset(
+    {
+        "schema_version",
+        "action_index",
+        "attempt",
+        "sim_step",
+        "expected_n_plus_one_sim_step",
+        "stage",
+        "action",
+        "leg",
+        "joint",
+        "direction_sign",
+        "configuration_sha256",
+        "configuration_payload",
+        "centroidal_evidence_sha256",
+        "feedback_observation_sha256",
+        "command_provenance",
+        "batch_id",
+        "dispatch_index",
+        "dispatch_ack",
+        "ack_sha256",
+        "n_plus_one_verified",
+        "n_plus_one_verified_sim_step",
+        "n_plus_one_readback_sha256",
+        "n_plus_one_readback",
+        "dispatch_centroidal_support_evidence",
+        "dispatch_feedback_recovery_observation",
+        "physical_response_verified",
+        "physical_response_sim_step",
+        "physical_response_centroidal_evidence_sha256",
+        "physical_response_feedback_observation_sha256",
+        "physical_response_centroidal_support_evidence",
+        "physical_response_feedback_recovery_observation",
+        "physical_response",
+    }
 )
 _SEGMENT_COMPLETION_ROW_KEYS = frozenset(
     {
@@ -545,7 +598,7 @@ def build_worker_macro_request(
         "capture_video": True,
         "post_run_settle_s": float(post_run_settle_s),
         "timeout_s": float(timeout_s),
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
     }
     return request
 
@@ -635,7 +688,7 @@ def validate_macro_worker_binding(
         "trial_index": request["trial_index"],
         "telemetry_hz": request["telemetry_hz"],
         "video_fps": DEFAULT_VIDEO_FPS,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
         "preflight_ok": True,
     }.items():
         if preflight.get(key) != expected:
@@ -663,7 +716,7 @@ def validate_macro_worker_binding(
         or session.get("request_id") != request["request_id"]
         or session.get("bundle_sha256") != request["bundle_sha256"]
         or session.get("state") != "ready_for_start"
-        or session.get("filtered_contact_bank_enabled") is not False
+        or session.get("filtered_contact_bank_enabled") is not True
     ):
         raise MacroRunnerContractError("Macro session identity/state is invalid")
     deployed = session.get("deployment_safety_evidence")
@@ -874,6 +927,247 @@ def _successful_ledger_claim(
     if not _is_lower_sha256(claim["segment_completion_ledger_sha256"]):
         raise MacroRunnerContractError(f"{label} ledger SHA-256 is invalid")
     return claim
+
+
+def _successful_feedback_ledger_claim(
+    mapping: Mapping[str, Any],
+    *,
+    label: str,
+) -> dict[str, Any]:
+    unexpected = sorted(
+        key
+        for key in mapping
+        if str(key).startswith("feedback_recovery_")
+        and key not in _FEEDBACK_LEDGER_BINDING_KEYS
+    )
+    if unexpected:
+        raise MacroRunnerContractError(
+            f"{label} has unexpected feedback-recovery fields: {unexpected}"
+        )
+    claim = {
+        key: _jsonable(mapping.get(key))
+        for key in _FEEDBACK_LEDGER_BINDING_KEYS
+    }
+    count = claim["feedback_recovery_action_count"]
+    verified = claim["feedback_recovery_verified_action_count"]
+    physical = claim[
+        "feedback_recovery_physical_response_verified_action_count"
+    ]
+    if (
+        claim["feedback_recovery_action_ledger_schema_version"]
+        != FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+        or type(count) is not int
+        or type(verified) is not int
+        or type(physical) is not int
+        or count < 0
+        or verified != count
+        or physical != count
+        or claim["feedback_recovery_action_coverage_complete"] is not True
+        or claim["feedback_recovery_action_coverage_errors"] != []
+        or not _is_lower_sha256(
+            claim["feedback_recovery_action_ledger_sha256"]
+        )
+        or type(claim["feedback_recovery_dispatch_count"]) is not int
+        or claim["feedback_recovery_dispatch_count"] < count
+        or not _is_lower_sha256(
+            claim["feedback_recovery_dispatch_ledger_sha256"]
+        )
+    ):
+        raise MacroRunnerContractError(
+            f"{label} does not claim exact successful feedback-recovery coverage"
+        )
+    return claim
+
+
+def _validate_feedback_recovery_action_row(
+    row: Mapping[str, Any],
+    *,
+    row_index: int,
+) -> None:
+    label = f"feedback recovery action ledger row {row_index}"
+    if set(row) != _FEEDBACK_RECOVERY_ACTION_ROW_KEYS:
+        missing = sorted(_FEEDBACK_RECOVERY_ACTION_ROW_KEYS - set(row))
+        extra = sorted(set(row) - _FEEDBACK_RECOVERY_ACTION_ROW_KEYS)
+        raise MacroRunnerContractError(
+            f"{label} keys are not exact; missing={missing}, extra={extra}"
+        )
+    stage_action = (row.get("stage"), row.get("action"))
+    if (
+        row.get("schema_version") != FEEDBACK_RECOVERY_ACTION_SCHEMA
+        or row.get("action_index") != row_index
+        or row.get("attempt") != row_index + 1
+        or stage_action
+        not in {
+            ("SAFE_PROBE", "CONSERVATIVE_DIAGNOSTIC_PROBE"),
+            ("RETURN_TO_REFERENCE", "RETURN_TO_IMMUTABLE_REFERENCE"),
+            ("INCREMENT", "BOUNDED_DESCENT_INCREMENT"),
+        }
+        or row.get("leg") not in {"FR", "FL", "RR", "RL"}
+        or row.get("direction_sign") not in {-1, 1}
+        or not _is_lower_sha256(row.get("configuration_sha256"))
+        or not _is_lower_sha256(row.get("centroidal_evidence_sha256"))
+        or not _is_lower_sha256(row.get("feedback_observation_sha256"))
+        or not _is_lower_sha256(row.get("ack_sha256"))
+        or type(row.get("sim_step")) is not int
+        or type(row.get("expected_n_plus_one_sim_step")) is not int
+        or row["expected_n_plus_one_sim_step"] != row["sim_step"] + 1
+        or row.get("n_plus_one_verified") is not True
+        or row.get("n_plus_one_verified_sim_step")
+        != row["expected_n_plus_one_sim_step"]
+        or row.get("physical_response_verified") is not True
+        or row.get("physical_response_sim_step")
+        != row["expected_n_plus_one_sim_step"]
+    ):
+        raise MacroRunnerContractError(f"{label} core identity is invalid")
+    provenance = row.get("command_provenance")
+    if not isinstance(provenance, Mapping):
+        raise MacroRunnerContractError(f"{label} command provenance is missing")
+    if (
+        provenance.get("kind") != "FEEDBACK_RECOVERY"
+        or provenance.get("recovery_stage") != row["stage"]
+        or provenance.get("recovery_action") != row["action"]
+        or provenance.get("recovery_attempt") != row["attempt"]
+        or provenance.get("recovery_leg") != row["leg"]
+        or provenance.get("recovery_joint") != row["joint"]
+        or provenance.get("recovery_direction_sign")
+        != row["direction_sign"]
+        or provenance.get("recovery_configuration_sha256")
+        != row["configuration_sha256"]
+        or provenance.get("recovery_centroidal_evidence_sha256")
+        != row["centroidal_evidence_sha256"]
+        or provenance.get("recovery_feedback_observation_sha256")
+        != row["feedback_observation_sha256"]
+    ):
+        raise MacroRunnerContractError(f"{label} provenance identity drifted")
+    expected_evidence_sha = _sha256_mapping(
+        {
+            "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+            "centroidal_support_evidence_sha256": row[
+                "centroidal_evidence_sha256"
+            ],
+            "feedback_recovery_observation_sha256": row[
+                "feedback_observation_sha256"
+            ],
+        }
+    )
+    if provenance.get("recovery_evidence_sha256") != expected_evidence_sha:
+        raise MacroRunnerContractError(f"{label} evidence-binding SHA drifted")
+    try:
+        dispatch_centroidal = CentroidalSupportEvidence.from_mapping(
+            row["dispatch_centroidal_support_evidence"]
+        )
+        dispatch_feedback = FeedbackRecoveryObservation.from_mapping(
+            row["dispatch_feedback_recovery_observation"]
+        )
+        response_centroidal = CentroidalSupportEvidence.from_mapping(
+            row["physical_response_centroidal_support_evidence"]
+        )
+        response_feedback = FeedbackRecoveryObservation.from_mapping(
+            row["physical_response_feedback_recovery_observation"]
+        )
+    except Exception as exc:
+        raise MacroRunnerContractError(
+            f"{label} strict evidence envelope is invalid"
+        ) from exc
+    expected_step = row["expected_n_plus_one_sim_step"]
+    if (
+        dispatch_centroidal.payload_sha256
+        != row["centroidal_evidence_sha256"]
+        or dispatch_feedback.payload_sha256
+        != row["feedback_observation_sha256"]
+        or response_centroidal.payload_sha256
+        != row["physical_response_centroidal_evidence_sha256"]
+        or response_feedback.payload_sha256
+        != row["physical_response_feedback_observation_sha256"]
+        or dispatch_centroidal.sim_step != row["sim_step"]
+        or dispatch_feedback.sim_step != row["sim_step"]
+        or response_centroidal.sim_step != expected_step
+        or response_feedback.sim_step != expected_step
+        or not math.isclose(
+            dispatch_centroidal.physics_time_s,
+            dispatch_feedback.physics_time_s,
+            rel_tol=0.0,
+            abs_tol=max(1.0e-9, dispatch_centroidal.physics_dt_s * 1.0e-6),
+        )
+        or not math.isclose(
+            response_centroidal.physics_time_s,
+            response_feedback.physics_time_s,
+            rel_tol=0.0,
+            abs_tol=max(1.0e-9, response_centroidal.physics_dt_s * 1.0e-6),
+        )
+    ):
+        raise MacroRunnerContractError(f"{label} evidence tick/SHA binding drifted")
+    readback = row.get("n_plus_one_readback")
+    if (
+        not isinstance(readback, Mapping)
+        or _sha256_mapping(readback) != row.get("n_plus_one_readback_sha256")
+    ):
+        raise MacroRunnerContractError(f"{label} N+1 readback preimage drifted")
+    expected_target_sha = _sha256_mapping(
+        {
+            "schema_version": "fsm50.feedback_recovery_target_map.v1",
+            "servo_targets_deg": dict(
+                response_feedback.readback_servo_targets_deg
+            ),
+            "wheel_targets_rad_s": dict(
+                response_feedback.readback_wheel_targets_rad_s
+            ),
+        }
+    )
+    if (
+        response_feedback.n_plus_one_verified is not True
+        or response_feedback.observed_command_epoch
+        != response_feedback.verified_command_epoch
+        or provenance.get("recovery_target_map_sha256")
+        != expected_target_sha
+    ):
+        raise MacroRunnerContractError(f"{label} N+1 full-map binding drifted")
+    response = row.get("physical_response")
+    if not isinstance(response, Mapping):
+        raise MacroRunnerContractError(f"{label} physical response is missing")
+    if row["action"] == "CONSERVATIVE_DIAGNOSTIC_PROBE":
+        required = {
+            "joint",
+            "direction_sign",
+            "dq_deg",
+            "dx_m",
+            "dz_m",
+            "sign_response_valid",
+            "baseline_preserved",
+            "unsafe_reasons",
+            "n_plus_one_response_verified",
+        }
+    elif row["action"] == "RETURN_TO_IMMUTABLE_REFERENCE":
+        required = {
+            "joint",
+            "direction_sign",
+            "return_error_deg",
+            "n_plus_one_response_verified",
+        }
+        if float(response.get("return_error_deg", float("inf"))) > 0.2:
+            raise MacroRunnerContractError(f"{label} return error exceeds bound")
+    else:
+        required = {
+            "joint",
+            "direction_sign",
+            "baseline_preserved",
+            "unsafe_reasons",
+            "n_plus_one_response_verified",
+        }
+        if (
+            response.get("baseline_preserved") is not True
+            or response.get("unsafe_reasons") != []
+        ):
+            raise MacroRunnerContractError(
+                f"{label} increment does not preserve its physical baseline"
+            )
+    if (
+        set(response) != required
+        or response.get("joint") != row["joint"]
+        or response.get("direction_sign") != row["direction_sign"]
+        or response.get("n_plus_one_response_verified") is not True
+    ):
+        raise MacroRunnerContractError(f"{label} physical response shape is invalid")
 
 
 def _validate_segment_completion_row(
@@ -1287,6 +1581,44 @@ def _validate_successful_segment_completion_ledger(
         raise MacroRunnerContractError(
             "Macro task_inputs macro_controller completion binding is missing"
         )
+    boundary_claims = []
+    for container, label in (
+        (terminal, "raw terminal"),
+        (durable_result, "durable worker result"),
+        (completed, "task_inputs.completed_result"),
+        (controller, "task_inputs.completed_result.macro_controller"),
+    ):
+        claim = {
+            "start_boundary_ack": container.get("start_boundary_ack"),
+            "start_boundary_readback": container.get(
+                "start_boundary_readback"
+            ),
+            "start_boundary_readback_sha256": container.get(
+                "start_boundary_readback_sha256"
+            ),
+        }
+        if not isinstance(claim["start_boundary_ack"], Mapping) or not isinstance(
+            claim["start_boundary_readback"], Mapping
+        ):
+            raise MacroRunnerContractError(
+                f"{label} lacks the durable zero-wheel boundary authority"
+            )
+        boundary_claims.append(claim)
+    if any(
+        not _strict_json_equal(claim, boundary_claims[0])
+        for claim in boundary_claims[1:]
+    ):
+        raise MacroRunnerContractError(
+            "zero-wheel boundary authority differs across terminal/result/task_inputs"
+        )
+    boundary_claim = boundary_claims[0]
+    if (
+        boundary_claim["start_boundary_readback_sha256"]
+        != _sha256_mapping(boundary_claim["start_boundary_readback"])
+    ):
+        raise MacroRunnerContractError(
+            "zero-wheel boundary readback SHA is stale"
+        )
     claims = [
         _successful_ledger_claim(terminal, label="raw terminal", require_aliases=True),
         _successful_ledger_claim(
@@ -1344,6 +1676,258 @@ def _validate_successful_segment_completion_ledger(
     }
 
 
+def _validate_successful_feedback_recovery_ledger(
+    *,
+    terminal: Mapping[str, Any],
+    durable_result: Mapping[str, Any],
+    task_inputs: Mapping[str, Any],
+    request: Mapping[str, Any],
+    bundle: MacroControllerBundle,
+    run_dir: Path,
+) -> dict[str, Any]:
+    completed = task_inputs.get("completed_result")
+    if not isinstance(completed, Mapping):
+        raise MacroRunnerContractError("Macro task_inputs completed_result is missing")
+    controller = completed.get("macro_controller")
+    if not isinstance(controller, Mapping):
+        raise MacroRunnerContractError(
+            "Macro task_inputs macro_controller completion binding is missing"
+        )
+    boundary_claims = [
+        {
+            "start_boundary_ack": container.get("start_boundary_ack"),
+            "start_boundary_readback": container.get(
+                "start_boundary_readback"
+            ),
+            "start_boundary_readback_sha256": container.get(
+                "start_boundary_readback_sha256"
+            ),
+        }
+        for container in (terminal, durable_result, completed, controller)
+    ]
+    if any(
+        not isinstance(claim["start_boundary_ack"], Mapping)
+        or not isinstance(claim["start_boundary_readback"], Mapping)
+        or not _strict_json_equal(claim, boundary_claims[0])
+        for claim in boundary_claims
+    ):
+        raise MacroRunnerContractError(
+            "zero-wheel boundary authority differs across terminal/result/task_inputs"
+        )
+    boundary_claim = boundary_claims[0]
+    if boundary_claim["start_boundary_readback_sha256"] != _sha256_mapping(
+        boundary_claim["start_boundary_readback"]
+    ):
+        raise MacroRunnerContractError("zero-wheel boundary readback SHA is stale")
+    claims = [
+        _successful_feedback_ledger_claim(
+            terminal, label="raw terminal"
+        ),
+        _successful_feedback_ledger_claim(
+            durable_result, label="durable worker result"
+        ),
+        _successful_feedback_ledger_claim(
+            completed, label="task_inputs.completed_result"
+        ),
+        _successful_feedback_ledger_claim(
+            controller,
+            label="task_inputs.completed_result.macro_controller",
+        ),
+    ]
+    if any(not _strict_json_equal(claim, claims[0]) for claim in claims[1:]):
+        raise MacroRunnerContractError(
+            "feedback recovery ledger claims differ across terminal/result/task_inputs"
+        )
+    claim = claims[0]
+    ledger_path = _path_in_run(
+        str(claim["feedback_recovery_action_ledger_path"] or ""), run_dir
+    )
+    if ledger_path != (
+        run_dir / "macro_feedback_recovery_action_ledger.jsonl"
+    ).resolve():
+        raise MacroRunnerContractError(
+            "feedback recovery ledger path is not the canonical in-run filename"
+        )
+    if sha256_file(ledger_path) != claim[
+        "feedback_recovery_action_ledger_sha256"
+    ]:
+        raise MacroRunnerContractError("feedback recovery ledger SHA is stale")
+    dispatch_path = _path_in_run(
+        str(claim["feedback_recovery_dispatch_ledger_path"] or ""), run_dir
+    )
+    if dispatch_path != (run_dir / "macro_dispatch_ledger.jsonl").resolve():
+        raise MacroRunnerContractError(
+            "feedback recovery dispatch ledger path is not canonical"
+        )
+    if sha256_file(dispatch_path) != claim[
+        "feedback_recovery_dispatch_ledger_sha256"
+    ]:
+        raise MacroRunnerContractError(
+            "feedback recovery dispatch ledger SHA is stale"
+        )
+    rows = (
+        []
+        if claim["feedback_recovery_action_count"] == 0
+        and ledger_path.read_bytes() == b""
+        else _strict_jsonl_load(ledger_path)
+    )
+    if len(rows) != claim["feedback_recovery_action_count"]:
+        raise MacroRunnerContractError(
+            "feedback recovery ledger count differs from its successful claim"
+        )
+    for index, row in enumerate(rows):
+        _validate_feedback_recovery_action_row(row, row_index=index)
+    dispatch_rows = (
+        []
+        if claim["feedback_recovery_dispatch_count"] == 0
+        and dispatch_path.read_bytes() == b""
+        else _strict_jsonl_load(dispatch_path)
+    )
+    if len(dispatch_rows) != claim["feedback_recovery_dispatch_count"]:
+        raise MacroRunnerContractError(
+            "feedback recovery dispatch ledger count differs from its claim"
+        )
+    try:
+        request_path = (run_dir / "worker_macro_fsm_request.json").resolve()
+        if not _strict_json_equal(strict_json_load(request_path), dict(request)):
+            raise RuntimeError("durable request differs from runner request")
+        loaded_request = load_worker_macro_fsm_request(request_path)
+        if loaded_request is None:
+            raise RuntimeError("Macro request is disabled")
+        auditor = WorkerMacroFSMSession(
+            loaded_request,
+            worker_session_id="runner-static-feedback-ledger-audit",
+        )
+        auditor.expected_source_actions = auditor._build_expected_source_actions(
+            bundle
+        )
+        auditor.durable_adapter_runtime_instance_id = str(
+            durable_result.get("adapter_runtime_instance_id", "") or ""
+        )
+        if not auditor.durable_adapter_runtime_instance_id:
+            raise RuntimeError(
+                "durable worker result lacks adapter runtime identity"
+            )
+        durable_transform = durable_result.get("servo_command_transform")
+        durable_transform_sha256 = durable_result.get(
+            "servo_command_transform_sha256"
+        )
+        if (
+            not isinstance(durable_transform, Mapping)
+            or set(durable_transform)
+            != {
+                "schema_version",
+                "standing_pose_deg_by_servo",
+                "command_sign_by_servo",
+            }
+            or durable_transform.get("schema_version")
+            != "fsm50.servo_command_transform.v1"
+            or durable_transform_sha256
+            != _sha256_mapping(durable_transform)
+            or not _strict_json_equal(
+                terminal.get("servo_command_transform"),
+                durable_transform,
+            )
+            or terminal.get("servo_command_transform_sha256")
+            != durable_transform_sha256
+        ):
+            raise RuntimeError(
+                "durable servo command transform authority is invalid"
+            )
+        auditor.durable_servo_command_transform = dict(durable_transform)
+        auditor.boundary_ack = dict(boundary_claim["start_boundary_ack"])
+        auditor.boundary_readback = dict(
+            boundary_claim["start_boundary_readback"]
+        )
+        boundary_errors = auditor._durable_target_readback_errors(
+            readback=auditor.boundary_readback,
+            readback_sha256=str(
+                boundary_claim["start_boundary_readback_sha256"] or ""
+            ),
+            expected_servo_targets=auditor.boundary_ack.get(
+                "servo_targets_applied", {}
+            ),
+            expected_wheel_targets=auditor.boundary_ack.get(
+                "wheel_targets_applied", {}
+            ),
+            expected_sim_step=int(
+                auditor.boundary_ack.get("first_physics_step", -1)
+            ),
+            expected_command_epoch=0,
+            expected_batch_id=str(
+                auditor.boundary_ack.get("batch_id", "") or ""
+            ),
+            label="zero-wheel start boundary",
+        )
+        if boundary_errors:
+            raise RuntimeError("; ".join(boundary_errors))
+        auditor.feedback_recovery_action_rows = [dict(row) for row in rows]
+        auditor.feedback_recovery_verified_action_count = len(rows)
+        auditor.dispatch_rows = [dict(row) for row in dispatch_rows]
+        source_consumption_path = (
+            run_dir / "macro_source_action_consumption.jsonl"
+        ).resolve()
+        if (
+            durable_result.get("source_action_consumption_path")
+            != str(source_consumption_path)
+            or not source_consumption_path.is_file()
+            or durable_result.get("source_action_consumption_sha256")
+            != sha256_file(source_consumption_path)
+        ):
+            raise RuntimeError(
+                "durable source-action consumption ledger binding is invalid"
+            )
+        source_rows = _strict_jsonl_load(source_consumption_path)
+        if (
+            durable_result.get("source_action_consumption_count")
+            != len(source_rows)
+        ):
+            raise RuntimeError(
+                "durable source-action consumption count is invalid"
+            )
+        segment_path = (run_dir / "macro_segment_completion_ledger.jsonl").resolve()
+        if (
+            durable_result.get("segment_completion_ledger_path")
+            != str(segment_path)
+            or not segment_path.is_file()
+            or durable_result.get("segment_completion_ledger_sha256")
+            != sha256_file(segment_path)
+        ):
+            raise RuntimeError("durable segment-completion ledger binding is invalid")
+        segment_rows = (
+            []
+            if segment_path.read_bytes() == b""
+            else _strict_jsonl_load(segment_path)
+        )
+        auditor.source_action_consumption_rows = [
+            dict(row) for row in source_rows
+        ]
+        auditor.next_source_action_index = len(source_rows)
+        auditor.segment_completion_rows = [dict(row) for row in segment_rows]
+        auditor.command_dispatch_count = int(
+            durable_result.get("command_dispatch_count", -1)
+        )
+        final_telemetry_row = task_inputs.get("final_telemetry_row")
+        if not isinstance(final_telemetry_row, Mapping):
+            raise RuntimeError("task_inputs final telemetry row is missing")
+        auditor.rows = [dict(final_telemetry_row)]
+        closure_errors = [
+            *auditor._source_action_coverage_errors(),
+            *auditor._feedback_recovery_coverage_errors(),
+            *auditor._dispatch_ownership_errors(),
+        ]
+    except Exception as exc:
+        raise MacroRunnerContractError(
+            "could not independently replay the feedback recovery ledger"
+        ) from exc
+    if closure_errors:
+        raise MacroRunnerContractError(
+            "feedback recovery ledger independent replay failed: "
+            + "; ".join(closure_errors)
+        )
+    return claim
+
+
 def _validate_manifest_segment_completion_binding(
     manifest: Mapping[str, Any], binding: Mapping[str, Any]
 ) -> None:
@@ -1361,6 +1945,26 @@ def _validate_manifest_segment_completion_binding(
         if not _strict_json_equal(manifest.get(key), expected):
             raise MacroRunnerContractError(
                 f"runner manifest segment completion {key} mismatch"
+            )
+
+
+def _validate_manifest_feedback_recovery_binding(
+    manifest: Mapping[str, Any], binding: Mapping[str, Any]
+) -> None:
+    unexpected = sorted(
+        key
+        for key in manifest
+        if str(key).startswith("feedback_recovery_") and key not in binding
+    )
+    if unexpected:
+        raise MacroRunnerContractError(
+            "runner manifest has unexpected feedback-recovery fields: "
+            f"{unexpected}"
+        )
+    for key, expected in binding.items():
+        if not _strict_json_equal(manifest.get(key), expected):
+            raise MacroRunnerContractError(
+                f"runner manifest feedback recovery {key} mismatch"
             )
 
 
@@ -1389,7 +1993,7 @@ def validate_macro_terminal(
         "bundle_sha256": request["bundle_sha256"],
         "run_dir": str(run_dir.resolve()),
         "video_writer_quiesced": True,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
         "physics_dt_s": 1.0 / 120.0,
         "worker_pid": worker_binding.get("worker_pid"),
         "worker_session_id": worker_binding.get("worker_session_id"),
@@ -1433,7 +2037,7 @@ def validate_macro_terminal(
         "run_dir": str(run_dir.resolve()),
         "macro_fsm_complete": complete,
         "video_writer_quiesced": True,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
         "physics_dt_s": 1.0 / 120.0,
         "worker_pid": worker_binding.get("worker_pid"),
         "worker_session_id": worker_binding.get("worker_session_id"),
@@ -1466,6 +2070,14 @@ def validate_macro_terminal(
             request=request,
             run_dir=run_dir,
             bundle=bundle,
+        )
+        _validate_successful_feedback_recovery_ledger(
+            terminal=result,
+            durable_result=durable_result,
+            task_inputs=task_inputs,
+            request=request,
+            bundle=bundle,
+            run_dir=run_dir,
         )
     return result
 
@@ -1707,6 +2319,7 @@ def run_one_macro(
     terminal: dict[str, Any] = {}
     terminal_ack: dict[str, Any] = {}
     segment_completion_binding: dict[str, Any] = {}
+    feedback_recovery_binding: dict[str, Any] = {}
     shutdown_outcome: dict[str, Any] = {}
     shutdown_verified = False
     error = ""
@@ -1788,6 +2401,10 @@ def run_one_macro(
                 require_aliases=True,
             ),
         }
+        feedback_recovery_binding = _successful_feedback_ledger_claim(
+            terminal,
+            label="validated raw terminal",
+        )
         terminal_ack = wait_for_operation_ack(
             client,
             operation="macro_fsm",
@@ -1861,6 +2478,7 @@ def run_one_macro(
         "terminal": _jsonable(terminal),
         "terminal_ack": _jsonable(terminal_ack),
         **_jsonable(segment_completion_binding),
+        **_jsonable(feedback_recovery_binding),
         "controller_complete": controller_complete,
         "manual_review_status": (
             "NOT_EVALUATED_PENDING_SHA_BOUND_VIDEO_REVIEW"
@@ -2170,7 +2788,7 @@ def review_run(*, run_dir: str | Path, verdict_path: str | Path) -> dict[str, An
         "trial_index": trial_index,
         "capture_video": True,
         "video_fps": DEFAULT_VIDEO_FPS,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
     }
     for key, expected in request_expected.items():
         if request.get(key) != expected:
@@ -2199,6 +2817,13 @@ def review_run(*, run_dir: str | Path, verdict_path: str | Path) -> dict[str, An
                 require_aliases=True,
             ),
         },
+    )
+    _validate_manifest_feedback_recovery_binding(
+        manifest,
+        _successful_feedback_ledger_claim(
+            terminal,
+            label="reviewed raw terminal",
+        ),
     )
     _validate_terminal_ack(
         dict(manifest.get("terminal_ack", {}) or {}),
@@ -2491,7 +3116,7 @@ def _validate_reviewed_gate_c_attempt(
         "trial_index": expected_trial_index,
         "capture_video": True,
         "video_fps": DEFAULT_VIDEO_FPS,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
     }
     for key, expected in request_expected.items():
         if request.get(key) != expected:
@@ -2519,6 +3144,13 @@ def _validate_reviewed_gate_c_attempt(
         ),
     }
     _validate_manifest_segment_completion_binding(manifest, ledger_binding)
+    _validate_manifest_feedback_recovery_binding(
+        manifest,
+        _successful_feedback_ledger_claim(
+            terminal,
+            label="Gate-C closure raw terminal",
+        ),
+    )
     _validate_terminal_ack(
         dict(manifest.get("terminal_ack", {}) or {}),
         terminal=terminal,

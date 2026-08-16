@@ -237,6 +237,7 @@ class PlaybackFailureVisibilityTest(unittest.TestCase):
             "accepted": True,
             "plan_id": manager.worker_plan_id,
             "plan_sha256": plan.plan_sha256,
+            "execution_semantics": plan.execution_semantics,
             "event_count": len(plan.events),
             "segment_count": len(plan.segments),
             "worker_session_id": "session-visible-failure",

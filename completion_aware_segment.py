@@ -24,6 +24,11 @@ ACTUATOR_DIVERGENCE_WINDOW_S = 1.50
 CONTACT_RESIDUAL_HARD_CAP_DEG = 3.0
 SERVO_STALL_WINDOW_S = 0.75
 SERVO_IMPROVEMENT_EPSILON_DEG = 0.05
+MEASURED_ENDPOINT_V1 = "measured_endpoint_v1"
+RECORDED_TIMELINE_OPEN_LOOP_V1 = "recorded_timeline_open_loop_v1"
+EXECUTION_SEMANTICS = frozenset(
+    {MEASURED_ENDPOINT_V1, RECORDED_TIMELINE_OPEN_LOOP_V1}
+)
 
 
 def _finite_nonnegative(value: Any, *, label: str) -> float:
@@ -288,6 +293,7 @@ class CompletionAwareSegmentExecutor:
         servo_stall_window_s: float = SERVO_STALL_WINDOW_S,
         servo_improvement_epsilon_deg: float = SERVO_IMPROVEMENT_EPSILON_DEG,
         servo_completion_velocity_deg_s: float = SERVO_COMPLETION_VELOCITY_DEG_S,
+        execution_semantics: str = MEASURED_ENDPOINT_V1,
     ) -> None:
         self.servo_position_tolerance_deg = _finite_nonnegative(
             servo_position_tolerance_deg,
@@ -321,7 +327,30 @@ class CompletionAwareSegmentExecutor:
         self.servo_tracking_hard_liveness_s = (
             self.actuator_divergence_window_s + self.servo_stall_window_s
         )
+        self.execution_semantics = self._validate_execution_semantics(
+            execution_semantics
+        )
         self.reset()
+
+    @staticmethod
+    def _validate_execution_semantics(value: Any) -> str:
+        if type(value) is not str or value not in EXECUTION_SEMANTICS:
+            raise ValueError(
+                "execution_semantics must be one of "
+                f"{sorted(EXECUTION_SEMANTICS)}"
+            )
+        return value
+
+    def configure_execution_semantics(self, value: str) -> None:
+        if self.spec is not None and (
+            self.last_decision is None
+            or self.last_decision.kind
+            not in {SegmentDecisionKind.COMPLETE, SegmentDecisionKind.FAIL}
+        ):
+            raise RuntimeError(
+                "cannot change execution_semantics while a segment is active"
+            )
+        self.execution_semantics = self._validate_execution_semantics(value)
 
     def reset(self) -> None:
         self.spec: SegmentCompletionSpec | None = None
@@ -569,9 +598,19 @@ class CompletionAwareSegmentExecutor:
                 for value in velocities.values()
             )
         )
-        servo_done = reference_done
+        recorded_timeline_open_loop = bool(
+            self.execution_semantics == RECORDED_TIMELINE_OPEN_LOOP_V1
+        )
+        servo_done = bool(
+            not target_keys
+            or (
+                servo_planned_done
+                and not measurement_error
+                and (recorded_timeline_open_loop or reference_done)
+            )
+        )
         contact_grace_done = False
-        if contact_candidate:
+        if contact_candidate and not recorded_timeline_open_loop:
             contact_grace_done = bool(
                 contact_extension >= self.contact_residual_grace_s
                 and max_error
@@ -602,12 +641,22 @@ class CompletionAwareSegmentExecutor:
         )
         failure_reason = ""
         failure_code = ""
-        phase = "waiting"
+        phase = (
+            RECORDED_TIMELINE_OPEN_LOOP_V1
+            if recorded_timeline_open_loop
+            else "waiting"
+        )
 
         if measurement_error:
             failure_reason = "invalid_joint_state"
             failure_code = measurement_error
-        elif not segment_done and servo_planned_done and target_keys and not servo_done:
+        elif (
+            not recorded_timeline_open_loop
+            and not segment_done
+            and servo_planned_done
+            and target_keys
+            and not servo_done
+        ):
             within_recorded_tolerance = bool(
                 max_error > self.servo_position_tolerance_deg
                 and max_error <= spec.servo_tolerance_deg
@@ -734,6 +783,7 @@ class CompletionAwareSegmentExecutor:
 
     def snapshot(self) -> dict[str, Any]:
         return {
+            "execution_semantics": self.execution_semantics,
             "active_spec": None if self.spec is None else self.spec.to_mapping(),
             "start_elapsed_s": self.start_elapsed_s,
             "start_sim_time_s": self.start_sim_time_s,

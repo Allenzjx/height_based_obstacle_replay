@@ -1,0 +1,189 @@
+{
+  "current_fsm": {
+    "dimensions": [
+      1280,
+      720
+    ],
+    "fps": 15.0,
+    "frame_count": 1361,
+    "ledger": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\viewport_frame_ledger.jsonl",
+    "ledger_sha256": "688460624e2e4694ffd9fde3823144e31b6cae6e8da55f30d50a26dec349fa74",
+    "manifest": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\viewport_buffer_video_manifest.json",
+    "phase_spans": {
+      "S10_POSTURE_RECOVERY": [
+        1322,
+        1353
+      ],
+      "S1_APPROACH_AND_PRE_FR_SHIFT": [
+        0,
+        213
+      ],
+      "S2_FR_TRAVERSE": [
+        213,
+        330
+      ],
+      "S3_FL_TRAVERSE": [
+        330,
+        874
+      ],
+      "S6_RR_TRAVERSE": [
+        877,
+        1034
+      ],
+      "S8_RL_COM_SHIFT_AND_TRAVERSE": [
+        1034,
+        1153
+      ],
+      "S9_FINAL_ADVANCE": [
+        1153,
+        1322
+      ]
+    },
+    "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438",
+    "telemetry": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\minimal_macro_telemetry.jsonl",
+    "telemetry_sha256": "72e2bedc991c455e318865aa92f2b62e14a1ff042b93fa54bc622915d2c805ea",
+    "video": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\actual_viewport_video.mp4",
+    "video_sha256": "9a446fbfab7aae0ae84d167e5ac15e1bf38a3495582c7aa04d884fb27fed00f7"
+  },
+  "ffmpeg": "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS (2)\\FloXpress\\bin\\ffmpeg.exe",
+  "limitations": [
+    "Visual comparison does not establish a true whole-body COM measurement.",
+    "Visual comparison does not establish filtered/force-based diagonal support evidence.",
+    "The current baseline predates the proposed feedback-landing S10 redesign; it is not proof of that new logic."
+  ],
+  "offline_only": true,
+  "phase_alignment": [
+    {
+      "aligned_frames": 213,
+      "fsm_frame_span": [
+        0,
+        213
+      ],
+      "phase": "S1_APPROACH_AND_PRE_FR_SHIFT",
+      "recording_frame_span": [
+        0,
+        213
+      ]
+    },
+    {
+      "aligned_frames": 119,
+      "fsm_frame_span": [
+        213,
+        330
+      ],
+      "phase": "S2_FR_TRAVERSE",
+      "recording_frame_span": [
+        213,
+        332
+      ]
+    },
+    {
+      "aligned_frames": 550,
+      "fsm_frame_span": [
+        330,
+        874
+      ],
+      "phase": "S3_FL_TRAVERSE",
+      "recording_frame_span": [
+        332,
+        882
+      ]
+    },
+    {
+      "aligned_frames": 157,
+      "fsm_frame_span": [
+        877,
+        1034
+      ],
+      "phase": "S6_RR_TRAVERSE",
+      "recording_frame_span": [
+        882,
+        1038
+      ]
+    },
+    {
+      "aligned_frames": 119,
+      "fsm_frame_span": [
+        1034,
+        1153
+      ],
+      "phase": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+      "recording_frame_span": [
+        1038,
+        1152
+      ]
+    },
+    {
+      "aligned_frames": 169,
+      "fsm_frame_span": [
+        1153,
+        1322
+      ],
+      "phase": "S9_FINAL_ADVANCE",
+      "recording_frame_span": [
+        1152,
+        1320
+      ]
+    },
+    {
+      "aligned_frames": 36,
+      "fsm_frame_span": [
+        1322,
+        1353
+      ],
+      "phase": "S10_POSTURE_RECOVERY",
+      "recording_frame_span": [
+        1320,
+        1356
+      ]
+    }
+  ],
+  "recording": {
+    "dimensions": [
+      1280,
+      720
+    ],
+    "fps": 15.0,
+    "frame_count": 1364,
+    "ledger": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\viewport_frame_ledger.jsonl",
+    "ledger_sha256": "621612349203514cb2181396c57601f657c534c025dfc1a6956d91158059e6b7",
+    "manifest": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\viewport_buffer_video_manifest.json",
+    "phase_spans": {
+      "S10_POSTURE_RECOVERY": [
+        1320,
+        1356
+      ],
+      "S1_APPROACH_AND_PRE_FR_SHIFT": [
+        0,
+        213
+      ],
+      "S2_FR_TRAVERSE": [
+        213,
+        332
+      ],
+      "S3_FL_TRAVERSE": [
+        332,
+        882
+      ],
+      "S6_RR_TRAVERSE": [
+        882,
+        1038
+      ],
+      "S8_RL_COM_SHIFT_AND_TRAVERSE": [
+        1038,
+        1152
+      ],
+      "S9_FINAL_ADVANCE": [
+        1152,
+        1320
+      ]
+    },
+    "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a",
+    "telemetry": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\minimal_telemetry.jsonl",
+    "telemetry_sha256": "e8be69e66d448fac1b9044125d638f4808e5ecec8af49a151f7f30ccb734cd56",
+    "video": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\actual_viewport_video.mp4",
+    "video_sha256": "0031f043148db9a68170f31e19154203e99ce4e9337976d65a483b2653a8771b"
+  },
+  "schema_version": "fsm50.visual_comparison.v1",
+  "tool_sha256": "2e73c4781ae5bc201fda03bb3023e0b56385d2b786a8b29a79abc890fbdee80d"
+}

@@ -1045,7 +1045,7 @@ def _validate_reviewed_reference(
         "trial_index": 0,
         "capture_video": True,
         "video_fps": DEFAULT_VIDEO_FPS,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
     }.items():
         if request.get(key) != expected:
             raise ResidualRunnerContractError(

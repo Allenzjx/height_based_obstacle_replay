@@ -36,7 +36,12 @@ except ImportError:  # pragma: no cover - lets the stdlib smoke harness run too
 
     pytest = _PytestFallback()
 
-from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from command_model import (
+    JOINT_COMMAND_SIGN,
+    SERVO_JOINT_NAMES,
+    WHEEL_JOINT_NAMES,
+    command_limits_for_servo,
+)
 from fsm_50mm_recording_derived_v3.fsm50_direct_command_residual import (
     RESIDUAL_ACTION_NAMES,
     ZERO_RESIDUAL_ACTION,
@@ -44,13 +49,27 @@ from fsm_50mm_recording_derived_v3.fsm50_direct_command_residual import (
     ZeroResidualPolicy,
     canonical_mapping_sha256,
 )
-from fsm_50mm_recording_derived_v3.fsm50_macro_controller import MacroObservation
+from fsm_50mm_recording_derived_v3.fsm50_macro_controller import (
+    FeedbackRecoveryObservation,
+    MacroObservation,
+)
+from fsm_50mm_recording_derived_v3.filtered_wheel_contact import (
+    FILTERED_SURFACES,
+    FilteredWheelContactSensorBank,
+    wheel_contact_sensor_specs,
+)
+from fsm_50mm_recording_derived_v3.nonwheel_obstacle_contact import (
+    NonWheelObstacleContactSensorBank,
+    NonWheelRigidBodySpec,
+    WheelAndNonWheelContactSensorBank,
+)
 from fsm_50mm_recording_derived_v3.worker_macro_fsm_session import (
     AUTHORIZED_GATE_D_SOURCE_VERSIONS,
     CANONICAL_GATE_C_SOURCE_VERSION,
     GATE_D_TRIAL_KIND,
     REQUEST_SCHEMA,
     WorkerMacroFSMSession,
+    configure_scene_for_macro_fsm,
     load_worker_macro_fsm_request,
     validate_worker_macro_start_binding,
 )
@@ -89,28 +108,64 @@ class _Adapter:
             "rear_right_wheel",
         ]
         self.write_calls = 0
+        body_points = np.asarray(
+            [
+                [0.80, -0.20, 0.05],
+                [0.80, 0.20, 0.05],
+                [0.40, -0.20, 0.05],
+                [0.40, 0.20, 0.05],
+            ],
+            dtype=float,
+        )
+        body_pose = np.concatenate(
+            (body_points, np.tile(np.asarray([[1.0, 0.0, 0.0, 0.0]]), (4, 1))),
+            axis=1,
+        )
+        data = SimpleNamespace(
+            root_pose_w=np.asarray([[0.5, 0.0, 0.20, 1.0, 0.0, 0.0, 0.0]]),
+            root_vel_w=np.zeros((1, 6)),
+            joint_pos=np.zeros((1, len(names))),
+            joint_vel=np.zeros((1, len(names))),
+            body_link_state_w=np.asarray(
+                [
+                    [
+                        [0.80, -0.20, 0.05] + [0.0] * 10,
+                        [0.80, 0.20, 0.05] + [0.0] * 10,
+                        [0.40, -0.20, 0.05] + [0.0] * 10,
+                        [0.40, 0.20, 0.05] + [0.0] * 10,
+                    ]
+                ]
+            ),
+            body_names=bodies,
+            _sim_timestamp=0.0,
+            _body_com_pose_w=SimpleNamespace(timestamp=0.0),
+            _body_com_vel_w=SimpleNamespace(timestamp=0.0),
+            _body_com_acc_w=SimpleNamespace(timestamp=0.0),
+            body_com_pos_w=body_points.reshape(1, 4, 3),
+            body_com_pose_w=body_pose.reshape(1, 4, 7),
+            body_com_lin_vel_w=np.zeros((1, 4, 3)),
+            body_com_vel_w=np.zeros((1, 4, 6)),
+            body_com_lin_acc_w=np.zeros((1, 4, 3)),
+            body_com_acc_w=np.zeros((1, 4, 6)),
+        )
+        root_view = SimpleNamespace(
+            shared_metatype=SimpleNamespace(link_names=bodies),
+            get_masses=lambda: np.ones((1, 4), dtype=float),
+            get_inertias=lambda: np.tile(
+                np.asarray([[0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]]),
+                (1, 4, 1),
+            ),
+        )
         self.robot = SimpleNamespace(
             joint_names=names,
             body_names=bodies,
+            num_bodies=4,
+            num_instances=1,
+            root_physx_view=root_view,
             write_data_to_sim=self._write,
-            data=SimpleNamespace(
-                root_pose_w=np.asarray([[0.5, 0.0, 0.20, 1.0, 0.0, 0.0, 0.0]]),
-                root_vel_w=np.zeros((1, 6)),
-                joint_pos=np.zeros((1, len(names))),
-                joint_vel=np.zeros((1, len(names))),
-                body_link_state_w=np.asarray(
-                    [
-                        [
-                            [0.80, -0.20, 0.05] + [0.0] * 10,
-                            [0.80, 0.20, 0.05] + [0.0] * 10,
-                            [0.40, -0.20, 0.05] + [0.0] * 10,
-                            [0.40, 0.20, 0.05] + [0.0] * 10,
-                        ]
-                    ]
-                ),
-            ),
+            data=data,
         )
-        self.sim_time = 0.0
+        self._sim_time = 0.0
         self.sim_steps = 0
         self.physics_dt_s = 1.0 / 120.0
         self.sim = SimpleNamespace(get_physics_dt=lambda: self.physics_dt_s)
@@ -147,9 +202,25 @@ class _Adapter:
             name: {"min_rad": -2.0, "max_rad": 2.0}
             for name in SERVO_JOINT_NAMES
         }
+        self.event_log = None
 
     def _write(self):
         self.write_calls += 1
+
+    @property
+    def sim_time(self):
+        return self._sim_time
+
+    @sim_time.setter
+    def sim_time(self, value):
+        self._sim_time = float(value)
+        if hasattr(self, "robot"):
+            self._sync_physics_buffers()
+
+    def _sync_physics_buffers(self):
+        self.robot.data._sim_timestamp = self.sim_time
+        for name in ("_body_com_pose_w", "_body_com_vel_w", "_body_com_acc_w"):
+            getattr(self.robot.data, name).timestamp = self.sim_time
 
     def _render_step_timing(self):
         return (8.0 / 120.0, 8)
@@ -202,7 +273,9 @@ class _Adapter:
         if self.readback_target_mismatch:
             canonical_servos[SERVO_JOINT_NAMES[0]] += 0.5
         servo_rad = {
-            name: math.radians(float(canonical_servos[name]))
+            name: math.radians(
+                float(JOINT_COMMAND_SIGN[name]) * float(canonical_servos[name])
+            )
             for name in SERVO_JOINT_NAMES
         }
         position_targets = {
@@ -232,6 +305,8 @@ class _Adapter:
         }
 
     def capture_macro_safety_evidence(self, *, scene_handle):
+        if self.event_log is not None:
+            self.event_log.append(("capture_macro_safety_evidence", self.sim_steps))
         return {
             "available": True,
             "dangerous_body_collision": False,
@@ -268,8 +343,8 @@ class _Adapter:
         return None
 
     @staticmethod
-    def command_to_actual_target_deg(_name, value):
-        return float(value)
+    def command_to_actual_target_deg(name, value):
+        return float(JOINT_COMMAND_SIGN[name]) * float(value)
 
     @staticmethod
     def get_final_target_limits_deg(_name):
@@ -294,6 +369,163 @@ class _Adapter:
         if isinstance(self.end_tracking_result, dict):
             return dict(self.end_tracking_result)
         return self.end_tracking_result
+
+
+class _FakeRawContactView:
+    def __init__(self, data):
+        self._data = data
+        self.sensor_count = int(np.asarray(data.force_matrix_w).shape[0])
+        self.filter_count = int(np.asarray(data.force_matrix_w).shape[2])
+        self.max_contact_data_count = 8
+
+    @staticmethod
+    def _layout(vector_rows, point_rows):
+        capacity = 8
+        values = np.full((capacity, 3), np.nan, dtype=float)
+        points = np.full((capacity, 3), np.nan, dtype=float)
+        counts = np.zeros((1, 2), dtype=np.int64)
+        starts = np.zeros((1, 2), dtype=np.int64)
+        cursor = 0
+        for filter_index, (vector, point) in enumerate(zip(vector_rows, point_rows)):
+            starts[0, filter_index] = cursor
+            if vector is None:
+                continue
+            values[cursor] = np.asarray(vector, dtype=float)
+            points[cursor] = np.asarray(point, dtype=float)
+            counts[0, filter_index] = 1
+            cursor += 1
+        return values, points, counts, starts
+
+    def check(self):
+        return True
+
+    def get_contact_data(self, *, dt):
+        assert float(dt) > 0.0
+        aggregate_forces = np.asarray(self._data.force_matrix_w, dtype=float)[0, 0]
+        aggregate_points = np.asarray(self._data.contact_pos_w, dtype=float)[0, 0]
+        raw_forces = []
+        raw_points = []
+        for force, point in zip(aggregate_forces, aggregate_points):
+            magnitude = float(np.linalg.norm(force))
+            if magnitude > 0.0:
+                raw_forces.append(np.asarray(force, dtype=float))
+                raw_points.append(np.asarray(point, dtype=float))
+            else:
+                raw_forces.append(None)
+                raw_points.append(None)
+        vectors, points, counts, starts = self._layout(raw_forces, raw_points)
+        magnitudes = np.full((self.max_contact_data_count, 1), np.nan, dtype=float)
+        normals = np.full((self.max_contact_data_count, 3), np.nan, dtype=float)
+        separations = np.full((self.max_contact_data_count, 1), np.nan, dtype=float)
+        for index in range(int(np.sum(counts))):
+            magnitude = float(np.linalg.norm(vectors[index]))
+            magnitudes[index, 0] = magnitude
+            normals[index] = vectors[index] / magnitude
+            separations[index, 0] = 0.0
+        return magnitudes, points, normals, separations, counts, starts
+
+    def get_friction_data(self, *, dt):
+        assert float(dt) > 0.0
+        aggregate_forces = np.asarray(self._data.friction_forces_w, dtype=float)[0, 0]
+        aggregate_points = np.asarray(self._data.contact_pos_w, dtype=float)[0, 0]
+        raw_forces = []
+        raw_points = []
+        for force, point in zip(aggregate_forces, aggregate_points):
+            if float(np.linalg.norm(force)) > 0.0:
+                raw_forces.append(np.asarray(force, dtype=float))
+                raw_points.append(np.asarray(point, dtype=float))
+            else:
+                raw_forces.append(None)
+                raw_points.append(None)
+        return self._layout(raw_forces, raw_points)
+
+
+class _FakeContactSensor:
+    def __init__(self, data, *, prim_path, filter_paths, event_log=None):
+        self.data = data
+        self._timestamp = np.asarray([0.0], dtype=float)
+        self._timestamp_last_update = np.asarray([0.0], dtype=float)
+        self.cfg = SimpleNamespace(
+            prim_path=str(prim_path),
+            filter_prim_paths_expr=list(filter_paths),
+        )
+        self.event_log = event_log
+        self.contact_physx_view = _FakeRawContactView(data)
+
+    def update(self, dt, force_recompute=False):
+        if self.event_log is not None:
+            self.event_log.append(
+                ("child_contact_update", float(dt), bool(force_recompute))
+            )
+        self._timestamp += float(dt)
+        self._timestamp_last_update[:] = self._timestamp
+
+    def reset(self, _env_ids=None):
+        self._timestamp[:] = 0.0
+        self._timestamp_last_update[:] = 0.0
+
+
+class _FakeCombinedContactBank(WheelAndNonWheelContactSensorBank):
+    def __init__(self, *, event_log=None):
+        points = {
+            "FL": (0.80, -0.20, 0.0),
+            "FR": (0.80, 0.20, 0.0),
+            "RL": (0.40, -0.20, 0.0),
+            "RR": (0.40, 0.20, 0.0),
+        }
+        wheel_sensors = {}
+        for spec in wheel_contact_sensor_specs():
+            normal = np.zeros((1, 1, 2, 3), dtype=float)
+            normal[0, 0, 0, :] = (0.0, 0.0, 9.81)
+            contact = np.full((1, 1, 2, 3), np.nan, dtype=float)
+            contact[0, 0, 0, :] = points[spec.leg]
+            friction = np.zeros((1, 1, 2, 3), dtype=float)
+            wheel_sensors[spec.leg] = _FakeContactSensor(
+                SimpleNamespace(
+                    net_forces_w=np.asarray([[[0.0, 0.0, 9.81]]]),
+                    force_matrix_w=normal,
+                    contact_pos_w=contact,
+                    friction_forces_w=friction,
+                ),
+                prim_path=spec.prim_path,
+                filter_paths=[path for _name, path in FILTERED_SURFACES],
+                event_log=event_log,
+            )
+        wheel_bank = FilteredWheelContactSensorBank(
+            wheel_sensors,
+            wheel_contact_sensor_specs(),
+            force_threshold_n=1.0,
+        )
+        nonwheel_spec = NonWheelRigidBodySpec(
+            body_name="base_link",
+            prim_path="/World/WLRRobot/base_link",
+        )
+        nonwheel_sensor = _FakeContactSensor(
+            SimpleNamespace(
+                net_forces_w=np.zeros((1, 1, 3), dtype=float),
+                force_matrix_w=np.zeros((1, 1, 1, 3), dtype=float),
+                contact_pos_w=np.full((1, 1, 1, 3), np.nan, dtype=float),
+                friction_forces_w=np.zeros((1, 1, 1, 3), dtype=float),
+            ),
+            prim_path=nonwheel_spec.prim_path,
+            filter_paths=["/World/Obstacle"],
+            event_log=event_log,
+        )
+        nonwheel_bank = NonWheelObstacleContactSensorBank(
+            {nonwheel_spec.prim_path: nonwheel_sensor},
+            (nonwheel_spec,),
+            obstacle_prim_path="/World/Obstacle",
+            force_threshold_n=1.0,
+        )
+        super().__init__(wheel_bank, nonwheel_bank)
+        self.event_log = event_log
+
+    def update(self, dt, force_recompute=False):
+        if self.event_log is not None:
+            self.event_log.append(
+                ("combined_contact_update", float(dt), bool(force_recompute))
+            )
+        super().update(dt, force_recompute=force_recompute)
 
 
 def _source_provenance(
@@ -335,6 +567,17 @@ def _source_provenance(
             for key, value in identity_payload.items()
             if key != "schema_version"
         },
+        "recovery_stage": "",
+        "recovery_action": "",
+        "recovery_evidence_sha256": "",
+        "recovery_centroidal_evidence_sha256": "",
+        "recovery_feedback_observation_sha256": "",
+        "recovery_target_map_sha256": "",
+        "recovery_direction_sign": None,
+        "recovery_attempt": None,
+        "recovery_leg": "",
+        "recovery_joint": "",
+        "recovery_configuration_sha256": "",
     }
 
 
@@ -546,6 +789,17 @@ def _decision(
             "commands": [],
             "dispatch_kind": "",
             "sequence_index": None,
+            "recovery_stage": "",
+            "recovery_action": "",
+            "recovery_evidence_sha256": "",
+            "recovery_centroidal_evidence_sha256": "",
+            "recovery_feedback_observation_sha256": "",
+            "recovery_target_map_sha256": "",
+            "recovery_direction_sign": None,
+            "recovery_attempt": None,
+            "recovery_leg": "",
+            "recovery_joint": "",
+            "recovery_configuration_sha256": "",
         }
     )
     consumed = (
@@ -757,7 +1011,7 @@ def _request_payload(root: Path) -> dict:
         "capture_video": True,
         "post_run_settle_s": 1.0 / 120.0,
         "timeout_s": 10.0,
-        "filtered_contact_bank_enabled": False,
+        "filtered_contact_bank_enabled": True,
     }
 
 
@@ -770,6 +1024,15 @@ def _load_request(root: Path):
     return request, payload
 
 
+def _bind_fake_contact_scene(session, scene, request, *, event_log=None):
+    scene.config.telemetry_contact_sensors_enabled = False
+    scene.config.contact_sensor_factory = None
+    configure_scene_for_macro_fsm(scene.config, request)
+    scene.contact_sensor = _FakeCombinedContactBank(event_log=event_log)
+    scene.contact_sensor_error = ""
+    session.bind_filtered_contact_bank_scene(scene)
+
+
 def _runtime(
     request,
     controller=None,
@@ -777,8 +1040,10 @@ def _runtime(
     *,
     residual_policy=None,
     residual_contract_provider=None,
+    contact_event_log=None,
 ):
     adapter = _Adapter()
+    adapter.event_log = contact_event_log
     scene = SimpleNamespace(
         config=SimpleNamespace(
             obstacle_front_x=1.0,
@@ -786,6 +1051,10 @@ def _runtime(
             obstacle_length=1.0,
             obstacle_width=2.0,
             ground_z_m=0.0,
+            ground_static_friction=1.25,
+            ground_dynamic_friction=1.05,
+            obstacle_static_friction=1.20,
+            obstacle_dynamic_friction=1.00,
         )
     )
     chosen = controller or _Controller()
@@ -799,6 +1068,12 @@ def _runtime(
         recorder_factory=_Recorder,
         residual_policy=residual_policy,
         residual_contract_provider=residual_contract_provider,
+    )
+    _bind_fake_contact_scene(
+        session,
+        scene,
+        request,
+        event_log=contact_event_log,
     )
     session.prepare_after_adapter(
         adapter=adapter,
@@ -819,6 +1094,22 @@ def _on_step(session, adapter, dt=1.0 / 120.0):
     session.on_step(adapter, dt)
 
 
+def _prime_current_target_readback(session, adapter):
+    servos = dict(adapter.joint_command_deg)
+    wheels = dict(adapter.wheel_speeds)
+    session.last_target_readback = session._capture_and_validate_target_readback(
+        adapter,
+        servo_targets=servos,
+        wheel_targets=wheels,
+        expected_sim_step=adapter.sim_steps,
+    )
+    session.last_verified_servo_targets = servos
+    session.last_verified_wheel_targets = wheels
+    observed_epoch = int(session.last_epoch if session.last_epoch is not None else 0)
+    session.last_epoch = observed_epoch
+    session.last_verified_command_epoch = observed_epoch
+
+
 def _advance_until_terminal(session, adapter, *, first_step=1, last_step=128):
     for step in range(first_step, last_step + 1):
         adapter.sim_steps = step
@@ -833,6 +1124,7 @@ def _advance_until_terminal(session, adapter, *, first_step=1, last_step=128):
 def _observe_completion_boundary(session, adapter, *, step):
     adapter.sim_steps = step
     adapter.sim_time = step / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         token = session._observe_active_segment_completion(
@@ -857,6 +1149,17 @@ def _non_source_provenance(kind="NONE"):
         "commands": [],
         "dispatch_kind": "",
         "sequence_index": None,
+        "recovery_stage": "",
+        "recovery_action": "",
+        "recovery_evidence_sha256": "",
+        "recovery_centroidal_evidence_sha256": "",
+        "recovery_feedback_observation_sha256": "",
+        "recovery_target_map_sha256": "",
+        "recovery_direction_sign": None,
+        "recovery_attempt": None,
+        "recovery_leg": "",
+        "recovery_joint": "",
+        "recovery_configuration_sha256": "",
     }
 
 
@@ -1034,6 +1337,7 @@ def _prime_manual_session(
     first = session.expected_source_actions[0]
     adapter.sim_steps = 2
     adapter.sim_time = 2.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session._process_decision(
         adapter,
         session._observation_payload(adapter),
@@ -1051,6 +1355,7 @@ def _prime_manual_session(
 def _process_expected_source_action(session, adapter, expected, *, step, epoch):
     adapter.sim_steps = step
     adapter.sim_time = step / 120.0
+    _prime_current_target_readback(session, adapter)
     provenance = expected["command_provenance"]
     if provenance["dispatch_kind"] == "segment_start":
         binding = expected["segment_completion_binding"]
@@ -1231,6 +1536,1973 @@ def _coalesced_transition_case(
         completion_control=control,
     )
     return session, adapter, decision, step
+
+
+def test_combined_contact_refresh_is_atomic_once_per_tick_and_tracks_dwell(
+    tmp_path: Path,
+):
+    legs = ("FL", "FR", "RL", "RR")
+    request, _payload = _load_request(tmp_path)
+    events: list[tuple] = []
+    session, adapter, _controller = _runtime(
+        request,
+        contact_event_log=events,
+    )
+
+    def capture_runtime_safety(*, scene_handle):
+        assert scene_handle is session.scene_handle
+        assert session.filtered_contact_last_sim_step == adapter.sim_steps
+        events.append(("capture_macro_runtime_safety_evidence", adapter.sim_steps))
+        return {
+            "available": False,
+            "dangerous_body_collision": None,
+            "severe_penetration": None,
+            "source": "TEST_UNAVAILABLE_RUNTIME_SAFETY",
+            "sample_sim_step": adapter.sim_steps,
+            "error": "test runtime safety is unavailable",
+        }
+
+    adapter.capture_macro_runtime_safety_evidence = capture_runtime_safety
+
+    events.clear()
+    session.start()
+    assert [row for row in events if row[0] == "combined_contact_update"] == [
+        ("combined_contact_update", 0.0, True)
+    ]
+    assert events.index(("combined_contact_update", 0.0, True)) < events.index(
+        ("capture_macro_runtime_safety_evidence", 0)
+    )
+    first = dict(session.filtered_contact_sample)
+    assert first["sample_epoch"] == 1
+    assert first["sample_sim_step"] == 0
+    assert first["surface_kind_by_leg"] == {leg: "GROUND" for leg in legs}
+    assert first["surface_dwell_lower_bound_s_by_leg"] == {
+        leg: 0.0 for leg in legs
+    }
+    assert session.filtered_contact_frame.available is False
+
+    # Multiple payload consumers at one completed physics tick reuse the
+    # immutable published sample and never update either child bank again.
+    session._observation_payload(adapter)
+    session._observation_payload(adapter)
+    assert len([row for row in events if row[0] == "combined_contact_update"]) == 1
+
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    session._refresh_filtered_contact_evidence(adapter)
+    session._observation_payload(adapter)
+    session._observation_payload(adapter)
+    updates = [row for row in events if row[0] == "combined_contact_update"]
+    assert updates == [
+        ("combined_contact_update", 0.0, True),
+        ("combined_contact_update", 1.0 / 120.0, True),
+    ]
+    assert events.index(
+        ("combined_contact_update", 1.0 / 120.0, True)
+    ) < events.index(("capture_macro_runtime_safety_evidence", 1))
+    second = session.filtered_contact_sample
+    assert second["sample_epoch"] == 2
+    assert second["sample_sim_step"] == 1
+    assert second["surface_dwell_lower_bound_s_by_leg"] == {
+        leg: 1.0 / 120.0 for leg in legs
+    }
+    assert session.filtered_contact_frame.available is True
+    assert session.filtered_contact_com.available is True
+    assert session.last_centroidal_support_evidence.sim_step == 1
+
+
+def test_combined_contact_refresh_rejects_rebound_bank_before_update(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    events: list[tuple] = []
+    session, _adapter, _controller = _runtime(
+        request,
+        contact_event_log=events,
+    )
+    events.clear()
+    replacement_events: list[tuple] = []
+    session.scene_handle.contact_sensor = _FakeCombinedContactBank(
+        event_log=replacement_events
+    )
+    with pytest.raises(RuntimeError, match="cannot be updated"):
+        session._refresh_filtered_contact_evidence(_adapter)
+    assert replacement_events == []
+    assert events == []
+    assert session.filtered_contact_sample_epoch == 0
+    assert session.filtered_contact_sample == {}
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    ("extra_wheel", "aliased_child", "nonwheel_prim", "nonwheel_filter"),
+)
+def test_combined_contact_bind_requires_exact_unique_child_mapping(
+    tmp_path: Path,
+    tamper: str,
+):
+    request, _payload = _load_request(tmp_path)
+    bound, _adapter, _controller = _runtime(request)
+    scene = bound.scene_handle
+    bank = _FakeCombinedContactBank()
+    if tamper == "extra_wheel":
+        bank.wheel_bank.sensors["EXTRA"] = next(
+            iter(bank.wheel_bank.sensors.values())
+        )
+    else:
+        nonwheel_key = next(iter(bank.nonwheel_bank.sensors))
+        if tamper == "aliased_child":
+            bank.nonwheel_bank.sensors[nonwheel_key] = bank.wheel_bank.sensors["FL"]
+        elif tamper == "nonwheel_prim":
+            bank.nonwheel_bank.sensors[nonwheel_key].cfg.prim_path = (
+                "/World/WLRRobot/wrong_body"
+            )
+        else:
+            bank.nonwheel_bank.sensors[
+                nonwheel_key
+            ].cfg.filter_prim_paths_expr = ["/World/defaultGroundPlane"]
+    scene.contact_sensor = bank
+    session = WorkerMacroFSMSession(
+        request,
+        worker_session_id="worker-session-exact-children",
+        bundle_builder=lambda _root, _request: _Bundle(),
+        controller_factory=lambda _bundle: _Controller(),
+        observation_factory=lambda payload: dict(payload),
+        recorder_factory=_Recorder,
+    )
+    with pytest.raises(RuntimeError, match="child"):
+        session.bind_filtered_contact_bank_scene(scene)
+
+
+@pytest.mark.parametrize("tamper", ("spec_object", "child_prim", "child_filter"))
+def test_combined_contact_refresh_rejects_nonwheel_contract_drift_before_update(
+    tmp_path: Path,
+    tamper: str,
+):
+    request, _payload = _load_request(tmp_path)
+    events: list[tuple] = []
+    session, adapter, _controller = _runtime(
+        request,
+        contact_event_log=events,
+    )
+    bank = session.filtered_contact_nonwheel_bank
+    if tamper == "spec_object":
+        original = bank.specs[0]
+        bank.specs = (
+            NonWheelRigidBodySpec(
+                body_name=original.body_name,
+                prim_path=original.prim_path,
+            ),
+        )
+    else:
+        child = next(iter(bank.sensors.values()))
+        if tamper == "child_prim":
+            child.cfg.prim_path = "/World/WLRRobot/wrong_body"
+        else:
+            child.cfg.filter_prim_paths_expr = ["/World/defaultGroundPlane"]
+    events.clear()
+    with pytest.raises(RuntimeError, match="cannot be updated"):
+        session._refresh_filtered_contact_evidence(adapter)
+    assert events == []
+    assert session.filtered_contact_sample_epoch == 0
+
+
+def test_combined_contact_clock_reset_cannot_inherit_pair_dwell(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    session._refresh_filtered_contact_evidence(adapter)
+    assert session.filtered_contact_dwell_s_by_leg["FL"] == 1.0 / 120.0
+    for child_bank in (
+        session.filtered_contact_wheel_bank,
+        session.filtered_contact_nonwheel_bank,
+    ):
+        for sensor in child_bank.sensors.values():
+            sensor.reset()
+    adapter.sim_steps = 2
+    adapter.sim_time = 2.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    with pytest.raises(RuntimeError, match="clock regressed"):
+        session._refresh_filtered_contact_evidence(adapter)
+    assert session.filtered_contact_sample_epoch == 2
+    assert session.filtered_contact_last_sim_step == 1
+    assert session.filtered_contact_dwell_s_by_leg["FL"] == 1.0 / 120.0
+
+
+def test_surface_pair_changes_and_tick_gaps_reset_dwell(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    sensor = session.filtered_contact_wheel_bank.sensors["FL"]
+
+    def set_filters(ground_force, obstacle_force, *, obstacle_point):
+        sensor.data.force_matrix_w[0, 0, 0, :] = ground_force
+        sensor.data.force_matrix_w[0, 0, 1, :] = obstacle_force
+        sensor.data.net_forces_w[0, 0, :] = np.asarray(
+            ground_force, dtype=float
+        ) + np.asarray(obstacle_force, dtype=float)
+        sensor.data.contact_pos_w[0, 0, 0, :] = (
+            (0.80, -0.20, 0.0)
+            if np.linalg.norm(ground_force) > 0.0
+            else (np.nan, np.nan, np.nan)
+        )
+        sensor.data.contact_pos_w[0, 0, 1, :] = (
+            obstacle_point
+            if np.linalg.norm(obstacle_force) > 0.0
+            else (np.nan, np.nan, np.nan)
+        )
+
+    def refresh(step):
+        adapter.sim_steps = step
+        adapter.sim_time = step / 120.0
+        session._refresh_filtered_contact_evidence(adapter)
+        return (
+            session.filtered_contact_surface_kind_by_leg["FL"],
+            session.filtered_contact_dwell_s_by_leg["FL"],
+        )
+
+    set_filters((0.0, 0.0, 0.0), (5.0, 0.0, 0.0), obstacle_point=(1.0, -0.2, 0.025))
+    assert refresh(1) == ("FRONT_FACE", 0.0)
+    set_filters((0.0, 0.0, 0.0), (0.0, 0.0, 9.81), obstacle_point=(1.1, -0.2, 0.05))
+    assert refresh(2) == ("OBSTACLE_TOP", 0.0)
+    assert refresh(3) == ("OBSTACLE_TOP", 1.0 / 120.0)
+    set_filters((0.0, 0.0, 9.81), (0.0, 0.0, 0.0), obstacle_point=(np.nan, np.nan, np.nan))
+    assert refresh(4) == ("GROUND", 0.0)
+    set_filters((0.0, 0.0, 9.81), (0.0, 0.0, 9.81), obstacle_point=(1.1, -0.2, 0.05))
+    assert refresh(5) == ("UNKNOWN", 0.0)
+    set_filters((0.0, 0.0, 9.81), (0.0, 0.0, 0.0), obstacle_point=(np.nan, np.nan, np.nan))
+    assert refresh(7) == ("GROUND", 0.0)
+
+
+def test_worker_uses_mass_weighted_whole_body_com_without_root_proxy(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    masses = np.asarray([[1.0, 2.0, 3.0, 4.0]], dtype=float)
+    positions = np.asarray(
+        [[[0.0, 0.0, 0.1], [1.0, 0.0, 0.2], [2.0, 0.0, 0.3], [4.0, 0.0, 0.4]]],
+        dtype=float,
+    )
+    adapter.robot.root_physx_view.get_masses = lambda: masses
+    adapter.robot.data.body_com_pos_w = positions
+    adapter.robot.data.body_com_pose_w[0, :, :3] = positions[0]
+    adapter.robot.data.root_pose_w[0, :3] = (99.0, 98.0, 97.0)
+    session._refresh_filtered_contact_evidence(adapter)
+    expected = tuple(
+        float(value)
+        for value in np.sum(positions[0] * masses[0, :, None], axis=0)
+        / np.sum(masses)
+    )
+    assert session.filtered_contact_com.available is True
+    assert session.filtered_contact_com.position_w_m == expected
+    assert session.filtered_contact_com.position_w_m != (99.0, 98.0, 97.0)
+    evidence = session._build_centroidal_support_evidence(adapter, active_leg="")
+    assert evidence.whole_body_com.position_w_m == expected
+    assert evidence.sim_step == adapter.sim_steps
+    assert evidence.wheel_contacts.physics_tick == adapter.sim_steps
+
+
+def test_feedback_joint_state_uses_canonical_rear_command_sign_and_zero_offset():
+    adapter = _Adapter()
+    offsets = {
+        name: float(index + 1) for index, name in enumerate(SERVO_JOINT_NAMES)
+    }
+    adapter.command_to_actual_target_deg = (
+        lambda name, value: offsets[name]
+        + float(JOINT_COMMAND_SIGN[name]) * float(value)
+    )
+    joint_q = {
+        name: math.radians(offsets[name] + 10.0)
+        for name in SERVO_JOINT_NAMES
+    }
+    joint_qd = {
+        name: math.radians(2.0) for name in SERVO_JOINT_NAMES
+    }
+    positions, velocities, margins = WorkerMacroFSMSession._command_space_servo_state(
+        adapter,
+        joint_q,
+        joint_qd,
+    )
+    for name in SERVO_JOINT_NAMES:
+        sign = float(JOINT_COMMAND_SIGN[name])
+        assert positions[name] == pytest.approx(sign * 10.0)
+        assert velocities[name] == pytest.approx(sign * 2.0)
+        assert margins[name] > 0.0
+
+
+def test_feedback_probe_matrix_is_complete_and_chooses_only_measured_best_response():
+    pairs = (
+        ("front_right_hip", 1),
+        ("front_right_hip", -1),
+        ("front_right_knee", 1),
+        ("front_right_knee", -1),
+    )
+
+    def result(joint, sign, *, dz, sign_valid=True, baseline=True):
+        return {
+            "joint": joint,
+            "direction_sign": sign,
+            "dq_deg": 0.25 * sign if sign_valid else 0.0,
+            "dx_m": 0.0,
+            "dz_m": dz,
+            "sign_response_valid": sign_valid,
+            "baseline_preserved": baseline,
+            "unsafe_reasons": [],
+            "n_plus_one_response_verified": True,
+        }
+
+    complete = {
+        "completed_probe_pairs": list(pairs),
+        "probe_results": [
+            result(*pairs[0], dz=-0.0005),
+            result(*pairs[1], dz=-0.0010),
+            result(*pairs[2], dz=-0.0007),
+            result(*pairs[3], dz=-0.0004),
+        ],
+    }
+    assert WorkerMacroFSMSession._feedback_probe_matrix_choice(
+        sequence=complete,
+        safe_pairs=pairs,
+    ) == pairs[1]
+
+    missing = {
+        "completed_probe_pairs": list(pairs[:-1]),
+        "probe_results": complete["probe_results"][:-1],
+    }
+    with pytest.raises(RuntimeError, match="complete independently verified"):
+        WorkerMacroFSMSession._feedback_probe_matrix_choice(
+            sequence=missing,
+            safe_pairs=pairs,
+        )
+
+    no_motion_best = {
+        **complete,
+        "probe_results": [
+            result(*pairs[0], dz=-0.0020, sign_valid=False),
+            *complete["probe_results"][1:],
+        ],
+    }
+    assert WorkerMacroFSMSession._feedback_probe_matrix_choice(
+        sequence=no_motion_best,
+        safe_pairs=pairs,
+    ) == pairs[1]
+
+    no_descent = {
+        **complete,
+        "probe_results": [
+            result(joint, sign, dz=0.0)
+            for joint, sign in pairs
+        ],
+    }
+    with pytest.raises(RuntimeError, match="no independently measured safe descent"):
+        WorkerMacroFSMSession._feedback_probe_matrix_choice(
+            sequence=no_descent,
+            safe_pairs=pairs,
+        )
+
+
+def test_feedback_command_map_comparison_is_exact_not_tolerance_based():
+    expected = {"joint": 1.0}
+    assert WorkerMacroFSMSession._feedback_target_maps_equal(expected, expected)
+    assert not WorkerMacroFSMSession._feedback_target_maps_equal(
+        {"joint": 1.0 + 5.0e-10},
+        expected,
+    )
+    assert not WorkerMacroFSMSession._feedback_target_maps_equal(
+        {"joint": 1.0, "extra": 0.0},
+        expected,
+    )
+
+
+def test_feedback_recovery_dispatch_is_config_bound_atomic_and_exact_n_plus_one(
+    tmp_path: Path,
+):
+    reference = {name: 0.0 for name in SERVO_JOINT_NAMES}
+    zero_wheels = {name: 0.0 for name in WHEEL_JOINT_NAMES}
+    actions = [
+        {
+            "provenance": _source_provenance(
+                segment=0,
+                step=1,
+                source_time_s=0.0,
+                events=(0,),
+                commands=("initial source reference",),
+                sequence=0,
+            ),
+            "servos": reference,
+            "wheels": zero_wheels,
+        },
+        {
+            "provenance": _source_provenance(
+                segment=1,
+                step=2,
+                source_time_s=1.0,
+                events=(1,),
+                commands=("S10 immutable recovery reference",),
+                sequence=1,
+            ),
+            "servos": reference,
+            "wheels": zero_wheels,
+        },
+    ]
+    base_bundle = _bundle_for_actions(actions)
+    profile_mapping = base_bundle.profiles.to_mapping()
+    s1_profile = profile_mapping["profiles"][0]
+    s10_keyframe = dict(s1_profile["keyframes"][1])
+    s10_keyframe["sequence_index"] = 0
+    s10_profile = {
+        **s1_profile,
+        "profile_id": "profile-s10-reference",
+        "state_id": "S10_POSTURE_RECOVERY",
+        "source_segment_range": [1, 1],
+        "segment_bindings": [s1_profile["segment_bindings"][1]],
+        "keyframes": [s10_keyframe],
+    }
+    s1_profile["source_segment_range"] = [0, 0]
+    s1_profile["segment_bindings"] = [s1_profile["segment_bindings"][0]]
+    s1_profile["keyframes"] = [s1_profile["keyframes"][0]]
+    profile_mapping["segment_ownership"][0]["last_segment"] = 0
+    profile_mapping["segment_ownership"].append(
+        {
+            **profile_mapping["segment_ownership"][0],
+            "state_id": "S10_POSTURE_RECOVERY",
+            "phase_source_state_id": "S10_POSTURE_RECOVERY",
+            "first_segment": 1,
+            "last_segment": 1,
+        }
+    )
+    profile_mapping["profiles"].append(s10_profile)
+    profiles = SimpleNamespace(
+        library_id=_Profiles.library_id,
+        sha256=_Profiles.sha256,
+        to_mapping=lambda: profile_mapping,
+    )
+    bundle = SimpleNamespace(
+        graph=_Graph(),
+        profiles=profiles,
+        graph_sha256=_Graph.sha256,
+        profile_library_sha256=_Profiles.sha256,
+        bundle_sha256=_Bundle.bundle_sha256,
+        to_mapping=lambda: {"bundle_sha256": _Bundle.bundle_sha256},
+    )
+    request, _payload = _load_request(tmp_path)
+    session, adapter = _prime_manual_session(request, bundle=bundle)
+    epoch = len(session.expected_source_actions)
+    session.next_source_action_index = len(session.expected_source_actions)
+    session.last_macro_state = "S10_POSTURE_RECOVERY"
+    session.last_epoch = epoch
+    session.last_servo_targets = dict(reference)
+    session.last_wheel_targets = dict(zero_wheels)
+    session.last_applied_servo_targets = dict(reference)
+    session.last_applied_wheel_targets = dict(zero_wheels)
+    session.last_applied_residual = ZERO_RESIDUAL_ACTION
+    session.last_verified_servo_targets = dict(reference)
+    session.last_verified_wheel_targets = dict(zero_wheels)
+    session.last_verified_command_epoch = epoch
+    adapter.joint_command_deg.update(reference)
+    adapter.servo_applied_command_deg.update(reference)
+    adapter.wheel_speeds.update(zero_wheels)
+    fr_sensor = session.filtered_contact_wheel_sensors["FR"]
+    fr_sensor.data.net_forces_w[...] = 0.0
+    fr_sensor.data.force_matrix_w[...] = 0.0
+    fr_sensor.data.contact_pos_w[...] = np.nan
+    fr_sensor.data.friction_forces_w[...] = 0.0
+    # Preserve the exact four-body gravity wrench on the remaining three
+    # support contacts while FR is the deliberate AIR recovery candidate.
+    for support_leg in ("FL", "RL", "RR"):
+        support_sensor = session.filtered_contact_wheel_sensors[support_leg]
+        support_sensor.data.net_forces_w[0, 0, :] = (0.0, 0.0, 13.08)
+        support_sensor.data.force_matrix_w[0, 0, 0, :] = (0.0, 0.0, 13.08)
+    support_centroid = (0.5333333333333333, -0.06666666666666667, 0.05)
+    adapter.robot.data.body_com_pos_w[0, :, :] = support_centroid
+    adapter.robot.data.body_com_pose_w[0, :, :3] = support_centroid
+    front_right_body_index = adapter.robot.body_names.index("front_right_wheel")
+    adapter.robot.data.body_link_state_w[
+        0, front_right_body_index, :3
+    ] = (1.05, 0.20, 0.055)
+    payload = None
+    first_bootstrap_step = int(session.filtered_contact_last_sim_step or 0) + 1
+    for bootstrap_step in range(
+        first_bootstrap_step,
+        first_bootstrap_step + 13,
+    ):
+        adapter.sim_steps = bootstrap_step
+        adapter.sim_time = bootstrap_step / 120.0
+        _prime_current_target_readback(session, adapter)
+        payload = session._observation_payload(adapter)
+    assert payload is not None
+    probe_dispatch_step = adapter.sim_steps
+    feedback = FeedbackRecoveryObservation.from_mapping(
+        payload["feedback_recovery_observation"]
+    )
+    centroidal_sha = payload["centroidal_support_evidence"]["payload_sha256"]
+    feedback_sha = feedback.payload_sha256
+    joint = "front_right_hip"
+    targets = dict(reference)
+    targets[joint] = 0.25
+    target_sha = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_target_map.v1",
+            "servo_targets_deg": targets,
+            "wheel_targets_rad_s": zero_wheels,
+        }
+    )
+    evidence_sha = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+            "centroidal_support_evidence_sha256": centroidal_sha,
+            "feedback_recovery_observation_sha256": feedback_sha,
+        }
+    )
+    configuration_payload = {
+        "schema_version": "fsm50.feedback_recovery_configuration.v1",
+        "leg": "FR",
+        "macro_state": "S10_POSTURE_RECOVERY",
+        "selected_source_version": request.source_version,
+        "reference_profile_id": s10_profile["profile_id"],
+        "reference_profile_source_version": s10_profile["source_version"],
+        "reference_profile_source_plan_sha256": s10_profile["source_plan_sha256"],
+        "centroidal_evidence_sha256": centroidal_sha,
+        "feedback_observation_sha256": feedback_sha,
+        "servo_reference_targets_deg": reference,
+        "measured_servo_positions_deg": dict(
+            feedback.measured_servo_positions_deg
+        ),
+        "wheel_center_w_m": {
+            leg: list(feedback.wheel_center_w_m[leg])
+            for leg in ("FR", "FL", "RR", "RL")
+        },
+        "body_crossed_front_face": feedback.body_crossed_front_face,
+        "final_recoverable": feedback.final_recoverable,
+        "posture_complete": feedback.posture_complete,
+    }
+    configuration_sha = canonical_mapping_sha256(configuration_payload)
+    provenance = _non_source_provenance()
+    provenance.update(
+        kind="FEEDBACK_RECOVERY",
+        recovery_stage="SAFE_PROBE",
+        recovery_action="CONSERVATIVE_DIAGNOSTIC_PROBE",
+        recovery_evidence_sha256=evidence_sha,
+        recovery_centroidal_evidence_sha256=centroidal_sha,
+        recovery_feedback_observation_sha256=feedback_sha,
+        recovery_target_map_sha256=target_sha,
+        recovery_direction_sign=1,
+        recovery_attempt=1,
+        recovery_leg="FR",
+        recovery_joint=joint,
+        recovery_configuration_sha256=configuration_sha,
+    )
+    wrong_leg_targets = dict(reference)
+    wrong_leg_targets["front_left_hip"] = 0.25
+    wrong_leg_target_sha = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_target_map.v1",
+            "servo_targets_deg": wrong_leg_targets,
+            "wheel_targets_rad_s": zero_wheels,
+        }
+    )
+    wrong_leg_configuration = dict(configuration_payload)
+    wrong_leg_configuration["leg"] = "FL"
+    wrong_leg_provenance = dict(provenance)
+    wrong_leg_provenance.update(
+        recovery_target_map_sha256=wrong_leg_target_sha,
+        recovery_leg="FL",
+        recovery_joint="front_left_hip",
+        recovery_configuration_sha256=canonical_mapping_sha256(
+            wrong_leg_configuration
+        ),
+    )
+    wrong_leg_batches_before = len(adapter.batch_calls)
+    session.outer_render_boundary_permit = True
+    try:
+        with pytest.raises(RuntimeError, match="deterministic current AIR"):
+            session._process_decision(
+                adapter,
+                payload,
+                _decision(
+                    state="S10_POSTURE_RECOVERY",
+                    epoch=epoch + 1,
+                    changed=True,
+                    servos=wrong_leg_targets,
+                    wheels=zero_wheels,
+                    provenance=wrong_leg_provenance,
+                    profile_id=s10_profile["profile_id"],
+                    profile_source_version=s10_profile["source_version"],
+                    profile_strategy=s10_profile["strategy"],
+                    subphase="SAFE_PROBE",
+                ),
+            )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert session.pending_readback is None
+    assert len(adapter.batch_calls) == wrong_leg_batches_before
+    class _AckDiagnosticBomb:
+        @property
+        def value(self):
+            raise RuntimeError("ACK_NORMALIZATION_BOMB_AFTER_APPLY")
+
+    original_apply_motion_batch = adapter.apply_motion_batch
+
+    def apply_with_irrelevant_diagnostic(payload):
+        ack = original_apply_motion_batch(payload)
+        ack["adapter_specific_diagnostic"] = _AckDiagnosticBomb()
+        return ack
+
+    adapter.apply_motion_batch = apply_with_irrelevant_diagnostic
+    batches_before = len(adapter.batch_calls)
+    session.outer_render_boundary_permit = True
+    try:
+        session._process_decision(
+            adapter,
+            payload,
+            _decision(
+                state="S10_POSTURE_RECOVERY",
+                epoch=epoch + 1,
+                changed=True,
+                servos=targets,
+                wheels=zero_wheels,
+                provenance=provenance,
+                profile_id=s10_profile["profile_id"],
+                profile_source_version=s10_profile["source_version"],
+                profile_strategy=s10_profile["strategy"],
+                subphase="SAFE_PROBE",
+            ),
+        )
+    finally:
+        session.outer_render_boundary_permit = False
+        adapter.apply_motion_batch = original_apply_motion_batch
+    assert len(adapter.batch_calls) == batches_before + 1
+    assert session.next_source_action_index == len(session.expected_source_actions)
+    assert len(session.feedback_recovery_action_rows) == 1
+    assert session.feedback_recovery_sequence_by_configuration
+    assert session.dispatch_rows
+    assert session.pending_readback is not None
+    action_row = session.feedback_recovery_action_rows[0]
+    assert action_row["attempt"] == 1
+    assert action_row["n_plus_one_verified"] is False
+    assert session.pending_readback["feedback_recovery_action_index"] == 0
+    adapter.sim_steps = probe_dispatch_step + 1
+    adapter.sim_time = adapter.sim_steps / 120.0
+    joint_index = adapter.robot.joint_names.index(joint)
+    adapter.robot.data.joint_pos[0, joint_index] = math.radians(0.25)
+    adapter.robot.data.body_link_state_w[
+        0, front_right_body_index, 2
+    ] = 0.0545
+    session._verify_pending_readback(adapter, sim_step=adapter.sim_steps)
+    assert action_row["n_plus_one_verified"] is True
+    assert action_row["n_plus_one_verified_sim_step"] == adapter.sim_steps
+    assert len(action_row["n_plus_one_readback_sha256"]) == 64
+    assert session.feedback_recovery_verified_action_count == 1
+
+    payload = session._observation_payload(adapter)
+    session._capture_feedback_recovery_n_plus_one_response(
+        payload=payload,
+        sim_step=adapter.sim_steps,
+    )
+    assert action_row["physical_response_verified"] is True
+    assert action_row["physical_response"]["sign_response_valid"] is True
+    assert action_row["physical_response"]["dz_m"] <= -0.00025
+    assert action_row["n_plus_one_readback"]
+    assert action_row["dispatch_centroidal_support_evidence"]
+    assert action_row["dispatch_feedback_recovery_observation"]
+    assert action_row["physical_response_centroidal_support_evidence"]
+    assert action_row["physical_response_feedback_recovery_observation"]
+    feedback = FeedbackRecoveryObservation.from_mapping(
+        payload["feedback_recovery_observation"]
+    )
+    centroidal_sha = payload["centroidal_support_evidence"]["payload_sha256"]
+    feedback_sha = feedback.payload_sha256
+    return_target_sha = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_target_map.v1",
+            "servo_targets_deg": reference,
+            "wheel_targets_rad_s": zero_wheels,
+        }
+    )
+    return_evidence_sha = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+            "centroidal_support_evidence_sha256": centroidal_sha,
+            "feedback_recovery_observation_sha256": feedback_sha,
+        }
+    )
+    return_provenance = _non_source_provenance()
+    return_provenance.update(
+        kind="FEEDBACK_RECOVERY",
+        recovery_stage="RETURN_TO_REFERENCE",
+        recovery_action="RETURN_TO_IMMUTABLE_REFERENCE",
+        recovery_evidence_sha256=return_evidence_sha,
+        recovery_centroidal_evidence_sha256=centroidal_sha,
+        recovery_feedback_observation_sha256=feedback_sha,
+        recovery_target_map_sha256=return_target_sha,
+        recovery_direction_sign=1,
+        recovery_attempt=2,
+        recovery_leg="FR",
+        recovery_joint=joint,
+        recovery_configuration_sha256=configuration_sha,
+    )
+
+    def return_decision(provenance, servos):
+        return _decision(
+            state="S10_POSTURE_RECOVERY",
+            epoch=session.last_epoch + 1,
+            changed=True,
+            servos=servos,
+            wheels=zero_wheels,
+            provenance=provenance,
+            profile_id=s10_profile["profile_id"],
+            profile_source_version=s10_profile["source_version"],
+            profile_strategy=s10_profile["strategy"],
+            subphase="RETURN_TO_REFERENCE",
+        )
+
+    gap_provenance = dict(return_provenance)
+    gap_provenance["recovery_attempt"] = 3
+    batches_before = len(adapter.batch_calls)
+    session.outer_render_boundary_permit = True
+    try:
+        with pytest.raises(RuntimeError, match="attempts must start at one"):
+            session._process_decision(
+                adapter,
+                payload,
+                return_decision(gap_provenance, reference),
+            )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert len(adapter.batch_calls) == batches_before
+    assert session.pending_readback is None
+
+    wrong_return = dict(reference)
+    wrong_return[joint] = 0.1
+    wrong_target_provenance = dict(return_provenance)
+    wrong_target_provenance["recovery_target_map_sha256"] = canonical_mapping_sha256(
+        {
+            "schema_version": "fsm50.feedback_recovery_target_map.v1",
+            "servo_targets_deg": wrong_return,
+            "wheel_targets_rad_s": zero_wheels,
+        }
+    )
+    session.outer_render_boundary_permit = True
+    try:
+        with pytest.raises(RuntimeError, match="target map differs"):
+            session._process_decision(
+                adapter,
+                payload,
+                return_decision(wrong_target_provenance, wrong_return),
+            )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert len(adapter.batch_calls) == batches_before
+    assert session.pending_readback is None
+
+    session.outer_render_boundary_permit = True
+    try:
+        session._process_decision(
+            adapter,
+            payload,
+            return_decision(return_provenance, reference),
+        )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert len(adapter.batch_calls) == batches_before + 1
+    assert session.feedback_recovery_action_rows[-1]["stage"] == "RETURN_TO_REFERENCE"
+    adapter.sim_steps += 1
+    adapter.sim_time = adapter.sim_steps / 120.0
+    adapter.robot.data.joint_pos[0, joint_index] = 0.0
+    adapter.robot.data.body_link_state_w[
+        0, front_right_body_index, 2
+    ] = 0.055
+    session._verify_pending_readback(adapter, sim_step=adapter.sim_steps)
+    assert session.feedback_recovery_action_rows[-1]["n_plus_one_verified"] is True
+    assert session.feedback_recovery_verified_action_count == 2
+    payload = session._observation_payload(adapter)
+    session._capture_feedback_recovery_n_plus_one_response(
+        payload=payload,
+        sim_step=adapter.sim_steps,
+    )
+    assert session.feedback_recovery_action_rows[-1][
+        "physical_response_verified"
+    ] is True
+
+    # This hermetic fixture jumps directly to the post-profile S10 state. Add
+    # the durable preceding physical reference dispatch that production gets
+    # while consuming the selected source profile, then shift the two
+    # feedback-dispatch identities forward by one.
+    for dispatch_row in session.dispatch_rows:
+        dispatch_row["dispatch_index"] += 1
+    for feedback_row in session.feedback_recovery_action_rows:
+        feedback_row["dispatch_index"] += 1
+    reference_dispatch = json.loads(json.dumps(session.dispatch_rows[0]))
+    canonical_reference_action = max(
+        (
+            action
+            for action in session.expected_source_actions
+            if action["owner_state"] == "S10_POSTURE_RECOVERY"
+        ),
+        key=lambda action: action["source_action_index"],
+    )
+    reference_batch_id = f"{request.request_id}:macro:{epoch:06d}"
+    reference_ack = json.loads(json.dumps(reference_dispatch["ack"]))
+    reference_ack.update(
+        batch_id=reference_batch_id,
+        applied_sim_step=probe_dispatch_step - 1,
+        first_physics_step=probe_dispatch_step,
+        motion_start_skew_s=0.0,
+        physics_dt_s=1.0 / 120.0,
+        servo_targets_applied=dict(reference),
+        wheel_targets_applied=dict(zero_wheels),
+    )
+    reference_ack["recording_metadata"].update(
+        source_version=request.source_version,
+        command_epoch=epoch,
+        bundle_sha256=request.bundle_sha256,
+        command_provenance=dict(
+            canonical_reference_action["command_provenance"]
+        ),
+        source_plan_sha256=canonical_reference_action[
+            "source_plan_sha256"
+        ],
+        source_action_consumption_index=canonical_reference_action[
+            "source_action_index"
+        ],
+    )
+    reference_dispatch.update(
+        dispatch_index=0,
+        batch_id=reference_batch_id,
+        command_epoch=epoch,
+        sim_step=probe_dispatch_step - 1,
+        sim_time_s=(probe_dispatch_step - 1) / 120.0,
+        servo_targets_deg=dict(reference),
+        wheel_targets_rad_s=dict(zero_wheels),
+        n_plus_one_verified=True,
+        n_plus_one_verified_sim_step=probe_dispatch_step,
+        n_plus_one_readback_sha256="f" * 64,
+        command_provenance=dict(
+            canonical_reference_action["command_provenance"]
+        ),
+        source_action_consumption_index=canonical_reference_action[
+            "source_action_index"
+        ],
+        ack=reference_ack,
+    )
+    session.dispatch_rows.insert(0, reference_dispatch)
+
+    assert session._feedback_recovery_action_closure_errors(
+        index=0,
+        row=session.feedback_recovery_action_rows[0],
+    ) == []
+    assert any(
+        "ended before the complete safe probe/return matrix" in error
+        for error in session._feedback_recovery_durable_sequence_errors()
+    )
+    saved_feedback_rows = session.feedback_recovery_action_rows
+    synthetic_matrix = []
+    for matrix_joint, matrix_sign in (
+        ("front_right_hip", 1),
+        ("front_right_hip", -1),
+        ("front_right_knee", 1),
+        ("front_right_knee", -1),
+    ):
+        probe_copy = json.loads(json.dumps(saved_feedback_rows[0]))
+        probe_copy.update(
+            joint=matrix_joint,
+            direction_sign=matrix_sign,
+            action="CONSERVATIVE_DIAGNOSTIC_PROBE",
+        )
+        probe_copy["physical_response"].update(
+            joint=matrix_joint,
+            direction_sign=matrix_sign,
+            dq_deg=0.0,
+            dx_m=0.0,
+            dz_m=0.0,
+            sign_response_valid=False,
+            baseline_preserved=True,
+            unsafe_reasons=[],
+        )
+        return_copy = json.loads(json.dumps(saved_feedback_rows[1]))
+        return_copy.update(
+            joint=matrix_joint,
+            direction_sign=matrix_sign,
+            action="RETURN_TO_IMMUTABLE_REFERENCE",
+        )
+        return_copy["physical_response"].update(
+            joint=matrix_joint,
+            direction_sign=matrix_sign,
+            return_error_deg=0.0,
+        )
+        synthetic_matrix.extend((probe_copy, return_copy))
+    session.feedback_recovery_action_rows = synthetic_matrix
+    assert session._feedback_recovery_durable_sequence_errors() == []
+    session.feedback_recovery_action_rows = saved_feedback_rows
+    probe_row = session.feedback_recovery_action_rows[0]
+    probe_dispatch = session.dispatch_rows[probe_row["dispatch_index"]]
+
+    reference_dispatch = session.dispatch_rows[probe_row["dispatch_index"] - 1]
+    saved_reference_wheels = dict(reference_dispatch["wheel_targets_rad_s"])
+    reference_dispatch["wheel_targets_rad_s"][WHEEL_JOINT_NAMES[0]] = 0.25
+    assert any(
+        "first-action physical reference binding" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0,
+            row=probe_row,
+        )
+    )
+    reference_dispatch["wheel_targets_rad_s"] = saved_reference_wheels
+
+    saved_attempt = probe_row["attempt"]
+    probe_row["attempt"] = 64
+    assert any(
+        "core action identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["attempt"] = saved_attempt
+
+    saved_batch_id = probe_row["batch_id"]
+    probe_row["batch_id"] = "coherently-tampered-batch"
+    assert any(
+        "dispatch" in error or "ACK" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["batch_id"] = saved_batch_id
+
+    saved_provenance = dict(probe_row["command_provenance"])
+    probe_row["command_provenance"] = {}
+    assert any(
+        "provenance" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["command_provenance"] = saved_provenance
+
+    saved_readback = json.loads(json.dumps(probe_row["n_plus_one_readback"]))
+    saved_readback_sha = probe_row["n_plus_one_readback_sha256"]
+    saved_dispatch_readback_sha = probe_dispatch["n_plus_one_readback_sha256"]
+    probe_row["n_plus_one_readback"] = {"arbitrary": True}
+    probe_row["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        probe_row["n_plus_one_readback"]
+    )
+    probe_dispatch["n_plus_one_readback_sha256"] = probe_row[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["n_plus_one_readback"] = saved_readback
+    probe_row["n_plus_one_readback_sha256"] = saved_readback_sha
+    probe_dispatch["n_plus_one_readback_sha256"] = saved_dispatch_readback_sha
+
+    saved_actual_servos = dict(
+        probe_row["n_plus_one_readback"]["actual_servo_drive_targets_rad"]
+    )
+    first_servo = SERVO_JOINT_NAMES[0]
+    probe_row["n_plus_one_readback"]["actual_servo_drive_targets_rad"][
+        first_servo
+    ] += 1.0
+    probe_row["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        probe_row["n_plus_one_readback"]
+    )
+    probe_dispatch["n_plus_one_readback_sha256"] = probe_row[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["n_plus_one_readback"]["actual_servo_drive_targets_rad"] = (
+        saved_actual_servos
+    )
+    probe_row["n_plus_one_readback_sha256"] = saved_readback_sha
+    probe_dispatch["n_plus_one_readback_sha256"] = saved_dispatch_readback_sha
+
+    saved_expected_servos = dict(
+        probe_row["n_plus_one_readback"][
+            "expected_servo_drive_targets_rad"
+        ]
+    )
+    probe_row["n_plus_one_readback"]["actual_servo_drive_targets_rad"][
+        first_servo
+    ] += 1.0
+    probe_row["n_plus_one_readback"]["expected_servo_drive_targets_rad"][
+        first_servo
+    ] += 1.0
+    probe_row["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        probe_row["n_plus_one_readback"]
+    )
+    probe_dispatch["n_plus_one_readback_sha256"] = probe_row[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["n_plus_one_readback"]["actual_servo_drive_targets_rad"] = (
+        saved_actual_servos
+    )
+    probe_row["n_plus_one_readback"]["expected_servo_drive_targets_rad"] = (
+        saved_expected_servos
+    )
+    probe_row["n_plus_one_readback_sha256"] = saved_readback_sha
+    probe_dispatch["n_plus_one_readback_sha256"] = saved_dispatch_readback_sha
+
+    saved_runtime_id = probe_row["n_plus_one_readback"][
+        "adapter_runtime_instance_id"
+    ]
+    probe_row["n_plus_one_readback"][
+        "adapter_runtime_instance_id"
+    ] = "forged-runtime"
+    probe_row["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        probe_row["n_plus_one_readback"]
+    )
+    probe_dispatch["n_plus_one_readback_sha256"] = probe_row[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["n_plus_one_readback"][
+        "adapter_runtime_instance_id"
+    ] = saved_runtime_id
+    probe_row["n_plus_one_readback_sha256"] = saved_readback_sha
+    probe_dispatch["n_plus_one_readback_sha256"] = saved_dispatch_readback_sha
+
+    saved_ack = json.loads(json.dumps(probe_row["dispatch_ack"]))
+    saved_ack_sha = probe_row["ack_sha256"]
+    saved_dispatch_ack = json.loads(json.dumps(probe_dispatch["ack"]))
+    tampered_ack = json.loads(json.dumps(saved_ack))
+    tampered_ack["motion_start_skew_s"] = 0.5
+    tampered_ack["physics_dt_s"] = 0.5
+    probe_row["dispatch_ack"] = tampered_ack
+    probe_row["ack_sha256"] = canonical_mapping_sha256(tampered_ack)
+    probe_dispatch["ack"] = json.loads(json.dumps(tampered_ack))
+    assert any(
+        "durable atomic ACK" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["dispatch_ack"] = saved_ack
+    probe_row["ack_sha256"] = saved_ack_sha
+    probe_dispatch["ack"] = saved_dispatch_ack
+
+    tampered_ack = json.loads(json.dumps(saved_ack))
+    tampered_ack["recording_metadata"].update(
+        {
+            "source_version": "forged-source",
+            "macro_state": "S3_REAR_LEFT_LIFT",
+            "subphase": "INCREMENT",
+            "bundle_sha256": "0" * 64,
+        }
+    )
+    probe_row["dispatch_ack"] = tampered_ack
+    probe_row["ack_sha256"] = canonical_mapping_sha256(tampered_ack)
+    probe_dispatch["ack"] = json.loads(json.dumps(tampered_ack))
+    assert any(
+        "ACK preimage/identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["dispatch_ack"] = saved_ack
+    probe_row["ack_sha256"] = saved_ack_sha
+    probe_dispatch["ack"] = saved_dispatch_ack
+
+    saved_actual_wheels = dict(
+        probe_row["n_plus_one_readback"][
+            "actual_wheel_drive_targets_rad_s"
+        ]
+    )
+    first_wheel = WHEEL_JOINT_NAMES[0]
+    probe_row["n_plus_one_readback"][
+        "actual_wheel_drive_targets_rad_s"
+    ][first_wheel] = 1.0
+    probe_row["n_plus_one_readback_sha256"] = canonical_mapping_sha256(
+        probe_row["n_plus_one_readback"]
+    )
+    probe_dispatch["n_plus_one_readback_sha256"] = probe_row[
+        "n_plus_one_readback_sha256"
+    ]
+    assert any(
+        "readback preimage/full identity" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["n_plus_one_readback"][
+        "actual_wheel_drive_targets_rad_s"
+    ] = saved_actual_wheels
+    probe_row["n_plus_one_readback_sha256"] = saved_readback_sha
+    probe_dispatch["n_plus_one_readback_sha256"] = saved_dispatch_readback_sha
+
+    saved_probe_response = dict(probe_row["physical_response"])
+    sequence_for_tamper = dict(
+        session.feedback_recovery_sequence_by_configuration[configuration_sha]
+    )
+    saved_sequence_for_tamper = json.loads(json.dumps(sequence_for_tamper))
+    tampered_baseline = dict(sequence_for_tamper["physical_baseline"])
+    tampered_positions = dict(
+        tampered_baseline["measured_servo_positions_deg"]
+    )
+    tampered_positions[joint] += 0.1
+    tampered_baseline["measured_servo_positions_deg"] = tampered_positions
+    sequence_for_tamper["physical_baseline"] = tampered_baseline
+    session.feedback_recovery_sequence_by_configuration[
+        configuration_sha
+    ] = sequence_for_tamper
+    probe_row["physical_response"]["dq_deg"] -= 0.1
+    assert any(
+        "physical response differs" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0, row=probe_row
+        )
+    )
+    probe_row["physical_response"] = saved_probe_response
+    session.feedback_recovery_sequence_by_configuration[
+        configuration_sha
+    ] = saved_sequence_for_tamper
+    saved_response_evidence = json.loads(
+        json.dumps(
+            session.feedback_recovery_action_rows[0][
+                "physical_response_feedback_recovery_observation"
+            ]
+        )
+    )
+    session.feedback_recovery_action_rows[0][
+        "physical_response_feedback_recovery_observation"
+    ]["payload"]["sim_step"] += 1
+    assert any(
+        "strict evidence envelope is invalid" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=0,
+            row=session.feedback_recovery_action_rows[0],
+        )
+    )
+    session.feedback_recovery_action_rows[0][
+        "physical_response_feedback_recovery_observation"
+    ] = saved_response_evidence
+    return_row = session.feedback_recovery_action_rows[1]
+    saved_return_evidence = json.loads(
+        json.dumps(
+            return_row["physical_response_feedback_recovery_observation"]
+        )
+    )
+    saved_return_sha = return_row[
+        "physical_response_feedback_observation_sha256"
+    ]
+    saved_return_response = dict(return_row["physical_response"])
+    return_payload = return_row[
+        "physical_response_feedback_recovery_observation"
+    ]["payload"]
+    return_payload["measured_servo_positions_deg"][joint] = 0.3
+    return_row["physical_response_feedback_recovery_observation"][
+        "payload_sha256"
+    ] = canonical_mapping_sha256(return_payload)
+    return_row["physical_response_feedback_observation_sha256"] = (
+        return_row["physical_response_feedback_recovery_observation"][
+            "payload_sha256"
+        ]
+    )
+    return_row["physical_response"]["return_error_deg"] = 0.3
+    assert any(
+        "return did not close" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=1,
+            row=return_row,
+        )
+    )
+    return_row["physical_response_feedback_recovery_observation"] = (
+        saved_return_evidence
+    )
+    return_row["physical_response_feedback_observation_sha256"] = (
+        saved_return_sha
+    )
+    return_row["physical_response"] = saved_return_response
+
+    # A later durable row may not point backward (or sideways) in the
+    # physical-dispatch ledger even when all of its other row-local hashes are
+    # self-consistent.  Cross-action chronology is an independent invariant.
+    saved_return_dispatch_index = return_row["dispatch_index"]
+    return_row["dispatch_index"] = probe_row["dispatch_index"]
+    assert any(
+        "physical dispatch chronology" in error
+        for error in session._feedback_recovery_action_closure_errors(
+            index=1,
+            row=return_row,
+        )
+    )
+    return_row["dispatch_index"] = saved_return_dispatch_index
+
+    sequence = dict(
+        session.feedback_recovery_sequence_by_configuration[configuration_sha]
+    )
+    sequence["probe_index"] = 4
+    session.feedback_recovery_sequence_by_configuration[configuration_sha] = sequence
+    payload = session._observation_payload(adapter)
+    feedback = FeedbackRecoveryObservation.from_mapping(
+        payload["feedback_recovery_observation"]
+    )
+    centroidal_sha = payload["centroidal_support_evidence"]["payload_sha256"]
+    feedback_sha = feedback.payload_sha256
+    unproven_increment = dict(reference)
+    unproven_increment[joint] = -0.25
+    unproven_increment_provenance = _non_source_provenance()
+    unproven_increment_provenance.update(
+        kind="FEEDBACK_RECOVERY",
+        recovery_stage="INCREMENT",
+        recovery_action="BOUNDED_DESCENT_INCREMENT",
+        recovery_evidence_sha256=canonical_mapping_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+                "centroidal_support_evidence_sha256": centroidal_sha,
+                "feedback_recovery_observation_sha256": feedback_sha,
+            }
+        ),
+        recovery_centroidal_evidence_sha256=centroidal_sha,
+        recovery_feedback_observation_sha256=feedback_sha,
+        recovery_target_map_sha256=canonical_mapping_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_target_map.v1",
+                "servo_targets_deg": unproven_increment,
+                "wheel_targets_rad_s": zero_wheels,
+            }
+        ),
+        recovery_direction_sign=-1,
+        recovery_attempt=3,
+        recovery_leg="FR",
+        recovery_joint=joint,
+        recovery_configuration_sha256=configuration_sha,
+    )
+    batches_before = len(adapter.batch_calls)
+    session.outer_render_boundary_permit = True
+    try:
+        with pytest.raises(RuntimeError, match="complete independently verified"):
+            session._process_decision(
+                adapter,
+                payload,
+                _decision(
+                    state="S10_POSTURE_RECOVERY",
+                    epoch=session.last_epoch + 1,
+                    changed=True,
+                    servos=unproven_increment,
+                    wheels=zero_wheels,
+                    provenance=unproven_increment_provenance,
+                    profile_id=s10_profile["profile_id"],
+                    profile_source_version=s10_profile["source_version"],
+                    profile_strategy=s10_profile["strategy"],
+                    subphase="INCREMENT",
+                ),
+            )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert len(adapter.batch_calls) == batches_before
+    assert session.pending_readback is None
+
+    _assert_feedback_increment_margin_is_fail_closed(
+        session=session,
+        adapter=adapter,
+        configuration_sha=configuration_sha,
+        reference=reference,
+        zero_wheels=zero_wheels,
+        joint=joint,
+        s10_profile=s10_profile,
+    )
+
+
+def _assert_feedback_increment_margin_is_fail_closed(
+    *,
+    session,
+    adapter,
+    configuration_sha,
+    reference,
+    zero_wheels,
+    joint,
+    s10_profile,
+):
+    _lower, upper = command_limits_for_servo(joint)
+    near_limit_reference = dict(reference)
+    near_limit_reference[joint] = upper - 1.3
+    session.last_servo_targets = dict(near_limit_reference)
+    session.last_applied_servo_targets = dict(near_limit_reference)
+    session.last_verified_servo_targets = dict(near_limit_reference)
+    adapter.joint_command_deg.update(near_limit_reference)
+    adapter.servo_applied_command_deg.update(near_limit_reference)
+    _prime_current_target_readback(session, adapter)
+    sequence = dict(
+        session.feedback_recovery_sequence_by_configuration[configuration_sha]
+    )
+    probe_pairs = [
+        ("front_right_hip", 1),
+        ("front_right_hip", -1),
+        ("front_right_knee", 1),
+        ("front_right_knee", -1),
+    ]
+    sequence.update(
+        reference_targets_deg=dict(near_limit_reference),
+        probe_index=4,
+        awaiting_return=False,
+        completed_probe_pairs=list(probe_pairs),
+        probe_results=[
+            {
+                "joint": probe_joint,
+                "direction_sign": probe_sign,
+                "dq_deg": 0.25,
+                "dx_m": 0.0,
+                "dz_m": (
+                    -0.001
+                    if (probe_joint, probe_sign) == (joint, 1)
+                    else -0.0005
+                ),
+                "sign_response_valid": True,
+                "baseline_preserved": True,
+                "unsafe_reasons": [],
+                "n_plus_one_response_verified": True,
+            }
+            for probe_joint, probe_sign in probe_pairs
+        ],
+        increment_joint=joint,
+        increment_sign=1,
+        increment_count=1,
+    )
+    session.feedback_recovery_sequence_by_configuration[configuration_sha] = sequence
+    payload = session._observation_payload(adapter)
+    feedback = FeedbackRecoveryObservation.from_mapping(
+        payload["feedback_recovery_observation"]
+    )
+    centroidal_sha = payload["centroidal_support_evidence"]["payload_sha256"]
+    feedback_sha = feedback.payload_sha256
+    target = dict(near_limit_reference)
+    target[joint] += 0.50
+    provenance = _non_source_provenance()
+    provenance.update(
+        kind="FEEDBACK_RECOVERY",
+        recovery_stage="INCREMENT",
+        recovery_action="BOUNDED_DESCENT_INCREMENT",
+        recovery_evidence_sha256=canonical_mapping_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+                "centroidal_support_evidence_sha256": centroidal_sha,
+                "feedback_recovery_observation_sha256": feedback_sha,
+            }
+        ),
+        recovery_centroidal_evidence_sha256=centroidal_sha,
+        recovery_feedback_observation_sha256=feedback_sha,
+        recovery_target_map_sha256=canonical_mapping_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_target_map.v1",
+                "servo_targets_deg": target,
+                "wheel_targets_rad_s": zero_wheels,
+            }
+        ),
+        recovery_direction_sign=1,
+        recovery_attempt=len(session.feedback_recovery_action_rows) + 1,
+        recovery_leg="FR",
+        recovery_joint=joint,
+        recovery_configuration_sha256=configuration_sha,
+    )
+    batches_before = len(adapter.batch_calls)
+    session.outer_render_boundary_permit = True
+    try:
+        with pytest.raises(RuntimeError, match="command-limit margin"):
+            session._process_decision(
+                adapter,
+                payload,
+                _decision(
+                    state="S10_POSTURE_RECOVERY",
+                    epoch=session.last_epoch + 1,
+                    changed=True,
+                    servos=target,
+                    wheels=zero_wheels,
+                    provenance=provenance,
+                    profile_id=s10_profile["profile_id"],
+                    profile_source_version=s10_profile["source_version"],
+                    profile_strategy=s10_profile["strategy"],
+                    subphase="INCREMENT",
+                ),
+            )
+    finally:
+        session.outer_render_boundary_permit = False
+    assert len(adapter.batch_calls) == batches_before
+    assert session.pending_readback is None
+
+
+def test_runtime_safety_rehashes_contact_sample_and_rejects_stale_provider(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    original = json.loads(json.dumps(session.filtered_contact_sample))
+    session.filtered_contact_sample["nonwheel_rows"][0]["active"] = True
+    with pytest.raises(RuntimeError, match="current exact non-wheel contact sample"):
+        session._capture_runtime_safety_evidence(adapter)
+    session.filtered_contact_sample = original
+    session.filtered_contact_nonwheel_rows = json.loads(
+        json.dumps(original["nonwheel_rows"])
+    )
+    session._capture_runtime_safety_evidence(adapter)
+
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": False,
+        "source": "TEST_STALE_RUNTIME_PROVIDER",
+        "sample_sim_step": 0,
+        "error": "",
+    }
+    with pytest.raises(RuntimeError, match="provider sample is stale"):
+        session._capture_runtime_safety_evidence(adapter)
+
+
+def test_unverified_provider_true_collision_claim_stops_without_false_attribution(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "dangerous_body_collision": True,
+    }
+    with pytest.raises(RuntimeError, match="true collision claim is not a valid"):
+        session._capture_runtime_safety_evidence(adapter)
+    physical = session._task_inputs(success=False, error="unverified provider claim")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    assert physical["dangerous_collision_validation_source"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    )
+    assert physical["runtime_collision_penetration_classification"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+    )
+    claim = physical["unverified_provider_collision_claim"]
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert len(claim["provider_payload_sha256"]) == 64
+    assert claim["provider_payload_sha256_error"] == ""
+    assert "unavailable" in claim["provider_contract_error"]
+    assert claim["combined_contact_sample_sha256"] == (
+        session.filtered_contact_sample["sample_sha256"]
+    )
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    (
+        {"severe_penetration": None, "error": ""},
+        {"severe_penetration": False, "error": "provider reported corruption"},
+        {
+            "available": "malformed",
+            "severe_penetration": False,
+            "error": "",
+        },
+    ),
+)
+def test_provider_true_malformed_contract_cannot_be_finalized_as_collision_clear(
+    tmp_path: Path,
+    malformed: dict[str, object],
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": True,
+        "source": "PROVIDER_TRUE_BUT_MALFORMED",
+        "sample_sim_step": adapter.sim_steps,
+        **malformed,
+    }
+    with pytest.raises(RuntimeError, match="true collision claim is not a valid"):
+        session._capture_runtime_safety_evidence(adapter)
+    physical = session._task_inputs(success=False, error="malformed provider claim")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    assert physical["runtime_collision_penetration_classification"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+    )
+    claim = physical["unverified_provider_collision_claim"]
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert claim["reported_source"] == "PROVIDER_TRUE_BUT_MALFORMED"
+    assert claim["provider_contract_error"]
+
+
+def test_valid_provider_true_is_sticky_before_later_observation_failure(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": True,
+        "severe_penetration": False,
+        "source": "VERIFIED_CURRENT_PROVIDER",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+    }
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    assert evidence["dangerous_body_collision"] is True
+    assert session.dangerous_collision_detected is True
+    # Model an exception in any later observation field before hard safety.
+    physical = session._task_inputs(success=False, error="later observation failure")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is True
+    assert physical["dangerous_collision_available"] is True
+    detection = physical["dangerous_collision_detection_evidence"]
+    assert detection["sample_sim_step"] == adapter.sim_steps
+    assert "VERIFIED_CURRENT_PROVIDER" in detection["source"]
+    assert len(detection["runtime_safety_evidence_sha256"]) == 64
+
+
+def test_provider_true_nonserializable_payload_records_claim_before_hash_failure(
+    tmp_path: Path,
+):
+    class _NonSerializable:
+        def __str__(self) -> str:
+            raise ValueError("intentional provider serialization failure")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": True,
+        "severe_penetration": False,
+        "source": "PROVIDER_WITH_UNSERIALIZABLE_DIAGNOSTIC",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+        "diagnostic": _NonSerializable(),
+    }
+    with pytest.raises(ValueError, match="serialization failure"):
+        session._capture_runtime_safety_evidence(adapter)
+    claim = session.unverified_provider_collision_claim
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert claim["provider_payload_sha256"] == ""
+    assert "serialization failure" in claim["provider_payload_sha256_error"]
+    physical = session._task_inputs(success=False, error="provider hash failure")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+
+
+def test_provider_true_penetration_is_sticky_before_normalization_failure(
+    tmp_path: Path,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("intentional penetration normalization failure")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": True,
+        "source": "PROVIDER_PENETRATION_TRUE_WITH_BAD_DIAGNOSTIC",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+        "diagnostic": _ExplodingValue(),
+    }
+    with pytest.raises(RuntimeError, match="penetration normalization failure"):
+        session._capture_runtime_safety_evidence(adapter)
+    physical = session._task_inputs(
+        success=False, error="penetration normalization failure"
+    )["physical_evidence"]
+    assert physical["severe_penetration"] is True
+    assert physical["penetration_evidence_available"] is True
+    claim = physical["unverified_provider_penetration_claim"]
+    assert claim["classification"] == (
+        "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM"
+    )
+    assert claim["reported_sample_sim_step"] == adapter.sim_steps
+    assert claim["reported_source"] == (
+        "PROVIDER_PENETRATION_TRUE_WITH_BAD_DIAGNOSTIC"
+    )
+    assert physical["penetration_validation_source"] == (
+        "PROVIDER_PENETRATION_TRUE_WITH_BAD_DIAGNOSTIC"
+    )
+    assert "normalization failure" in claim["provider_payload_sha256_error"]
+
+
+def test_verified_provider_penetration_preserves_first_hit_provenance(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": True,
+        "source": "VALID_PENETRATION_SENSOR",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+    }
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    assert evidence["severe_penetration"] is True
+    physical = session._task_inputs(success=False, error="penetration detected")[
+        "physical_evidence"
+    ]
+    assert physical["severe_penetration"] is True
+    assert physical["penetration_evidence_available"] is True
+    assert physical["penetration_validation_source"].startswith(
+        "VALID_PENETRATION_SENSOR;"
+        "COMBINED_FILTERED_NONWHEEL_OBSTACLE_CONTACT_CURRENT_TICK:"
+    )
+    detection = physical["severe_penetration_detection_evidence"]
+    assert detection["sample_sim_step"] == adapter.sim_steps
+    assert "VALID_PENETRATION_SENSOR" in detection["source"]
+    assert len(detection["runtime_safety_evidence_sha256"]) == 64
+
+
+def test_later_verified_penetration_does_not_replace_first_unverified_hit(
+    tmp_path: Path,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("first penetration sample normalization failed")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": True,
+        "source": "FIRST_UNVERIFIED_PENETRATION_HIT",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+        "diagnostic": _ExplodingValue(),
+    }
+    with pytest.raises(RuntimeError, match="first penetration sample"):
+        session._capture_runtime_safety_evidence(adapter)
+    first_claim = dict(session.unverified_provider_penetration_claim)
+
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": True,
+        "source": "LATER_VERIFIED_PENETRATION_HIT",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+    }
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    assert evidence["severe_penetration"] is True
+    assert session.unverified_provider_penetration_claim == first_claim
+    assert session.severe_penetration_detection_evidence["sample_sim_step"] == 1
+    assert "LATER_VERIFIED_PENETRATION_HIT" in (
+        session.severe_penetration_detection_evidence["source"]
+    )
+    physical = session._task_inputs(success=False, error="penetration detected")[
+        "physical_evidence"
+    ]
+    assert physical["penetration_validation_source"] == (
+        "FIRST_UNVERIFIED_PENETRATION_HIT"
+    )
+    assert physical["unverified_provider_penetration_claim"] == first_claim
+
+
+def test_provider_true_hash_bomb_records_claim_before_canonical_hash_failure(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: {
+        "available": True,
+        "dangerous_body_collision": True,
+        "severe_penetration": False,
+        "source": "PROVIDER_WITH_HASH_BOMB_DIAGNOSTIC",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+        "diagnostic_integer": 10**5000,
+    }
+    with pytest.raises(ValueError):
+        session._capture_runtime_safety_evidence(adapter)
+    claim = session.unverified_provider_collision_claim
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert claim["reported_source"] == "PROVIDER_WITH_HASH_BOMB_DIAGNOSTIC"
+    assert claim["provider_payload_sha256"] == ""
+    physical = session._task_inputs(success=False, error="provider hash bomb")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    assert physical["runtime_collision_penetration_classification"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+    )
+
+
+def test_provider_true_cannot_flip_false_during_mapping_snapshot(
+    tmp_path: Path,
+):
+    class _FlippingCollisionMapping(dict):
+        def __init__(self, payload: dict[str, object]):
+            super().__init__(payload)
+            self._first_collision_read = True
+
+        def get(self, key, default=None):
+            if key == "dangerous_body_collision" and self._first_collision_read:
+                self._first_collision_read = False
+                return True
+            return super().get(key, default)
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    provider_mapping = _FlippingCollisionMapping(
+        {
+            "available": True,
+            "dangerous_body_collision": False,
+            "severe_penetration": False,
+            "source": "FLIPPING_PROVIDER_MAPPING",
+            "sample_sim_step": adapter.sim_steps,
+            "error": "",
+        }
+    )
+    adapter.capture_macro_runtime_safety_evidence = (
+        lambda **_kwargs: provider_mapping
+    )
+    with pytest.raises(RuntimeError, match="claim drifted during snapshot"):
+        session._capture_runtime_safety_evidence(adapter)
+    claim = session.unverified_provider_collision_claim
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert "changed while" in claim["provider_contract_error"]
+    physical = session._task_inputs(success=False, error="provider snapshot drift")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    assert physical["runtime_collision_penetration_classification"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+    )
+
+
+def test_provider_snapshot_true_is_recorded_before_unrelated_normalization_failure(
+    tmp_path: Path,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("intentional post-snapshot normalization failure")
+
+    class _SnapshotTrueMapping(dict):
+        def get(self, key, default=None):
+            if key == "dangerous_body_collision":
+                return False
+            return super().get(key, default)
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    provider_mapping = _SnapshotTrueMapping(
+        {
+            "available": True,
+            "dangerous_body_collision": True,
+            "severe_penetration": False,
+            "source": "SNAPSHOT_TRUE_PROVIDER_MAPPING",
+            "sample_sim_step": adapter.sim_steps,
+            "error": "",
+            "diagnostic": _ExplodingValue(),
+        }
+    )
+    adapter.capture_macro_runtime_safety_evidence = (
+        lambda **_kwargs: provider_mapping
+    )
+    with pytest.raises(RuntimeError, match="normalization failure"):
+        session._capture_runtime_safety_evidence(adapter)
+    claim = session.unverified_provider_collision_claim
+    assert claim["classification"] == "UNVERIFIED_PROVIDER_TRUE_CLAIM"
+    assert "normalization failure" in claim["provider_payload_sha256_error"]
+    physical = session._task_inputs(success=False, error="provider normalization failure")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    assert physical["runtime_collision_penetration_classification"] == (
+        "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+    )
+
+
+def test_final_readback_failure_cannot_reuse_prior_tick_as_collision_clear(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session.start()
+    assert session.runtime_contact_collision_evidence["last_sample_sim_step"] == 0
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+
+    def fail_readback():
+        raise RuntimeError("injected final readback failure")
+
+    adapter.capture_motion_start_base_evidence = fail_readback
+    terminal = session._finalize(success=False, error="injected failure")
+    physical = terminal["task_inputs"]["physical_evidence"]
+    collision = physical["runtime_nonwheel_collision_evidence"]
+    assert collision["terminal_adapter_sim_step"] == 1
+    assert collision["last_sample_sim_step"] == 0
+    assert collision["coverage_complete"] is False
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+    for field in ("body_stuck", "active_leg_trapped"):
+        assert physical[field] is None
+        assert physical[f"{field}_available"] is False
+        assert physical[f"{field}_last_sample_sim_step"] == 0
+        assert physical[f"{field}_terminal_adapter_sim_step"] == 1
+        assert physical[f"{field}_complete_live_coverage"] is False
+
+
+def test_terminal_time_drift_cannot_reuse_same_step_as_collision_clear(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session.start()
+    assert session.runtime_contact_collision_evidence["last_sample_sim_step"] == 0
+    adapter.sim_time = 1.0 / 120.0
+
+    def fail_readback():
+        raise RuntimeError("injected final readback failure with time drift")
+
+    adapter.capture_motion_start_base_evidence = fail_readback
+    terminal = session._finalize(success=False, error="injected failure")
+    physical = terminal["task_inputs"]["physical_evidence"]
+    collision = physical["runtime_nonwheel_collision_evidence"]
+    assert collision["terminal_adapter_sim_step"] == 0
+    assert collision["terminal_adapter_sim_time_s"] == 1.0 / 120.0
+    assert collision["last_published_contact_sim_time_s"] == 0.0
+    assert collision["terminal_time_identity_valid"] is False
+    assert collision["coverage_complete"] is False
+    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision_available"] is False
+
+
+@pytest.mark.parametrize("tamper", ("nan_friction", "nan_active_point"))
+def test_combined_contact_refresh_fails_closed_before_partial_publication(
+    tmp_path: Path,
+    tamper: str,
+):
+    request, _payload = _load_request(tmp_path)
+    session, _adapter, _controller = _runtime(request)
+    sensor = session.scene_handle.contact_sensor.wheel_bank.sensors["FL"]
+    if tamper == "nan_friction":
+        sensor.data.friction_forces_w[0, 0, 0, 0] = np.nan
+    else:
+        sensor.data.contact_pos_w[0, 0, 0, :] = np.nan
+    with pytest.raises(RuntimeError):
+        session._refresh_filtered_contact_evidence(_adapter)
+    assert session.filtered_contact_sample_epoch == 0
+    assert session.filtered_contact_sample == {}
+    assert session.filtered_contact_frame is None
+
+
+def test_exact_one_newton_filtered_row_is_not_active_support(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, _adapter, _controller = _runtime(request)
+    sensor = session.scene_handle.contact_sensor.wheel_bank.sensors["FL"]
+    sensor.data.force_matrix_w[0, 0, 0, :] = (0.0, 0.0, 1.0)
+    sensor.data.net_forces_w[0, 0, :] = (0.0, 0.0, 1.0)
+    session._refresh_filtered_contact_evidence(_adapter)
+    rows = [
+        row
+        for row in session.filtered_contact_wheel_rows
+        if row["leg"] == "FL" and row["surface"] == "ground"
+    ]
+    assert len(rows) == 1
+    assert rows[0]["bank_active"] is True
+    assert rows[0]["active"] is False
+    assert session.filtered_contact_surface_kind_by_leg["FL"] == "AIR"
+    assert session.filtered_contact_frame.by_leg()["FL"].measurement.active is False
+
+
+def test_exact_one_newton_nonwheel_row_is_not_a_collision(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    sensor = next(iter(session.filtered_contact_nonwheel_bank.sensors.values()))
+    sensor.data.force_matrix_w[0, 0, 0, :] = (0.0, 0.0, 1.0)
+    sensor.data.net_forces_w[0, 0, :] = (0.0, 0.0, 1.0)
+    sensor.data.contact_pos_w[0, 0, 0, :] = (0.55, 0.0, 0.05)
+    session._refresh_filtered_contact_evidence(adapter)
+    assert session.filtered_contact_nonwheel_rows[0]["active"] is False
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    assert evidence["filtered_nonwheel_collision"] is False
+    assert evidence["dangerous_body_collision"] is False
+
+
+def test_current_nonwheel_obstacle_contact_is_a_same_tick_hard_stop(tmp_path: Path):
+    request, _payload = _load_request(tmp_path)
+    session, _adapter, _controller = _runtime(request)
+    sensor = next(
+        iter(session.scene_handle.contact_sensor.nonwheel_bank.sensors.values())
+    )
+    sensor.data.force_matrix_w[0, 0, 0, :] = (0.0, 0.0, 5.0)
+    sensor.data.net_forces_w[0, 0, :] = (0.0, 0.0, 5.0)
+    sensor.data.contact_pos_w[0, 0, 0, :] = (0.55, 0.0, 0.05)
+    with pytest.raises(RuntimeError, match="dangerous body collision"):
+        session.start()
+    assert session.filtered_contact_nonwheel_rows[0]["active"] is True
+    assert session.filtered_contact_sample["sample_sim_step"] == 0
+
+
+def test_contact_collision_captured_before_later_observation_failure_cannot_false_clear(
+    tmp_path: Path,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    sensor = next(iter(session.filtered_contact_nonwheel_bank.sensors.values()))
+    sensor.data.force_matrix_w[0, 0, 0, :] = (0.0, 0.0, 5.0)
+    sensor.data.net_forces_w[0, 0, :] = (0.0, 0.0, 5.0)
+    sensor.data.contact_pos_w[0, 0, 0, :] = (0.55, 0.0, 0.05)
+    session._refresh_filtered_contact_evidence(adapter)
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    assert evidence["dangerous_body_collision"] is True
+    # Model any later payload-construction exception by finalizing evidence
+    # before _validate_hard_safety has had a chance to set its sticky flag.
+    assert session.dangerous_collision_detected is False
+    physical = session._task_inputs(success=False, error="injected observation failure")[
+        "physical_evidence"
+    ]
+    assert physical["dangerous_collision"] is True
+    assert physical["dangerous_collision_available"] is True
+    assert physical["runtime_nonwheel_collision_evidence"][
+        "detected_sample_count"
+    ] == 1
+    assert physical["runtime_nonwheel_collision_evidence"][
+        "coverage_complete"
+    ] is False
+    assert physical["dangerous_collision_detection_evidence"][
+        "combined_contact_sample_sha256"
+    ] == session.filtered_contact_sample["sample_sha256"]
 
 
 def test_current_complete_coalesces_adjacent_changed_start_with_one_n_plus_one_batch(
@@ -1645,6 +3917,9 @@ def test_physics_tick_control_atomic_epochs_boundary_and_15hz_evidence(tmp_path:
         "batch_id",
         "canonical_servo_targets_deg",
         "canonical_wheel_targets_rad_s",
+        "servo_command_transform",
+        "servo_command_transform_sha256",
+        "expected_servo_drive_targets_rad",
         "actual_servo_drive_targets_rad",
         "actual_wheel_drive_targets_rad_s",
         "adapter_runtime_instance_id",
@@ -1666,12 +3941,15 @@ def test_physics_tick_control_atomic_epochs_boundary_and_15hz_evidence(tmp_path:
     assert set(safe_readback["actual_servo_drive_targets_rad"]) == set(
         SERVO_JOINT_NAMES
     )
+    assert set(safe_readback["expected_servo_drive_targets_rad"]) == set(
+        SERVO_JOINT_NAMES
+    )
     assert set(safe_readback["actual_wheel_drive_targets_rad_s"]) == set(
         WHEEL_JOINT_NAMES
     )
     assert safe_readback_sha256 == canonical_mapping_sha256(safe_readback)
     assert terminal["last_target_readback"]["sim_step"] > safe_readback["sim_step"]
-    assert terminal["last_target_readback"]["batch_id"] == ""
+    assert terminal["last_target_readback"]["batch_id"] == safe_ack["batch_id"]
     durable_result = json.loads(Path(terminal["worker_result_path"]).read_text())
     assert durable_result["safe_stop_readback"] == safe_readback
     assert durable_result["safe_stop_readback_sha256"] == safe_readback_sha256
@@ -1757,15 +4035,35 @@ def test_physics_tick_control_atomic_epochs_boundary_and_15hz_evidence(tmp_path:
         assert physical[f"{field}_validation_source"] == (
             "UNAVAILABLE_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
         )
-    assert physical["dangerous_collision"] is None
+    assert physical["dangerous_collision"] is False
     assert physical["severe_penetration"] is None
-    assert physical["dangerous_collision_available"] is False
+    assert physical["dangerous_collision_available"] is True
+    collision = physical["runtime_nonwheel_collision_evidence"]
+    assert collision["coverage_complete"] is True
+    assert collision["sample_count"] > 0
+    assert collision["sample_count"] == collision["clear_sample_count"]
+    assert collision["detected_sample_count"] == 0
+    assert collision["sample_count"] == collision["published_contact_sample_epoch"]
+    assert len(collision["first_sample_sha256"]) == 64
+    assert len(collision["last_sample_sha256"]) == 64
     assert physical["penetration_evidence_available"] is False
     assert physical["runtime_collision_penetration_classification"] == (
-        "NOT_EVALUATED_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
+        "DANGEROUS_COLLISION_CLEAR_BY_FULL_CURRENT_TICK_FILTERED_"
+        "CONTACT_COVERAGE;PENETRATION_NOT_EVALUATED_REQUIRES_"
+        "SHA_BOUND_FULL_VIDEO_REVIEW"
     )
     assert physical["initial_deployment_collision_penetration_clear"] is True
     assert len(physical["initial_deployment_evidence_sha256"]) == 64
+    session.runtime_contact_collision_evidence["last_sample_sim_step"] += 1
+    gap_physical = session._task_inputs(success=True, error="")["physical_evidence"]
+    assert gap_physical["dangerous_collision"] is None
+    assert gap_physical["dangerous_collision_available"] is False
+    assert gap_physical["runtime_nonwheel_collision_evidence"][
+        "coverage_complete"
+    ] is False
+    assert gap_physical["runtime_collision_penetration_classification"] == (
+        "NOT_EVALUATED_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
+    )
 
 
 def test_changed_epoch_ack_mismatch_fails_closed(tmp_path: Path):
@@ -1848,6 +4146,135 @@ def test_same_target_source_action_is_consumed_without_physical_dispatch(
     assert completion["tracking_end_count"] == 1
     assert len(adapter.end_tracking_calls) == 1
 
+    saved_servo_targets = dict(row["servo_targets_deg"])
+    row["servo_targets_deg"][SERVO_JOINT_NAMES[0]] = 7.0
+    row["target_changed"] = True
+    row["physical_dispatch_required"] = True
+    assert any(
+        "canonical source action" in error
+        or "physical dispatch completion flag" in error
+        for error in session._source_action_coverage_errors()
+    )
+    row["servo_targets_deg"] = saved_servo_targets
+    row["target_changed"] = False
+    row["physical_dispatch_required"] = False
+    assert session._source_action_coverage_errors() == []
+
+    physical_action = {
+        "provenance": _source_provenance(
+            segment=0,
+            step=1,
+            source_time_s=0.0,
+            events=(0,),
+            commands=("physical source action",),
+            sequence=0,
+        ),
+        "servos": {name: 1.0 for name in SERVO_JOINT_NAMES},
+        "wheels": zeros_w,
+    }
+    other, other_adapter = _prime_manual_session(
+        request, bundle=_bundle_for_actions([physical_action])
+    )
+    _process_expected_source_action(
+        other, other_adapter, other.expected_source_actions[0], step=3, epoch=1
+    )
+    other_adapter.sim_steps = 4
+    other_adapter.sim_time = 4.0 / 120.0
+    other._verify_pending_readback(other_adapter, sim_step=4)
+    assert other._source_action_coverage_errors() == []
+    physical_row = other.source_action_consumption_rows[0]
+    saved_physical_identity = {
+        key: physical_row[key]
+        for key in (
+            "target_changed",
+            "physical_dispatch_required",
+            "physical_dispatch_applied",
+            "physical_dispatch_index",
+            "batch_id",
+            "n_plus_one_verified",
+            "n_plus_one_verified_sim_step",
+            "n_plus_one_readback_sha256",
+        )
+    }
+    physical_row.update(
+        target_changed=False,
+        physical_dispatch_required=False,
+        physical_dispatch_applied=False,
+        physical_dispatch_index=None,
+        batch_id="",
+        n_plus_one_verified=False,
+        n_plus_one_verified_sim_step=None,
+        n_plus_one_readback_sha256="",
+    )
+    assert any(
+        "target-change flag differs" in error
+        for error in other._source_action_coverage_errors()
+    )
+    physical_row.update(saved_physical_identity)
+    assert other._source_action_coverage_errors() == []
+
+    saved_pre_epoch = physical_row["pre_action_verified_command_epoch"]
+    physical_row["pre_action_verified_command_epoch"] = 999
+    assert any(
+        "scalar/readback identity" in error
+        for error in other._source_action_coverage_errors()
+    )
+    physical_row["pre_action_verified_command_epoch"] = saved_pre_epoch
+
+    saved_step = physical_row["sim_step"]
+    saved_time = physical_row["sim_time_s"]
+    physical_row["sim_step"] = 999
+    physical_row["sim_time_s"] = 999.0 / 120.0
+    physical_row["n_plus_one_verified_sim_step"] = 1000
+    assert any(
+        "exact source-action consumption" in error
+        for error in other._dispatch_ownership_errors()
+    )
+    physical_row["sim_step"] = saved_step
+    physical_row["sim_time_s"] = saved_time
+    physical_row["n_plus_one_verified_sim_step"] = saved_physical_identity[
+        "n_plus_one_verified_sim_step"
+    ]
+
+    saved_pre_action = json.loads(
+        json.dumps(physical_row["pre_action_verified_readback"])
+    )
+    forged_pre_action = json.loads(json.dumps(saved_pre_action))
+    forged_pre_action["canonical_servo_targets_deg"] = dict(
+        physical_action["servos"]
+    )
+    transform = forged_pre_action["servo_command_transform"]
+    for name in SERVO_JOINT_NAMES:
+        expected_rad = math.radians(
+            float(transform["standing_pose_deg_by_servo"][name])
+            + float(transform["command_sign_by_servo"][name])
+            * float(physical_action["servos"][name])
+        )
+        forged_pre_action["expected_servo_drive_targets_rad"][name] = expected_rad
+        forged_pre_action["actual_servo_drive_targets_rad"][name] = expected_rad
+    physical_row["pre_action_verified_readback"] = forged_pre_action
+    physical_row["pre_action_verified_readback_sha256"] = canonical_mapping_sha256(
+        forged_pre_action
+    )
+    assert any(
+        "readback preimage/full identity" in error
+        for error in other._source_action_coverage_errors()
+    )
+    physical_row["pre_action_verified_readback"] = saved_pre_action
+    physical_row["pre_action_verified_readback_sha256"] = canonical_mapping_sha256(
+        saved_pre_action
+    )
+    assert other._source_action_coverage_errors() == []
+    assert other._dispatch_ownership_errors() == []
+    phantom = json.loads(json.dumps(other.dispatch_rows[0]))
+    phantom["dispatch_index"] = 0
+    session.dispatch_rows.append(phantom)
+    session.command_dispatch_count = 1
+    assert any(
+        "exact source-action consumption" in error
+        for error in session._dispatch_ownership_errors()
+    )
+
 
 def test_wheel_completion_action_is_ordered_consumed_and_not_counted_as_segment(
     tmp_path: Path,
@@ -1898,6 +4325,7 @@ def test_wheel_completion_action_is_ordered_consumed_and_not_counted_as_segment(
     session._verify_pending_readback(adapter, sim_step=4)
     adapter.sim_steps = 64
     adapter.sim_time = 64.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         due_token = session._observe_active_segment_completion(
@@ -1916,6 +4344,7 @@ def test_wheel_completion_action_is_ordered_consumed_and_not_counted_as_segment(
     session._verify_pending_readback(adapter, sim_step=65)
     adapter.sim_steps = 72
     adapter.sim_time = 72.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         complete_token = session._observe_active_segment_completion(
@@ -2345,6 +4774,7 @@ def test_source_action_duplicate_missing_out_of_order_and_malformed_fail_closed(
     malformed["source_action_identity"] = "0" * 64
     adapter.sim_steps = 3
     adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="identity hash mismatch"):
         session._process_decision(
             adapter,
@@ -2400,6 +4830,7 @@ def test_source_target_change_without_provenance_and_incomplete_success_fail(
     )
     adapter.sim_steps = 3
     adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="require exact command provenance"):
         session._process_decision(
             adapter,
@@ -2467,6 +4898,7 @@ def test_non_source_zero_wheel_provenance_cannot_preapply_source_motion(
     )
     adapter.sim_steps = 3
     adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="retain all servo targets"):
         session._process_decision(
             adapter,
@@ -2496,6 +4928,7 @@ def test_non_source_zero_wheel_provenance_cannot_preapply_source_motion(
     session.last_macro_state = "S0_INITIALIZE"
     adapter.sim_steps = 3
     adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="current outer boundary"):
         session._process_decision(
             adapter,
@@ -2526,6 +4959,7 @@ def test_non_source_zero_wheel_provenance_cannot_preapply_source_motion(
     )
     adapter.sim_steps = 3
     adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="zero all wheel targets"):
         session._process_decision(
             adapter,
@@ -2560,6 +4994,7 @@ def test_non_source_zero_wheel_provenance_cannot_preapply_source_motion(
     session._verify_pending_readback(adapter, sim_step=4)
     adapter.sim_steps = 5
     adapter.sim_time = 5.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     with pytest.raises(RuntimeError, match="exact state/event context"):
         session._process_decision(
             adapter,
@@ -2599,10 +5034,34 @@ def test_same_target_source_action_requires_verified_retained_epoch(tmp_path: Pa
     session, adapter = _prime_manual_session(
         request, bundle=_bundle_for_actions([action])
     )
+    expected = session.expected_source_actions[0]
+    adapter.sim_steps = 3
+    adapter.sim_time = 3.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    payload = session._observation_payload(adapter)
     session.last_verified_command_epoch = -1
     with pytest.raises(RuntimeError, match="verified retained command epoch"):
-        _process_expected_source_action(
-            session, adapter, session.expected_source_actions[0], step=3, epoch=0
+        session._process_decision(
+            adapter,
+            payload,
+            _decision(
+                state=expected["owner_state"],
+                epoch=0,
+                servos=zeros_s,
+                wheels=zeros_w,
+                provenance=expected["command_provenance"],
+                completion_control=_start_completion_control(
+                    provenance=expected["command_provenance"],
+                    spec=expected["segment_completion_binding"]["completion_spec"],
+                    epoch=0,
+                    profile_id=expected["profile_id"],
+                    plan_sha=expected["source_plan_sha256"],
+                    owner_state=expected["owner_state"],
+                ),
+                profile_id=expected["profile_id"],
+                profile_source_version=expected["profile_source_version"],
+                profile_strategy=expected["profile_strategy"],
+            ),
         )
 
 
@@ -2671,6 +5130,7 @@ def test_real_v003_s1_to_s2_segment7_noop_and_canonical_counts(tmp_path: Path):
     boundary_wheels = {name: 0.0 for name in WHEEL_JOINT_NAMES}
     adapter.sim_steps = step
     adapter.sim_time = step / 120.0
+    _prime_current_target_readback(session, adapter)
     session._process_decision(
         adapter,
         session._observation_payload(adapter),
@@ -2718,8 +5178,9 @@ def test_real_v003_s1_to_s2_segment7_noop_and_canonical_counts(tmp_path: Path):
         session.source_action_consumption_rows[-1][
             "pre_action_verified_readback_sha256"
         ]
-        == boundary_dispatch["n_plus_one_readback_sha256"]
+        == canonical_mapping_sha256(session.last_target_readback)
     )
+    assert session.last_target_readback["sim_step"] == step
     assert [
         row["command_provenance"]["source_segment_index"]
         for row in session.source_action_consumption_rows
@@ -2743,7 +5204,9 @@ def test_initial_rl_air_cannot_authorize_later_s8_crossing_without_lift(
     # v003-like startup transient: RL is AIR before any RL active-leg phase.
     session.last_macro_state = "S0_INITIALIZE"
     adapter.robot.data.body_link_state_w[0, 2, 2] = 0.18
+    adapter.sim_steps = 120
     adapter.sim_time = 1.0
+    _prime_current_target_readback(session, adapter)
     startup = session._observation_payload(adapter)
     assert startup["wheel_contact_classes"]["RL"] == "AIR"
     assert session.traversal["RL"]["airborne_seen_before_crossing"] is True
@@ -2751,10 +5214,14 @@ def test_initial_rl_air_cannot_authorize_later_s8_crossing_without_lift(
 
     # It returns to support.  Entering S7 begins a new RL phase-local episode.
     adapter.robot.data.body_link_state_w[0, 2, 2] = 0.05
+    adapter.sim_steps = 240
     adapter.sim_time = 2.0
+    _prime_current_target_readback(session, adapter)
     session._observation_payload(adapter)
     session.last_macro_state = "S7_PRE_RL_SUPPORT_SETUP"
+    adapter.sim_steps = 8400
     adapter.sim_time = 70.0
+    _prime_current_target_readback(session, adapter)
     entry = session._observation_payload(adapter)
     assert entry["active_traversal_leg"] == "RL"
     assert session.phase_traversal["RL"]["airborne_seen_before_crossing"] is False
@@ -2763,7 +5230,9 @@ def test_initial_rl_air_cannot_authorize_later_s8_crossing_without_lift(
     # startup AIR must not suppress the live hard failure.
     session.last_macro_state = "S8_RL_COM_SHIFT_AND_TRAVERSE"
     adapter.robot.data.body_link_state_w[0, 2, 0] = 1.20
+    adapter.sim_steps = 8520
     adapter.sim_time = 71.0
+    _prime_current_target_readback(session, adapter)
     crossing = session._observation_payload(adapter)
     crossing["actuator_targets_applied"] = True
     assert crossing["wheel_drive_up_without_required_lift"] is True
@@ -3013,7 +5482,9 @@ def test_shift_air_that_returns_ground_cannot_authorize_traverse_crossing(
 
     session.last_macro_state = "S1_APPROACH_AND_PRE_FR_SHIFT"
     adapter.robot.data.body_link_state_w[0, 1, 2] = 0.18
+    adapter.sim_steps = 1200
     adapter.sim_time = 10.0
+    _prime_current_target_readback(session, adapter)
     session._observation_payload(adapter)
     assert session.phase_traversal["FR"]["airborne_seen_before_crossing"] is True
 
@@ -3021,13 +5492,17 @@ def test_shift_air_that_returns_ground_cannot_authorize_traverse_crossing(
     # must drop the earlier transient rather than sharing it across S1/S2.
     adapter.robot.data.body_link_state_w[0, 1, 2] = 0.05
     session.last_macro_state = "S2_FR_TRAVERSE"
+    adapter.sim_steps = 1320
     adapter.sim_time = 11.0
+    _prime_current_target_readback(session, adapter)
     session._observation_payload(adapter)
     assert session.phase_traversal["FR"]["airborne_seen_before_crossing"] is False
     assert session.phase_traversal["FR"]["phase_entry_state"] == "S2_FR_TRAVERSE"
 
     adapter.robot.data.body_link_state_w[0, 1, 0] = 1.20
+    adapter.sim_steps = 1440
     adapter.sim_time = 12.0
+    _prime_current_target_readback(session, adapter)
     crossing = session._observation_payload(adapter)
     crossing["actuator_targets_applied"] = True
     assert crossing["wheel_drive_up_without_required_lift"] is True
@@ -3054,6 +5529,7 @@ def test_transition_tick_live_air_seeds_next_state_without_one_tick_gap(
     adapter.robot.data.body_link_state_w[0, 1, 2] = 0.18
     adapter.sim_steps = 20
     adapter.sim_time = 20.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     boundary_payload = session._observation_payload(adapter)
     session._process_decision(
         adapter,
@@ -3076,12 +5552,14 @@ def test_transition_tick_live_air_seeds_next_state_without_one_tick_gap(
     adapter.robot.data.body_link_state_w[0, 1, 2] = 0.05
     adapter.sim_steps = 21
     adapter.sim_time = 21.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session._observation_payload(adapter)
     assert session.phase_traversal["FR"]["airborne_seen_before_crossing"] is True
 
     adapter.robot.data.body_link_state_w[0, 1, 0] = 1.20
     adapter.sim_steps = 22
     adapter.sim_time = 22.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     crossing = session._observation_payload(adapter)
     assert crossing["wheel_drive_up_without_required_lift"] is False
     assert session.phase_traversal["FR"]["front_face_crossing_s"] is not None
@@ -3097,9 +5575,13 @@ def test_real_observation_contract_accepts_only_complete_adapter_snapshot(
             obstacle_front_x=1.0,
             obstacle_height_m=0.05,
             obstacle_length=1.0,
-            obstacle_width=2.0,
-            ground_z_m=0.0,
-        )
+                obstacle_width=2.0,
+                ground_z_m=0.0,
+                ground_static_friction=1.25,
+                ground_dynamic_friction=1.05,
+                obstacle_static_friction=1.20,
+                obstacle_dynamic_friction=1.00,
+            )
     )
     controller = _Controller()
     session = WorkerMacroFSMSession(
@@ -3109,6 +5591,7 @@ def test_real_observation_contract_accepts_only_complete_adapter_snapshot(
         controller_factory=lambda _bundle: controller,
         recorder_factory=_Recorder,
     )
+    _bind_fake_contact_scene(session, scene, request)
     session.prepare_after_adapter(
         adapter=adapter, scene_handle=scene, project_root=tmp_path
     )
@@ -3259,9 +5742,12 @@ def test_runtime_collision_unknown_stays_none_and_true_hard_stops_same_tick(
     session, adapter, _controller = _runtime(request)
     session.start()
     unknown = session._observation_payload(adapter)
-    assert unknown["dangerous_body_collision"] is None
+    assert unknown["dangerous_body_collision"] is False
     assert unknown["severe_penetration"] is None
     assert unknown["runtime_safety_evidence"]["available"] is False
+    assert len(
+        unknown["runtime_safety_evidence"]["combined_contact_sample_sha256"]
+    ) == 64
     for field in ("body_stuck", "active_leg_trapped"):
         assert unknown[field] is None
         assert unknown[f"{field}_available"] is False
@@ -3284,6 +5770,21 @@ def test_runtime_collision_unknown_stays_none_and_true_hard_stops_same_tick(
     assert session.state == "safe_stop_pending_readback"
     assert "dangerous body collision" in session.error
     assert session.dangerous_collision_detected is True
+    adapter.sim_steps = 2
+    adapter.sim_time = 2.0 / 120.0
+    _on_step(session, adapter, 1.0 / 120.0)
+    terminal = session.after_adapter_step()
+    assert terminal["type"] == "macro_fsm_failed"
+    physical = terminal["task_inputs"]["physical_evidence"]
+    assert physical["dangerous_collision"] is True
+    assert physical["dangerous_collision_available"] is True
+    assert "TEST_RUNTIME_SENSOR" in physical[
+        "dangerous_collision_validation_source"
+    ]
+    detection = physical["dangerous_collision_detection_evidence"]
+    assert detection["sample_sim_step"] == 1
+    assert "TEST_RUNTIME_SENSOR" in detection["source"]
+    assert len(detection["runtime_safety_evidence_sha256"]) == 64
 
 
 def test_optional_body_and_trapped_live_producer_true_hard_stops_same_tick(
@@ -3317,6 +5818,232 @@ def test_optional_body_and_trapped_live_producer_true_hard_stops_same_tick(
             if field == "body_stuck"
             else session.active_leg_trapped_detected
         ) is True
+
+
+@pytest.mark.parametrize("field", ("body_stuck", "active_leg_trapped"))
+def test_optional_true_is_sticky_before_peer_or_later_observation_failure(
+    tmp_path: Path,
+    field: str,
+):
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+
+    def complete_row(*, true_field: str | None = None):
+        row = {}
+        for name in ("body_stuck", "active_leg_trapped"):
+            row[name] = name == true_field
+            row[f"{name}_available"] = True
+            row[f"{name}_source"] = "TEST_OPTIONAL_STICKY_PROVIDER"
+            row[f"{name}_sample_sim_step"] = adapter.sim_steps
+        return row
+
+    adapter.capture_macro_runtime_safety_evidence = (
+        lambda **_kwargs: complete_row()
+    )
+    session.start()
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    _prime_current_target_readback(session, adapter)
+    session._refresh_filtered_contact_evidence(adapter)
+    if field == "body_stuck":
+        malformed = complete_row(true_field=field)
+        malformed.pop("active_leg_trapped_source")
+        adapter.capture_macro_runtime_safety_evidence = (
+            lambda **_kwargs: malformed
+        )
+        with pytest.raises(RuntimeError, match="producer contract is incomplete"):
+            session._observation_payload(adapter)
+    else:
+        adapter.capture_macro_runtime_safety_evidence = (
+            lambda **_kwargs: complete_row(true_field=field)
+        )
+
+        def fail_root(_adapter):
+            raise RuntimeError("injected later root-state failure")
+
+        session._root_and_joint_state = fail_root
+        with pytest.raises(RuntimeError, match="later root-state failure"):
+            session._observation_payload(adapter)
+    physical = session._task_inputs(success=False, error="later observation failure")[
+        "physical_evidence"
+    ]
+    assert physical[field] is True
+    assert physical[f"{field}_available"] is True
+    assert physical[f"{field}_detected_sample_count"] == 1
+
+
+@pytest.mark.parametrize("field", ("body_stuck", "active_leg_trapped"))
+def test_optional_true_is_latched_before_provider_normalization_failure(
+    tmp_path: Path,
+    field: str,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("intentional optional-provider normalization failure")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+
+    def complete_row(*, true_field: str | None = None):
+        row = {}
+        for name in ("body_stuck", "active_leg_trapped"):
+            row[name] = name == true_field
+            row[f"{name}_available"] = True
+            row[f"{name}_source"] = "TEST_OPTIONAL_PRENORMALIZATION_PROVIDER"
+            row[f"{name}_sample_sim_step"] = adapter.sim_steps
+        return row
+
+    adapter.capture_macro_runtime_safety_evidence = (
+        lambda **_kwargs: complete_row()
+    )
+    session.start()
+    session._refresh_filtered_contact_evidence(adapter)
+    row = complete_row(true_field=field)
+    row["diagnostic"] = _ExplodingValue()
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: row
+    with pytest.raises(RuntimeError, match="normalization failure"):
+        session._capture_runtime_safety_evidence(adapter)
+
+    physical = session._task_inputs(success=False, error="normalization failure")[
+        "physical_evidence"
+    ]
+    assert physical[field] is True
+    assert physical[f"{field}_available"] is True
+    assert physical[f"{field}_complete_live_coverage"] is False
+    claim = physical[f"{field}_unverified_true_claim"]
+    assert claim["field"] == field
+    assert claim["classification"] == (
+        "UNVERIFIED_PROVIDER_" + field.upper() + "_TRUE_CLAIM"
+    )
+    assert claim["reported_sample_sim_step"] == adapter.sim_steps
+    assert claim["reported_source"] == (
+        "TEST_OPTIONAL_PRENORMALIZATION_PROVIDER"
+    )
+    assert "normalization failure" in claim["provider_payload_sha256_error"]
+
+
+@pytest.mark.parametrize("field", ("body_stuck", "active_leg_trapped"))
+def test_later_verified_optional_true_does_not_replace_first_unverified_hit(
+    tmp_path: Path,
+    field: str,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("first optional sample normalization failed")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+
+    def optional_row(*, source: str, exploding: bool):
+        row = {
+            "available": True,
+            "dangerous_body_collision": False,
+            "severe_penetration": False,
+            "source": source,
+            "sample_sim_step": adapter.sim_steps,
+            "error": "",
+        }
+        for name in ("body_stuck", "active_leg_trapped"):
+            row[name] = name == field
+            row[f"{name}_available"] = True
+            row[f"{name}_source"] = source
+            row[f"{name}_sample_sim_step"] = adapter.sim_steps
+        if exploding:
+            row["diagnostic"] = _ExplodingValue()
+        return row
+
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: optional_row(
+        source="FIRST_UNVERIFIED_OPTIONAL_HIT", exploding=True
+    )
+    with pytest.raises(RuntimeError, match="first optional sample"):
+        session._capture_runtime_safety_evidence(adapter)
+    first_claim = dict(session.unverified_optional_runtime_true_claims[field])
+
+    adapter.sim_steps = 1
+    adapter.sim_time = 1.0 / 120.0
+    session._refresh_filtered_contact_evidence(adapter)
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: optional_row(
+        source="LATER_VERIFIED_OPTIONAL_HIT", exploding=False
+    )
+    evidence = session._capture_runtime_safety_evidence(adapter)
+    normalized = session._normalize_optional_runtime_bool(
+        evidence,
+        field=field,
+        expected_sim_step=adapter.sim_steps,
+    )
+    assert normalized[field] is True
+    assert session.unverified_optional_runtime_true_claims[field] == first_claim
+    detection = session.optional_runtime_evidence[field]["first_detection_evidence"]
+    assert detection["sample_sim_step"] == 1
+    assert detection["source"] == "LATER_VERIFIED_OPTIONAL_HIT"
+    physical = session._task_inputs(success=False, error="optional safety hit")[
+        "physical_evidence"
+    ]
+    assert physical[f"{field}_validation_source"] == (
+        "FIRST_UNVERIFIED_OPTIONAL_HIT"
+    )
+    assert physical[f"{field}_unverified_true_claim"] == first_claim
+
+
+@pytest.mark.parametrize(
+    "field",
+    (
+        "dangerous_body_collision",
+        "severe_penetration",
+        "body_stuck",
+        "active_leg_trapped",
+    ),
+)
+def test_scalar_wrapper_true_is_latched_before_sibling_normalization_failure(
+    tmp_path: Path,
+    field: str,
+):
+    class _ExplodingValue:
+        @property
+        def value(self):
+            raise RuntimeError("intentional wrapped-true normalization failure")
+
+    request, _payload = _load_request(tmp_path)
+    session, adapter, _controller = _runtime(request)
+    session._refresh_filtered_contact_evidence(adapter)
+    row = {
+        "available": True,
+        "dangerous_body_collision": False,
+        "severe_penetration": False,
+        "source": "WRAPPED_TRUE_PROVIDER",
+        "sample_sim_step": adapter.sim_steps,
+        "error": "",
+        "body_stuck": False,
+        "body_stuck_available": True,
+        "body_stuck_source": "WRAPPED_TRUE_PROVIDER",
+        "body_stuck_sample_sim_step": adapter.sim_steps,
+        "active_leg_trapped": False,
+        "active_leg_trapped_available": True,
+        "active_leg_trapped_source": "WRAPPED_TRUE_PROVIDER",
+        "active_leg_trapped_sample_sim_step": adapter.sim_steps,
+    }
+    row[field] = np.bool_(True)
+    row["diagnostic"] = _ExplodingValue()
+    adapter.capture_macro_runtime_safety_evidence = lambda **_kwargs: row
+    with pytest.raises(RuntimeError, match="wrapped-true normalization failure"):
+        session._capture_runtime_safety_evidence(adapter)
+    physical = session._task_inputs(success=False, error="normalization failure")[
+        "physical_evidence"
+    ]
+    if field == "dangerous_body_collision":
+        assert physical["dangerous_collision"] is None
+        claim = physical["unverified_provider_collision_claim"]
+    elif field == "severe_penetration":
+        assert physical["severe_penetration"] is True
+        claim = physical["unverified_provider_penetration_claim"]
+    else:
+        assert physical[field] is True
+        claim = physical[f"{field}_unverified_true_claim"]
+    assert claim["reported_sample_sim_step"] == adapter.sim_steps
+    assert claim["reported_source"] == "WRAPPED_TRUE_PROVIDER"
 
 
 def test_optional_runtime_producer_contract_is_strict_and_fail_closed(
@@ -3592,6 +6319,7 @@ def test_zero_residual_is_exact_nominal_identity_without_an_extra_batch(
     batch_count = len(adapter.batch_calls)
     adapter.sim_steps = 8
     adapter.sim_time = 8.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         session._process_decision(
@@ -3649,6 +6377,7 @@ def test_zero_residual_empty_profile_non_source_boundary_uses_contract_identity_
     transform_count = session.residual_transform_count
     adapter.sim_steps = 8
     adapter.sim_time = 8.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         session._process_decision(
@@ -3850,6 +6579,7 @@ def test_nonzero_residual_uses_one_atomic_batch_and_latches_completion_target(
     policy.action = ZERO_RESIDUAL_ACTION
     adapter.sim_steps = 8
     adapter.sim_time = 8.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         session._process_decision(
@@ -4001,6 +6731,7 @@ def test_boundary_and_terminal_paths_force_residual_wheels_to_zero(
     session._verify_pending_readback(adapter, sim_step=9)
     adapter.sim_steps = 16
     adapter.sim_time = 16.0 / 120.0
+    _prime_current_target_readback(session, adapter)
     session.outer_render_boundary_permit = True
     try:
         session._process_decision(

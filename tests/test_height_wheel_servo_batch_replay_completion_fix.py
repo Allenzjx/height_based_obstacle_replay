@@ -10,6 +10,10 @@ from types import SimpleNamespace
 from typing import Any
 
 from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from completion_aware_segment import (
+    MEASURED_ENDPOINT_V1,
+    RECORDED_TIMELINE_OPEN_LOOP_V1,
+)
 from operation_coordinator import OperationState
 from playback import (
     PlaybackEvent,
@@ -219,6 +223,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
         )
         self.assertTrue(integrity["ok"], integrity)
         self.assertEqual(integrity["represented_step_indices"], list(range(1, 51)))
+        self.assertEqual(decoded.execution_semantics, MEASURED_ENDPOINT_V1)
 
     def test_plan_sha_detects_payload_tampering(self) -> None:
         before = empty_command_state()
@@ -237,6 +242,35 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
         result = validate_plan_integrity(decoded, expected_plan_sha256=plan.plan_sha256)
         self.assertFalse(result["ok"])
         self.assertIn("plan sha mismatch", "; ".join(result["errors"]))
+
+    def test_fast_execution_semantics_is_payload_and_fingerprint_bound(self) -> None:
+        before = empty_command_state()
+        step = make_step(
+            index=1,
+            step_type="recorded",
+            duration=0.1,
+            events=[make_event(0.0, "servo front_left_hip 10")],
+            command_state_before=before,
+            command_state_after=before,
+        )
+        plan = plan_from_steps([step], profile="fast")
+        self.assertEqual(plan.profile, "motion_only")
+        self.assertEqual(
+            plan.execution_semantics, RECORDED_TIMELINE_OPEN_LOOP_V1
+        )
+        payload = playback_plan_to_payload(plan)
+        self.assertEqual(
+            payload["execution_semantics"], RECORDED_TIMELINE_OPEN_LOOP_V1
+        )
+        decoded = playback_plan_from_payload(payload)
+        self.assertEqual(decoded.execution_semantics, plan.execution_semantics)
+        payload["execution_semantics"] = MEASURED_ENDPOINT_V1
+        tampered = playback_plan_from_payload(payload)
+        integrity = validate_plan_integrity(
+            tampered, expected_plan_sha256=plan.plan_sha256
+        )
+        self.assertFalse(integrity["ok"])
+        self.assertIn("plan sha mismatch", "; ".join(integrity["errors"]))
 
     def test_recorded_contact_residual_completes_without_target_rewrite(self) -> None:
         class LoadedAdapter:
@@ -1372,7 +1406,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
         self.assertTrue(
             all(
                 row["completion_decision"]
-                == "exact_completion"
+                == "recorded_timeline_open_loop_complete"
                 for row in service.timing_trace["segments"]
             )
         )
@@ -1781,6 +1815,9 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
         self.assertFalse(service.active)
         self.assertEqual(service.stop_reason, "actuator_unstable")
         self.assertIn("hard_liveness_bound_s=2.250000", service.last_error)
+        self.assertIn("worst_error_joint=front_left_hip", service.last_error)
+        self.assertIn("fastest_joint=front_left_hip", service.last_error)
+        self.assertIn("fastest_joint_velocity_deg_s=6.0", service.last_error)
 
     def test_hard_liveness_classifies_nearzero_unconverged_servo_limit(self) -> None:
         adapter = self._TrackingAdapter(

@@ -20,6 +20,7 @@ from typing import Any, Callable, Mapping
 import numpy as np
 
 from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from completion_aware_segment import RECORDED_TIMELINE_OPEN_LOOP_V1
 from telemetry.com_metrics import quat_wxyz_to_rpy
 
 from .support_classifier import (
@@ -31,8 +32,8 @@ from .support_classifier import (
 from .viewport_buffer_video import ActiveViewportBufferVideoRecorder
 
 
-REQUEST_SCHEMA = "fsm50.worker_task_replay_request.v1"
-SESSION_SCHEMA = "fsm50.worker_task_replay_session.v1"
+REQUEST_SCHEMA = "fsm50.worker_task_replay_request.v2"
+SESSION_SCHEMA = "fsm50.worker_task_replay_session.v2"
 TASK_INPUTS_SCHEMA = "fsm50.replay_task_inputs.v1"
 TELEMETRY_SCHEMA = "fsm50.minimal_task_telemetry.v1"
 DEFAULT_TELEMETRY_HZ = 15.0
@@ -55,6 +56,7 @@ _REQUIRED_KEYS = frozenset(
         "request_id",
         "plan_id",
         "plan_sha256",
+        "execution_semantics",
         "plan_event_count",
         "plan_segment_count",
         "source_version",
@@ -230,6 +232,7 @@ class WorkerTaskReplayRequest:
     request_id: str
     plan_id: str
     plan_sha256: str
+    execution_semantics: str
     plan_event_count: int
     plan_segment_count: int
     source_version: str
@@ -251,6 +254,8 @@ class WorkerTaskReplayRequest:
             "execution_mode": "normal_development",
             "request_id": self.request_id,
             "plan_id": self.plan_id,
+            "plan_sha256": self.plan_sha256,
+            "execution_semantics": self.execution_semantics,
             "source_version": self.source_version,
             "height_mm": self.height_mm,
             "step_count": self.step_count,
@@ -300,6 +305,12 @@ def load_worker_task_replay_request(
     plan_sha = _required_text(raw, "plan_sha256").lower()
     if len(plan_sha) != 64 or any(ch not in "0123456789abcdef" for ch in plan_sha):
         raise ValueError("plan_sha256 must be a lowercase SHA-256 digest")
+    execution_semantics = _required_text(raw, "execution_semantics")
+    if execution_semantics != RECORDED_TIMELINE_OPEN_LOOP_V1:
+        raise ValueError(
+            "normal task replay requires execution_semantics="
+            f"{RECORDED_TIMELINE_OPEN_LOOP_V1}"
+        )
     telemetry_hz = _required_float(raw, "telemetry_hz")
     video_fps = _required_float(raw, "video_fps")
     if not 10.0 <= telemetry_hz <= 30.0:
@@ -312,6 +323,7 @@ def load_worker_task_replay_request(
         request_id=_required_text(raw, "request_id"),
         plan_id=_required_text(raw, "plan_id"),
         plan_sha256=plan_sha,
+        execution_semantics=execution_semantics,
         plan_event_count=_required_int(raw, "plan_event_count", minimum=1),
         plan_segment_count=_required_int(raw, "plan_segment_count", minimum=1),
         source_version=_required_text(raw, "source_version"),
@@ -343,6 +355,14 @@ def validate_worker_task_plan_binding(
     if str(getattr(plan, "profile", "") or "") != "motion_only":
         errors.append(
             "task replay requires the canonical production Fast profile motion_only"
+        )
+    if (
+        str(getattr(plan, "execution_semantics", "") or "")
+        != request.execution_semantics
+    ):
+        errors.append(
+            "task replay execution_semantics does not match the explicit "
+            "recorded timeline open-loop request"
         )
     if str(getattr(plan, "plan_sha256", "") or "").lower() != request.plan_sha256:
         errors.append("task replay plan SHA-256 does not match the worker request")
@@ -474,6 +494,9 @@ class WorkerTaskReplaySession:
             "enabled": True,
             "execution_mode": "normal_development",
             "request_id": self.request.request_id,
+            "plan_id": self.request.plan_id,
+            "plan_sha256": self.request.plan_sha256,
+            "execution_semantics": self.request.execution_semantics,
             "source_version": self.request.source_version,
             "state": self.state,
             "terminal": self.terminal,
@@ -1334,6 +1357,8 @@ class WorkerTaskReplaySession:
             targets_applied = None
         completed_result = {
             "source_version": self.request.source_version,
+            "plan_sha256": self.request.plan_sha256,
+            "execution_semantics": self.request.execution_semantics,
             "step_count": self.request.step_count,
             "plan_event_count": self.request.plan_event_count,
             "plan_segment_count": self.request.plan_segment_count,
@@ -1589,6 +1614,10 @@ class WorkerTaskReplaySession:
             "source_version": self.request.source_version,
             "request_id": self.request.request_id,
             "plan_id": self.request.plan_id,
+            "plan_sha256": self.request.plan_sha256,
+            "execution_semantics": self.request.execution_semantics,
+            "plan_event_count": self.request.plan_event_count,
+            "plan_segment_count": self.request.plan_segment_count,
             "run_dir": str(self.request.run_dir),
             "task_inputs_path": str(inputs_path),
             "task_replay_complete": success,
@@ -1608,6 +1637,10 @@ class WorkerTaskReplaySession:
             "task_replay_complete": success,
             "request_id": self.request.request_id,
             "plan_id": self.request.plan_id,
+            "plan_sha256": self.request.plan_sha256,
+            "execution_semantics": self.request.execution_semantics,
+            "plan_event_count": self.request.plan_event_count,
+            "plan_segment_count": self.request.plan_segment_count,
             "source_version": self.request.source_version,
             "run_dir": str(self.request.run_dir),
             "task_inputs_path": str(inputs_path),

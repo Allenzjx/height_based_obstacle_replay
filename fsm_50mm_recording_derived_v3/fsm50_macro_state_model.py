@@ -23,6 +23,51 @@ LEGACY_57_STATE_CONFIG = "fsm50_config.yaml"
 LEGACY_57_STATE_COUNT = 57
 LEGACY_57_STATE_CONTROL_AUTHORITY = False
 
+# This is a recording-derived reference only.  It seeds bounded S10 feedback;
+# it is not itself an authoritative feedback policy and must never be reported
+# as a newly consumed source action by that feedback controller.
+FINAL_RECOVERY_REFERENCE_PROFILE_SEED: Mapping[str, Any] = {
+    "source_version": "v010_20260806_220745_363972_manual",
+    "strategy": "RECOVERY_PROFILE_1",
+    "source_segment_indices": (140, 141),
+    "authoritative_feedback_profile": "NOT_YET_PROVEN",
+    "visual_target_only": {
+        "source_version": "v008_20260806_211408_578700_manual",
+        "source_segment_indices": (117,),
+    },
+    "fr_specific_alternate_only": {
+        "source_version": "v003_20260805_224517_157723_manual",
+        "strategy": "RECOVERY_PROFILE_2",
+        "source_segment_indices": (104, 111),
+    },
+}
+
+# Only FR-hip has a non-zero within-S10 increment in the four sealed successes
+# (minimum 1.1 deg).  The other joints therefore have no recording-derived
+# increment bound.  Use a smaller development probe for every axis and label
+# it diagnostic rather than manufacturing profile truth.
+FINAL_RECOVERY_FEEDBACK_LIMITS: Mapping[str, Any] = {
+    "probe_kind": "CONSERVATIVE_DIAGNOSTIC_PROBE",
+    "probe_delta_deg": 0.25,
+    "increment_delta_deg": 0.25,
+    "maximum_increments_per_leg": 8,
+    "maximum_feedback_actions": 64,
+    "joint_limit_margin_deg": 1.0,
+    "contact_dwell_s": 0.25,
+    "maximum_contact_dwell_wait_s": 0.75,
+    "settle_dwell_s": 0.25,
+    "maximum_settle_wait_s": 1.50,
+    "maximum_n_plus_one_wait_steps": 1,
+    "maximum_abs_joint_velocity_deg_s": 3.0,
+    "maximum_abs_body_angular_velocity_rad_s": 0.15,
+    "minimum_descent_m": 0.00025,
+    "derivation_schema": "fsm50.s10_conservative_probe_derivation.v1",
+    "derivation_sha256": "94d264434e81319c5266de0f0ba4a49001ce7864d9844f55a083837687bd1975",
+    "recording_minimum_nonzero_increment_deg": {
+        "front_right_hip": 1.0999999999999979,
+    },
+}
+
 
 class MacroStateId(str, Enum):
     S0_INITIALIZE = "S0_INITIALIZE"
@@ -49,6 +94,7 @@ class MacroSubphase(str, Enum):
     LOAD_CONFIRM = "LOAD_CONFIRM"
     ADVANCE = "ADVANCE"
     RECOVERY = "RECOVERY"
+    FEEDBACK_RECOVERY = "FEEDBACK_RECOVERY"
     HOLD = "HOLD"
     RETRY = "RETRY"
     COMPLETE = "COMPLETE"
@@ -85,6 +131,10 @@ class MacroGuardSpec:
     target_com_leg: str = ""
     required_top_legs: tuple[str, ...] = ()
     required_support_legs: tuple[str, ...] = ()
+    required_primary_diagonal: tuple[str, ...] = ()
+    require_viable_support: bool = False
+    require_support_wrench: bool = False
+    release_physical_phase: str = ""
     require_airborne_before_crossing: bool = False
     require_body_crossed: bool = False
     minimum_com_displacement_m: float = 0.0
@@ -104,6 +154,20 @@ class MacroGuardSpec:
             raise ValueError("required_top_legs contains an unknown leg")
         if not set(self.required_support_legs).issubset(legs):
             raise ValueError("required_support_legs contains an unknown leg")
+        if self.required_primary_diagonal and (
+            len(self.required_primary_diagonal) != 2
+            or len(set(self.required_primary_diagonal)) != 2
+            or not set(self.required_primary_diagonal).issubset(legs)
+        ):
+            raise ValueError("required_primary_diagonal must name two distinct legs")
+        for label, value in (
+            ("require_viable_support", self.require_viable_support),
+            ("require_support_wrench", self.require_support_wrench),
+        ):
+            if type(value) is not bool:
+                raise ValueError(f"{label} must be an exact bool")
+        if not isinstance(self.release_physical_phase, str):
+            raise ValueError("release_physical_phase must be a string")
         for name, value in (
             ("minimum_com_displacement_m", self.minimum_com_displacement_m),
             ("minimum_body_progress_m", self.minimum_body_progress_m),
@@ -283,6 +347,7 @@ def build_default_macro_graph() -> MacroFSMGraph:
                 MacroGuardKind.COM_SHIFT_OR_UNLOAD,
                 active_leg="FR",
                 target_com_leg="RL",
+                require_viable_support=True,
                 minimum_com_displacement_m=0.003,
                 **common_attitude,
             ),
@@ -374,6 +439,7 @@ def build_default_macro_graph() -> MacroFSMGraph:
                 MacroGuardKind.COM_SHIFT_OR_UNLOAD,
                 active_leg="RR",
                 target_com_leg="FL",
+                require_viable_support=True,
                 minimum_com_displacement_m=0.003,
                 **common_attitude,
             ),
@@ -422,6 +488,9 @@ def build_default_macro_graph() -> MacroFSMGraph:
                 MacroGuardKind.SUPPORT_SETUP,
                 active_leg="RL",
                 required_support_legs=("FL", "RR"),
+                required_primary_diagonal=("FL", "RR"),
+                require_viable_support=True,
+                require_support_wrench=True,
                 **common_attitude,
             ),
             retry_policy=MacroRetryPolicy(
@@ -453,6 +522,10 @@ def build_default_macro_graph() -> MacroFSMGraph:
                 MacroGuardKind.LEG_TRAVERSED,
                 active_leg="RL",
                 target_com_leg="FR",
+                minimum_com_displacement_m=0.003,
+                require_viable_support=True,
+                require_support_wrench=True,
+                release_physical_phase="RL_UNLOAD_AND_LIFT",
                 # Traversal completion needs the active RL wheel on top.  A
                 # previously crossed support wheel may be temporarily AIR;
                 # final all-TOP is explicitly a secondary diagnostic.
@@ -498,6 +571,9 @@ def build_default_macro_graph() -> MacroFSMGraph:
             candidate_support_legs=("FR", "FL", "RR", "RL"),
             completion_guard=MacroGuardSpec(
                 MacroGuardKind.POSTURE_RECOVERED,
+                required_top_legs=("FL", "FR", "RL", "RR"),
+                require_viable_support=True,
+                require_support_wrench=True,
                 require_body_crossed=True,
                 maximum_abs_roll_rad=math.radians(30.0),
                 maximum_abs_pitch_rad=math.radians(30.0),

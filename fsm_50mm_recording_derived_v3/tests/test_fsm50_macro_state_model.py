@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 
 from fsm_50mm_recording_derived_v3.fsm50_macro_state_model import (
+    FINAL_RECOVERY_FEEDBACK_LIMITS,
+    FINAL_RECOVERY_REFERENCE_PROFILE_SEED,
     LEGACY_57_STATE_CONFIG,
     LEGACY_57_STATE_CONTROL_AUTHORITY,
     LEGACY_57_STATE_COUNT,
@@ -58,6 +60,12 @@ class MacroStateModelTests(unittest.TestCase):
         )
         self.assertEqual(state.completion_guard.required_top_legs, ("RL",))
         self.assertTrue(state.completion_guard.require_airborne_before_crossing)
+        self.assertEqual(
+            state.completion_guard.release_physical_phase,
+            "RL_UNLOAD_AND_LIFT",
+        )
+        self.assertTrue(state.completion_guard.require_viable_support)
+        self.assertTrue(state.completion_guard.require_support_wrench)
 
     def test_support_setup_is_source_optional_not_a_manufactured_profile(self) -> None:
         state = build_default_macro_graph().get(
@@ -65,6 +73,50 @@ class MacroStateModelTests(unittest.TestCase):
         )
         self.assertFalse(state.profile_required)
         self.assertEqual(state.completion_guard.required_support_legs, ("FL", "RR"))
+        self.assertEqual(state.completion_guard.required_primary_diagonal, ("FL", "RR"))
+        self.assertTrue(state.completion_guard.require_support_wrench)
+
+    def test_com_shift_guards_require_current_viable_support(self) -> None:
+        graph = build_default_macro_graph()
+        for state_id, target_leg in (
+            (MacroStateId.S1_APPROACH_AND_PRE_FR_SHIFT, "RL"),
+            (MacroStateId.S5_PRE_RR_COM_SHIFT, "FL"),
+        ):
+            guard = graph.get(state_id).completion_guard
+            self.assertEqual(guard.target_com_leg, target_leg)
+            self.assertTrue(guard.require_viable_support)
+
+    def test_final_recovery_seed_is_reference_not_proven_feedback(self) -> None:
+        seed = FINAL_RECOVERY_REFERENCE_PROFILE_SEED
+        self.assertEqual(seed["source_version"], "v010_20260806_220745_363972_manual")
+        self.assertEqual(seed["strategy"], "RECOVERY_PROFILE_1")
+        self.assertEqual(seed["source_segment_indices"], (140, 141))
+        self.assertEqual(seed["authoritative_feedback_profile"], "NOT_YET_PROVEN")
+        self.assertEqual(seed["visual_target_only"]["source_segment_indices"], (117,))
+        self.assertEqual(seed["fr_specific_alternate_only"]["strategy"], "RECOVERY_PROFILE_2")
+        limits = FINAL_RECOVERY_FEEDBACK_LIMITS
+        self.assertEqual(limits["probe_kind"], "CONSERVATIVE_DIAGNOSTIC_PROBE")
+        self.assertLess(limits["probe_delta_deg"], 1.1)
+        self.assertEqual(limits["maximum_n_plus_one_wait_steps"], 1)
+        self.assertEqual(limits["maximum_contact_dwell_wait_s"], 0.75)
+        self.assertEqual(limits["maximum_settle_wait_s"], 1.5)
+        self.assertEqual(limits["maximum_feedback_actions"], 64)
+        self.assertEqual(limits["maximum_increments_per_leg"], 8)
+        self.assertEqual(
+            limits["derivation_sha256"],
+            "94d264434e81319c5266de0f0ba4a49001ce7864d9844f55a083837687bd1975",
+        )
+
+    def test_s10_keeps_one_macro_state_with_strict_final_support_guard(self) -> None:
+        graph = build_default_macro_graph()
+        state = graph.get(MacroStateId.S10_POSTURE_RECOVERY)
+        self.assertEqual(graph.active_state_count, 11)
+        self.assertEqual(
+            state.completion_guard.required_top_legs,
+            ("FL", "FR", "RL", "RR"),
+        )
+        self.assertTrue(state.completion_guard.require_viable_support)
+        self.assertTrue(state.completion_guard.require_support_wrench)
 
     def test_feedback_acknowledgements_are_optional_and_holds_are_evidence_bounded(self) -> None:
         graph = build_default_macro_graph()

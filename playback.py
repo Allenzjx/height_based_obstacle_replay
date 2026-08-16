@@ -28,6 +28,9 @@ from playback_progress import PlaybackProgress, PlaybackState
 from motion_speed import load_motion_reference
 from completion_aware_segment import (
     CompletionAwareSegmentExecutor,
+    EXECUTION_SEMANTICS,
+    MEASURED_ENDPOINT_V1,
+    RECORDED_TIMELINE_OPEN_LOOP_V1,
     SegmentCompletionSpec,
     SegmentDecision,
     SegmentDecisionKind,
@@ -104,6 +107,7 @@ class PlaybackPlan:
     plan_sha256: str = ""
     source_sha256: str = ""
     profile: str = "raw"
+    execution_semantics: str = MEASURED_ENDPOINT_V1
     total_steps: int = 0
     selected_playback: bool = False
     final_pad_s: float = 0.0
@@ -308,6 +312,11 @@ def plan_from_steps(
         final_time_s=cursor,
         label=label,
         profile=normalized_profile,
+        execution_semantics=(
+            RECORDED_TIMELINE_OPEN_LOOP_V1
+            if normalized_profile == "motion_only"
+            else MEASURED_ENDPOINT_V1
+        ),
         total_steps=total_steps,
         selected_playback=bool(len(normalized_steps) == 1 and total_steps > 1),
         final_pad_s=0.0,
@@ -402,6 +411,18 @@ def validate_plan_integrity(
         errors.append("plan is empty")
     if not plan.segments:
         errors.append("plan has no segments")
+    if plan.execution_semantics not in EXECUTION_SEMANTICS:
+        errors.append(
+            "unsupported execution semantics: "
+            f"{plan.execution_semantics!r}"
+        )
+    if (
+        plan.execution_semantics == RECORDED_TIMELINE_OPEN_LOOP_V1
+        and plan.profile != "motion_only"
+    ):
+        errors.append(
+            "recorded timeline open-loop execution requires profile motion_only"
+        )
     if expected_event_count is not None and len(plan.events) != int(expected_event_count):
         errors.append(f"event count mismatch expected={int(expected_event_count)} decoded={len(plan.events)}")
     if expected_segment_count is not None and len(plan.segments) != int(expected_segment_count):
@@ -550,6 +571,7 @@ def plan_fingerprint(plan: PlaybackPlan) -> str:
     payload = {
         "final_time_s": round(float(plan.final_time_s), 9),
         "profile": plan.profile,
+        "execution_semantics": plan.execution_semantics,
         "total_steps": int(plan.total_steps),
         "events": [
             {
@@ -599,6 +621,9 @@ def playback_plan_to_payload(plan: PlaybackPlan) -> dict[str, Any]:
         "declared_segment_count": len(plan.segments),
         "source_sha256": str(plan.source_sha256 or ""),
         "profile": str(plan.profile or "raw"),
+        "execution_semantics": str(
+            plan.execution_semantics or MEASURED_ENDPOINT_V1
+        ),
         "total_steps": int(plan.total_steps),
         "selected_playback": bool(plan.selected_playback),
         "final_pad_s": float(plan.final_pad_s),
@@ -736,6 +761,10 @@ def playback_plan_from_payload(payload: dict[str, Any]) -> PlaybackPlan:
         label=str(data.get("label", "") or ""),
         source_sha256=str(data.get("source_sha256", "") or ""),
         profile=str(data.get("profile", "raw") or "raw"),
+        execution_semantics=str(
+            data.get("execution_semantics", MEASURED_ENDPOINT_V1)
+            or MEASURED_ENDPOINT_V1
+        ),
         total_steps=int(data.get("total_steps", 0) or 0),
         selected_playback=bool(data.get("selected_playback", False)),
         final_pad_s=float(data.get("final_pad_s", 0.0) or 0.0),
@@ -872,6 +901,7 @@ class SimTimePlaybackService:
         self.max_dispatch_jitter_s = 0.0
         self.dispatch_jitter_samples = []
         self.timing_trace = copy.deepcopy(self.plan.timing)
+        self.timing_trace["execution_semantics"] = self.plan.execution_semantics
         self.timing_trace["worker_ready_time"] = float(current_wall_time_s)
         self.timing_trace.setdefault("commands", [])
         self.timing_trace.setdefault("steps", [])
@@ -904,6 +934,9 @@ class SimTimePlaybackService:
         self.segment_contact_error_history = []
         self.segment_contact_stable_error_history = []
         self.segment_completion_executor.reset()
+        self.segment_completion_executor.configure_execution_semantics(
+            self.plan.execution_semantics
+        )
         self.last_motion_batch_ack = {}
         self.last_motion_batch_attempt_step = None
         self.motion_start_readiness_token = ""
@@ -1262,34 +1295,55 @@ class SimTimePlaybackService:
             errors = dict(decision.servo_errors_deg)
             max_completed_error = decision.max_servo_error_deg
             if max_completed_error > self.servo_position_tolerance_deg:
-                warning = {
-                    "warning": "contact_residual_accepted",
-                    "step_index": int(segment.source_step),
-                    "segment_index": int(segment.segment_index),
-                    "max_error_deg": max_completed_error,
-                    "effective_tolerance_deg": float(segment.servo_tolerance_deg),
-                    "recorded_residual_deg": dict(segment.recorded_servo_residual_deg),
-                    "measured_errors_deg": dict(errors),
-                    "stability_basis": (
-                        "finite_grace_bounded_recorded_contact_tolerance"
-                    ),
-                    "velocity_evidence_role": "diagnostic_only",
-                    "stability_window_s": float(self.contact_residual_stable_s),
-                    "stability_window_cap_deg": float(
-                        decision.contact_window_cap_deg
-                    ),
-                    "recent_min_deg": float(decision.contact_window_min_deg),
-                    "recent_max_deg": float(decision.contact_window_max_deg),
-                    "recent_slope_deg_s": float(
-                        decision.contact_window_slope_deg_s
-                    ),
-                    "joint_velocity_deg_s": dict(completed_velocities),
-                }
+                if (
+                    self.plan.execution_semantics
+                    == RECORDED_TIMELINE_OPEN_LOOP_V1
+                ):
+                    warning = {
+                        "warning": "recorded_timeline_endpoint_diagnostic",
+                        "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
+                        "completion_role": "diagnostic_only",
+                        "step_index": int(segment.source_step),
+                        "segment_index": int(segment.segment_index),
+                        "max_error_deg": max_completed_error,
+                        "measured_errors_deg": dict(errors),
+                        "joint_velocity_deg_s": dict(completed_velocities),
+                    }
+                    self.last_info = (
+                        "recorded_timeline_endpoint_diagnostic "
+                        f"step={segment.source_step} "
+                        f"segment={segment.segment_index} "
+                        f"error={max_completed_error:.3f}deg"
+                    )
+                else:
+                    warning = {
+                        "warning": "contact_residual_accepted",
+                        "step_index": int(segment.source_step),
+                        "segment_index": int(segment.segment_index),
+                        "max_error_deg": max_completed_error,
+                        "effective_tolerance_deg": float(segment.servo_tolerance_deg),
+                        "recorded_residual_deg": dict(segment.recorded_servo_residual_deg),
+                        "measured_errors_deg": dict(errors),
+                        "stability_basis": (
+                            "finite_grace_bounded_recorded_contact_tolerance"
+                        ),
+                        "velocity_evidence_role": "diagnostic_only",
+                        "stability_window_s": float(self.contact_residual_stable_s),
+                        "stability_window_cap_deg": float(
+                            decision.contact_window_cap_deg
+                        ),
+                        "recent_min_deg": float(decision.contact_window_min_deg),
+                        "recent_max_deg": float(decision.contact_window_max_deg),
+                        "recent_slope_deg_s": float(
+                            decision.contact_window_slope_deg_s
+                        ),
+                        "joint_velocity_deg_s": dict(completed_velocities),
+                    }
+                    self.last_info = (
+                        f"contact_residual_accepted step={segment.source_step} segment={segment.segment_index} "
+                        f"error={max_completed_error:.3f}deg tolerance={segment.servo_tolerance_deg:.3f}deg"
+                    )
                 self.servo_residual_warnings.append(warning)
-                self.last_info = (
-                    f"contact_residual_accepted step={segment.source_step} segment={segment.segment_index} "
-                    f"error={max_completed_error:.3f}deg tolerance={segment.servo_tolerance_deg:.3f}deg"
-                )
             if not self._finish_segment(
                 adapter,
                 segment,
@@ -1427,8 +1481,11 @@ class SimTimePlaybackService:
                 "actuator_unstable: nonconvergent servo remained in motion "
                 "through the derived hard liveness bound; "
                 f"step={segment.source_step} segment={segment.segment_index} "
-                f"joint={fast_joint} error_deg={errors.get(fast_joint)} "
-                f"joint_velocity_deg_s={velocities.get(fast_joint)} "
+                f"worst_error_joint={worst_joint} "
+                f"worst_error_deg={errors.get(worst_joint)} "
+                f"fastest_joint={fast_joint} "
+                f"fastest_joint_error_deg={errors.get(fast_joint)} "
+                f"fastest_joint_velocity_deg_s={velocities.get(fast_joint)} "
                 f"extension_s={decision.contact_extension_s:.6f} "
                 f"hard_liveness_bound_s="
                 f"{self.servo_tracking_hard_liveness_s:.6f} "
@@ -2279,8 +2336,12 @@ class SimTimePlaybackService:
                     name: float(target) + float(servo_errors.get(name, 0.0)) for name, target in segment.servo_targets.items()
                 },
                 "servo_target_error": dict(servo_errors),
+                "execution_semantics": self.plan.execution_semantics,
                 "completion_decision": (
-                    "reference_position_complete_tracking_deferred"
+                    "recorded_timeline_open_loop_complete"
+                    if self.plan.execution_semantics
+                    == RECORDED_TIMELINE_OPEN_LOOP_V1
+                    else "reference_position_complete_tracking_deferred"
                     if tracking_completion_deferred
                     else "contact_residual_accepted"
                     if completion_warning
@@ -2455,6 +2516,11 @@ class SimTimePlaybackService:
             "source_sha256": str(plan.source_sha256 if plan is not None else ""),
             "label": str(plan.label if plan is not None else ""),
             "profile": str(plan.profile if plan is not None else "raw"),
+            "execution_semantics": str(
+                plan.execution_semantics
+                if plan is not None
+                else MEASURED_ENDPOINT_V1
+            ),
             "path": str(plan.path) if plan is not None and plan.path is not None else "",
             "index": int(self.index),
             "count": int(count),
@@ -2991,6 +3057,12 @@ class PlaybackManager:
                 identity_ok = (
                     str(ack.get("plan_id", "") or "") == self.worker_plan_id
                     and str(ack.get("plan_sha256", "") or "") == str(self.plan.plan_sha256 if self.plan else "")
+                    and str(ack.get("execution_semantics", "") or "")
+                    == str(
+                        self.plan.execution_semantics
+                        if self.plan
+                        else MEASURED_ENDPOINT_V1
+                    )
                     and int(ack.get("event_count", -1) or -1) == len(self.plan.events if self.plan else [])
                     and int(ack.get("segment_count", -1) or -1) == len(self.plan.segments if self.plan else [])
                     and bool(str(ack.get("worker_session_id", "") or ""))
@@ -3273,6 +3345,11 @@ class PlaybackManager:
             "dispatch_clock": self.dispatch_clock,
             "plan_sha256": self.plan.plan_sha256 if self.plan else "",
             "source_sha256": self.plan.source_sha256 if self.plan else "",
+            "execution_semantics": (
+                self.plan.execution_semantics
+                if self.plan
+                else MEASURED_ENDPOINT_V1
+            ),
             "max_dispatch_jitter_s": float(self.max_dispatch_jitter_s),
             "progress_detail": self.progress.to_dict(),
             "timing": copy.deepcopy(self.timing_trace),

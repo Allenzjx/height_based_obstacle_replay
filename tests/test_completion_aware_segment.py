@@ -7,6 +7,8 @@ from typing import Any
 
 from completion_aware_segment import (
     CompletionAwareSegmentExecutor,
+    MEASURED_ENDPOINT_V1,
+    RECORDED_TIMELINE_OPEN_LOOP_V1,
     SegmentCompletionSpec,
     SegmentDecisionKind,
     SegmentFeedback,
@@ -139,6 +141,92 @@ class SegmentCompletionSpecContractTest(unittest.TestCase):
 
 
 class CompletionAwareSegmentExecutorTest(unittest.TestCase):
+    def test_recorded_timeline_completion_is_explicit_and_endpoint_diagnostic(self) -> None:
+        measured = CompletionAwareSegmentExecutor()
+        self.assertEqual(measured.execution_semantics, MEASURED_ENDPOINT_V1)
+        measured.start(
+            _spec(servo_duration_s=0.0),
+            start_elapsed_s=0.0,
+            start_sim_time_s=0.0,
+            start_sim_step=0,
+        )
+        measured_wait = measured.observe(
+            _feedback(
+                0.1,
+                8,
+                errors={"front_left_hip": 4.0},
+                velocities={"front_left_hip": 8.0},
+            )
+        )
+        self.assertEqual(measured_wait.kind, SegmentDecisionKind.WAIT)
+
+        timeline = CompletionAwareSegmentExecutor(
+            execution_semantics=RECORDED_TIMELINE_OPEN_LOOP_V1
+        )
+        timeline.start(
+            _spec(servo_duration_s=0.0),
+            start_elapsed_s=0.0,
+            start_sim_time_s=0.0,
+            start_sim_step=0,
+        )
+        complete = timeline.observe(
+            _feedback(
+                0.1,
+                8,
+                errors={"front_left_hip": 4.0},
+                velocities={"front_left_hip": 8.0},
+            )
+        )
+        self.assertEqual(complete.kind, SegmentDecisionKind.COMPLETE)
+        self.assertFalse(complete.reference_position_done)
+        self.assertTrue(complete.servo_done)
+        self.assertEqual(complete.phase, RECORDED_TIMELINE_OPEN_LOOP_V1)
+
+    def test_hard_liveness_message_distinguishes_error_and_velocity_joints(self) -> None:
+        targets = {"front_left_hip": 10.0, "rear_right_knee": 20.0}
+        executor = CompletionAwareSegmentExecutor()
+        executor.start(
+            _spec(
+                servo_targets_deg=targets,
+                servo_duration_s=0.0,
+                recorded_servo_residual_deg={name: 0.0 for name in targets},
+            ),
+            start_elapsed_s=0.0,
+            start_sim_time_s=0.0,
+            start_sim_step=0,
+        )
+        feedback = {
+            "errors": {"front_left_hip": 4.0, "rear_right_knee": 0.1},
+            "velocities": {"front_left_hip": 1.0, "rear_right_knee": 8.0},
+        }
+        self.assertEqual(
+            executor.observe(_feedback(0.1, 8, **feedback)).kind,
+            SegmentDecisionKind.WAIT,
+        )
+        decision = executor.observe(_feedback(2.3, 16, **feedback))
+        self.assertEqual(decision.failure_code, "hard_liveness_in_motion")
+        segment = PlaybackSegment(
+            segment_index=7,
+            source_step=3,
+            source_step_id="step-3",
+            event_start_index=0,
+            event_count=1,
+            planned_start_s=0.0,
+            planned_end_s=0.0,
+            base_duration_s=0.0,
+            servo_base_duration_s=0.0,
+            servo_duration_s=0.0,
+            servo_targets=targets,
+        )
+        message = SimTimePlaybackService()._segment_completion_failure_message(
+            SimpleNamespace(), segment, decision
+        )
+        self.assertIn("worst_error_joint=front_left_hip", message)
+        self.assertIn("worst_error_deg=4.0", message)
+        self.assertIn("fastest_joint=rear_right_knee", message)
+        self.assertIn("fastest_joint_error_deg=0.1", message)
+        self.assertIn("fastest_joint_velocity_deg_s=8.0", message)
+
     def test_n_plus_one_monotonic_and_terminal_exact_once(self) -> None:
         executor = CompletionAwareSegmentExecutor()
         executor.start(
@@ -456,6 +544,40 @@ class PlaybackCompletionSeamTest(unittest.TestCase):
         self.assertFalse(service.active)
         self.assertEqual(service.stop_reason, "invalid_joint_state")
         self.assertIn("keys are not exact", service.last_error)
+
+    def test_service_uses_recorded_timeline_only_when_plan_explicitly_requests_it(self) -> None:
+        adapter = self.Adapter(measured_deg=20.0, velocity_deg_s=8.0)
+        service = SimTimePlaybackService()
+        plan = self.plan()
+        plan.profile = "motion_only"
+        plan.execution_semantics = RECORDED_TIMELINE_OPEN_LOOP_V1
+        plan.plan_sha256 = plan_fingerprint(plan)
+        self.assertTrue(
+            service.start_plan(
+                plan, current_sim_time_s=0.0, current_wall_time_s=0.0
+            )
+        )
+        service.update(
+            adapter,
+            current_sim_time_s=0.0,
+            current_sim_step=0,
+            current_wall_time_s=0.0,
+        )
+        service.update(
+            adapter,
+            current_sim_time_s=0.1,
+            current_sim_step=8,
+            current_wall_time_s=0.1,
+        )
+        self.assertEqual(service.stop_reason, "complete")
+        self.assertEqual(
+            service.servo_residual_warnings[-1]["warning"],
+            "recorded_timeline_endpoint_diagnostic",
+        )
+        self.assertEqual(
+            service.timing_trace["segments"][0]["completion_decision"],
+            "recorded_timeline_open_loop_complete",
+        )
 
     def test_dynamic_duration_uses_finite_positive_effective_speed(self) -> None:
         adapter = self.Adapter(

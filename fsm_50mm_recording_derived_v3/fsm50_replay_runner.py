@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from sequence_model import load_steps_jsonl
+from completion_aware_segment import RECORDED_TIMELINE_OPEN_LOOP_V1
 
 from .fsm50_task_success import (
     EVALUATED,
@@ -67,7 +68,7 @@ CLASSIFIER_INPUTS_NAME = "classifier_inputs.json"
 VIDEO_VERDICT_NAME = "manual_video_verdict.json"
 VIDEO_VERDICT_TEMPLATE_NAME = "manual_video_verdict.template.json"
 VIDEO_VERDICT_SCHEMA = "fsm50.manual_video_verdict.v1"
-RUNNER_RESULT_SCHEMA = "fsm50.task_replay_runner_result.v1"
+RUNNER_RESULT_SCHEMA = "fsm50.task_replay_runner_result.v2"
 
 _VERSION_RE = re.compile(r"^v(?P<number>\d{3})(?:_|$)", re.IGNORECASE)
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -383,6 +384,14 @@ def prepare_replay(
         raise RunnerContractError(
             "production compiler did not return canonical Fast profile motion_only"
         )
+    if (
+        str(getattr(plan, "execution_semantics", "") or "")
+        != RECORDED_TIMELINE_OPEN_LOOP_V1
+    ):
+        raise RunnerContractError(
+            "production compiler did not return explicit "
+            f"execution_semantics={RECORDED_TIMELINE_OPEN_LOOP_V1}"
+        )
     digest = str(getattr(plan, "plan_sha256", "") or "").lower()
     if not _SHA256_RE.fullmatch(digest):
         raise RunnerContractError("production Fast plan has no valid SHA-256")
@@ -422,6 +431,14 @@ def build_worker_task_request(
     timeout_s: float | None = None,
 ) -> dict[str, Any]:
     plan = prepared.plan
+    if (
+        str(getattr(plan, "execution_semantics", "") or "")
+        != RECORDED_TIMELINE_OPEN_LOOP_V1
+    ):
+        raise RunnerContractError(
+            "worker task request requires explicit "
+            f"execution_semantics={RECORDED_TIMELINE_OPEN_LOOP_V1}"
+        )
     if timeout_s is None:
         timeout_s = float(getattr(plan, "final_time_s", 0.0) or 0.0) + 30.0
     payload = {
@@ -431,6 +448,7 @@ def build_worker_task_request(
         "request_id": str(request_id),
         "plan_id": str(plan_id),
         "plan_sha256": str(plan.plan_sha256).lower(),
+        "execution_semantics": str(plan.execution_semantics),
         "plan_event_count": len(list(plan.events)),
         "plan_segment_count": len(list(plan.segments)),
         "source_version": prepared.recording.version_id,
@@ -940,6 +958,8 @@ def validate_task_worker_binding(
         "execution_mode": "normal_development",
         "request_id": request.get("request_id"),
         "plan_id": request.get("plan_id"),
+        "plan_sha256": request.get("plan_sha256"),
+        "execution_semantics": request.get("execution_semantics"),
         "source_version": request.get("source_version"),
         "height_mm": request.get("height_mm"),
         "step_count": request.get("step_count"),
@@ -970,6 +990,10 @@ def validate_task_worker_binding(
         task_session.get("enabled") is not True
         or task_session.get("execution_mode") != "normal_development"
         or task_session.get("request_id") != request.get("request_id")
+        or task_session.get("plan_id") != request.get("plan_id")
+        or task_session.get("plan_sha256") != request.get("plan_sha256")
+        or task_session.get("execution_semantics")
+        != request.get("execution_semantics")
         or task_session.get("source_version") != request.get("source_version")
         or task_session.get("state") != "ready_for_plan"
         or task_session.get("filtered_contact_bank_enabled") is not False
@@ -1069,6 +1093,10 @@ def validate_task_terminal(
     *,
     request_id: str,
     plan_id: str,
+    plan_sha256: str,
+    execution_semantics: str,
+    plan_event_count: int,
+    plan_segment_count: int,
     source_version: str,
     run_dir: Path,
 ) -> dict[str, Any]:
@@ -1086,6 +1114,10 @@ def validate_task_terminal(
         "operation": "task_replay",
         "request_id": request_id,
         "plan_id": plan_id,
+        "plan_sha256": plan_sha256,
+        "execution_semantics": execution_semantics,
+        "plan_event_count": plan_event_count,
+        "plan_segment_count": plan_segment_count,
         "source_version": source_version,
         "run_dir": str(run_dir.resolve()),
         "accepted": expected_accepted,
@@ -1114,6 +1146,10 @@ def validate_task_operation_ack(
     terminal: Mapping[str, Any],
     request_id: str,
     plan_id: str,
+    plan_sha256: str,
+    execution_semantics: str,
+    plan_event_count: int,
+    plan_segment_count: int,
     source_version: str,
     run_dir: Path,
     worker_binding: Mapping[str, Any],
@@ -1126,6 +1162,10 @@ def validate_task_operation_ack(
         "phase": terminal.get("phase"),
         "request_id": request_id,
         "plan_id": plan_id,
+        "plan_sha256": plan_sha256,
+        "execution_semantics": execution_semantics,
+        "plan_event_count": plan_event_count,
+        "plan_segment_count": plan_segment_count,
         "source_version": source_version,
         "run_dir": str(run_dir.resolve()),
         "accepted": bool(complete),
@@ -1344,6 +1384,7 @@ def _run_manifest(
         "accepted_steps_path": str(prepared.recording.accepted_steps_path),
         "accepted_steps_sha256": prepared.accepted_steps_sha256,
         "plan_sha256": str(prepared.plan.plan_sha256).lower(),
+        "execution_semantics": str(prepared.plan.execution_semantics),
         "request_id": str(request.get("request_id", "") or ""),
         "plan_id": str(request.get("plan_id", "") or ""),
         "run_dir": str(paths.run_dir),
@@ -1433,6 +1474,8 @@ def _latest_resumable_manifest(
                 or result.get("source_version") != recording.version_id
                 or result.get("accepted_steps_sha256") != expected_source_sha
                 or result.get("plan_sha256") != expected_plan_sha256
+                or result.get("execution_semantics")
+                != RECORDED_TIMELINE_OPEN_LOOP_V1
                 or result.get("shutdown_verified") is not True
                 or not isinstance(row, Mapping)
                 or row.get("task_result")
@@ -1475,6 +1518,7 @@ def _latest_resumable_manifest(
                 "accepted_steps_path": str(recording.accepted_steps_path.resolve()),
                 "accepted_steps_sha256": expected_source_sha,
                 "plan_sha256": expected_plan_sha256,
+                "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
                 "request_id": result.get("request_id"),
                 "plan_id": result.get("plan_id"),
                 "run_dir": str(run_dir),
@@ -1486,6 +1530,10 @@ def _latest_resumable_manifest(
                 "source_version": recording.version_id,
                 "request_id": result.get("request_id"),
                 "plan_id": result.get("plan_id"),
+                "plan_sha256": expected_plan_sha256,
+                "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
+                "plan_event_count": request.get("plan_event_count"),
+                "plan_segment_count": request.get("plan_segment_count"),
                 "run_dir": str(run_dir),
                 "task_inputs_path": str(task_inputs_path),
                 "video_writer_quiesced": True,
@@ -1498,6 +1546,8 @@ def _latest_resumable_manifest(
                 raise RunnerContractError("resume classifier inputs are malformed")
             for key, expected in {
                 "source_version": recording.version_id,
+                "plan_sha256": expected_plan_sha256,
+                "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
                 "plan_event_count": request.get("plan_event_count"),
                 "plan_segment_count": request.get("plan_segment_count"),
                 "second_simulator_process_detected": False,
@@ -1724,6 +1774,7 @@ def run_one_replay(
             "plan_id": plan_id,
             "plan_sha256": str(prepared.plan.plan_sha256),
             "profile": "motion_only",
+            "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
             "event_count": len(list(prepared.plan.events)),
             "segment_count": len(list(prepared.plan.segments)),
             "input_step_count": len(prepared.steps),
@@ -1752,6 +1803,10 @@ def run_one_replay(
             terminal,
             request_id=request_id,
             plan_id=plan_id,
+            plan_sha256=str(prepared.plan.plan_sha256),
+            execution_semantics=RECORDED_TIMELINE_OPEN_LOOP_V1,
+            plan_event_count=len(list(prepared.plan.events)),
+            plan_segment_count=len(list(prepared.plan.segments)),
             source_version=recording.version_id,
             run_dir=paths.run_dir,
         )
@@ -1769,6 +1824,10 @@ def run_one_replay(
             terminal=terminal,
             request_id=request_id,
             plan_id=plan_id,
+            plan_sha256=str(prepared.plan.plan_sha256),
+            execution_semantics=RECORDED_TIMELINE_OPEN_LOOP_V1,
+            plan_event_count=len(list(prepared.plan.events)),
+            plan_segment_count=len(list(prepared.plan.segments)),
             source_version=recording.version_id,
             run_dir=paths.run_dir,
             worker_binding=worker_binding,
@@ -1820,6 +1879,10 @@ def run_one_replay(
                             candidate,
                             request_id=request_id,
                             plan_id=plan_id,
+                            plan_sha256=str(prepared.plan.plan_sha256),
+                            execution_semantics=RECORDED_TIMELINE_OPEN_LOOP_V1,
+                            plan_event_count=len(list(prepared.plan.events)),
+                            plan_segment_count=len(list(prepared.plan.segments)),
                             source_version=recording.version_id,
                             run_dir=paths.run_dir,
                         )

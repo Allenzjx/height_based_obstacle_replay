@@ -1,0 +1,157 @@
+{
+  "schema_version": "fsm50.current_background_process_stop_report.v1",
+  "report_phase": "FINAL_POST_STOP",
+  "timestamp_utc": "2026-08-16T05:14:14.9883707Z",
+  "requested_final_status": "INTERRUPTED_BY_USER_FOR_FSM_REVIEW",
+  "physical_promotion": false,
+  "project_root": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay",
+  "process_tree": [
+    {
+      "pid": 18544,
+      "parent_pid": 18460,
+      "name": "explorer.exe",
+      "classification": "desktop_ancestor_not_a_stop_target",
+      "creation_time_utc": "2026-08-14T21:13:49.7396800Z",
+      "cpu_time_s": 181.1875,
+      "working_set_bytes": 320577536,
+      "command_line": "C:\\WINDOWS\\Explorer.EXE"
+    },
+    {
+      "pid": 19516,
+      "parent_pid": 18544,
+      "name": "ChatGPT.exe",
+      "classification": "codex_desktop_ancestor_not_a_stop_target",
+      "creation_time_utc": "2026-08-14T22:30:41.1113140Z",
+      "cpu_time_s": 1684.4375,
+      "working_set_bytes": 212000768,
+      "command_line": "\"C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.810.4967.0_x64__2p2nqsd0c76g0\\app\\ChatGPT.exe\" "
+    },
+    {
+      "pid": 36404,
+      "parent_pid": 19516,
+      "name": "codex.exe",
+      "classification": "codex_app_server_ancestor_not_a_stop_target",
+      "creation_time_utc": "2026-08-14T22:30:48.0113900Z",
+      "cpu_time_s": 2290.90625,
+      "working_set_bytes": 194150400,
+      "command_line": "\"C:\\Program Files\\WindowsApps\\OpenAI.Codex_26.810.4967.0_x64__2p2nqsd0c76g0\\app\\resources\\codex.exe\" -c features.code_mode_host=true app-server --analytics-default-enabled"
+    },
+    {
+      "pid": 20844,
+      "parent_pid": 36404,
+      "name": "pwsh.exe",
+      "classification": "codex_owning_terminal_for_evaluation_coordinator",
+      "creation_time_utc": "2026-08-15T23:21:06.1583870Z",
+      "cpu_time_s": 2.078125,
+      "working_set_bytes": 81702912,
+      "command_line": "\"C:\\Users\\kskzz\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\native\\powershell\\pwsh.exe\" -Command <inline evaluation coordinator piped to env_isaaclab python; exact coordinator argv is recorded on pid 48284 and the inline coordinator contract is reproduced in CURRENT_BACKGROUND_PROCESS_STOP_REPORT.md>"
+    },
+    {
+      "pid": 4176,
+      "parent_pid": 20844,
+      "name": "python.exe",
+      "classification": "evaluation_coordinator_and_singleton_owner",
+      "creation_time_utc": "2026-08-15T23:21:06.3897830Z",
+      "cpu_time_s": 0.3125,
+      "working_set_bytes": 16441344,
+      "command_line": "\"C:\\Users\\kskzz\\miniconda3\\envs\\env_isaaclab\\python.exe\" -"
+    },
+    {
+      "pid": 48284,
+      "parent_pid": 4176,
+      "name": "python.exe",
+      "classification": "ppo_evaluation_child_with_embedded_isaac_kit",
+      "creation_time_utc": "2026-08-15T23:21:07.1897620Z",
+      "cpu_time_s": 21351.078125,
+      "working_set_bytes": 598507520,
+      "command_line": "C:\\Users\\kskzz\\miniconda3\\envs\\env_isaaclab\\python.exe -m fsm_50mm_recording_derived_v3.play_fsm50_residual_ppo --stage R1 --checkpoint-manifest C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint_manifest.json --output C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_evaluation.json --seed 20260815 --episodes-per-entry 3 --device cuda:0 --headless"
+    },
+    {
+      "pid": 60448,
+      "parent_pid": 36404,
+      "name": "pwsh.exe",
+      "classification": "read_only_pre_stop_audit_process_exited_after_snapshot",
+      "creation_time_utc": "2026-08-16T05:14:13.4500380Z",
+      "cpu_time_s": 0.6875,
+      "working_set_bytes": 121217024,
+      "command_line": "Codex read-only PowerShell snapshot: Win32_Process, file SHA-256, singleton payload, and Git read-only commands"
+    }
+  ],
+  "project_process_ids_to_stop": [48284, 4176, 20844],
+  "standalone_isaac_or_kit_process_ids": [],
+  "singleton": {
+    "path": "C:\\Users\\kskzz\\AppData\\Local\\Temp\\fsm50_replay_0ab14a3020e34b71.pid.lock",
+    "exists_before": true,
+    "size_bytes_before": 186,
+    "sha256_before": "b66a4c46199059a178b86964942ba6fb6a880c3ab3b8fd433b9d0441f4724eb4",
+    "owner_pid": 4176,
+    "owner_alive_before": true,
+    "owner_token": "3b0ed81fca284bedad2f21620fe58358",
+    "created_utc": "2026-08-15T19:21:07.18249-04:00",
+    "recovery_method": "one_normal_interrupt_to_owning_terminal_then_production_ReplaySingletonLock_owner_token_checked_stale_recovery",
+    "recovery_process_pid": 43456,
+    "recovery_process_token": "2750fda8c0004cb49baa29a1fb87a5e2",
+    "exists_after": false,
+    "owner_alive_after": false
+  },
+  "checkpoint": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint.pt",
+    "exists": true,
+    "size_bytes": 3128101,
+    "sha256_before": "582df8517f26bd6c1820e54625621813882ca132964b20519ac26b989665d8a0",
+    "sha256_after": "582df8517f26bd6c1820e54625621813882ca132964b20519ac26b989665d8a0"
+  },
+  "checkpoint_manifest": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint_manifest.json",
+    "exists": true,
+    "size_bytes": 26673,
+    "sha256_before": "1058d431000877fbde7d49cb25d4480c610aad466aff191fa9f37c21a6b5ac3a",
+    "sha256_after": "1058d431000877fbde7d49cb25d4480c610aad466aff191fa9f37c21a6b5ac3a"
+  },
+  "training_manifest": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_training_manifest.json",
+    "exists": true,
+    "size_bytes": 3416,
+    "sha256_before": "40040ba479d1d3fd41ce301be84f7ca0985db3263bc2c45720b4ab1ddd9bd601",
+    "sha256_after": "40040ba479d1d3fd41ce301be84f7ca0985db3263bc2c45720b4ab1ddd9bd601"
+  },
+  "evaluation_output": {
+    "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_evaluation.json",
+    "exists_before": false,
+    "size_bytes_before": 0,
+    "sha256_before": "",
+    "partial_candidates_before": [],
+    "exists_after": false,
+    "size_bytes_after": 0,
+    "partial_candidates_after": [],
+    "final_status": "INTERRUPTED_BY_USER_FOR_FSM_REVIEW",
+    "physical_promotion": false
+  },
+  "git": {
+    "head": "2acd2852ee73e1d378de26df1abb0b86845ae4a1",
+    "branch": "main",
+    "log": "2acd285 Update latest obstacle replay FSM code and validation artifacts",
+    "status_short_before_report": [],
+    "diff_stat_before_report": [],
+    "diff_check_before_report": []
+  },
+  "post_stop_verification": {
+    "normal_interrupt_count": 1,
+    "owning_terminal_session_id": 43503,
+    "owning_terminal_exit_code": 1,
+    "owning_terminal_pid_20844_alive": false,
+    "coordinator_pid_4176_alive": false,
+    "evaluation_child_pid_48284_alive": false,
+    "standalone_isaac_or_kit_processes": [],
+    "simulator_conflicts": [],
+    "singleton_exists": false,
+    "checkpoint_unchanged": true,
+    "checkpoint_manifest_unchanged": true,
+    "training_manifest_unchanged": true,
+    "formal_evaluation_output_exists": false,
+    "partial_evaluation_candidates": [],
+    "evaluation_status": "INTERRUPTED_BY_USER_FOR_FSM_REVIEW",
+    "physical_promotion": false,
+    "verified_utc": "2026-08-16T05:16:05.6451021Z"
+  }
+}

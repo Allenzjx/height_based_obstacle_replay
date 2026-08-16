@@ -24,7 +24,13 @@ from typing import Any, Callable, Mapping
 
 import numpy as np
 
-from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES, clamp_servo_command
+from command_model import (
+    JOINT_COMMAND_SIGN,
+    SERVO_JOINT_NAMES,
+    WHEEL_JOINT_NAMES,
+    clamp_servo_command,
+    command_limits_for_servo,
+)
 from completion_aware_segment import (
     CompletionAwareSegmentExecutor,
     SegmentCompletionSpec,
@@ -39,6 +45,23 @@ from .fsm50_direct_command_residual import (
     ResidualPhaseContract,
     ResidualTransformInput,
     compose_direct_command_residual,
+)
+from .fsm50_centroidal_support import (
+    CentroidalSupportEvidence,
+    SupportThresholds,
+    WholeBodyCOMMeasurement,
+    WheelContactFrame,
+    assess_contact_wrench_feasibility,
+    assess_primary_diagonal_support,
+    assess_support_region,
+    measure_isaac_centroidal_angular_momentum_rate,
+    measure_isaac_wheel_contacts,
+    measure_isaac_whole_body_com,
+)
+from .fsm50_macro_state_model import (
+    FINAL_RECOVERY_FEEDBACK_LIMITS,
+    MacroStateId,
+    build_default_macro_graph,
 )
 from .support_classifier import (
     LEGS,
@@ -59,6 +82,11 @@ SOURCE_ACTION_CONSUMPTION_SCHEMA = "fsm50.source_action_consumption.v1"
 SEGMENT_COMPLETION_SCHEMA = "fsm50.macro_segment_completion.v1"
 RESIDUAL_POLICY_OBSERVATION_SCHEMA = "fsm50.worker_residual_observation.v1"
 SOURCE_ACTION_IDENTITY_SCHEMA_VERSION = "fsm50.source_action_identity.v1"
+FEEDBACK_RECOVERY_ACTION_SCHEMA = "fsm50.feedback_recovery_action.v2"
+FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA = (
+    "fsm50.feedback_recovery_action_ledger.v2"
+)
+TERMINAL_RECOVERY_CLOSURE_SCHEMA = "fsm50.terminal_recovery_closure.v1"
 DEFAULT_TELEMETRY_HZ = 15.0
 DEFAULT_VIDEO_FPS = 15.0
 DEFAULT_POST_SETTLE_S = 0.5
@@ -66,6 +94,11 @@ EXPECTED_PHYSICS_DT_S = 1.0 / 120.0
 EXPECTED_RENDER_SUBSTEPS = 8
 EXPECTED_RENDER_DT_S = EXPECTED_PHYSICS_DT_S * EXPECTED_RENDER_SUBSTEPS
 EXPECTED_SERVO_REFERENCE_VELOCITY_DEG_S = 150.0
+FEEDBACK_RECOVERY_PROBE_DELTA_DEG = 0.25
+FEEDBACK_RECOVERY_INCREMENT_DELTA_DEG = 0.25
+FEEDBACK_RECOVERY_MAXIMUM_ACTIONS = 64
+FEEDBACK_RECOVERY_MAXIMUM_INCREMENTS_PER_LEG = 8
+FEEDBACK_RECOVERY_CONTACT_DWELL_S = 0.25
 CANONICAL_GATE_C_SOURCE_VERSION = "v003_20260805_224517_157723_manual"
 AUTHORIZED_GATE_D_SOURCE_VERSIONS = (
     "v008_20260806_211408_578700_manual",
@@ -77,10 +110,21 @@ CANONICAL_TASK_SUCCESS_TABLE_SHA256 = (
     "5549ee54b8e1aa17954c8d7dc0c9c88feee445ad32dbf6f58f6ccf900f45419c"
 )
 WHEEL_RADIUS_M = 0.04998999834060672
+# Conservative lower bound shared by the unchanged production ground
+# (dynamic friction 1.05) and obstacle (dynamic friction 1.00).  The scene
+# uses max-combine, so 1.00 never overstates either declared surface.
+CONSERVATIVE_SCENE_DYNAMIC_FRICTION = 1.0
+FINITE_WHEEL_CONTACT_PATCH_RADIUS_M = 0.01
+FILTERED_CONTACT_FORCE_THRESHOLD_N = 1.0
+CONTACT_FORCE_AXIS_TOLERANCE_N = 2.0e-4
+CONTACT_SURFACE_HEIGHT_TOLERANCE_M = 0.005
 TARGET_COMMAND_TOLERANCE = 1.0e-6
 DRIVE_READBACK_TOLERANCE = 2.0e-6
 UNAVAILABLE_RUNTIME_EVIDENCE_SOURCE = (
     "UNAVAILABLE_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
+)
+_FILTERED_CONTACT_SCENE_ROUTE_MARKER = (
+    "_fsm50_macro_filtered_contact_scene_request_id"
 )
 
 _COMMAND_PROVENANCE_KEYS = frozenset(
@@ -95,6 +139,17 @@ _COMMAND_PROVENANCE_KEYS = frozenset(
         "commands",
         "dispatch_kind",
         "sequence_index",
+        "recovery_stage",
+        "recovery_action",
+        "recovery_evidence_sha256",
+        "recovery_centroidal_evidence_sha256",
+        "recovery_feedback_observation_sha256",
+        "recovery_target_map_sha256",
+        "recovery_direction_sign",
+        "recovery_attempt",
+        "recovery_leg",
+        "recovery_joint",
+        "recovery_configuration_sha256",
     }
 )
 _COMMAND_PROVENANCE_KINDS = frozenset(
@@ -106,6 +161,7 @@ _COMMAND_PROVENANCE_KINDS = frozenset(
         "SAFE_STOP_ZERO_WHEELS",
         "SUCCESS_ZERO_WHEELS",
         "COMPLETION_WHEEL_STOP",
+        "FEEDBACK_RECOVERY",
     }
 )
 _EMPTY_COMMAND_PROVENANCE = {
@@ -119,7 +175,150 @@ _EMPTY_COMMAND_PROVENANCE = {
     "commands": [],
     "dispatch_kind": "",
     "sequence_index": None,
+    "recovery_stage": "",
+    "recovery_action": "",
+    "recovery_evidence_sha256": "",
+    "recovery_centroidal_evidence_sha256": "",
+    "recovery_feedback_observation_sha256": "",
+    "recovery_target_map_sha256": "",
+    "recovery_direction_sign": None,
+    "recovery_attempt": None,
+    "recovery_leg": "",
+    "recovery_joint": "",
+    "recovery_configuration_sha256": "",
 }
+
+_FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA = (
+    "fsm50.feedback_recovery_configuration.v1"
+)
+_FEEDBACK_RECOVERY_CONFIGURATION_KEYS = frozenset(
+    {
+        "schema_version",
+        "leg",
+        "macro_state",
+        "selected_source_version",
+        "reference_profile_id",
+        "reference_profile_source_version",
+        "reference_profile_source_plan_sha256",
+        "centroidal_evidence_sha256",
+        "feedback_observation_sha256",
+        "servo_reference_targets_deg",
+        "measured_servo_positions_deg",
+        "wheel_center_w_m",
+        "body_crossed_front_face",
+        "final_recoverable",
+        "posture_complete",
+    }
+)
+_FEEDBACK_RECOVERY_ACTION_ROW_KEYS = frozenset(
+    {
+        "schema_version",
+        "action_index",
+        "attempt",
+        "sim_step",
+        "expected_n_plus_one_sim_step",
+        "stage",
+        "action",
+        "leg",
+        "joint",
+        "direction_sign",
+        "configuration_sha256",
+        "configuration_payload",
+        "centroidal_evidence_sha256",
+        "feedback_observation_sha256",
+        "command_provenance",
+        "batch_id",
+        "dispatch_index",
+        "dispatch_ack",
+        "ack_sha256",
+        "n_plus_one_verified",
+        "n_plus_one_verified_sim_step",
+        "n_plus_one_readback_sha256",
+        "n_plus_one_readback",
+        "dispatch_centroidal_support_evidence",
+        "dispatch_feedback_recovery_observation",
+        "physical_response_verified",
+        "physical_response_sim_step",
+        "physical_response_centroidal_evidence_sha256",
+        "physical_response_feedback_observation_sha256",
+        "physical_response_centroidal_support_evidence",
+        "physical_response_feedback_recovery_observation",
+        "physical_response",
+    }
+)
+_FEEDBACK_RECOVERY_READBACK_KEYS = frozenset(
+    {
+        "sim_step",
+        "command_epoch",
+        "batch_id",
+        "canonical_servo_targets_deg",
+        "canonical_wheel_targets_rad_s",
+        "servo_command_transform",
+        "servo_command_transform_sha256",
+        "expected_servo_drive_targets_rad",
+        "actual_servo_drive_targets_rad",
+        "actual_wheel_drive_targets_rad_s",
+        "adapter_runtime_instance_id",
+        "root_state_write_count",
+        "physics_dt_s",
+    }
+)
+_SERVO_COMMAND_TRANSFORM_SCHEMA = "fsm50.servo_command_transform.v1"
+_SERVO_COMMAND_TRANSFORM_KEYS = frozenset(
+    {
+        "schema_version",
+        "standing_pose_deg_by_servo",
+        "command_sign_by_servo",
+    }
+)
+_DURABLE_MOTION_BATCH_ACK_KEYS = frozenset(
+    {
+        "batch_id",
+        "source",
+        "error",
+        "applied_sim_step",
+        "first_physics_step",
+        "motion_start_skew_s",
+        "physics_dt_s",
+        "servo_applied",
+        "wheel_applied",
+        "servo_targets_applied",
+        "wheel_targets_applied",
+        "recording_metadata",
+    }
+)
+_SOURCE_ACTION_CONSUMPTION_ROW_KEYS = frozenset(
+    {
+        "schema_version",
+        "source_action_index",
+        "expected_source_action_count",
+        "sim_time_s",
+        "sim_step",
+        "macro_state",
+        "subphase",
+        "profile_id",
+        "profile_source_version",
+        "profile_strategy",
+        "source_plan_sha256",
+        "profile_library_sha256",
+        "bundle_sha256",
+        "command_provenance",
+        "servo_targets_deg",
+        "wheel_targets_rad_s",
+        "target_changed",
+        "dispatch_epoch",
+        "physical_dispatch_required",
+        "physical_dispatch_applied",
+        "physical_dispatch_index",
+        "batch_id",
+        "n_plus_one_verified",
+        "n_plus_one_verified_sim_step",
+        "n_plus_one_readback_sha256",
+        "pre_action_verified_command_epoch",
+        "pre_action_verified_readback",
+        "pre_action_verified_readback_sha256",
+    }
+)
 
 SEGMENT_COMPLETION_CONTROL_SCHEMA_VERSION = (
     "fsm50.macro_segment_completion_control.v1"
@@ -332,6 +531,21 @@ def _strict_json_equal(actual: Any, expected: Any) -> bool:
     return bool(actual == expected)
 
 
+def _safety_scalar_normalizes_true(value: Any) -> bool:
+    """Recognize a hard-safety True before normalizing sibling fields.
+
+    Providers may expose numpy/torch-like scalar wrappers which `_jsonable`
+    legitimately normalizes to the exact JSON boolean ``True``.  Inspect each
+    hard-safety scalar in isolation so an unrelated later normalization error
+    cannot erase a physical True observation.
+    """
+
+    try:
+        return _jsonable(value) is True
+    except BaseException:
+        return value is True
+
+
 def _atomic_write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
@@ -433,6 +647,14 @@ def _required_sha(raw: Mapping[str, Any], key: str) -> str:
     return value
 
 
+def _is_lower_sha256(value: Any) -> bool:
+    return bool(
+        type(value) is str
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
 @dataclass(frozen=True)
 class WorkerMacroFSMRequest:
     request_path: Path
@@ -456,6 +678,7 @@ class WorkerMacroFSMRequest:
     post_run_settle_s: float
     timeout_s: float
     capture_video: bool = True
+    filtered_contact_bank_enabled: bool = True
 
     def preflight_payload(self) -> dict[str, Any]:
         return {
@@ -475,7 +698,7 @@ class WorkerMacroFSMRequest:
             "trial_index": self.trial_index,
             "telemetry_hz": self.telemetry_hz,
             "video_fps": self.video_fps,
-            "filtered_contact_bank_enabled": False,
+            "filtered_contact_bank_enabled": self.filtered_contact_bank_enabled,
             "preflight_ok": True,
         }
 
@@ -502,8 +725,8 @@ def load_worker_macro_fsm_request(
         raise ValueError("macro FSM request must use normal_development mode")
     if raw.get("capture_video") is not True:
         raise ValueError("normal Macro FSM execution requires viewport video")
-    if raw.get("filtered_contact_bank_enabled") is not False:
-        raise ValueError("normal Macro FSM execution forbids the filtered contact bank")
+    if raw.get("filtered_contact_bank_enabled") is not True:
+        raise ValueError("normal Macro FSM execution requires the filtered contact bank")
 
     alignment_path = Path(_required_text(raw, "alignment_path")).resolve()
     table_path = Path(_required_text(raw, "task_success_table_path")).resolve()
@@ -570,7 +793,59 @@ def load_worker_macro_fsm_request(
         post_run_settle_s=settle_s,
         timeout_s=timeout_s,
         capture_video=True,
+        filtered_contact_bank_enabled=True,
     )
+
+
+def configure_scene_for_macro_fsm(
+    scene_config: Any,
+    request: WorkerMacroFSMRequest | None,
+) -> Any:
+    """Install the strict combined contact bank before ``create_scene``.
+
+    The Macro/Residual route is opt-in and may only start from the production
+    scene defaults.  The delegated helper changes contact instrumentation only;
+    it does not touch pose, obstacle, material, solver, or actuator settings.
+    """
+
+    if request is None:
+        return scene_config
+    if request.filtered_contact_bank_enabled is not True:
+        raise ValueError("Macro FSM request does not require the filtered contact bank")
+    if getattr(scene_config, "telemetry_contact_sensors_enabled", None) is not False:
+        raise ValueError(
+            "Macro FSM contact route requires incoming production default "
+            "telemetry_contact_sensors_enabled=false"
+        )
+    if getattr(scene_config, "contact_sensor_factory", None) is not None:
+        raise ValueError(
+            "Macro FSM contact route requires incoming production default "
+            "contact_sensor_factory=None"
+        )
+
+    from .filtered_wheel_contact import make_filtered_wheel_contact_sensor_factory
+    from .nonwheel_obstacle_contact import (
+        configure_scene_for_wheel_and_nonwheel_contacts,
+    )
+
+    configure_scene_for_wheel_and_nonwheel_contacts(
+        scene_config,
+        wheel_factory=make_filtered_wheel_contact_sensor_factory(
+            force_threshold_n=1.0
+        ),
+        force_threshold_n=1.0,
+    )
+    if (
+        getattr(scene_config, "telemetry_contact_sensors_enabled", None) is not True
+        or not callable(getattr(scene_config, "contact_sensor_factory", None))
+    ):
+        raise RuntimeError("Macro FSM combined contact-bank configuration failed")
+    setattr(
+        scene_config,
+        _FILTERED_CONTACT_SCENE_ROUTE_MARKER,
+        request.request_id,
+    )
+    return scene_config
 
 
 def validate_worker_macro_start_binding(
@@ -880,6 +1155,9 @@ class WorkerMacroFSMSession:
         self.infrastructure_failure = False
         self.simulation_app_stopped = False
         self.adapter: Any | None = None
+        # Offline runner replay sets this from the SHA-bound durable worker
+        # result; live sessions bind it directly to the attached adapter.
+        self.durable_adapter_runtime_instance_id = ""
         self.scene_handle: Any | None = None
         self.bundle: Any | None = None
         self.controller: Any | None = None
@@ -888,11 +1166,46 @@ class WorkerMacroFSMSession:
         self.telemetry_attached = False
         self.video: dict[str, Any] = {}
         self.video_writer_quiesced = False
+        self.filtered_contact_bank_enabled = False
+        self.filtered_contact_scene_handle: Any | None = None
+        self.filtered_contact_bank: Any | None = None
+        self.filtered_contact_wheel_bank: Any | None = None
+        self.filtered_contact_nonwheel_bank: Any | None = None
+        self.filtered_contact_wheel_sensors: dict[str, Any] = {}
+        self.filtered_contact_nonwheel_sensors: dict[str, Any] = {}
+        self.filtered_contact_nonwheel_specs: tuple[Any, ...] = ()
+        self.filtered_contact_nonwheel_spec_identity: tuple[
+            tuple[str, str], ...
+        ] = ()
+        self.filtered_contact_material_evidence: dict[str, Any] = {}
+        self.filtered_contact_sample_epoch = 0
+        self.filtered_contact_sample: dict[str, Any] = {}
+        self.filtered_contact_wheel_rows: list[dict[str, Any]] = []
+        self.filtered_contact_nonwheel_rows: list[dict[str, Any]] = []
+        self.filtered_contact_surface_kind_by_leg = {
+            leg: "AIR" for leg in LEGS
+        }
+        self.filtered_contact_surface_height_m_by_leg = {
+            leg: 0.0 for leg in LEGS
+        }
+        self.filtered_contact_dwell_s_by_leg = {
+            leg: 0.0 for leg in LEGS
+        }
+        self.filtered_contact_dwell_kind_by_leg = {
+            leg: "AIR" for leg in LEGS
+        }
+        self.filtered_contact_last_sim_step: int | None = None
+        self.filtered_contact_last_sim_time_s: float | None = None
+        self.filtered_contact_previous_frame: WheelContactFrame | None = None
+        self.filtered_contact_frame: WheelContactFrame | None = None
+        self.filtered_contact_com: WholeBodyCOMMeasurement | None = None
+        self.last_centroidal_support_evidence: CentroidalSupportEvidence | None = None
         self.started_sim_time_s: float | None = None
         self.completed_sim_time_s: float | None = None
         self.boundary_first_physics_step: int | None = None
         self.physics_dt_s: float | None = None
         self.boundary_ack: dict[str, Any] = {}
+        self.boundary_readback: dict[str, Any] = {}
         self.bundle_identity: dict[str, Any] = {}
         self.target_audit: dict[str, Any] = {}
         self.rows: list[dict[str, Any]] = []
@@ -922,6 +1235,14 @@ class WorkerMacroFSMSession:
         self.last_verified_wheel_targets: dict[str, float] | None = None
         self.last_verified_command_epoch: int | None = None
         self.last_target_readback: dict[str, Any] = {}
+        self.durable_servo_command_transform: dict[str, Any] = {}
+        self.feedback_recovery_action_rows: list[dict[str, Any]] = []
+        self.feedback_recovery_sequence_by_configuration: dict[
+            str, dict[str, Any]
+        ] = {}
+        self.feedback_recovery_configuration_by_leg: dict[str, str] = {}
+        self.feedback_recovery_active_leg = ""
+        self.feedback_recovery_verified_action_count = 0
         self.boundary_readback_verified = False
         self.segment_completion_executor = CompletionAwareSegmentExecutor()
         self.active_segment_completion_row_index: int | None = None
@@ -941,16 +1262,49 @@ class WorkerMacroFSMSession:
         self.safe_stop_count = 0
         self.deployment_safety_evidence: dict[str, Any] = {}
         self.dangerous_collision_detected = False
+        self.dangerous_collision_detection_evidence: dict[str, Any] = {}
+        self.unverified_provider_collision_claim: dict[str, Any] = {}
+        self.unverified_provider_penetration_claim: dict[str, Any] = {}
         self.severe_penetration_detected = False
+        self.severe_penetration_detection_evidence: dict[str, Any] = {}
+        self.runtime_contact_collision_evidence: dict[str, Any] = {
+            "sample_count": 0,
+            "clear_sample_count": 0,
+            "detected_sample_count": 0,
+            "last_sample_epoch": None,
+            "first_sample_sim_step": None,
+            "last_sample_sim_step": None,
+            "first_sample_sha256": "",
+            "last_sample_sha256": "",
+            "first_detected_sim_step": None,
+            "last_detected_sim_step": None,
+            "first_detected_sample_sha256": "",
+            "last_detected_sample_sha256": "",
+            "last_collision": None,
+            "source": "COMBINED_FILTERED_NONWHEEL_OBSTACLE_CONTACT_CURRENT_TICK",
+        }
         self.body_stuck_detected = False
         self.active_leg_trapped_detected = False
         self.optional_runtime_evidence = {
             name: {
                 "sample_count": 0,
                 "available_sample_count": 0,
+                "detected_sample_count": 0,
                 "source": "",
+                "first_sample_sim_step": None,
+                "last_sample_sim_step": None,
+                "last_value": None,
+                "last_available": None,
+                "first_detection_evidence": {},
             }
             for name in ("body_stuck", "active_leg_trapped")
+        }
+        self.unverified_optional_runtime_true_claims = {
+            name: {} for name in ("body_stuck", "active_leg_trapped")
+        }
+        self._runtime_safety_capture_serial = 0
+        self._optional_true_claim_capture_serial = {
+            name: None for name in ("body_stuck", "active_leg_trapped")
         }
         self.controller_terminal_outcome = ""
         self.controller_terminal_reason = ""
@@ -1026,7 +1380,7 @@ class WorkerMacroFSMSession:
             ),
             "telemetry_sample_count": len(self.rows),
             "physics_dt_s": self.physics_dt_s,
-            "filtered_contact_bank_enabled": False,
+            "filtered_contact_bank_enabled": self.filtered_contact_bank_enabled,
             "error": self.error,
         }
         if self.residual_enabled:
@@ -1051,6 +1405,733 @@ class WorkerMacroFSMSession:
             }
         return status
 
+    def bind_filtered_contact_bank_scene(self, scene_handle: Any) -> None:
+        """Bind the session only to a helper-selected, live combined bank."""
+
+        if self.state != "created":
+            raise RuntimeError(
+                f"Macro FSM contact scene bind in state={self.state}"
+            )
+        config = getattr(scene_handle, "config", None)
+        if (
+            config is None
+            or getattr(config, _FILTERED_CONTACT_SCENE_ROUTE_MARKER, None)
+            != self.request.request_id
+            or getattr(config, "telemetry_contact_sensors_enabled", None) is not True
+            or not callable(getattr(config, "contact_sensor_factory", None))
+        ):
+            raise RuntimeError(
+                "Macro FSM scene was not selected by the strict combined "
+                "contact-bank helper"
+            )
+        sensor_error = str(getattr(scene_handle, "contact_sensor_error", "") or "")
+        sensor = getattr(scene_handle, "contact_sensor", None)
+        if sensor_error or sensor is None:
+            raise RuntimeError(
+                "Macro FSM combined contact bank is unavailable after scene creation: "
+                + (sensor_error or "contact sensor is None")
+            )
+        wheel_bank = getattr(sensor, "wheel_bank", None)
+        nonwheel_bank = getattr(sensor, "nonwheel_bank", None)
+        if (
+            getattr(sensor, "is_filtered_wheel_contact_bank", False) is not True
+            or getattr(sensor, "is_nonwheel_obstacle_contact_bank", False) is not True
+            or getattr(wheel_bank, "is_filtered_wheel_contact_bank", False) is not True
+            or getattr(nonwheel_bank, "is_nonwheel_obstacle_contact_bank", False)
+            is not True
+        ):
+            raise RuntimeError(
+                "Macro FSM scene sensor is not the combined filtered wheel/non-wheel bank"
+            )
+        for label, bank in (("wheel", wheel_bank), ("non-wheel", nonwheel_bank)):
+            threshold = getattr(bank, "force_threshold_n", None)
+            if (
+                type(threshold) not in (int, float)
+                or not math.isfinite(float(threshold))
+                or not math.isclose(
+                    float(threshold), 1.0, rel_tol=0.0, abs_tol=1.0e-12
+                )
+            ):
+                raise RuntimeError(
+                    f"Macro FSM {label} contact threshold is not exactly 1.0 N"
+                )
+        wheel_sensors = getattr(wheel_bank, "sensors", None)
+        nonwheel_sensors = getattr(nonwheel_bank, "sensors", None)
+        nonwheel_specs = tuple(getattr(nonwheel_bank, "specs", ()) or ())
+        nonwheel_spec_identity = tuple(
+            (
+                str(getattr(spec, "body_name", "") or ""),
+                str(getattr(spec, "prim_path", "") or ""),
+            )
+            for spec in nonwheel_specs
+        )
+        expected_nonwheel_keys = tuple(
+            prim_path for _body_name, prim_path in nonwheel_spec_identity
+        )
+        if (
+            not isinstance(wheel_sensors, Mapping)
+            or not isinstance(nonwheel_sensors, Mapping)
+            or tuple(wheel_sensors.keys()) != tuple(LEGS)
+            or not expected_nonwheel_keys
+            or any(not key for key in expected_nonwheel_keys)
+            or tuple(nonwheel_sensors.keys()) != expected_nonwheel_keys
+        ):
+            raise RuntimeError(
+                "Macro FSM combined contact child mappings are not exact"
+            )
+        child_objects = tuple(wheel_sensors.values()) + tuple(
+            nonwheel_sensors.values()
+        )
+        if len({id(value) for value in child_objects}) != len(child_objects):
+            raise RuntimeError(
+                "Macro FSM combined contact child sensors must be unique and disjoint"
+            )
+        from .nonwheel_obstacle_contact import OBSTACLE_PRIM_PATH
+
+        if (
+            getattr(nonwheel_bank, "obstacle_prim_path", None)
+            != OBSTACLE_PRIM_PATH
+            or any(not body_name for body_name, _prim_path in nonwheel_spec_identity)
+        ):
+            raise RuntimeError(
+                "Macro FSM non-wheel obstacle contact specification is not exact"
+            )
+        for (_body_name, prim_path), child in zip(
+            nonwheel_spec_identity,
+            nonwheel_sensors.values(),
+        ):
+            cfg = getattr(child, "cfg", None)
+            if (
+                cfg is None
+                or str(getattr(cfg, "prim_path", "") or "") != prim_path
+                or tuple(getattr(cfg, "filter_prim_paths_expr", ()) or ())
+                != (OBSTACLE_PRIM_PATH,)
+            ):
+                raise RuntimeError(
+                    "Macro FSM non-wheel child prim/filter identity is not exact"
+                )
+        from .fsm50_residual_scene import GROUND_MATERIAL, OBSTACLE_MATERIAL
+
+        material_values = {
+            "ground_static_friction": GROUND_MATERIAL.static_friction,
+            "ground_dynamic_friction": GROUND_MATERIAL.dynamic_friction,
+            "obstacle_static_friction": OBSTACLE_MATERIAL.static_friction,
+            "obstacle_dynamic_friction": OBSTACLE_MATERIAL.dynamic_friction,
+        }
+        for field, expected in material_values.items():
+            value = getattr(config, field, None)
+            if type(value) not in (int, float) or not math.isclose(
+                float(value), float(expected), rel_tol=0.0, abs_tol=1.0e-12
+            ):
+                raise RuntimeError(
+                    f"Macro FSM scene material field {field} is not canonical"
+                )
+        if (
+            GROUND_MATERIAL.friction_combine_mode != "max"
+            or OBSTACLE_MATERIAL.friction_combine_mode != "max"
+        ):
+            raise RuntimeError("Macro FSM canonical surface combine mode is not max")
+        material_evidence = {
+            "schema_version": "fsm50.contact_friction_bound.v1",
+            "ground": {
+                "static_friction": float(GROUND_MATERIAL.static_friction),
+                "dynamic_friction": float(GROUND_MATERIAL.dynamic_friction),
+                "friction_combine_mode": GROUND_MATERIAL.friction_combine_mode,
+            },
+            "obstacle": {
+                "static_friction": float(OBSTACLE_MATERIAL.static_friction),
+                "dynamic_friction": float(OBSTACLE_MATERIAL.dynamic_friction),
+                "friction_combine_mode": OBSTACLE_MATERIAL.friction_combine_mode,
+            },
+            "conservative_pair_dynamic_friction_lower_bound": (
+                CONSERVATIVE_SCENE_DYNAMIC_FRICTION
+            ),
+            "source": (
+                "CANONICAL_SCENE_CONFIG_AND_ENVIRONMENT_LOCK_BOUND;"
+                "NOT_A_MEASURED_PAIR_COEFFICIENT"
+            ),
+        }
+        material_evidence["payload_sha256"] = _canonical_json_sha256(
+            material_evidence
+        )
+        self.filtered_contact_scene_handle = scene_handle
+        self.filtered_contact_bank = sensor
+        self.filtered_contact_wheel_bank = wheel_bank
+        self.filtered_contact_nonwheel_bank = nonwheel_bank
+        self.filtered_contact_wheel_sensors = dict(wheel_sensors)
+        self.filtered_contact_nonwheel_sensors = dict(nonwheel_sensors)
+        self.filtered_contact_nonwheel_specs = nonwheel_specs
+        self.filtered_contact_nonwheel_spec_identity = nonwheel_spec_identity
+        self.filtered_contact_material_evidence = material_evidence
+        self.filtered_contact_bank_enabled = True
+
+    @staticmethod
+    def _same_sensor_mapping(
+        current: Any,
+        pinned: Mapping[str, Any],
+    ) -> bool:
+        return bool(
+            isinstance(current, Mapping)
+            and tuple(current.keys()) == tuple(pinned.keys())
+            and all(current[key] is value for key, value in pinned.items())
+        )
+
+    def _same_nonwheel_sensor_contract(self, bank: Any) -> bool:
+        from .nonwheel_obstacle_contact import OBSTACLE_PRIM_PATH
+
+        specs = tuple(getattr(bank, "specs", ()) or ())
+        sensors = getattr(bank, "sensors", None)
+        if (
+            len(specs) != len(self.filtered_contact_nonwheel_specs)
+            or any(
+                current is not pinned
+                for current, pinned in zip(
+                    specs, self.filtered_contact_nonwheel_specs
+                )
+            )
+            or getattr(bank, "obstacle_prim_path", None) != OBSTACLE_PRIM_PATH
+            or not self._same_sensor_mapping(
+                sensors, self.filtered_contact_nonwheel_sensors
+            )
+        ):
+            return False
+        identity = tuple(
+            (
+                str(getattr(spec, "body_name", "") or ""),
+                str(getattr(spec, "prim_path", "") or ""),
+            )
+            for spec in specs
+        )
+        if identity != self.filtered_contact_nonwheel_spec_identity:
+            return False
+        for (_body_name, prim_path), child in zip(identity, sensors.values()):
+            cfg = getattr(child, "cfg", None)
+            if (
+                cfg is None
+                or str(getattr(cfg, "prim_path", "") or "") != prim_path
+                or tuple(getattr(cfg, "filter_prim_paths_expr", ()) or ())
+                != (OBSTACLE_PRIM_PATH,)
+            ):
+                return False
+        return True
+
+    @staticmethod
+    def _contact_sensor_clock_values(bank: Any) -> tuple[float, ...]:
+        sensors: list[Any] = []
+        for child in (
+            getattr(bank, "wheel_bank", None),
+            getattr(bank, "nonwheel_bank", None),
+        ):
+            mapping = getattr(child, "sensors", None)
+            if not isinstance(mapping, Mapping) or not mapping:
+                raise RuntimeError(
+                    "combined contact bank lacks its exact child-sensor mapping"
+                )
+            sensors.extend(mapping.values())
+        clocks: list[float] = []
+        for sensor in sensors:
+            values: list[float] = []
+            for attribute in ("_timestamp", "_timestamp_last_update"):
+                value = getattr(sensor, attribute, None)
+                if hasattr(value, "detach"):
+                    value = value.detach()
+                if hasattr(value, "cpu"):
+                    value = value.cpu()
+                if hasattr(value, "numpy"):
+                    value = value.numpy()
+                array = np.asarray(value, dtype=float)
+                if (
+                    array.ndim != 1
+                    or array.size != 1
+                    or not np.isfinite(array).all()
+                ):
+                    raise RuntimeError(
+                        f"contact sensor {attribute} is not exact finite [1]"
+                    )
+                values.append(float(array[0]))
+            if not math.isclose(
+                values[0], values[1], rel_tol=0.0, abs_tol=1.0e-12
+            ):
+                raise RuntimeError(
+                    "contact sensor clock and last-update timestamp differ"
+                )
+            clocks.append(values[0])
+        if not clocks:
+            raise RuntimeError("combined contact bank contains no live sensors")
+        return tuple(clocks)
+
+    @staticmethod
+    def _finite_contact_vec3(value: Any, *, label: str) -> tuple[float, float, float]:
+        array = np.asarray(value, dtype=float)
+        if array.shape != (3,) or not np.isfinite(array).all():
+            raise RuntimeError(f"{label} is not an exact finite vec3")
+        return tuple(float(item) for item in array)
+
+    def _validated_combined_contact_rows(
+        self,
+        *,
+        bank: Any,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        from .filtered_wheel_contact import (
+            FILTERED_SURFACES,
+            LEG_TO_WHEEL_BODY,
+            ROBOT_PRIM_PATH,
+        )
+        from .nonwheel_obstacle_contact import OBSTACLE_PRIM_PATH
+
+        wheel_bank = bank.wheel_bank
+        nonwheel_bank = bank.nonwheel_bank
+        wheel_objects = list(
+            wheel_bank.filtered_observations(
+                env_id=0,
+                force_threshold_n=FILTERED_CONTACT_FORCE_THRESHOLD_N,
+            )
+        )
+        expected_pairs = [
+            (
+                leg,
+                LEG_TO_WHEEL_BODY[leg],
+                f"{ROBOT_PRIM_PATH}/{LEG_TO_WHEEL_BODY[leg]}",
+                filter_index,
+                surface,
+                other_path,
+            )
+            for leg in LEGS
+            for filter_index, (surface, other_path) in enumerate(
+                FILTERED_SURFACES
+            )
+        ]
+        if len(wheel_objects) != len(expected_pairs):
+            raise RuntimeError("filtered wheel bank does not expose exact 4x2 rows")
+        wheel_rows: list[dict[str, Any]] = []
+        for row, expected in zip(wheel_objects, expected_pairs, strict=True):
+            identity = (
+                getattr(row, "leg", None),
+                getattr(row, "wheel_body_name", None),
+                getattr(row, "wheel_prim_path", None),
+                getattr(row, "filter_index", None),
+                getattr(row, "surface", None),
+                getattr(row, "other_prim_path", None),
+            )
+            if identity != expected:
+                raise RuntimeError(
+                    "filtered wheel contact pair identity/order is not canonical"
+                )
+            if getattr(row, "force_valid", None) is not True:
+                raise RuntimeError("filtered wheel contact force evidence is unavailable")
+            normal = self._finite_contact_vec3(
+                getattr(row, "normal_force_w", None),
+                label=f"{expected[0]}/{expected[4]} normal force",
+            )
+            friction = self._finite_contact_vec3(
+                getattr(row, "friction_force_w", None),
+                label=f"{expected[0]}/{expected[4]} friction force",
+            )
+            total = self._finite_contact_vec3(
+                getattr(row, "total_force_w", None),
+                label=f"{expected[0]}/{expected[4]} total force",
+            )
+            if not np.allclose(
+                np.asarray(normal, dtype=float) + np.asarray(friction, dtype=float),
+                np.asarray(total, dtype=float),
+                rtol=0.0,
+                atol=1.0e-9,
+            ):
+                raise RuntimeError("filtered wheel contact force decomposition drifted")
+            normal_norm = float(np.linalg.norm(normal))
+            friction_norm = float(np.linalg.norm(friction))
+            total_norm = float(np.linalg.norm(total))
+            strict_active = normal_norm > FILTERED_CONTACT_FORCE_THRESHOLD_N
+            point_valid = getattr(row, "contact_point_valid", None)
+            if type(point_valid) is not bool:
+                raise RuntimeError("filtered wheel contact point validity is malformed")
+            raw_point = np.asarray(getattr(row, "contact_point_w", None), dtype=float)
+            if raw_point.shape != (3,):
+                raise RuntimeError("filtered wheel contact point shape is invalid")
+            if strict_active and (not point_valid or not np.isfinite(raw_point).all()):
+                raise RuntimeError("active filtered wheel contact lacks a finite point")
+            if not point_valid and not bool(np.isnan(raw_point).all()):
+                raise RuntimeError("inactive wheel contact point is partially non-finite")
+            reported_normal = float(getattr(row, "normal_force_n", float("nan")))
+            reported_friction = float(
+                getattr(row, "friction_force_n", float("nan"))
+            )
+            reported_total = float(getattr(row, "total_force_n", float("nan")))
+            reported_upward = float(
+                getattr(row, "upward_force_n", float("nan"))
+            )
+            if (
+                not math.isclose(
+                    reported_normal,
+                    normal_norm,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+                or not math.isclose(
+                    reported_friction,
+                    friction_norm,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+                or not math.isclose(
+                    reported_total,
+                    total_norm,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+                or not math.isclose(
+                    reported_upward,
+                    max(0.0, normal[2]),
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+            ):
+                raise RuntimeError("filtered wheel contact force norm is inconsistent")
+            serialized = dict(row.as_dict())
+            serialized["contact_point_w"] = (
+                [float(item) for item in raw_point]
+                if point_valid
+                else None
+            )
+            wheel_rows.append(
+                {
+                    **serialized,
+                    # The shared gate uses the strict Isaac contact-time
+                    # predicate.  In particular an exact 1.0 N row is not
+                    # active even though the legacy facade reports >=.
+                    "active": strict_active,
+                    "bank_active": bool(getattr(row, "active", False)),
+                }
+            )
+
+        nonwheel_objects = list(
+            nonwheel_bank.observations(
+                env_id=0,
+                force_threshold_n=FILTERED_CONTACT_FORCE_THRESHOLD_N,
+            )
+        )
+        specs = tuple(getattr(nonwheel_bank, "specs", ()))
+        if not specs or len(nonwheel_objects) != len(specs):
+            raise RuntimeError("non-wheel contact bank identity/count is unavailable")
+        nonwheel_rows: list[dict[str, Any]] = []
+        seen_paths: set[str] = set()
+        wheel_bodies = set(LEG_TO_WHEEL_BODY.values())
+        for row, spec in zip(nonwheel_objects, specs, strict=True):
+            body_path = str(getattr(row, "body_prim_path", "") or "")
+            if (
+                body_path != str(getattr(spec, "prim_path", "") or "")
+                or str(getattr(row, "body_name", "") or "")
+                != str(getattr(spec, "body_name", "") or "")
+                or str(getattr(row, "body_name", "") or "") in wheel_bodies
+                or body_path in seen_paths
+                or getattr(row, "filter_index", None) != 0
+                or getattr(row, "other_prim_path", None) != OBSTACLE_PRIM_PATH
+                or getattr(row, "force_valid", None) is not True
+            ):
+                raise RuntimeError("non-wheel obstacle contact identity is not exact")
+            seen_paths.add(body_path)
+            normal = self._finite_contact_vec3(
+                getattr(row, "normal_force_w", None),
+                label=f"{body_path} normal force",
+            )
+            friction = self._finite_contact_vec3(
+                getattr(row, "friction_force_w", None),
+                label=f"{body_path} friction force",
+            )
+            total = self._finite_contact_vec3(
+                getattr(row, "total_force_w", None),
+                label=f"{body_path} total force",
+            )
+            if not np.allclose(
+                np.asarray(normal, dtype=float) + np.asarray(friction, dtype=float),
+                np.asarray(total, dtype=float),
+                rtol=0.0,
+                atol=1.0e-9,
+            ):
+                raise RuntimeError("non-wheel obstacle force decomposition drifted")
+            for reported, vector, label in (
+                (getattr(row, "normal_force_n", None), normal, "normal"),
+                (getattr(row, "friction_force_n", None), friction, "friction"),
+                (getattr(row, "total_force_n", None), total, "total"),
+            ):
+                if type(reported) not in (int, float) or not math.isclose(
+                    float(reported),
+                    float(np.linalg.norm(vector)),
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                ):
+                    raise RuntimeError(
+                        f"non-wheel obstacle {label} force norm is inconsistent"
+                    )
+            strict_active = (
+                float(np.linalg.norm(normal))
+                > FILTERED_CONTACT_FORCE_THRESHOLD_N
+            )
+            if strict_active != bool(getattr(row, "active", False)):
+                raise RuntimeError("non-wheel obstacle threshold predicate drifted")
+            point_valid = getattr(row, "contact_point_valid", None)
+            if type(point_valid) is not bool:
+                raise RuntimeError("non-wheel obstacle point validity is malformed")
+            raw_point = np.asarray(getattr(row, "contact_point_w", None), dtype=float)
+            if raw_point.shape != (3,):
+                raise RuntimeError("non-wheel obstacle contact point shape is invalid")
+            if strict_active and (not point_valid or not np.isfinite(raw_point).all()):
+                raise RuntimeError("active non-wheel contact lacks a finite point")
+            if not point_valid and not bool(np.isnan(raw_point).all()):
+                raise RuntimeError("inactive non-wheel contact point is partially non-finite")
+            serialized = dict(row.as_dict())
+            if not point_valid:
+                serialized["contact_point_w"] = None
+            nonwheel_rows.append(serialized)
+        return wheel_rows, nonwheel_rows
+
+    def _refresh_filtered_contact_evidence(self, adapter: Any) -> None:
+        """Refresh and atomically publish one combined same-tick sample."""
+
+        if (
+            self.filtered_contact_bank_enabled is not True
+            or self.filtered_contact_scene_handle is not self.scene_handle
+        ):
+            raise RuntimeError("combined filtered contact bank is not bound")
+        bank = getattr(self.scene_handle, "contact_sensor", None)
+        if (
+            bank is None
+            or bank is not self.filtered_contact_bank
+            or getattr(bank, "wheel_bank", None) is not self.filtered_contact_wheel_bank
+            or getattr(bank, "nonwheel_bank", None)
+            is not self.filtered_contact_nonwheel_bank
+            or not self._same_sensor_mapping(
+                getattr(self.filtered_contact_wheel_bank, "sensors", None),
+                self.filtered_contact_wheel_sensors,
+            )
+            or not self._same_nonwheel_sensor_contract(
+                self.filtered_contact_nonwheel_bank
+            )
+            or not callable(getattr(bank, "update", None))
+        ):
+            raise RuntimeError("combined filtered contact bank cannot be updated")
+        sim_step = int(getattr(adapter, "sim_steps", -1))
+        sim_time = float(getattr(adapter, "sim_time", float("nan")))
+        dt = float(self.physics_dt_s or float("nan"))
+        if (
+            sim_step < 0
+            or not math.isfinite(sim_time)
+            or not math.isfinite(dt)
+            or dt <= 0.0
+            or not math.isclose(
+                sim_time,
+                sim_step * dt,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, dt * 1.0e-6),
+            )
+        ):
+            raise RuntimeError("contact refresh lacks an exact adapter tick/time")
+        if self.filtered_contact_last_sim_step == sim_step:
+            if (
+                self.filtered_contact_last_sim_time_s is None
+                or not math.isclose(
+                    self.filtered_contact_last_sim_time_s,
+                    sim_time,
+                    rel_tol=0.0,
+                    abs_tol=max(1.0e-9, dt * 1.0e-6),
+                )
+                or not self.filtered_contact_sample
+            ):
+                raise RuntimeError("same-step contact sample identity drifted")
+            return
+        prior_step = self.filtered_contact_last_sim_step
+        consecutive = prior_step is not None and sim_step == prior_step + 1
+        if prior_step is not None and sim_step <= prior_step:
+            raise RuntimeError("contact sample tick did not advance")
+        if not consecutive:
+            self.filtered_contact_previous_frame = None
+            self.filtered_contact_dwell_s_by_leg = {
+                leg: 0.0 for leg in LEGS
+            }
+            self.filtered_contact_dwell_kind_by_leg = {
+                leg: "AIR" for leg in LEGS
+            }
+
+        clocks = self._contact_sensor_clock_values(bank)
+        clock0 = clocks[0]
+        tolerance = max(1.0e-9, dt * 1.0e-6)
+        if any(
+            not math.isclose(value, clock0, rel_tol=0.0, abs_tol=tolerance)
+            for value in clocks[1:]
+        ):
+            raise RuntimeError("combined child contact banks are not at one clock")
+        if consecutive:
+            prior_time = self.filtered_contact_last_sim_time_s
+            if prior_time is None or not (
+                math.isclose(clock0, prior_time, rel_tol=0.0, abs_tol=tolerance)
+                or math.isclose(clock0, sim_time, rel_tol=0.0, abs_tol=tolerance)
+            ):
+                raise RuntimeError(
+                    "contact sensor clock regressed across consecutive samples"
+                )
+        update_dt = sim_time - clock0
+        if update_dt < -tolerance:
+            raise RuntimeError("contact sensor clock is ahead of the adapter")
+        update_dt = max(0.0, update_dt)
+        bank.update(update_dt, force_recompute=True)
+        if (
+            int(getattr(adapter, "sim_steps", -1)) != sim_step
+            or not math.isclose(
+                float(getattr(adapter, "sim_time", float("nan"))),
+                sim_time,
+                rel_tol=0.0,
+                abs_tol=tolerance,
+            )
+        ):
+            raise RuntimeError("physics advanced while refreshing combined contacts")
+        updated_clocks = self._contact_sensor_clock_values(bank)
+        if any(
+            not math.isclose(value, sim_time, rel_tol=0.0, abs_tol=tolerance)
+            for value in updated_clocks
+        ):
+            raise RuntimeError("combined contact bank did not reach the adapter tick")
+
+        wheel_rows, nonwheel_rows = self._validated_combined_contact_rows(
+            bank=bank
+        )
+        obstacle = self._obstacle()
+        surface_by_leg: dict[str, str] = {}
+        surface_height_by_leg: dict[str, float] = {}
+        dwell_by_leg: dict[str, float] = {}
+        dwell_kind_by_leg: dict[str, str] = {}
+        for leg in LEGS:
+            active = [
+                row for row in wheel_rows
+                if row["leg"] == leg and row["active"] is True
+            ]
+            if len(active) == 0:
+                surface = "AIR"
+                height = 0.0
+                dwell_identity = "AIR"
+            elif len(active) > 1:
+                # A wheel may touch a sharp ground/obstacle edge.  Keep both
+                # pair rows, but do not guess a unique support plane.
+                surface = "UNKNOWN"
+                height = 0.0
+                dwell_identity = "UNKNOWN"
+            else:
+                row = active[0]
+                if row["surface"] == "ground":
+                    surface = "GROUND"
+                    height = float(obstacle.bottom_z_m)
+                elif row["surface"] == "obstacle":
+                    point = self._finite_contact_vec3(
+                        row["contact_point_w"],
+                        label=f"{leg} obstacle contact point",
+                    )
+                    normal = self._finite_contact_vec3(
+                        row["normal_force_w"],
+                        label=f"{leg} obstacle normal force",
+                    )
+                    horizontal = math.hypot(normal[0], normal[1])
+                    if (
+                        abs(point[2] - float(obstacle.top_z_m))
+                        <= CONTACT_SURFACE_HEIGHT_TOLERANCE_M
+                        and normal[2] > FILTERED_CONTACT_FORCE_THRESHOLD_N
+                        and horizontal <= CONTACT_FORCE_AXIS_TOLERANCE_N
+                    ):
+                        surface = "OBSTACLE_TOP"
+                        height = float(obstacle.top_z_m)
+                    else:
+                        surface = "FRONT_FACE"
+                        height = 0.0
+                else:
+                    raise RuntimeError("filtered wheel surface label is unknown")
+                dwell_identity = (
+                    f"{surface}|filter={row['filter_index']}|"
+                    f"other={row['other_prim_path']}"
+                )
+            prior_identity = self.filtered_contact_dwell_kind_by_leg[leg]
+            if consecutive and dwell_identity == prior_identity and surface not in {
+                "AIR",
+                "UNKNOWN",
+            }:
+                dwell = self.filtered_contact_dwell_s_by_leg[leg] + dt
+            else:
+                dwell = 0.0
+            surface_by_leg[leg] = surface
+            surface_height_by_leg[leg] = height
+            dwell_by_leg[leg] = dwell
+            dwell_kind_by_leg[leg] = dwell_identity
+
+        thresholds = SupportThresholds(
+            normal_alignment_tolerance_n=CONTACT_FORCE_AXIS_TOLERANCE_N,
+            friction_normal_tolerance_n=CONTACT_FORCE_AXIS_TOLERANCE_N,
+        )
+        current_com = measure_isaac_whole_body_com(
+            adapter,
+            env_id=0,
+            expected_body_names=tuple(getattr(adapter.robot, "body_names", ())),
+        )
+        frame = measure_isaac_wheel_contacts(
+            adapter,
+            bank.wheel_bank,
+            env_id=0,
+            surface_kind_by_leg=surface_by_leg,
+            surface_height_m_by_leg=surface_height_by_leg,
+            friction_coefficient_by_leg={
+                leg: CONSERVATIVE_SCENE_DYNAMIC_FRICTION for leg in LEGS
+            },
+            surface_dwell_s_by_leg=dwell_by_leg,
+            surface_dwell_kind_by_leg=surface_by_leg,
+            previous_frame=self.filtered_contact_previous_frame,
+            finite_patch_radius_m_by_leg={
+                leg: FINITE_WHEEL_CONTACT_PATCH_RADIUS_M for leg in LEGS
+            },
+            whole_body_com=current_com,
+            contact_moment_model="MEASURED",
+            thresholds=thresholds,
+        )
+        sample_epoch = self.filtered_contact_sample_epoch + 1
+        sample_payload = {
+            "schema_version": "fsm50.combined_contact_sample.v1",
+            "sample_epoch": sample_epoch,
+            "sample_sim_step": sim_step,
+            "sample_sim_time_s": sim_time,
+            "physics_dt_s": dt,
+            "wheel_rows": wheel_rows,
+            "nonwheel_rows": nonwheel_rows,
+            "surface_kind_by_leg": surface_by_leg,
+            "surface_height_m_by_leg": surface_height_by_leg,
+            "surface_dwell_lower_bound_s_by_leg": dwell_by_leg,
+            "surface_dwell_pair_identity_by_leg": dwell_kind_by_leg,
+            "friction_coefficient_by_leg": {
+                leg: CONSERVATIVE_SCENE_DYNAMIC_FRICTION for leg in LEGS
+            },
+            "friction_coefficient_source": (
+                "CANONICAL_SCENE_CONFIG_AND_ENVIRONMENT_LOCK_BOUND;"
+                "NOT_A_MEASURED_PAIR_COEFFICIENT"
+            ),
+            "friction_material_evidence": dict(
+                _jsonable(self.filtered_contact_material_evidence)
+            ),
+            "wheel_contact_frame_available": frame.available,
+            "wheel_contact_frame_errors": list(frame.errors),
+        }
+        sample_payload["sample_sha256"] = _canonical_json_sha256(
+            sample_payload
+        )
+        # Publish all related rows and identities only after both child banks
+        # and the strict wheel-contact frame have completed successfully.
+        self.filtered_contact_sample_epoch = sample_epoch
+        self.filtered_contact_sample = sample_payload
+        self.filtered_contact_wheel_rows = wheel_rows
+        self.filtered_contact_nonwheel_rows = nonwheel_rows
+        self.filtered_contact_surface_kind_by_leg = surface_by_leg
+        self.filtered_contact_surface_height_m_by_leg = surface_height_by_leg
+        self.filtered_contact_dwell_s_by_leg = dwell_by_leg
+        self.filtered_contact_dwell_kind_by_leg = dwell_kind_by_leg
+        self.filtered_contact_last_sim_step = sim_step
+        self.filtered_contact_last_sim_time_s = sim_time
+        self.filtered_contact_frame = frame
+        self.filtered_contact_com = current_com
+        self.filtered_contact_previous_frame = frame
+
     def prepare_after_adapter(
         self,
         *,
@@ -1065,6 +2146,11 @@ class WorkerMacroFSMSession:
         if getattr(adapter, "artifact_render_observer", None) is not None:
             raise RuntimeError("Macro FSM found another viewport observer")
         self.adapter = adapter
+        self.durable_adapter_runtime_instance_id = str(
+            getattr(adapter, "runtime_instance_id", "") or ""
+        )
+        if not self.durable_adapter_runtime_instance_id:
+            raise RuntimeError("Macro FSM adapter runtime identity is unavailable")
         self.scene_handle = scene_handle
         try:
             physics_dt_s = float(adapter.sim.get_physics_dt())
@@ -1119,6 +2205,14 @@ class WorkerMacroFSMSession:
     def start(self) -> dict[str, Any]:
         if self.state != "ready_for_start":
             raise RuntimeError(f"Macro FSM is not ready for start: state={self.state}")
+        if (
+            self.filtered_contact_bank_enabled is not True
+            or self.filtered_contact_scene_handle is not self.scene_handle
+        ):
+            raise RuntimeError(
+                "Macro FSM cannot start without the helper-selected combined "
+                "filtered contact bank"
+            )
         adapter = self.adapter
         if adapter is None:
             raise RuntimeError("Macro FSM adapter is unavailable")
@@ -1127,7 +2221,6 @@ class WorkerMacroFSMSession:
         if getattr(adapter, "artifact_render_observer", None) is not None:
             raise RuntimeError("Macro FSM found another viewport observer at start")
 
-        initial_payload = self._observation_payload(adapter)
         initial_servos = self._validated_target_map(
             getattr(adapter, "joint_command_deg", None),
             names=SERVO_JOINT_NAMES,
@@ -1146,6 +2239,8 @@ class WorkerMacroFSMSession:
         )
         self.last_verified_servo_targets = dict(initial_servos)
         self.last_verified_wheel_targets = dict(initial_wheels)
+        self._refresh_filtered_contact_evidence(adapter)
+        initial_payload = self._observation_payload(adapter)
         initial_payload["actuator_targets_applied"] = True
         initial_payload["actuator_target_source"] = "PHYSX_DRIVE_TARGET_READBACK"
         initial_payload["actuator_target_readback"] = self.last_target_readback
@@ -1209,7 +2304,9 @@ class WorkerMacroFSMSession:
             command_epoch=0,
             physical_command_epoch=(0 if self.residual_enabled else None),
         )
-        self.boundary_ack = _jsonable(ack)
+        self.boundary_ack = self._durable_motion_batch_ack(
+            ack, expected_recording_metadata={}
+        )
         self.boundary_first_physics_step = int(ack["first_physics_step"])
         self.next_sample_sim_time_s = float(getattr(adapter, "sim_time", 0.0) or 0.0)
         self.state = "boundary_pending"
@@ -1345,22 +2442,38 @@ class WorkerMacroFSMSession:
                     wheel_targets=self.last_verified_wheel_targets,
                     expected_sim_step=sim_step,
                 )
+            self._refresh_filtered_contact_evidence(adapter)
             payload = self._observation_payload(adapter)
             payload["actuator_targets_applied"] = True
             payload["actuator_target_source"] = "PHYSX_DRIVE_TARGET_READBACK"
             payload["actuator_target_readback"] = self.last_target_readback
             self._attach_drive_readback_layers(payload)
-            self._validate_hard_safety(payload)
-            self._sample(payload, decision=self.last_decision)
+            if completed_readback_kind == "controller":
+                self._capture_feedback_recovery_n_plus_one_response(
+                    payload=payload,
+                    sim_step=sim_step,
+                )
             if completed_readback_kind == "safe_stop":
+                # The physical safe-stop has already been independently
+                # verified at exact N+1.  Persist this final observation, but
+                # do not re-raise the same sticky hard-safety predicate and
+                # recursively dispatch another safe-stop batch.
                 stop_request = dict(self.terminal_stop_request or {})
                 self.terminal_stop_request = None
+                if stop_request.get("success_after_stop") is True:
+                    # A newly observed hard failure still overrides a planned
+                    # success stop; only failure-driven safe stops suppress
+                    # the already-latched predicate.
+                    self._validate_hard_safety(payload)
+                self._sample(payload, decision=self.last_decision)
                 if stop_request.get("success_after_stop") is True:
                     self.completed_sim_time_s = float(payload["sim_time_s"])
                     self.state = "settling"
                 else:
                     self.state = "failed_pending_finalize"
                 return
+            self._validate_hard_safety(payload)
+            self._sample(payload, decision=self.last_decision)
             if self.terminal_stop_request is not None:
                 self._begin_safe_stop(adapter, payload)
                 return
@@ -1874,6 +2987,17 @@ class WorkerMacroFSMSession:
                     "commands": frame.get("commands"),
                     "dispatch_kind": frame.get("dispatch_kind"),
                     "sequence_index": frame.get("sequence_index"),
+                    "recovery_stage": "",
+                    "recovery_action": "",
+                    "recovery_evidence_sha256": "",
+                    "recovery_centroidal_evidence_sha256": "",
+                    "recovery_feedback_observation_sha256": "",
+                    "recovery_target_map_sha256": "",
+                    "recovery_direction_sign": None,
+                    "recovery_attempt": None,
+                    "recovery_leg": "",
+                    "recovery_joint": "",
+                    "recovery_configuration_sha256": "",
                 }
                 self._validate_source_action_provenance_shape(provenance)
                 provenance["source_action_identity"] = _source_action_identity(
@@ -2041,6 +3165,165 @@ class WorkerMacroFSMSession:
             raise RuntimeError(
                 "wheel_channel_completion_stop provenance requires empty commands/events"
             )
+        for name, expected in {
+            "recovery_stage": "",
+            "recovery_action": "",
+            "recovery_evidence_sha256": "",
+            "recovery_centroidal_evidence_sha256": "",
+            "recovery_feedback_observation_sha256": "",
+            "recovery_target_map_sha256": "",
+            "recovery_direction_sign": None,
+            "recovery_attempt": None,
+            "recovery_leg": "",
+            "recovery_joint": "",
+            "recovery_configuration_sha256": "",
+        }.items():
+            if provenance.get(name) != expected:
+                raise RuntimeError(
+                    "SOURCE_ACTION provenance cannot claim feedback recovery fields"
+                )
+
+    def _durable_target_readback_errors(
+        self,
+        *,
+        readback: Mapping[str, Any],
+        readback_sha256: str,
+        expected_servo_targets: Mapping[str, Any],
+        expected_wheel_targets: Mapping[str, Any],
+        expected_sim_step: int,
+        expected_command_epoch: int | None,
+        expected_batch_id: str,
+        label: str,
+    ) -> list[str]:
+        """Validate a durable 8+4 PhysX target readback against an external anchor."""
+
+        errors: list[str] = []
+        try:
+            transform = readback.get("servo_command_transform")
+            standing_pose = (
+                transform.get("standing_pose_deg_by_servo", {})
+                if isinstance(transform, Mapping)
+                else {}
+            )
+            command_sign = (
+                transform.get("command_sign_by_servo", {})
+                if isinstance(transform, Mapping)
+                else {}
+            )
+            canonical_servos = readback.get("canonical_servo_targets_deg")
+            canonical_wheels = readback.get("canonical_wheel_targets_rad_s")
+            expected_drive = readback.get("expected_servo_drive_targets_rad")
+            actual_drive = readback.get("actual_servo_drive_targets_rad")
+            actual_wheels = readback.get("actual_wheel_drive_targets_rad_s")
+            expected_runtime = str(self.durable_adapter_runtime_instance_id or "")
+            valid = bool(
+                isinstance(readback, Mapping)
+                and set(readback) == _FEEDBACK_RECOVERY_READBACK_KEYS
+                and _is_lower_sha256(readback_sha256)
+                and _canonical_json_sha256(readback) == readback_sha256
+                and type(readback.get("sim_step")) is int
+                and readback.get("sim_step") == expected_sim_step
+                and readback.get("command_epoch") == expected_command_epoch
+                and type(readback.get("batch_id")) is str
+                and readback.get("batch_id") == expected_batch_id
+                and isinstance(canonical_servos, Mapping)
+                and set(canonical_servos) == set(SERVO_JOINT_NAMES)
+                and _strict_json_equal(
+                    dict(canonical_servos), dict(expected_servo_targets)
+                )
+                and isinstance(canonical_wheels, Mapping)
+                and set(canonical_wheels) == set(WHEEL_JOINT_NAMES)
+                and _strict_json_equal(
+                    dict(canonical_wheels), dict(expected_wheel_targets)
+                )
+                and isinstance(transform, Mapping)
+                and set(transform) == _SERVO_COMMAND_TRANSFORM_KEYS
+                and transform.get("schema_version")
+                == _SERVO_COMMAND_TRANSFORM_SCHEMA
+                and _canonical_json_sha256(transform)
+                == readback.get("servo_command_transform_sha256")
+                and isinstance(self.durable_servo_command_transform, Mapping)
+                and bool(self.durable_servo_command_transform)
+                and _strict_json_equal(
+                    transform, self.durable_servo_command_transform
+                )
+                and isinstance(standing_pose, Mapping)
+                and set(standing_pose) == set(SERVO_JOINT_NAMES)
+                and isinstance(command_sign, Mapping)
+                and _strict_json_equal(
+                    dict(command_sign),
+                    {
+                        name: float(JOINT_COMMAND_SIGN[name])
+                        for name in SERVO_JOINT_NAMES
+                    },
+                )
+                and isinstance(expected_drive, Mapping)
+                and set(expected_drive) == set(SERVO_JOINT_NAMES)
+                and isinstance(actual_drive, Mapping)
+                and set(actual_drive) == set(SERVO_JOINT_NAMES)
+                and isinstance(actual_wheels, Mapping)
+                and set(actual_wheels) == set(WHEEL_JOINT_NAMES)
+                and all(
+                    type(value) in (int, float)
+                    and type(value) is not bool
+                    and math.isfinite(float(value))
+                    for value in [
+                        *standing_pose.values(),
+                        *canonical_servos.values(),
+                        *canonical_wheels.values(),
+                        *expected_drive.values(),
+                        *actual_drive.values(),
+                        *actual_wheels.values(),
+                    ]
+                )
+                and all(
+                    math.isclose(
+                        float(expected_drive[name]),
+                        math.radians(
+                            float(standing_pose[name])
+                            + float(JOINT_COMMAND_SIGN[name])
+                            * float(canonical_servos[name])
+                        ),
+                        rel_tol=0.0,
+                        abs_tol=DRIVE_READBACK_TOLERANCE,
+                    )
+                    and math.isclose(
+                        float(actual_drive[name]),
+                        float(expected_drive[name]),
+                        rel_tol=0.0,
+                        abs_tol=DRIVE_READBACK_TOLERANCE,
+                    )
+                    for name in SERVO_JOINT_NAMES
+                )
+                and all(
+                    math.isclose(
+                        float(actual_wheels[name]),
+                        float(canonical_wheels[name]),
+                        rel_tol=0.0,
+                        abs_tol=DRIVE_READBACK_TOLERANCE,
+                    )
+                    for name in WHEEL_JOINT_NAMES
+                )
+                and type(readback.get("adapter_runtime_instance_id")) is str
+                and bool(expected_runtime)
+                and readback.get("adapter_runtime_instance_id")
+                == expected_runtime
+                and type(readback.get("root_state_write_count")) is int
+                and readback.get("root_state_write_count") == 0
+                and type(readback.get("physics_dt_s")) in (int, float)
+                and type(readback.get("physics_dt_s")) is not bool
+                and math.isclose(
+                    float(readback.get("physics_dt_s")),
+                    EXPECTED_PHYSICS_DT_S,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-12,
+                )
+            )
+        except Exception:
+            valid = False
+        if not valid:
+            errors.append(f"{label} readback preimage/full identity drifted")
+        return errors
 
     def _source_action_coverage_errors(self) -> list[str]:
         errors: list[str] = []
@@ -2098,6 +3381,214 @@ class WorkerMacroFSMSession:
             errors.append(
                 "consumed segment-start coverage differs from canonical 0..N-1"
             )
+        prior_source_sim_step: int | None = None
+        prior_source_sim_time_s: float | None = None
+        for index, row in enumerate(self.source_action_consumption_rows):
+            label = f"source-action consumption row {index}"
+            if index >= expected_action_count:
+                errors.append(f"{label} has no canonical expected action")
+                continue
+            expected = self.expected_source_actions[index]
+            if (
+                not isinstance(row, Mapping)
+                or (
+                    not self.residual_enabled
+                    and set(row) != _SOURCE_ACTION_CONSUMPTION_ROW_KEYS
+                )
+                or not _SOURCE_ACTION_CONSUMPTION_ROW_KEYS.issubset(set(row))
+            ):
+                errors.append(f"{label} keys are not exact")
+                continue
+            sim_step = row.get("sim_step")
+            sim_time = row.get("sim_time_s")
+            dispatch_epoch = row.get("dispatch_epoch")
+            target_changed = row.get("target_changed")
+            physical_required = row.get("physical_dispatch_required")
+            physical_applied = row.get("physical_dispatch_applied")
+            pre_action_readback = row.get("pre_action_verified_readback")
+            exact_identity = {
+                "schema_version": SOURCE_ACTION_CONSUMPTION_SCHEMA,
+                "source_action_index": index,
+                "expected_source_action_count": expected_action_count,
+                "macro_state": expected["owner_state"],
+                "profile_id": expected["profile_id"],
+                "profile_source_version": expected["profile_source_version"],
+                "profile_strategy": expected["profile_strategy"],
+                "source_plan_sha256": expected["source_plan_sha256"],
+                "profile_library_sha256": self.request.profile_library_sha256,
+                "bundle_sha256": self.request.bundle_sha256,
+                "command_provenance": expected["command_provenance"],
+                "servo_targets_deg": expected["servo_targets_deg"],
+                "wheel_targets_rad_s": expected["wheel_targets_rad_s"],
+            }
+            if any(
+                not _strict_json_equal(row.get(key), value)
+                for key, value in exact_identity.items()
+            ):
+                errors.append(f"{label} differs from its canonical source action")
+            if (
+                type(sim_step) is not int
+                or sim_step < 0
+                or type(sim_time) not in (int, float)
+                or isinstance(sim_time, bool)
+                or not math.isfinite(float(sim_time))
+                or float(sim_time) < 0.0
+                or type(dispatch_epoch) is not int
+                or dispatch_epoch < 0
+                or not (
+                    row.get("pre_action_verified_command_epoch") is None
+                    or (
+                        type(row.get("pre_action_verified_command_epoch")) is int
+                        and row.get("pre_action_verified_command_epoch") >= 0
+                    )
+                )
+                or not isinstance(pre_action_readback, Mapping)
+                or set(pre_action_readback) != _FEEDBACK_RECOVERY_READBACK_KEYS
+                or _canonical_json_sha256(pre_action_readback)
+                != row.get("pre_action_verified_readback_sha256")
+                or pre_action_readback.get("command_epoch")
+                != row.get("pre_action_verified_command_epoch")
+                or type(pre_action_readback.get("sim_step")) is not int
+                or pre_action_readback.get("sim_step") > sim_step
+                or (
+                    self.durable_adapter_runtime_instance_id
+                    and pre_action_readback.get("adapter_runtime_instance_id")
+                    != self.durable_adapter_runtime_instance_id
+                )
+                or (
+                    self.durable_servo_command_transform
+                    and not _strict_json_equal(
+                        pre_action_readback.get("servo_command_transform"),
+                        self.durable_servo_command_transform,
+                    )
+                )
+                or not _is_lower_sha256(
+                    row.get("pre_action_verified_readback_sha256")
+                )
+                or type(target_changed) is not bool
+                or type(physical_required) is not bool
+                or type(physical_applied) is not bool
+            ):
+                errors.append(f"{label} scalar/readback identity is invalid")
+                continue
+            if not math.isclose(
+                float(sim_time),
+                float(sim_step) * EXPECTED_PHYSICS_DT_S,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, EXPECTED_PHYSICS_DT_S * 1.0e-6),
+            ):
+                errors.append(f"{label} tick/time identity is invalid")
+            if prior_source_sim_step is not None and (
+                sim_step < prior_source_sim_step
+                or float(sim_time) < float(prior_source_sim_time_s)
+            ):
+                errors.append(f"{label} source-action chronology regressed")
+            prior_source_sim_step = sim_step
+            prior_source_sim_time_s = float(sim_time)
+
+            # The readback immediately preceding a source action is not its own
+            # authority.  Anchor it to the most recent physical batch whose N+1
+            # step has completed, or to the zero-wheel start boundary before the
+            # first controller dispatch.  This prevents a coherently rehashed
+            # pre-action map from turning a required physical action into a
+            # fabricated retained-target consumption.
+            prior_dispatches = [
+                candidate
+                for candidate in self.dispatch_rows
+                if type(candidate.get("n_plus_one_verified_sim_step")) is int
+                and candidate.get("n_plus_one_verified_sim_step") <= sim_step
+            ]
+            if prior_dispatches:
+                anchor = max(
+                    prior_dispatches,
+                    key=lambda candidate: (
+                        int(candidate["n_plus_one_verified_sim_step"]),
+                        int(candidate.get("dispatch_index", -1)),
+                    ),
+                )
+                anchor_servos = anchor.get("servo_targets_deg", {})
+                anchor_wheels = anchor.get("wheel_targets_rad_s", {})
+                anchor_epoch = anchor.get("command_epoch")
+                anchor_batch_id = anchor.get("batch_id")
+            else:
+                anchor = self.boundary_ack
+                anchor_servos = anchor.get("servo_targets_applied", {})
+                anchor_wheels = anchor.get("wheel_targets_applied", {})
+                anchor_epoch = 0
+                anchor_batch_id = anchor.get("batch_id")
+            readback_errors = self._durable_target_readback_errors(
+                readback=pre_action_readback,
+                readback_sha256=str(
+                    row.get("pre_action_verified_readback_sha256", "") or ""
+                ),
+                expected_servo_targets=anchor_servos,
+                expected_wheel_targets=anchor_wheels,
+                expected_sim_step=sim_step,
+                expected_command_epoch=anchor_epoch,
+                expected_batch_id=anchor_batch_id,
+                label=f"{label} pre-action",
+            )
+            errors.extend(readback_errors)
+            pre_action_servos = pre_action_readback.get(
+                "canonical_servo_targets_deg"
+            )
+            pre_action_wheels = pre_action_readback.get(
+                "canonical_wheel_targets_rad_s"
+            )
+            if (
+                not isinstance(pre_action_servos, Mapping)
+                or set(pre_action_servos) != set(SERVO_JOINT_NAMES)
+                or not isinstance(pre_action_wheels, Mapping)
+                or set(pre_action_wheels) != set(WHEEL_JOINT_NAMES)
+                or any(
+                    type(value) not in (int, float)
+                    or isinstance(value, bool)
+                    or not math.isfinite(float(value))
+                    for value in [
+                        *pre_action_servos.values(),
+                        *pre_action_wheels.values(),
+                    ]
+                )
+            ):
+                errors.append(f"{label} pre-action canonical 8+4 map is invalid")
+                continue
+            rebuilt_target_changed = bool(
+                not _strict_json_equal(
+                    dict(pre_action_servos), expected["servo_targets_deg"]
+                )
+                or not _strict_json_equal(
+                    dict(pre_action_wheels), expected["wheel_targets_rad_s"]
+                )
+            )
+            if not self.residual_enabled and target_changed is not rebuilt_target_changed:
+                errors.append(
+                    f"{label} target-change flag differs from its verified pre-action 8+4 map"
+                )
+            if not self.residual_enabled and physical_required is not target_changed:
+                errors.append(f"{label} physical requirement differs from target change")
+            if physical_applied is not physical_required:
+                errors.append(f"{label} physical dispatch completion flag is invalid")
+            if physical_applied:
+                if (
+                    type(row.get("physical_dispatch_index")) is not int
+                    or row.get("physical_dispatch_index") < 0
+                    or type(row.get("batch_id")) is not str
+                    or not row.get("batch_id")
+                    or row.get("n_plus_one_verified") is not True
+                    or row.get("n_plus_one_verified_sim_step") != sim_step + 1
+                    or not _is_lower_sha256(
+                        row.get("n_plus_one_readback_sha256")
+                    )
+                ):
+                    errors.append(f"{label} physical N+1 closure is invalid")
+            elif (
+                row.get("physical_dispatch_index") is not None
+                or row.get("batch_id") != ""
+                or row.get("n_plus_one_verified") is not False
+                or row.get("n_plus_one_verified_sim_step") is not None
+                or row.get("n_plus_one_readback_sha256") != ""
+            ):
+                errors.append(f"{label} retained-target closure is invalid")
         return errors
 
     def _segment_completion_coverage_errors(self) -> list[str]:
@@ -2149,10 +3640,1813 @@ class WorkerMacroFSMSession:
                 errors.append(f"{label} final decision is not COMPLETE")
         return errors
 
+    def _feedback_recovery_action_closure_errors(
+        self,
+        *,
+        index: int,
+        row: Mapping[str, Any],
+    ) -> list[str]:
+        from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+        label = f"feedback recovery action row {index}"
+        errors: list[str] = []
+        allowed_stage_actions = {
+            "SAFE_PROBE": "CONSERVATIVE_DIAGNOSTIC_PROBE",
+            "RETURN_TO_REFERENCE": "RETURN_TO_IMMUTABLE_REFERENCE",
+            "INCREMENT": "BOUNDED_DESCENT_INCREMENT",
+        }
+        leg_joints = {
+            "FL": {"front_left_hip", "front_left_knee"},
+            "FR": {"front_right_hip", "front_right_knee"},
+            "RL": {"rear_left_hip", "rear_left_knee"},
+            "RR": {"rear_right_hip", "rear_right_knee"},
+        }
+        if set(row) != _FEEDBACK_RECOVERY_ACTION_ROW_KEYS:
+            return [f"{label} keys are not exact"]
+        stage = row.get("stage")
+        action = row.get("action")
+        leg = row.get("leg")
+        joint = row.get("joint")
+        sign = row.get("direction_sign")
+        action_index = row.get("action_index")
+        attempt = row.get("attempt")
+        sim_step = row.get("sim_step")
+        batch_id = row.get("batch_id")
+        if (
+            row.get("schema_version") != FEEDBACK_RECOVERY_ACTION_SCHEMA
+            or type(action_index) is not int
+            or action_index != index
+            or type(attempt) is not int
+            or attempt != index + 1
+            or not 1 <= attempt <= FEEDBACK_RECOVERY_MAXIMUM_ACTIONS
+            or type(sim_step) is not int
+            or sim_step < 0
+            or type(batch_id) is not str
+            or not batch_id
+            or allowed_stage_actions.get(stage) != action
+            or leg not in leg_joints
+            or joint not in leg_joints.get(leg, set())
+            or type(sign) is not int
+            or sign not in {-1, 1}
+        ):
+            errors.append(f"{label} core action identity drifted")
+        try:
+            dispatch_centroidal = CentroidalSupportEvidence.from_mapping(
+                row.get("dispatch_centroidal_support_evidence", {})
+            )
+            dispatch_feedback = FeedbackRecoveryObservation.from_mapping(
+                row.get("dispatch_feedback_recovery_observation", {})
+            )
+            response_centroidal = CentroidalSupportEvidence.from_mapping(
+                row.get("physical_response_centroidal_support_evidence", {})
+            )
+            response_feedback = FeedbackRecoveryObservation.from_mapping(
+                row.get("physical_response_feedback_recovery_observation", {})
+            )
+        except Exception as exc:
+            return [
+                *errors,
+                f"{label} strict evidence envelope is invalid: "
+                f"{type(exc).__name__}: {exc}",
+            ]
+        if (
+            dispatch_centroidal.payload_sha256
+            != row.get("centroidal_evidence_sha256")
+            or dispatch_feedback.payload_sha256
+            != row.get("feedback_observation_sha256")
+            or response_centroidal.payload_sha256
+            != row.get("physical_response_centroidal_evidence_sha256")
+            or response_feedback.payload_sha256
+            != row.get("physical_response_feedback_observation_sha256")
+        ):
+            errors.append(f"{label} evidence envelope SHA binding drifted")
+        dispatch_index = row.get("dispatch_index")
+        if (
+            type(dispatch_index) is not int
+            or dispatch_index < 0
+            or dispatch_index >= len(self.dispatch_rows)
+        ):
+            return [*errors, f"{label} dispatch identity is invalid"]
+        dispatch = self.dispatch_rows[dispatch_index]
+        provenance = row.get("command_provenance")
+        dispatch_provenance = dispatch.get("command_provenance")
+        expected_evidence_sha = _canonical_json_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+                "centroidal_support_evidence_sha256": (
+                    dispatch_centroidal.payload_sha256
+                ),
+                "feedback_recovery_observation_sha256": (
+                    dispatch_feedback.payload_sha256
+                ),
+            }
+        )
+        expected_target_sha = _canonical_json_sha256(
+            {
+                "schema_version": "fsm50.feedback_recovery_target_map.v1",
+                "servo_targets_deg": dict(dispatch.get("servo_targets_deg", {})),
+                "wheel_targets_rad_s": dict(
+                    dispatch.get("wheel_targets_rad_s", {})
+                ),
+            }
+        )
+        empty_source = {
+            "source_action_identity": "",
+            "source_version": "",
+            "source_segment_index": None,
+            "source_step_index": None,
+            "source_time_s": None,
+            "source_event_indices": [],
+            "commands": [],
+            "dispatch_kind": "",
+            "sequence_index": None,
+        }
+        if (
+            not isinstance(provenance, Mapping)
+            or set(provenance) != _COMMAND_PROVENANCE_KEYS
+            or not _strict_json_equal(provenance, dispatch_provenance)
+            or provenance.get("kind") != "FEEDBACK_RECOVERY"
+            or any(
+                not _strict_json_equal(provenance.get(key), value)
+                for key, value in empty_source.items()
+            )
+            or provenance.get("recovery_stage") != stage
+            or provenance.get("recovery_action") != action
+            or type(provenance.get("recovery_attempt")) is not int
+            or provenance.get("recovery_attempt") != row.get("attempt")
+            or provenance.get("recovery_leg") != leg
+            or provenance.get("recovery_joint") != joint
+            or provenance.get("recovery_direction_sign") != sign
+            or provenance.get("recovery_configuration_sha256")
+            != row.get("configuration_sha256")
+            or provenance.get("recovery_centroidal_evidence_sha256")
+            != dispatch_centroidal.payload_sha256
+            or provenance.get("recovery_feedback_observation_sha256")
+            != dispatch_feedback.payload_sha256
+            or provenance.get("recovery_evidence_sha256")
+            != expected_evidence_sha
+            or provenance.get("recovery_target_map_sha256")
+            != expected_target_sha
+        ):
+            errors.append(f"{label} durable provenance/dispatch binding drifted")
+        expected_step = row.get("expected_n_plus_one_sim_step")
+        dispatch_epoch = dispatch.get("command_epoch")
+        expected_batch_id = (
+            f"{self.request.request_id}:macro:{dispatch_epoch:06d}"
+            if type(dispatch_epoch) is int
+            else ""
+        )
+        if (
+            type(dispatch.get("dispatch_index")) is not int
+            or dispatch.get("dispatch_index") != dispatch_index
+            or type(dispatch.get("sim_step")) is not int
+            or dispatch.get("batch_id") != row.get("batch_id")
+            or type(dispatch.get("batch_id")) is not str
+            or dispatch.get("batch_id") != expected_batch_id
+            or dispatch.get("sim_step") != row.get("sim_step")
+            or type(dispatch_epoch) is not int
+            or type(expected_step) is not int
+            or expected_step != sim_step + 1
+            or row.get("n_plus_one_verified") is not True
+            or type(row.get("n_plus_one_verified_sim_step")) is not int
+            or row.get("n_plus_one_verified_sim_step") != expected_step
+            or row.get("physical_response_verified") is not True
+            or type(row.get("physical_response_sim_step")) is not int
+            or row.get("physical_response_sim_step") != expected_step
+            or dispatch.get("n_plus_one_verified") is not True
+            or type(dispatch.get("n_plus_one_verified_sim_step")) is not int
+            or dispatch.get("n_plus_one_verified_sim_step") != expected_step
+            or dispatch.get("n_plus_one_readback_sha256")
+            != row.get("n_plus_one_readback_sha256")
+            or response_centroidal.sim_step != expected_step
+            or response_feedback.sim_step != expected_step
+            or dispatch_centroidal.sim_step != sim_step
+            or dispatch_feedback.sim_step != sim_step
+            or not math.isclose(
+                dispatch_centroidal.physics_time_s,
+                dispatch_feedback.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, dispatch_centroidal.physics_dt_s * 1.0e-6),
+            )
+            or not math.isclose(
+                response_centroidal.physics_time_s,
+                response_feedback.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, response_centroidal.physics_dt_s * 1.0e-6),
+            )
+            or not math.isclose(
+                response_centroidal.physics_time_s,
+                dispatch_centroidal.physics_time_s
+                + dispatch_centroidal.physics_dt_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, dispatch_centroidal.physics_dt_s * 1.0e-6),
+            )
+            or not math.isclose(
+                dispatch_centroidal.physics_dt_s,
+                EXPECTED_PHYSICS_DT_S,
+                rel_tol=0.0,
+                abs_tol=1.0e-12,
+            )
+            or not math.isclose(
+                response_centroidal.physics_dt_s,
+                dispatch_centroidal.physics_dt_s,
+                rel_tol=0.0,
+                abs_tol=1.0e-12,
+            )
+            or not math.isclose(
+                dispatch_centroidal.physics_time_s,
+                sim_step * dispatch_centroidal.physics_dt_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, dispatch_centroidal.physics_dt_s * 1.0e-6),
+            )
+            or not math.isclose(
+                float(dispatch.get("sim_time_s", float("nan"))),
+                dispatch_centroidal.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, dispatch_centroidal.physics_dt_s * 1.0e-6),
+            )
+        ):
+            errors.append(f"{label} exact dispatch/N+1 tick-time identity drifted")
+        try:
+            configuration_payload, reference, baseline = (
+                self._feedback_durable_configuration_context(row=row)
+            )
+            if configuration_payload.get("leg") != leg:
+                raise RuntimeError("configuration leg differs from action")
+        except Exception as exc:
+            errors.append(
+                f"{label} durable configuration baseline is invalid: {exc}"
+            )
+            configuration_payload = {}
+            reference = {}
+            baseline = {}
+        ack = row.get("dispatch_ack")
+        ack_metadata = ack.get("recording_metadata") if isinstance(ack, Mapping) else None
+        expected_ack_metadata: dict[str, Any] | None = None
+        if configuration_payload:
+            profile_matches = [
+                candidate
+                for candidate in self.expected_source_actions
+                if candidate.get("owner_state") == "S10_POSTURE_RECOVERY"
+                and candidate.get("profile_id")
+                == configuration_payload.get("reference_profile_id")
+                and candidate.get("profile_source_version")
+                == configuration_payload.get(
+                    "reference_profile_source_version"
+                )
+                and candidate.get("source_plan_sha256")
+                == configuration_payload.get(
+                    "reference_profile_source_plan_sha256"
+                )
+            ]
+            if len(profile_matches) != 1:
+                errors.append(
+                    f"{label} durable ACK profile identity is not unique"
+                )
+            else:
+                profile = profile_matches[0]
+                expected_ack_metadata = {
+                    "source_version": self.request.source_version,
+                    "profile_id": profile["profile_id"],
+                    "profile_source_version": profile[
+                        "profile_source_version"
+                    ],
+                    "profile_strategy": profile["profile_strategy"],
+                    "macro_state": "S10_POSTURE_RECOVERY",
+                    "subphase": stage,
+                    "command_epoch": dispatch_epoch,
+                    "bundle_sha256": self.request.bundle_sha256,
+                    "command_provenance": dict(provenance),
+                    "segment_completion_control": dict(
+                        _EMPTY_SEGMENT_COMPLETION_CONTROL
+                    ),
+                    "source_plan_sha256": "",
+                    "source_action_consumption_index": None,
+                }
+                if self.residual_enabled:
+                    residual_transform = dict(
+                        dispatch.get("residual_transform", {}) or {}
+                    )
+                    expected_ack_metadata.update(
+                        {
+                            "nominal_command_epoch": dispatch.get(
+                                "nominal_command_epoch"
+                            ),
+                            "physical_command_epoch": dispatch.get(
+                                "physical_command_epoch"
+                            ),
+                            "nominal_target_changed": dispatch.get(
+                                "nominal_target_changed"
+                            ),
+                            "applied_target_changed": dispatch.get(
+                                "applied_target_changed"
+                            ),
+                            "dispatch_cause": dispatch.get("dispatch_cause"),
+                            "nominal_servo_targets_deg": dict(
+                                dispatch.get("nominal_servo_targets_deg", {})
+                            ),
+                            "nominal_wheel_targets_rad_s": dict(
+                                dispatch.get("nominal_wheel_targets_rad_s", {})
+                            ),
+                            "residual_policy_id": dispatch.get(
+                                "residual_policy_id"
+                            ),
+                            "residual_policy_sha256": dispatch.get(
+                                "residual_policy_sha256"
+                            ),
+                            "residual_transform_sha256": str(
+                                residual_transform.get(
+                                    "core_transform_sha256", ""
+                                )
+                            ),
+                            "residual_evidence_sha256": str(
+                                residual_transform.get("evidence_sha256", "")
+                            ),
+                        }
+                    )
+        if (
+            not isinstance(ack, Mapping)
+            or set(ack) != _DURABLE_MOTION_BATCH_ACK_KEYS
+            or _canonical_json_sha256(ack) != row.get("ack_sha256")
+            or not _strict_json_equal(ack, dispatch.get("ack"))
+            or type(ack.get("batch_id")) is not str
+            or ack.get("batch_id") != row.get("batch_id")
+            or ack.get("source") != "fsm50_macro_controller"
+            or ack.get("error") != ""
+            or type(ack.get("applied_sim_step")) is not int
+            or ack.get("applied_sim_step") != sim_step
+            or type(ack.get("first_physics_step")) is not int
+            or ack.get("first_physics_step") != expected_step
+            or ack.get("servo_applied") is not True
+            or ack.get("wheel_applied") is not True
+            or not self._feedback_target_maps_equal(
+                ack.get("servo_targets_applied", {}),
+                dispatch.get("servo_targets_deg", {}),
+            )
+            or not self._feedback_target_maps_equal(
+                ack.get("wheel_targets_applied", {}),
+                dispatch.get("wheel_targets_rad_s", {}),
+            )
+            or not isinstance(ack_metadata, Mapping)
+            or expected_ack_metadata is None
+            or not _strict_json_equal(ack_metadata, expected_ack_metadata)
+            or type(ack_metadata.get("command_epoch")) is not int
+            or ack_metadata.get("command_epoch") != dispatch.get("command_epoch")
+            or dispatch.get("macro_state") != "S10_POSTURE_RECOVERY"
+            or dispatch.get("subphase") != stage
+            or dispatch.get("profile_id")
+            != configuration_payload.get("reference_profile_id")
+            or dispatch.get("profile_source_version")
+            != configuration_payload.get("reference_profile_source_version")
+            or (
+                expected_ack_metadata is not None
+                and dispatch.get("profile_strategy")
+                != expected_ack_metadata.get("profile_strategy")
+            )
+            or dispatch.get("source_action_consumption_index") is not None
+        ):
+            errors.append(f"{label} dispatch ACK preimage/identity drifted")
+        elif isinstance(ack_metadata, Mapping) and expected_ack_metadata is not None:
+            try:
+                # Reapply the same atomic timing/target validator used at the
+                # live dispatch boundary.  The durable row must not be able to
+                # rehash a non-zero skew or a noncanonical physics cadence into
+                # an apparently valid ACK.
+                self._validate_batch_ack(
+                    ack,
+                    batch_id=batch_id,
+                    servo_targets=dispatch.get("servo_targets_deg", {}),
+                    wheel_targets=dispatch.get("wheel_targets_rad_s", {}),
+                    expected_sim_step=sim_step,
+                    expected_physics_dt_s=EXPECTED_PHYSICS_DT_S,
+                    expected_source="fsm50_macro_controller",
+                    expected_recording_metadata=expected_ack_metadata,
+                )
+            except Exception as exc:
+                errors.append(f"{label} durable atomic ACK is invalid: {exc}")
+        readback = row.get("n_plus_one_readback")
+        expected_runtime_instance_id = str(
+            self.durable_adapter_runtime_instance_id or ""
+        )
+        if self.adapter is not None:
+            live_runtime_instance_id = str(
+                getattr(self.adapter, "runtime_instance_id", "") or ""
+            )
+            if (
+                expected_runtime_instance_id
+                and live_runtime_instance_id != expected_runtime_instance_id
+            ):
+                errors.append(f"{label} live adapter runtime identity drifted")
+            expected_runtime_instance_id = live_runtime_instance_id
+        command_transform = (
+            readback.get("servo_command_transform", {})
+            if isinstance(readback, Mapping)
+            else {}
+        )
+        standing_pose = (
+            command_transform.get("standing_pose_deg_by_servo", {})
+            if isinstance(command_transform, Mapping)
+            else {}
+        )
+        command_sign = (
+            command_transform.get("command_sign_by_servo", {})
+            if isinstance(command_transform, Mapping)
+            else {}
+        )
+        durable_transform = self.durable_servo_command_transform
+        durable_transform_valid = bool(
+            isinstance(durable_transform, Mapping)
+            and set(durable_transform) == _SERVO_COMMAND_TRANSFORM_KEYS
+            and durable_transform.get("schema_version")
+            == _SERVO_COMMAND_TRANSFORM_SCHEMA
+            and _strict_json_equal(durable_transform, command_transform)
+        )
+        live_transform_valid = True
+        if self.adapter is not None and isinstance(standing_pose, Mapping):
+            transform = getattr(
+                self.adapter, "command_to_actual_target_deg", None
+            )
+            live_transform_valid = bool(
+                callable(transform)
+                and set(standing_pose) == set(SERVO_JOINT_NAMES)
+                and all(
+                    math.isclose(
+                        float(standing_pose[name]),
+                        float(transform(name, 0.0)),
+                        rel_tol=0.0,
+                        abs_tol=DRIVE_READBACK_TOLERANCE,
+                    )
+                    for name in SERVO_JOINT_NAMES
+                )
+            )
+        try:
+            readback_valid = bool(
+                isinstance(readback, Mapping)
+                and set(readback) == _FEEDBACK_RECOVERY_READBACK_KEYS
+                and _canonical_json_sha256(readback)
+                == row.get("n_plus_one_readback_sha256")
+                and type(readback.get("sim_step")) is int
+                and readback.get("sim_step") == expected_step
+                and type(readback.get("command_epoch")) is int
+                and readback.get("command_epoch")
+                == dispatch.get("command_epoch")
+                and type(readback.get("batch_id")) is str
+                and readback.get("batch_id") == row.get("batch_id")
+                and self._feedback_target_maps_equal(
+                    readback.get("canonical_servo_targets_deg", {}),
+                    dispatch.get("servo_targets_deg", {}),
+                )
+                and self._feedback_target_maps_equal(
+                    readback.get("canonical_wheel_targets_rad_s", {}),
+                    dispatch.get("wheel_targets_rad_s", {}),
+                )
+                and isinstance(command_transform, Mapping)
+                and set(command_transform) == _SERVO_COMMAND_TRANSFORM_KEYS
+                and command_transform.get("schema_version")
+                == _SERVO_COMMAND_TRANSFORM_SCHEMA
+                and _canonical_json_sha256(command_transform)
+                == readback.get("servo_command_transform_sha256")
+                and durable_transform_valid
+                and set(standing_pose) == set(SERVO_JOINT_NAMES)
+                and set(command_sign) == set(SERVO_JOINT_NAMES)
+                and _strict_json_equal(
+                    dict(command_sign),
+                    {
+                        name: float(JOINT_COMMAND_SIGN[name])
+                        for name in SERVO_JOINT_NAMES
+                    },
+                )
+                and all(
+                    type(value) in (int, float)
+                    and type(value) is not bool
+                    and math.isfinite(float(value))
+                    for value in standing_pose.values()
+                )
+                and live_transform_valid
+                and set(readback.get("actual_servo_drive_targets_rad", {}))
+                == set(SERVO_JOINT_NAMES)
+                and set(readback.get("expected_servo_drive_targets_rad", {}))
+                == set(SERVO_JOINT_NAMES)
+                and set(readback.get("actual_wheel_drive_targets_rad_s", {}))
+                == set(WHEEL_JOINT_NAMES)
+                and all(
+                    type(value) in (int, float) and math.isfinite(float(value))
+                    for value in readback["actual_servo_drive_targets_rad"].values()
+                )
+                and all(
+                    type(value) in (int, float) and math.isfinite(float(value))
+                    for value in readback[
+                        "expected_servo_drive_targets_rad"
+                    ].values()
+                )
+                and all(
+                    type(value) in (int, float) and math.isfinite(float(value))
+                    for value in readback[
+                        "actual_wheel_drive_targets_rad_s"
+                    ].values()
+                )
+                and self._feedback_target_maps_equal(
+                    readback["actual_servo_drive_targets_rad"],
+                    readback["expected_servo_drive_targets_rad"],
+                )
+                and all(
+                    math.isclose(
+                        float(
+                            readback["expected_servo_drive_targets_rad"][name]
+                        ),
+                        math.radians(
+                            float(standing_pose[name])
+                            + float(JOINT_COMMAND_SIGN[name])
+                            * float(
+                                readback["canonical_servo_targets_deg"][name]
+                            )
+                        ),
+                        rel_tol=0.0,
+                        abs_tol=DRIVE_READBACK_TOLERANCE,
+                    )
+                    for name in SERVO_JOINT_NAMES
+                )
+                and self._feedback_target_maps_equal(
+                    readback["actual_wheel_drive_targets_rad_s"],
+                    readback["canonical_wheel_targets_rad_s"],
+                )
+                and type(readback.get("adapter_runtime_instance_id")) is str
+                and bool(expected_runtime_instance_id)
+                and readback.get("adapter_runtime_instance_id")
+                == expected_runtime_instance_id
+                and type(readback.get("root_state_write_count")) is int
+                and readback.get("root_state_write_count") == 0
+                and type(readback.get("physics_dt_s")) in (int, float)
+                and type(readback.get("physics_dt_s")) is not bool
+                and math.isclose(
+                    float(readback.get("physics_dt_s")),
+                    dispatch_centroidal.physics_dt_s,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-12,
+                )
+            )
+        except Exception:
+            readback_valid = False
+        if not readback_valid:
+            errors.append(f"{label} N+1 readback preimage/full identity drifted")
+        if (
+            dispatch_feedback.observed_command_epoch
+            != dispatch_feedback.verified_command_epoch
+            or dispatch_feedback.observed_command_epoch + 1
+            != dispatch.get("command_epoch")
+            or response_feedback.observed_command_epoch
+            != dispatch.get("command_epoch")
+            or response_feedback.verified_command_epoch
+            != dispatch.get("command_epoch")
+            or response_feedback.n_plus_one_verified is not True
+            or not self._feedback_target_maps_equal(
+                response_feedback.readback_servo_targets_deg,
+                dispatch.get("servo_targets_deg", {}),
+            )
+            or not self._feedback_target_maps_equal(
+                response_feedback.readback_wheel_targets_rad_s,
+                dispatch.get("wheel_targets_rad_s", {}),
+            )
+        ):
+            errors.append(f"{label} N+1 epoch/full-map evidence drifted")
+        try:
+            self._validate_feedback_recovery_safety(
+                centroidal=dispatch_centroidal,
+                feedback=dispatch_feedback,
+            )
+            self._validate_feedback_recovery_safety(
+                centroidal=response_centroidal,
+                feedback=response_feedback,
+            )
+        except Exception as exc:
+            errors.append(f"{label} persisted safety evidence is invalid: {exc}")
+        if reference:
+            expected_targets = dict(reference)
+            grouped_prior = [
+                candidate
+                for candidate in self.feedback_recovery_action_rows[:index]
+                if candidate.get("configuration_sha256")
+                == row.get("configuration_sha256")
+            ]
+            if action == "CONSERVATIVE_DIAGNOSTIC_PROBE":
+                expected_targets[joint] += sign * FEEDBACK_RECOVERY_PROBE_DELTA_DEG
+            elif action == "BOUNDED_DESCENT_INCREMENT":
+                prior_increments = [
+                    candidate
+                    for candidate in grouped_prior
+                    if candidate.get("action") == "BOUNDED_DESCENT_INCREMENT"
+                ]
+                if any(
+                    candidate.get("joint") != joint
+                    or candidate.get("direction_sign") != sign
+                    for candidate in prior_increments
+                ):
+                    errors.append(f"{label} descent selection drifted")
+                increment_count = len(prior_increments) + 1
+                if increment_count > FEEDBACK_RECOVERY_MAXIMUM_INCREMENTS_PER_LEG:
+                    errors.append(f"{label} descent increment bound exceeded")
+                expected_targets[joint] += (
+                    sign
+                    * FEEDBACK_RECOVERY_INCREMENT_DELTA_DEG
+                    * increment_count
+                )
+            if (
+                not self._feedback_target_maps_equal(
+                    dispatch.get("servo_targets_deg", {}), expected_targets
+                )
+                or any(
+                    float(value) != 0.0
+                    for value in dispatch.get("wheel_targets_rad_s", {}).values()
+                )
+            ):
+                errors.append(f"{label} durable bounded 8+4 target drifted")
+            margin = float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"]
+            )
+            if any(
+                not (
+                    command_limits_for_servo(name)[0] + margin
+                    <= float(target)
+                    <= command_limits_for_servo(name)[1] - margin
+                )
+                for name, target in expected_targets.items()
+            ):
+                errors.append(f"{label} durable target violates command margin")
+            if action == "BOUNDED_DESCENT_INCREMENT":
+                try:
+                    contact = dispatch_centroidal.wheel_contacts.by_leg()[leg]
+                    if (
+                        contact.evidence_available
+                        and contact.measurement.active
+                        and contact.measurement.surface_kind == "OBSTACLE_TOP"
+                        and contact.normal_load_n is not None
+                        and contact.normal_load_n
+                        >= dispatch_centroidal.wheel_contacts.thresholds.minimum_normal_force_n
+                    ):
+                        errors.append(
+                            f"{label} increment was issued after load-bearing TOP contact"
+                        )
+                except Exception as exc:
+                    errors.append(
+                        f"{label} TOP-contact increment gate cannot be rebuilt: {exc}"
+                    )
+        if index == 0:
+            try:
+                if dispatch_index <= 0:
+                    raise RuntimeError(
+                        "first feedback action has no preceding physical reference dispatch"
+                    )
+                reference_dispatch = self.dispatch_rows[dispatch_index - 1]
+                reference_verified_step = reference_dispatch.get(
+                    "n_plus_one_verified_sim_step"
+                )
+                reference_epoch = reference_dispatch.get("command_epoch")
+                reference_batch_id = (
+                    f"{self.request.request_id}:macro:{reference_epoch:06d}"
+                    if type(reference_epoch) is int
+                    else ""
+                )
+                reference_provenance = reference_dispatch.get(
+                    "command_provenance"
+                )
+                reference_ack = reference_dispatch.get("ack")
+                reference_ack_metadata = (
+                    reference_ack.get("recording_metadata")
+                    if isinstance(reference_ack, Mapping)
+                    else None
+                )
+                if (
+                    type(reference_dispatch.get("dispatch_index")) is not int
+                    or reference_dispatch.get("dispatch_index")
+                    != dispatch_index - 1
+                    or type(reference_epoch) is not int
+                    or reference_dispatch.get("batch_id")
+                    != reference_batch_id
+                    or dispatch_feedback.observed_command_epoch
+                    != reference_epoch
+                    or dispatch_feedback.verified_command_epoch
+                    != reference_epoch
+                    or reference_dispatch.get("n_plus_one_verified") is not True
+                    or type(reference_verified_step) is not int
+                    or not isinstance(reference_ack, Mapping)
+                    or set(reference_ack) != _DURABLE_MOTION_BATCH_ACK_KEYS
+                    or reference_ack.get("batch_id") != reference_batch_id
+                    or reference_ack.get("source")
+                    != "fsm50_macro_controller"
+                    or reference_ack.get("error") != ""
+                    or reference_ack.get("applied_sim_step")
+                    != reference_dispatch.get("sim_step")
+                    or reference_ack.get("first_physics_step")
+                    != reference_verified_step
+                    or reference_ack.get("servo_applied") is not True
+                    or reference_ack.get("wheel_applied") is not True
+                    or not self._feedback_target_maps_equal(
+                        reference_ack.get("servo_targets_applied", {}),
+                        reference_dispatch.get("servo_targets_deg", {}),
+                    )
+                    or not self._feedback_target_maps_equal(
+                        reference_ack.get("wheel_targets_applied", {}),
+                        reference_dispatch.get("wheel_targets_rad_s", {}),
+                    )
+                    or not isinstance(reference_provenance, Mapping)
+                    or reference_provenance.get("kind")
+                    == "FEEDBACK_RECOVERY"
+                    or not isinstance(reference_ack_metadata, Mapping)
+                    or not _strict_json_equal(
+                        reference_ack_metadata.get("command_provenance"),
+                        reference_provenance,
+                    )
+                    or reference_ack_metadata.get("command_epoch")
+                    != reference_epoch
+                    or reference_ack_metadata.get("source_version")
+                    != self.request.source_version
+                    or reference_ack_metadata.get("bundle_sha256")
+                    != self.request.bundle_sha256
+                    or reference_verified_step > sim_step
+                    or not reference_dispatch.get("n_plus_one_readback_sha256")
+                    or not self._feedback_target_maps_equal(
+                        dispatch_feedback.readback_servo_targets_deg,
+                        reference_dispatch.get("servo_targets_deg", {}),
+                    )
+                    or not self._feedback_target_maps_equal(
+                        dispatch_feedback.readback_wheel_targets_rad_s,
+                        reference_dispatch.get("wheel_targets_rad_s", {}),
+                    )
+                    or any(
+                        float(value) != 0.0
+                        for value in dispatch_feedback.readback_wheel_targets_rad_s.values()
+                    )
+                ):
+                    raise RuntimeError(
+                        "first feedback action does not continue the verified "
+                        "zero-wheel S10 reference dispatch"
+                    )
+                self._validate_batch_ack(
+                    reference_ack,
+                    batch_id=reference_batch_id,
+                    servo_targets=reference_dispatch.get(
+                        "servo_targets_deg", {}
+                    ),
+                    wheel_targets=reference_dispatch.get(
+                        "wheel_targets_rad_s", {}
+                    ),
+                    expected_sim_step=reference_dispatch.get("sim_step"),
+                    expected_physics_dt_s=EXPECTED_PHYSICS_DT_S,
+                    expected_source="fsm50_macro_controller",
+                    expected_recording_metadata=reference_ack_metadata,
+                )
+            except Exception as exc:
+                errors.append(
+                    f"{label} first-action physical reference binding is invalid: {exc}"
+                )
+        else:
+            prior = self.feedback_recovery_action_rows[index - 1]
+            try:
+                prior_dispatch_index = prior.get("dispatch_index")
+                prior_response_centroidal = CentroidalSupportEvidence.from_mapping(
+                    prior.get(
+                        "physical_response_centroidal_support_evidence", {}
+                    )
+                )
+                prior_response = FeedbackRecoveryObservation.from_mapping(
+                    prior.get(
+                        "physical_response_feedback_recovery_observation", {}
+                    )
+                )
+                chronology_tolerance_s = max(
+                    1.0e-9,
+                    dispatch_centroidal.physics_dt_s * 1.0e-6,
+                )
+                if (
+                    type(prior_dispatch_index) is not int
+                    or dispatch_index <= prior_dispatch_index
+                    or dispatch_centroidal.sim_step
+                    < prior_response_centroidal.sim_step
+                    or dispatch_feedback.sim_step < prior_response.sim_step
+                    or dispatch_centroidal.physics_time_s
+                    + chronology_tolerance_s
+                    < prior_response_centroidal.physics_time_s
+                    or dispatch_feedback.physics_time_s
+                    + chronology_tolerance_s
+                    < prior_response.physics_time_s
+                ):
+                    errors.append(
+                        f"{label} physical dispatch chronology does not follow "
+                        "the prior action N+1 response"
+                    )
+                if (
+                    dispatch_feedback.observed_command_epoch
+                    != prior_response.observed_command_epoch
+                    or not self._feedback_target_maps_equal(
+                        dispatch_feedback.readback_servo_targets_deg,
+                        prior_response.readback_servo_targets_deg,
+                    )
+                    or not self._feedback_target_maps_equal(
+                        dispatch_feedback.readback_wheel_targets_rad_s,
+                        prior_response.readback_wheel_targets_rad_s,
+                    )
+                ):
+                    errors.append(
+                        f"{label} pre-action epoch/map does not continue the prior N+1 action"
+                    )
+            except Exception as exc:
+                errors.append(
+                    f"{label} prior N+1 action cannot be cross-bound: {exc}"
+                )
+        actual_response = row.get("physical_response")
+        try:
+            if action == "CONSERVATIVE_DIAGNOSTIC_PROBE":
+                dq = float(response_feedback.measured_servo_positions_deg[joint]) - float(
+                    baseline["measured_servo_positions_deg"][joint]
+                )
+                dx = float(response_feedback.wheel_center_w_m[leg][0]) - float(
+                    baseline["wheel_x_m"]
+                )
+                dz = float(response_feedback.wheel_center_w_m[leg][2]) - float(
+                    baseline["wheel_z_m"]
+                )
+                preserved, reasons = self._feedback_baseline_preserved_values(
+                    leg=leg,
+                    baseline=baseline,
+                    centroidal=response_centroidal,
+                    feedback=response_feedback,
+                    joint=joint,
+                )
+                expected_response = {
+                    "joint": joint,
+                    "direction_sign": sign,
+                    "dq_deg": dq,
+                    "dx_m": dx,
+                    "dz_m": dz,
+                    "sign_response_valid": bool(
+                        abs(dq) >= 0.02 and (dq > 0.0) == (sign > 0)
+                    ),
+                    "baseline_preserved": preserved,
+                    "unsafe_reasons": list(reasons),
+                    "n_plus_one_response_verified": True,
+                }
+            elif action == "RETURN_TO_IMMUTABLE_REFERENCE":
+                return_error = abs(
+                    float(response_feedback.measured_servo_positions_deg[joint])
+                    - float(baseline["measured_servo_positions_deg"][joint])
+                )
+                expected_response = {
+                    "joint": joint,
+                    "direction_sign": sign,
+                    "return_error_deg": return_error,
+                    "n_plus_one_response_verified": True,
+                }
+                matching_probes = [
+                    candidate
+                    for candidate in self.feedback_recovery_action_rows[:index]
+                    if candidate.get("configuration_sha256")
+                    == row.get("configuration_sha256")
+                    and candidate.get("action")
+                    == "CONSERVATIVE_DIAGNOSTIC_PROBE"
+                    and candidate.get("joint") == joint
+                    and candidate.get("direction_sign") == sign
+                    and candidate.get("physical_response_verified") is True
+                ]
+                if return_error > 0.2 or len(matching_probes) != 1:
+                    errors.append(
+                        f"{label} return did not close one verified probe at its immutable reference"
+                    )
+            elif action == "BOUNDED_DESCENT_INCREMENT":
+                preserved, reasons = self._feedback_baseline_preserved_values(
+                    leg=leg,
+                    baseline=baseline,
+                    centroidal=response_centroidal,
+                    feedback=response_feedback,
+                    joint=joint,
+                )
+                expected_response = {
+                    "joint": joint,
+                    "direction_sign": sign,
+                    "baseline_preserved": preserved,
+                    "unsafe_reasons": list(reasons),
+                    "n_plus_one_response_verified": True,
+                }
+                if not preserved or reasons:
+                    errors.append(
+                        f"{label} descent increment degraded its immutable physical baseline"
+                    )
+            else:
+                raise ValueError("unsupported action")
+        except Exception as exc:
+            errors.append(f"{label} physical response cannot be recomputed: {exc}")
+        else:
+            if not _strict_json_equal(actual_response, expected_response):
+                errors.append(
+                    f"{label} physical response differs from its durable evidence"
+                )
+        return errors
+
+    def _feedback_recovery_coverage_errors(self) -> list[str]:
+        errors: list[str] = []
+        owned_dispatch_indices = [
+            row.get("dispatch_index")
+            for row in self.feedback_recovery_action_rows
+        ]
+        durable_feedback_dispatch_indices = [
+            index
+            for index, dispatch in enumerate(self.dispatch_rows)
+            if isinstance(dispatch.get("command_provenance"), Mapping)
+            and dispatch["command_provenance"].get("kind")
+            == "FEEDBACK_RECOVERY"
+        ]
+        if (
+            any(type(index) is not int for index in owned_dispatch_indices)
+            or len(owned_dispatch_indices) != len(set(owned_dispatch_indices))
+            or sorted(owned_dispatch_indices)
+            != durable_feedback_dispatch_indices
+            or (
+                owned_dispatch_indices
+                and sorted(owned_dispatch_indices)
+                != list(
+                    range(
+                        min(owned_dispatch_indices),
+                        min(owned_dispatch_indices)
+                        + len(owned_dispatch_indices),
+                    )
+                )
+            )
+        ):
+            errors.append(
+                "feedback recovery dispatch ownership is not an exact one-action partition"
+            )
+        if self.feedback_recovery_verified_action_count != len(
+            self.feedback_recovery_action_rows
+        ):
+            errors.append("feedback recovery action/readback count mismatch")
+        for index, row in enumerate(self.feedback_recovery_action_rows):
+            if (
+                row.get("action_index") != index
+                or row.get("n_plus_one_verified") is not True
+                or not row.get("n_plus_one_readback_sha256")
+                or row.get("physical_response_verified") is not True
+                or not row.get(
+                    "physical_response_centroidal_evidence_sha256"
+                )
+                or not row.get(
+                    "physical_response_feedback_observation_sha256"
+                )
+            ):
+                errors.append(
+                    f"feedback recovery action row {index} lacks exact N+1 physical response closure"
+                )
+                continue
+            errors.extend(
+                self._feedback_recovery_action_closure_errors(
+                    index=index,
+                    row=row,
+                )
+            )
+        errors.extend(self._feedback_recovery_durable_sequence_errors())
+        return errors
+
+    def _feedback_recovery_top_dwell_closure(
+        self,
+        *,
+        leg: str,
+        centroidal_mapping: Mapping[str, Any],
+        feedback_mapping: Mapping[str, Any],
+    ) -> tuple[bool, str]:
+        """Rebuild one current-tick TOP/dwell closure from strict envelopes."""
+
+        try:
+            centroidal = CentroidalSupportEvidence.from_mapping(
+                centroidal_mapping
+            )
+            from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+            feedback = FeedbackRecoveryObservation.from_mapping(feedback_mapping)
+            if (
+                centroidal.sim_step != feedback.sim_step
+                or not math.isclose(
+                    centroidal.physics_time_s,
+                    feedback.physics_time_s,
+                    rel_tol=0.0,
+                    abs_tol=max(1.0e-9, float(centroidal.physics_dt_s) * 1.0e-6),
+                )
+            ):
+                raise RuntimeError("centroidal/feedback tick identity differs")
+            self._validate_feedback_recovery_safety(
+                centroidal=centroidal,
+                feedback=feedback,
+            )
+            contact = centroidal.wheel_contacts.by_leg()[leg]
+            measurement = contact.measurement
+            if not (
+                contact.support_qualified
+                and contact.evidence_available
+                and measurement.active
+                and measurement.surface_kind == "OBSTACLE_TOP"
+                and contact.normal_load_n is not None
+                and contact.normal_load_n
+                >= centroidal.wheel_contacts.thresholds.minimum_normal_force_n
+                and measurement.surface_dwell_verified
+                and measurement.dwell_s is not None
+                and measurement.dwell_s
+                >= float(FINAL_RECOVERY_FEEDBACK_LIMITS["contact_dwell_s"])
+            ):
+                return False, "target leg lacks current TOP/load/dwell proof"
+            return True, ""
+        except Exception as exc:
+            return False, f"strict TOP/dwell evidence is invalid: {exc}"
+
+    def _feedback_recovery_terminal_top_dwell_closure(
+        self, *, leg: str
+    ) -> tuple[bool, str]:
+        if not self.rows:
+            return False, "final telemetry row is absent"
+        final = self.rows[-1]
+        centroidal_mapping = final.get("centroidal_support_evidence")
+        feedback_mapping = final.get("feedback_recovery_observation")
+        if not isinstance(centroidal_mapping, Mapping) or not isinstance(
+            feedback_mapping, Mapping
+        ):
+            return False, "final strict centroidal/feedback envelopes are absent"
+        return self._feedback_recovery_top_dwell_closure(
+            leg=leg,
+            centroidal_mapping=centroidal_mapping,
+            feedback_mapping=feedback_mapping,
+        )
+
+    def _feedback_recovery_terminal_row_assessment(
+        self,
+        *,
+        row: Mapping[str, Any],
+        outcome: str,
+    ) -> dict[str, Any]:
+        """Recompute one strict final-recovery sample from its two envelopes."""
+
+        from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+        result = {
+            "valid": False,
+            "error": "",
+            "sim_step": None,
+            "sim_time_s": None,
+            "centroidal_evidence_sha256": "",
+            "feedback_observation_sha256": "",
+            "all_four_top_load_dwell": False,
+            "body_crossed_front_face": False,
+            "final_recoverable": False,
+            "posture_complete": False,
+            "support_viable": False,
+            "wrench_proven": False,
+            "attitude_safe": False,
+            "joint_velocity_settled": False,
+            "body_angular_velocity_settled": False,
+            "outcome_predicate_satisfied": False,
+        }
+        try:
+            centroidal = CentroidalSupportEvidence.from_mapping(
+                row.get("centroidal_support_evidence", {})
+            )
+            feedback = FeedbackRecoveryObservation.from_mapping(
+                row.get("feedback_recovery_observation", {})
+            )
+            sim_step = row.get("sim_step")
+            sim_time = row.get("sim_time_s")
+            tolerance = max(
+                1.0e-9, float(centroidal.physics_dt_s) * 1.0e-6
+            )
+            if (
+                type(sim_step) is not int
+                or type(sim_time) not in (int, float)
+                or isinstance(sim_time, bool)
+                or not math.isfinite(float(sim_time))
+                or centroidal.sim_step != sim_step
+                or feedback.sim_step != sim_step
+                or not math.isclose(
+                    centroidal.physics_time_s,
+                    float(sim_time),
+                    rel_tol=0.0,
+                    abs_tol=tolerance,
+                )
+                or not math.isclose(
+                    feedback.physics_time_s,
+                    float(sim_time),
+                    rel_tol=0.0,
+                    abs_tol=tolerance,
+                )
+            ):
+                raise RuntimeError("terminal telemetry/evidence tick identity differs")
+            row_base = row.get("base_position_m")
+            row_joint_q = row.get("joint_position_rad")
+            row_joint_qd = row.get("joint_velocity_rad_s")
+            row_angular = row.get("root_angular_velocity_w")
+            row_centers = row.get("wheel_center_w_m")
+            if (
+                not isinstance(row_base, Mapping)
+                or set(row_base) != {"x", "y", "z"}
+                or not isinstance(row_joint_q, Mapping)
+                or set(row_joint_q) != set(SERVO_JOINT_NAMES)
+                or not isinstance(row_joint_qd, Mapping)
+                or set(row_joint_qd) != set(SERVO_JOINT_NAMES)
+                or not isinstance(row_angular, (list, tuple))
+                or len(row_angular) != 3
+                or not isinstance(row_centers, Mapping)
+                or set(row_centers) != set(LEGS)
+            ):
+                raise RuntimeError("terminal raw kinematic row is incomplete")
+            transform = self.durable_servo_command_transform
+            standing_pose = (
+                transform.get("standing_pose_deg_by_servo", {})
+                if isinstance(transform, Mapping)
+                else {}
+            )
+            if (
+                not isinstance(standing_pose, Mapping)
+                or set(standing_pose) != set(SERVO_JOINT_NAMES)
+            ):
+                raise RuntimeError("terminal servo command transform is unavailable")
+            rebuilt_positions = {
+                name: float(JOINT_COMMAND_SIGN[name])
+                * (
+                    math.degrees(float(row_joint_q[name]))
+                    - float(standing_pose[name])
+                )
+                for name in SERVO_JOINT_NAMES
+            }
+            rebuilt_velocities = {
+                name: float(JOINT_COMMAND_SIGN[name])
+                * math.degrees(float(row_joint_qd[name]))
+                for name in SERVO_JOINT_NAMES
+            }
+            body_crossed_rebuilt = bool(
+                float(row_base["x"]) > float(feedback.obstacle_front_face_x_m)
+            )
+            if (
+                not all(
+                    math.isclose(
+                        float(row_base[axis]),
+                        float(feedback.base_position_m[index]),
+                        rel_tol=0.0,
+                        abs_tol=1.0e-9,
+                    )
+                    for index, axis in enumerate(("x", "y", "z"))
+                )
+                or not math.isclose(
+                    float(row.get("base_roll_rad", float("nan"))),
+                    float(feedback.base_roll_rad),
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+                or not math.isclose(
+                    float(row.get("base_pitch_rad", float("nan"))),
+                    float(feedback.base_pitch_rad),
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                )
+                or any(
+                    not math.isclose(
+                        float(row_angular[index]),
+                        float(feedback.base_angular_velocity_rad_s[index]),
+                        rel_tol=0.0,
+                        abs_tol=1.0e-9,
+                    )
+                    for index in range(3)
+                )
+                or any(
+                    not math.isclose(
+                        rebuilt_positions[name],
+                        float(feedback.measured_servo_positions_deg[name]),
+                        rel_tol=0.0,
+                        abs_tol=1.0e-7,
+                    )
+                    or not math.isclose(
+                        rebuilt_velocities[name],
+                        float(feedback.measured_servo_velocities_deg_s[name]),
+                        rel_tol=0.0,
+                        abs_tol=1.0e-7,
+                    )
+                    for name in SERVO_JOINT_NAMES
+                )
+                or not _strict_json_equal(
+                    {leg: list(row_centers[leg]) for leg in LEGS},
+                    {
+                        leg: list(feedback.wheel_center_w_m[leg])
+                        for leg in LEGS
+                    },
+                )
+                or row.get("obstacle_front_face_x_m")
+                != feedback.obstacle_front_face_x_m
+                or row.get("obstacle_top_z_m") != feedback.obstacle_top_z_m
+                or row.get("body_crossed_front_face")
+                is not body_crossed_rebuilt
+                or feedback.body_crossed_front_face is not body_crossed_rebuilt
+                or row.get("final_recoverable") is not feedback.final_recoverable
+                or row.get("posture_complete") is not feedback.posture_complete
+            ):
+                raise RuntimeError(
+                    "terminal strict envelope differs from raw same-tick kinematics"
+                )
+            support = self._validate_feedback_recovery_safety(
+                centroidal=centroidal,
+                feedback=feedback,
+            )
+            contacts = centroidal.wheel_contacts.by_leg()
+            all_four = all(
+                contacts[leg].evidence_available
+                and contacts[leg].support_qualified
+                and contacts[leg].measurement.active
+                and contacts[leg].measurement.surface_kind == "OBSTACLE_TOP"
+                and contacts[leg].normal_load_n is not None
+                and contacts[leg].normal_load_n
+                >= centroidal.wheel_contacts.thresholds.minimum_normal_force_n
+                and contacts[leg].measurement.surface_dwell_verified
+                and contacts[leg].measurement.dwell_s is not None
+                and contacts[leg].measurement.dwell_s
+                >= float(FINAL_RECOVERY_FEEDBACK_LIMITS["contact_dwell_s"])
+                for leg in LEGS
+            )
+            joint_settled = max(
+                abs(float(value))
+                for value in feedback.measured_servo_velocities_deg_s.values()
+            ) <= float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS[
+                    "maximum_abs_joint_velocity_deg_s"
+                ]
+            )
+            angular_settled = max(
+                abs(float(value))
+                for value in feedback.base_angular_velocity_rad_s
+            ) <= float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS[
+                    "maximum_abs_body_angular_velocity_rad_s"
+                ]
+            )
+            base_closed = bool(
+                body_crossed_rebuilt
+                and feedback.final_recoverable
+                and support["support_viable"]
+                and support["wrench_proven"]
+                and joint_settled
+                and angular_settled
+            )
+            if outcome == "TASK_SUCCESS":
+                outcome_closed = bool(
+                    base_closed and all_four and feedback.posture_complete
+                )
+            elif outcome == "TASK_SUCCESS_POSTURE_INCOMPLETE":
+                outcome_closed = bool(
+                    base_closed
+                    and not (
+                        all_four and feedback.posture_complete
+                    )
+                )
+            else:
+                raise RuntimeError("terminal recovery outcome is not a task-success class")
+            state = build_default_macro_graph().get(
+                MacroStateId.S10_POSTURE_RECOVERY
+            )
+            result.update(
+                valid=True,
+                sim_step=sim_step,
+                sim_time_s=float(sim_time),
+                centroidal_evidence_sha256=centroidal.payload_sha256,
+                feedback_observation_sha256=feedback.payload_sha256,
+                all_four_top_load_dwell=all_four,
+                body_crossed_front_face=feedback.body_crossed_front_face,
+                final_recoverable=feedback.final_recoverable,
+                posture_complete=feedback.posture_complete,
+                support_viable=support["support_viable"],
+                wrench_proven=support["wrench_proven"],
+                attitude_safe=bool(
+                    abs(feedback.base_roll_rad)
+                    <= state.completion_guard.maximum_abs_roll_rad
+                    and abs(feedback.base_pitch_rad)
+                    <= state.completion_guard.maximum_abs_pitch_rad
+                ),
+                joint_velocity_settled=joint_settled,
+                body_angular_velocity_settled=angular_settled,
+                outcome_predicate_satisfied=outcome_closed,
+            )
+        except Exception as exc:
+            result["error"] = f"{type(exc).__name__}: {exc}"
+        return result
+
+    def _feedback_recovery_terminal_settle_assessment(
+        self, *, outcome: str
+    ) -> dict[str, Any]:
+        """Prove the terminal physical class over a contiguous telemetry tail."""
+
+        required_dwell = float(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["settle_dwell_s"]
+        )
+        result: dict[str, Any] = {
+            "complete": False,
+            "error": "",
+            "outcome": outcome,
+            "required_settle_dwell_s": required_dwell,
+            "settle_start_row_index": None,
+            "settle_start_sim_step": None,
+            "settle_start_sim_time_s": None,
+            "settle_end_row_index": None,
+            "settle_end_sim_step": None,
+            "settle_end_sim_time_s": None,
+            "settle_duration_s": 0.0,
+            "final_assessment": {},
+        }
+        if outcome not in {
+            "TASK_SUCCESS",
+            "TASK_SUCCESS_POSTURE_INCOMPLETE",
+        }:
+            result["error"] = "terminal outcome is not a task-success class"
+            return result
+        if not self.rows:
+            result["error"] = "terminal telemetry is absent"
+            return result
+        maximum_gap = max(
+            1.5 / float(self.request.telemetry_hz),
+            EXPECTED_RENDER_DT_S + EXPECTED_PHYSICS_DT_S,
+        )
+        qualifying: list[tuple[int, dict[str, Any]]] = []
+        next_step: int | None = None
+        next_time: float | None = None
+        for index in range(len(self.rows) - 1, -1, -1):
+            assessment = self._feedback_recovery_terminal_row_assessment(
+                row=self.rows[index], outcome=outcome
+            )
+            if assessment.get("outcome_predicate_satisfied") is not True:
+                break
+            step = int(assessment["sim_step"])
+            sample_time = float(assessment["sim_time_s"])
+            if next_step is not None and (
+                step >= next_step
+                or sample_time >= float(next_time)
+                or float(next_time) - sample_time > maximum_gap + 1.0e-9
+            ):
+                break
+            qualifying.append((index, assessment))
+            next_step = step
+            next_time = sample_time
+        if not qualifying:
+            result["error"] = "final telemetry does not satisfy its recovery outcome"
+            return result
+        qualifying.reverse()
+        start_index, start = qualifying[0]
+        end_index, end = qualifying[-1]
+        duration = float(end["sim_time_s"]) - float(start["sim_time_s"])
+        result.update(
+            settle_start_row_index=start_index,
+            settle_start_sim_step=start["sim_step"],
+            settle_start_sim_time_s=start["sim_time_s"],
+            settle_end_row_index=end_index,
+            settle_end_sim_step=end["sim_step"],
+            settle_end_sim_time_s=end["sim_time_s"],
+            settle_duration_s=duration,
+            final_assessment=dict(end),
+        )
+        if duration + 1.0e-9 < required_dwell:
+            result["error"] = "terminal recovery settling dwell is incomplete"
+            return result
+        result["complete"] = True
+        return result
+
+    def _feedback_recovery_terminal_errors(self) -> list[str]:
+        outcome = str(self.controller_terminal_outcome or "")
+        if not outcome:
+            return []
+        assessment = self._feedback_recovery_terminal_settle_assessment(
+            outcome=outcome
+        )
+        if assessment.get("complete") is True:
+            return []
+        return [
+            "terminal recovery physical/settling closure failed: "
+            + str(assessment.get("error", "invalid terminal recovery") or "invalid terminal recovery")
+        ]
+
+    def _feedback_recovery_durable_sequence_errors(self) -> list[str]:
+        """Replay the bounded probe/return/increment protocol from ledger rows."""
+
+        errors: list[str] = []
+        if len(self.feedback_recovery_action_rows) > FEEDBACK_RECOVERY_MAXIMUM_ACTIONS:
+            errors.append("feedback recovery durable action bound exceeded")
+        seen_closed: set[str] = set()
+        active_configuration = ""
+        grouped: dict[str, list[Mapping[str, Any]]] = {}
+        for row in self.feedback_recovery_action_rows:
+            configuration = str(row.get("configuration_sha256", "") or "")
+            if active_configuration and configuration != active_configuration:
+                seen_closed.add(active_configuration)
+            if configuration in seen_closed:
+                errors.append(
+                    "feedback recovery configuration action rows are not contiguous"
+                )
+            active_configuration = configuration
+            grouped.setdefault(configuration, []).append(row)
+        leg_joints = {
+            "FR": ("front_right_hip", "front_right_knee"),
+            "FL": ("front_left_hip", "front_left_knee"),
+            "RR": ("rear_right_hip", "rear_right_knee"),
+            "RL": ("rear_left_hip", "rear_left_knee"),
+        }
+        margin = float(FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"])
+        seen_legs: set[str] = set()
+        prior_leg = ""
+        grouped_items = list(grouped.items())
+        for configuration_index, (configuration, rows) in enumerate(grouped_items):
+            label = f"feedback recovery configuration {configuration}"
+            try:
+                config, reference, _baseline = (
+                    self._feedback_durable_configuration_context(row=rows[0])
+                )
+                leg = str(config["leg"])
+                joints = leg_joints[leg]
+                first_centroidal = CentroidalSupportEvidence.from_mapping(
+                    rows[0]["dispatch_centroidal_support_evidence"]
+                )
+                from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+                first_feedback = FeedbackRecoveryObservation.from_mapping(
+                    rows[0]["dispatch_feedback_recovery_observation"]
+                )
+            except Exception as exc:
+                errors.append(f"{label} cannot be rebuilt: {exc}")
+                continue
+            if leg in seen_legs:
+                errors.append(f"{label} reuses a completed recovery leg")
+            seen_legs.add(leg)
+            contacts = first_centroidal.wheel_contacts.by_leg()
+            eligible = tuple(
+                candidate_leg
+                for candidate_leg in ("FR", "FL", "RR", "RL")
+                if (
+                    contacts[candidate_leg].evidence_available
+                    and not contacts[candidate_leg].measurement.active
+                    and contacts[candidate_leg].measurement.surface_kind == "AIR"
+                    and first_feedback.wheel_center_w_m[candidate_leg][0]
+                    > first_feedback.obstacle_front_face_x_m
+                    and first_feedback.wheel_center_w_m[candidate_leg][2]
+                    >= first_feedback.obstacle_top_z_m - 0.02
+                    and not contacts[candidate_leg].support_qualified
+                )
+            )
+            if not eligible or eligible[0] != leg:
+                errors.append(
+                    f"{label} first leg is not the deterministic current recovery candidate"
+                )
+            if prior_leg:
+                prior_contact = contacts[prior_leg]
+                measurement = prior_contact.measurement
+                if not (
+                    prior_contact.support_qualified
+                    and measurement.active
+                    and measurement.surface_kind == "OBSTACLE_TOP"
+                    and measurement.surface_dwell_verified
+                    and measurement.dwell_s is not None
+                    and measurement.dwell_s
+                    >= FEEDBACK_RECOVERY_CONTACT_DWELL_S
+                ):
+                    errors.append(
+                        f"{label} starts before the prior leg has TOP contact dwell"
+                    )
+            probe_order = (
+                (joints[0], 1),
+                (joints[0], -1),
+                (joints[1], 1),
+                (joints[1], -1),
+            )
+
+            def safe(pair: tuple[str, int]) -> bool:
+                candidate = dict(reference)
+                candidate[pair[0]] += (
+                    pair[1] * FEEDBACK_RECOVERY_PROBE_DELTA_DEG
+                )
+                return all(
+                    command_limits_for_servo(name)[0] + margin
+                    <= float(target)
+                    <= command_limits_for_servo(name)[1] - margin
+                    for name, target in candidate.items()
+                )
+
+            safe_pairs = tuple(pair for pair in probe_order if safe(pair))
+            cursor = 0
+            awaiting: tuple[str, int] | None = None
+            completed: list[tuple[str, int]] = []
+            results: dict[tuple[str, int], Mapping[str, Any]] = {}
+            increment_pair: tuple[str, int] | None = None
+            increment_count = 0
+            for row in rows:
+                pair = (str(row.get("joint", "")), int(row.get("direction_sign", 0) or 0))
+                action = row.get("action")
+                if action == "CONSERVATIVE_DIAGNOSTIC_PROBE":
+                    while cursor < len(probe_order) and probe_order[cursor] != pair:
+                        if safe(probe_order[cursor]):
+                            errors.append(f"{label} skipped a command-limit-safe probe")
+                            break
+                        cursor += 1
+                    if (
+                        awaiting is not None
+                        or increment_pair is not None
+                        or cursor >= len(probe_order)
+                        or probe_order[cursor] != pair
+                        or pair not in safe_pairs
+                        or pair in results
+                    ):
+                        errors.append(f"{label} probe ordering is invalid")
+                    awaiting = pair
+                    response = row.get("physical_response")
+                    if isinstance(response, Mapping):
+                        results[pair] = response
+                elif action == "RETURN_TO_IMMUTABLE_REFERENCE":
+                    if (
+                        awaiting != pair
+                        or pair not in results
+                        or pair in completed
+                    ):
+                        errors.append(f"{label} return ordering is invalid")
+                    response = row.get("physical_response")
+                    if (
+                        not isinstance(response, Mapping)
+                        or float(response.get("return_error_deg", float("inf")))
+                        > 0.2
+                    ):
+                        errors.append(f"{label} return response is not closed")
+                    completed.append(pair)
+                    awaiting = None
+                    cursor += 1
+                elif action == "BOUNDED_DESCENT_INCREMENT":
+                    while cursor < len(probe_order) and not safe(probe_order[cursor]):
+                        cursor += 1
+                    if (
+                        awaiting is not None
+                        or cursor != len(probe_order)
+                        or set(completed) != set(safe_pairs)
+                        or set(results) != set(safe_pairs)
+                        or len(completed) != len(set(completed))
+                    ):
+                        errors.append(
+                            f"{label} increment precedes the complete safe probe matrix"
+                        )
+                    choices = sorted(
+                        (
+                            float(result.get("dz_m", float("inf"))),
+                            candidate_pair[0],
+                            candidate_pair[1],
+                        )
+                        for candidate_pair, result in results.items()
+                        if result.get("sign_response_valid") is True
+                        and result.get("baseline_preserved") is True
+                        and float(result.get("dz_m", float("inf")))
+                        <= -float(
+                            FINAL_RECOVERY_FEEDBACK_LIMITS["minimum_descent_m"]
+                        )
+                        and candidate_pair in set(completed)
+                    )
+                    selected = None if not choices else (choices[0][1], choices[0][2])
+                    if increment_pair is None:
+                        increment_pair = pair
+                        if selected is None or pair != selected:
+                            errors.append(
+                                f"{label} first increment is not the deterministic best measured response"
+                            )
+                    elif pair != increment_pair:
+                        errors.append(f"{label} increment selection drifted")
+                    increment_count += 1
+                    if increment_count > FEEDBACK_RECOVERY_MAXIMUM_INCREMENTS_PER_LEG:
+                        errors.append(f"{label} increment count exceeded its bound")
+                else:
+                    errors.append(f"{label} action kind is invalid")
+            while cursor < len(probe_order) and not safe(probe_order[cursor]):
+                cursor += 1
+            matrix_complete = bool(
+                cursor == len(probe_order)
+                and set(completed) == set(safe_pairs)
+                and set(results) == set(safe_pairs)
+                and len(completed) == len(set(completed))
+            )
+            top_dwell_closed = False
+            top_dwell_reason = ""
+            if configuration_index + 1 < len(grouped_items):
+                next_rows = grouped_items[configuration_index + 1][1]
+                next_first = next_rows[0]
+                next_centroidal = next_first.get(
+                    "dispatch_centroidal_support_evidence"
+                )
+                next_feedback = next_first.get(
+                    "dispatch_feedback_recovery_observation"
+                )
+                if isinstance(next_centroidal, Mapping) and isinstance(
+                    next_feedback, Mapping
+                ):
+                    top_dwell_closed, top_dwell_reason = (
+                        self._feedback_recovery_top_dwell_closure(
+                            leg=leg,
+                            centroidal_mapping=next_centroidal,
+                            feedback_mapping=next_feedback,
+                        )
+                    )
+                else:
+                    top_dwell_reason = (
+                        "next configuration lacks strict dispatch evidence"
+                    )
+            else:
+                top_dwell_closed, top_dwell_reason = (
+                    self._feedback_recovery_terminal_top_dwell_closure(leg=leg)
+                )
+            if awaiting is not None:
+                errors.append(f"{label} ends with an unreturned probe")
+            if not matrix_complete:
+                errors.append(
+                    f"{label} ended before the complete safe probe/return matrix"
+                )
+            choices = sorted(
+                (
+                    float(result.get("dz_m", float("inf"))),
+                    candidate_pair[0],
+                    candidate_pair[1],
+                )
+                for candidate_pair, result in results.items()
+                if result.get("sign_response_valid") is True
+                and result.get("baseline_preserved") is True
+                and float(result.get("dz_m", float("inf")))
+                <= -float(FINAL_RECOVERY_FEEDBACK_LIMITS["minimum_descent_m"])
+                and candidate_pair in set(completed)
+            )
+            if (
+                matrix_complete
+                and choices
+                and increment_pair is None
+                and not top_dwell_closed
+            ):
+                errors.append(
+                    f"{label} omitted the deterministic measured descent choice"
+                )
+            if (
+                increment_pair is not None
+                and increment_count
+                < int(FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_increments_per_leg"])
+                and not top_dwell_closed
+            ):
+                errors.append(
+                    f"{label} truncated bounded descent before TOP/dwell or its increment bound"
+                )
+            prior_leg = leg
+        return errors
+
+    def _dispatch_ownership_errors(self) -> list[str]:
+        """Require every physical dispatch to have one durable semantic cause."""
+
+        errors: list[str] = []
+        if self.command_dispatch_count != len(self.dispatch_rows):
+            errors.append("physical dispatch count differs from its durable ledger")
+        source_rows = {
+            row.get("source_action_index"): row
+            for row in self.source_action_consumption_rows
+            if type(row.get("source_action_index")) is int
+        }
+        feedback_rows_by_dispatch: dict[int, list[Mapping[str, Any]]] = {}
+        for action in self.feedback_recovery_action_rows:
+            dispatch_index = action.get("dispatch_index")
+            if type(dispatch_index) is int:
+                feedback_rows_by_dispatch.setdefault(dispatch_index, []).append(action)
+        generated_wheel_stops_by_batch: dict[str, list[Mapping[str, Any]]] = {}
+        for completion in self.segment_completion_rows:
+            wheel_stop = completion.get("wheel_stop")
+            if (
+                isinstance(wheel_stop, Mapping)
+                and wheel_stop.get("generated") is True
+                and type(wheel_stop.get("batch_id")) is str
+                and wheel_stop.get("batch_id")
+            ):
+                generated_wheel_stops_by_batch.setdefault(
+                    str(wheel_stop["batch_id"]), []
+                ).append(wheel_stop)
+        seen_batches: set[str] = set()
+        for index, dispatch in enumerate(self.dispatch_rows):
+            label = f"physical dispatch row {index}"
+            batch_id = dispatch.get("batch_id")
+            provenance = dispatch.get("command_provenance")
+            ack = dispatch.get("ack")
+            if (
+                dispatch.get("schema_version") != DISPATCH_SCHEMA
+                or type(dispatch.get("dispatch_index")) is not int
+                or dispatch.get("dispatch_index") != index
+                or type(batch_id) is not str
+                or not batch_id
+                or batch_id in seen_batches
+                or type(dispatch.get("sim_step")) is not int
+                or type(dispatch.get("command_epoch")) is not int
+                or dispatch.get("n_plus_one_verified") is not True
+                or dispatch.get("n_plus_one_verified_sim_step")
+                != dispatch.get("sim_step") + 1
+                or not isinstance(ack, Mapping)
+                or ack.get("batch_id") != batch_id
+                or ack.get("applied_sim_step") != dispatch.get("sim_step")
+                or ack.get("first_physics_step")
+                != dispatch.get("n_plus_one_verified_sim_step")
+                or not isinstance(provenance, Mapping)
+            ):
+                errors.append(f"{label} core physical/N+1 identity is invalid")
+                continue
+            seen_batches.add(batch_id)
+            kind = provenance.get("kind")
+            source_index = dispatch.get("source_action_consumption_index")
+            feedback_owners = feedback_rows_by_dispatch.get(index, [])
+            if kind == "SOURCE_ACTION":
+                source_row = source_rows.get(source_index)
+                if (
+                    type(source_index) is not int
+                    or source_row is None
+                    or source_row.get("physical_dispatch_applied") is not True
+                    or source_row.get("physical_dispatch_index") != index
+                    or source_row.get("batch_id") != batch_id
+                    or source_row.get("dispatch_epoch")
+                    != dispatch.get("command_epoch")
+                    or source_row.get("sim_step") != dispatch.get("sim_step")
+                    or type(source_row.get("sim_time_s")) not in (int, float)
+                    or type(source_row.get("sim_time_s")) is bool
+                    or type(dispatch.get("sim_time_s")) not in (int, float)
+                    or type(dispatch.get("sim_time_s")) is bool
+                    or not math.isclose(
+                        float(source_row.get("sim_time_s")),
+                        float(dispatch.get("sim_time_s")),
+                        rel_tol=0.0,
+                        abs_tol=max(
+                            1.0e-9, EXPECTED_PHYSICS_DT_S * 1.0e-6
+                        ),
+                    )
+                    or source_row.get("n_plus_one_verified_sim_step")
+                    != dispatch.get("n_plus_one_verified_sim_step")
+                    or source_row.get("n_plus_one_readback_sha256")
+                    != dispatch.get("n_plus_one_readback_sha256")
+                    or not _strict_json_equal(
+                        source_row.get("command_provenance"), provenance
+                    )
+                    or feedback_owners
+                ):
+                    errors.append(
+                        f"{label} is not owned by its exact source-action consumption"
+                    )
+            elif kind == "FEEDBACK_RECOVERY":
+                if source_index is not None or len(feedback_owners) != 1:
+                    errors.append(
+                        f"{label} is not owned by exactly one feedback action"
+                    )
+            elif kind == "NONE":
+                metadata = ack.get("recording_metadata")
+                completion_control = (
+                    metadata.get("segment_completion_control")
+                    if isinstance(metadata, Mapping)
+                    else None
+                )
+                generated_stop_owner = bool(
+                    isinstance(completion_control, Mapping)
+                    and completion_control.get("kind") == "WHEEL_STOP"
+                    and completion_control.get("source_action") is False
+                    and len(generated_wheel_stops_by_batch.get(batch_id, [])) == 1
+                )
+                residual_only_owner = bool(
+                    self.residual_enabled
+                    and dispatch.get("dispatch_cause") == "RESIDUAL_ONLY"
+                    and isinstance(completion_control, Mapping)
+                    and completion_control.get("kind") == "NONE"
+                )
+                if (
+                    source_index is not None
+                    or feedback_owners
+                    or generated_stop_owner is residual_only_owner
+                ):
+                    errors.append(
+                        f"{label} lacks exactly one generated-stop or residual-only owner"
+                    )
+            else:
+                errors.append(f"{label} has an unsupported provenance kind")
+        for source_index, source_row in source_rows.items():
+            applied = source_row.get("physical_dispatch_applied")
+            dispatch_index = source_row.get("physical_dispatch_index")
+            batch_id = source_row.get("batch_id")
+            if applied is True:
+                if (
+                    type(dispatch_index) is not int
+                    or dispatch_index < 0
+                    or dispatch_index >= len(self.dispatch_rows)
+                ):
+                    errors.append(
+                        f"source action {source_index} lacks its physical dispatch"
+                    )
+            elif applied is False:
+                if dispatch_index is not None or batch_id not in (None, ""):
+                    errors.append(
+                        f"source action {source_index} falsely claims a nonphysical dispatch"
+                    )
+            else:
+                errors.append(
+                    f"source action {source_index} physical dispatch flag is invalid"
+                )
+        return errors
+
     def _successful_coverage_errors(self) -> list[str]:
         return [
             *self._source_action_coverage_errors(),
             *self._segment_completion_coverage_errors(),
+            *self._feedback_recovery_coverage_errors(),
+            *self._dispatch_ownership_errors(),
         ]
 
     def _root_and_joint_state(
@@ -2418,29 +5712,664 @@ class WorkerMacroFSMSession:
         )
         return dict(_jsonable(evidence))
 
+    def _record_runtime_contact_collision_sample(
+        self,
+        *,
+        sample_epoch: int,
+        sim_step: int,
+        sample_sha256: str,
+        collision: bool,
+    ) -> None:
+        tracker = self.runtime_contact_collision_evidence
+        last_epoch = tracker.get("last_sample_epoch")
+        if last_epoch is None:
+            if sample_epoch != 1 or int(tracker.get("sample_count", 0)) != 0:
+                raise RuntimeError(
+                    "runtime contact collision ledger did not start at epoch one"
+                )
+            tracker["first_sample_sim_step"] = sim_step
+            tracker["first_sample_sha256"] = sample_sha256
+        elif sample_epoch == last_epoch:
+            if (
+                tracker.get("last_sample_sim_step") != sim_step
+                or tracker.get("last_sample_sha256") != sample_sha256
+                or tracker.get("last_collision") is not collision
+            ):
+                raise RuntimeError(
+                    "runtime contact collision same-epoch evidence drifted"
+                )
+            return
+        elif sample_epoch != int(last_epoch) + 1:
+            raise RuntimeError("runtime contact collision sample epoch is not contiguous")
+        tracker["sample_count"] = int(tracker.get("sample_count", 0)) + 1
+        tracker["clear_sample_count"] = int(
+            tracker.get("clear_sample_count", 0)
+        ) + int(not collision)
+        tracker["detected_sample_count"] = int(
+            tracker.get("detected_sample_count", 0)
+        ) + int(collision)
+        if collision:
+            if tracker.get("first_detected_sim_step") is None:
+                tracker["first_detected_sim_step"] = sim_step
+                tracker["first_detected_sample_sha256"] = sample_sha256
+            tracker["last_detected_sim_step"] = sim_step
+            tracker["last_detected_sample_sha256"] = sample_sha256
+        tracker["last_sample_epoch"] = sample_epoch
+        tracker["last_sample_sim_step"] = sim_step
+        tracker["last_sample_sha256"] = sample_sha256
+        tracker["last_collision"] = collision
+
     def _capture_runtime_safety_evidence(self, adapter: Any) -> dict[str, Any]:
+        sim_step = int(getattr(adapter, "sim_steps", 0) or 0)
+        sample = dict(self.filtered_contact_sample or {})
+        rows = list(self.filtered_contact_nonwheel_rows or [])
+        sample_sha256 = sample.get("sample_sha256")
+        sample_core = dict(sample)
+        sample_core.pop("sample_sha256", None)
+        if (
+            sample.get("sample_sim_step") != sim_step
+            or sample.get("sample_sim_step") != self.filtered_contact_last_sim_step
+            or sample.get("sample_epoch") != self.filtered_contact_sample_epoch
+            or type(sample_sha256) is not str
+            or len(sample_sha256) != 64
+            or _canonical_json_sha256(sample_core) != sample_sha256
+            or not rows
+            or sample.get("nonwheel_rows") != rows
+            or any(type(row.get("active")) is not bool for row in rows)
+        ):
+            raise RuntimeError(
+                "runtime safety lacks the current exact non-wheel contact sample"
+            )
+        contact_collision = any(row["active"] is True for row in rows)
+        self._record_runtime_contact_collision_sample(
+            sample_epoch=int(sample["sample_epoch"]),
+            sim_step=sim_step,
+            sample_sha256=sample_sha256,
+            collision=contact_collision,
+        )
+        contact_source = (
+            "COMBINED_FILTERED_NONWHEEL_OBSTACLE_CONTACT_CURRENT_TICK:"
+            + sample_sha256
+        )
         capture = getattr(adapter, "capture_macro_runtime_safety_evidence", None)
         if not callable(capture):
             return {
                 "available": False,
-                "dangerous_body_collision": None,
+                # The combined bank covers the configured non-wheel rigid-body
+                # obstacle filters.  Its strict >1 N predicate can prove a
+                # dangerous body contact (or its absence) independently of a
+                # penetration-depth provider.
+                "dangerous_body_collision": contact_collision,
                 "severe_penetration": None,
-                "source": "UNAVAILABLE_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW",
-                "sample_sim_step": int(getattr(adapter, "sim_steps", 0) or 0),
-                "error": "runtime non-wheel collision/penetration sensor is unavailable",
+                "source": contact_source,
+                "sample_sim_step": sim_step,
+                "combined_contact_sample_sha256": sample_sha256,
+                "nonwheel_contact_row_count": len(rows),
+                "filtered_nonwheel_collision": contact_collision,
+                "provider_dangerous_body_collision": None,
+                "provider_collision_available": False,
+                "provider_collision_source": "",
+                "provider_collision_sample_sim_step": None,
+                "error": "runtime severe-penetration depth evidence is unavailable",
             }
         try:
             raw = capture(scene_handle=self.scene_handle)
         except Exception as exc:
             return {
                 "available": False,
-                "dangerous_body_collision": None,
+                "dangerous_body_collision": contact_collision,
                 "severe_penetration": None,
-                "source": "capture_macro_runtime_safety_evidence",
-                "sample_sim_step": int(getattr(adapter, "sim_steps", 0) or 0),
+                "source": contact_source,
+                "sample_sim_step": sim_step,
+                "combined_contact_sample_sha256": sample_sha256,
+                "nonwheel_contact_row_count": len(rows),
+                "filtered_nonwheel_collision": contact_collision,
+                "provider_dangerous_body_collision": None,
+                "provider_collision_available": False,
+                "provider_collision_source": "",
+                "provider_collision_sample_sim_step": None,
                 "error": f"{type(exc).__name__}: {exc}",
             }
-        return dict(_jsonable(dict(raw or {})) or {}) if isinstance(raw, Mapping) else {}
+        if not isinstance(raw, Mapping):
+            raise RuntimeError("runtime safety provider did not return a mapping")
+        self._runtime_safety_capture_serial += 1
+        capture_serial = self._runtime_safety_capture_serial
+        collision_claim_preexisting = bool(
+            self.unverified_provider_collision_claim
+        )
+        penetration_claim_preexisting = bool(
+            self.unverified_provider_penetration_claim
+        )
+        optional_claim_preexisting = {
+            field: bool(self.unverified_optional_runtime_true_claims[field])
+            for field in ("body_stuck", "active_leg_trapped")
+        }
+        raw_provider_collision: Any
+        try:
+            raw_provider_collision = raw.get("dangerous_body_collision")
+        except Exception:
+            raw_provider_collision = None
+        try:
+            raw_provider_penetration = raw.get("severe_penetration")
+        except Exception:
+            raw_provider_penetration = None
+        raw_provider_collision_true = _safety_scalar_normalizes_true(
+            raw_provider_collision
+        )
+        raw_provider_penetration_true = _safety_scalar_normalizes_true(
+            raw_provider_penetration
+        )
+        raw_optional_true: dict[str, bool] = {}
+        raw_optional_claim_created: dict[str, bool] = {}
+        for optional_field in ("body_stuck", "active_leg_trapped"):
+            try:
+                optional_value = raw.get(optional_field)
+            except Exception:
+                optional_value = None
+            raw_optional_true[optional_field] = (
+                _safety_scalar_normalizes_true(optional_value)
+            )
+            raw_optional_claim_created[optional_field] = False
+            if raw_optional_true[optional_field]:
+                if optional_field == "body_stuck":
+                    self.body_stuck_detected = True
+                else:
+                    self.active_leg_trapped_detected = True
+                if not self.unverified_optional_runtime_true_claims[optional_field]:
+                    self.unverified_optional_runtime_true_claims[optional_field] = {
+                        "classification": (
+                            "UNVERIFIED_PROVIDER_"
+                            + optional_field.upper()
+                            + "_TRUE_CLAIM"
+                        ),
+                        "field": optional_field,
+                        "reported_sample_sim_step": None,
+                        "reported_source": "",
+                        "provider_payload_sha256": "",
+                        "provider_payload_sha256_error": "SNAPSHOT_PENDING",
+                        "combined_contact_sample_sha256": sample_sha256,
+                    }
+                    raw_optional_claim_created[optional_field] = True
+                    self._optional_true_claim_capture_serial[optional_field] = (
+                        capture_serial
+                    )
+
+        # A provider-reported collision is a sticky safety claim as soon as it
+        # crosses this capture boundary.  Do not wait for the rest of the
+        # observation or hard-safety payload to be built: an unrelated
+        # malformed field (or a later COM/readback exception) must never turn
+        # a reported collision into terminal ``False`` evidence.
+        raw_true_claim_created = False
+        if raw_provider_collision_true and not self.unverified_provider_collision_claim:
+            # Commit the first exact ``True`` read before taking a mapping
+            # snapshot.  A custom/concurrently-mutated Mapping must not be
+            # able to report True through ``get`` and then silently turn it
+            # into False while ``dict(raw)`` is being constructed.
+            self.unverified_provider_collision_claim = {
+                "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                "reported_sample_sim_step": None,
+                "reported_source": "",
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "SNAPSHOT_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            raw_true_claim_created = True
+        raw_penetration_true_claim_created = False
+        if (
+            raw_provider_penetration_true
+            and not self.unverified_provider_penetration_claim
+        ):
+            self.unverified_provider_penetration_claim = {
+                "classification": "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM",
+                "reported_sample_sim_step": None,
+                "reported_source": "",
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "SNAPSHOT_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            raw_penetration_true_claim_created = True
+        try:
+            raw_mapping = dict(raw)
+        except BaseException as exc:
+            if raw_provider_collision_true:
+                claim = {
+                    "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                    "reported_sample_sim_step": None,
+                    "reported_source": "",
+                    "provider_payload_sha256": "",
+                    "provider_payload_sha256_error": (
+                        f"{type(exc).__name__}: {exc}"
+                    ),
+                    "combined_contact_sample_sha256": sample_sha256,
+                }
+                existing_claim = dict(self.unverified_provider_collision_claim)
+                if existing_claim and collision_claim_preexisting:
+                    raise RuntimeError(
+                        "runtime safety provider unverified collision claim drifted"
+                    ) from exc
+                self.unverified_provider_collision_claim = claim
+            if raw_provider_penetration_true:
+                claim = dict(self.unverified_provider_penetration_claim)
+                if penetration_claim_preexisting:
+                    raise RuntimeError(
+                        "runtime safety provider unverified penetration claim drifted"
+                    ) from exc
+                claim["provider_payload_sha256"] = ""
+                claim["provider_payload_sha256_error"] = (
+                    f"{type(exc).__name__}: {exc}"
+                )
+                self.unverified_provider_penetration_claim = claim
+            for optional_field in ("body_stuck", "active_leg_trapped"):
+                if raw_optional_true[optional_field]:
+                    if optional_claim_preexisting[optional_field]:
+                        raise RuntimeError(
+                            "runtime safety provider unverified optional claim drifted"
+                        ) from exc
+                    claim = dict(
+                        self.unverified_optional_runtime_true_claims[optional_field]
+                    )
+                    claim["provider_payload_sha256_error"] = (
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    self.unverified_optional_runtime_true_claims[optional_field] = (
+                        claim
+                    )
+            raise
+        snapshot_provider_collision = raw_mapping.get(
+            "dangerous_body_collision"
+        )
+        snapshot_provider_penetration = raw_mapping.get("severe_penetration")
+        snapshot_provider_collision_true = _safety_scalar_normalizes_true(
+            snapshot_provider_collision
+        )
+        snapshot_provider_penetration_true = _safety_scalar_normalizes_true(
+            snapshot_provider_penetration
+        )
+        snapshot_optional_true = {
+            field: _safety_scalar_normalizes_true(raw_mapping.get(field))
+            for field in ("body_stuck", "active_leg_trapped")
+        }
+        for optional_field, optional_true in snapshot_optional_true.items():
+            if optional_true:
+                if optional_field == "body_stuck":
+                    self.body_stuck_detected = True
+                else:
+                    self.active_leg_trapped_detected = True
+                if (
+                    raw_optional_claim_created[optional_field]
+                    or not self.unverified_optional_runtime_true_claims[
+                        optional_field
+                    ]
+                ):
+                    self.unverified_optional_runtime_true_claims[optional_field] = {
+                        "classification": (
+                            "UNVERIFIED_PROVIDER_"
+                            + optional_field.upper()
+                            + "_TRUE_CLAIM"
+                        ),
+                        "field": optional_field,
+                        "reported_sample_sim_step": (
+                            raw_mapping.get(f"{optional_field}_sample_sim_step")
+                        ),
+                        "reported_source": (
+                            raw_mapping.get(f"{optional_field}_source")
+                            if type(raw_mapping.get(f"{optional_field}_source"))
+                            is str
+                            else ""
+                        ),
+                        "provider_payload_sha256": "",
+                        "provider_payload_sha256_error": "NORMALIZATION_PENDING",
+                        "combined_contact_sample_sha256": sample_sha256,
+                    }
+                    self._optional_true_claim_capture_serial[optional_field] = (
+                        capture_serial
+                    )
+            if raw_optional_true[optional_field] and not optional_true:
+                claim = dict(
+                    self.unverified_optional_runtime_true_claims[optional_field]
+                )
+                claim["provider_payload_sha256_error"] = ""
+                claim["provider_contract_error"] = (
+                    f"provider {optional_field} changed while the mapping "
+                    "snapshot was captured"
+                )
+                self.unverified_optional_runtime_true_claims[optional_field] = claim
+                raise RuntimeError(
+                    f"runtime safety provider true {optional_field} claim "
+                    "drifted during snapshot"
+                )
+        snapshot_true_claim_created = False
+        if (
+            snapshot_provider_collision_true
+            and (
+                raw_true_claim_created
+                or not self.unverified_provider_collision_claim
+            )
+        ):
+            # ``Mapping.get`` is not an authoritative snapshot: a custom or
+            # concurrently-mutated mapping may return False there and expose
+            # True while ``dict(raw)`` is materialized.  Commit the exact True
+            # snapshot before recursively normalizing any unrelated field.
+            self.unverified_provider_collision_claim = {
+                "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                "reported_sample_sim_step": (
+                    raw_mapping.get("sample_sim_step")
+                    if type(raw_mapping.get("sample_sim_step")) is int
+                    else None
+                ),
+                "reported_source": (
+                    raw_mapping.get("source")
+                    if type(raw_mapping.get("source")) is str
+                    else ""
+                ),
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "NORMALIZATION_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            snapshot_true_claim_created = True
+        snapshot_penetration_true_claim_created = False
+        if (
+            snapshot_provider_penetration_true
+            and (
+                raw_penetration_true_claim_created
+                or not self.unverified_provider_penetration_claim
+            )
+        ):
+            self.unverified_provider_penetration_claim = {
+                "classification": "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM",
+                "reported_sample_sim_step": (
+                    raw_mapping.get("sample_sim_step")
+                    if type(raw_mapping.get("sample_sim_step")) is int
+                    else None
+                ),
+                "reported_source": (
+                    raw_mapping.get("source")
+                    if type(raw_mapping.get("source")) is str
+                    else ""
+                ),
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "NORMALIZATION_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            snapshot_penetration_true_claim_created = True
+        if raw_provider_collision_true and not snapshot_provider_collision_true:
+            if not collision_claim_preexisting:
+                self.unverified_provider_collision_claim = {
+                    "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                    "reported_sample_sim_step": raw_mapping.get("sample_sim_step"),
+                    "reported_source": str(raw_mapping.get("source", "") or ""),
+                    "provider_payload_sha256": "",
+                    "provider_payload_sha256_error": "",
+                    "provider_contract_error": (
+                        "provider dangerous_body_collision changed while the "
+                        "mapping snapshot was captured"
+                    ),
+                    "combined_contact_sample_sha256": sample_sha256,
+                }
+            raise RuntimeError(
+                "runtime safety provider true collision claim drifted during snapshot"
+            )
+        if (
+            raw_provider_penetration_true
+            and not snapshot_provider_penetration_true
+        ):
+            if not penetration_claim_preexisting:
+                self.unverified_provider_penetration_claim = {
+                    "classification": "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM",
+                    "reported_sample_sim_step": raw_mapping.get("sample_sim_step"),
+                    "reported_source": str(raw_mapping.get("source", "") or ""),
+                    "provider_payload_sha256": "",
+                    "provider_payload_sha256_error": "",
+                    "provider_contract_error": (
+                        "provider severe_penetration changed while the mapping snapshot was captured"
+                    ),
+                    "combined_contact_sample_sha256": sample_sha256,
+                }
+            raise RuntimeError(
+                "runtime safety provider true penetration claim drifted during snapshot"
+            )
+        try:
+            result = dict(_jsonable(raw_mapping) or {})
+        except BaseException as exc:
+            if (
+                raw_provider_collision_true
+                or snapshot_provider_collision_true
+            ) and not collision_claim_preexisting:
+                claim = dict(self.unverified_provider_collision_claim)
+                claim["provider_payload_sha256"] = ""
+                claim["provider_payload_sha256_error"] = (
+                    f"{type(exc).__name__}: {exc}"
+                )
+                self.unverified_provider_collision_claim = claim
+            if (
+                raw_provider_penetration_true
+                or snapshot_provider_penetration_true
+            ) and not penetration_claim_preexisting:
+                claim = dict(self.unverified_provider_penetration_claim)
+                claim["provider_payload_sha256"] = ""
+                claim["provider_payload_sha256_error"] = (
+                    f"{type(exc).__name__}: {exc}"
+                )
+                self.unverified_provider_penetration_claim = claim
+            for optional_field in ("body_stuck", "active_leg_trapped"):
+                if (
+                    raw_optional_true[optional_field]
+                    or snapshot_optional_true[optional_field]
+                ) and not optional_claim_preexisting[optional_field]:
+                    claim = dict(
+                        self.unverified_optional_runtime_true_claims[optional_field]
+                    )
+                    claim["provider_payload_sha256_error"] = (
+                        f"{type(exc).__name__}: {exc}"
+                    )
+                    self.unverified_optional_runtime_true_claims[optional_field] = (
+                        claim
+                    )
+            raise
+        provider_available = result.get("available")
+        provider_step = result.get("sample_sim_step")
+        provider_collision = result.get("dangerous_body_collision")
+        provider_penetration = result.get("severe_penetration")
+        provider_source = str(result.get("source", "") or "").strip()
+        if (
+            raw_provider_collision_true
+            or snapshot_provider_collision_true
+        ) and provider_collision is not True:
+            if not collision_claim_preexisting:
+                self.unverified_provider_collision_claim = {
+                    "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                    "reported_sample_sim_step": provider_step,
+                    "reported_source": provider_source,
+                    "provider_payload_sha256": "",
+                    "provider_payload_sha256_error": "",
+                    "provider_contract_error": (
+                        "provider dangerous_body_collision changed while the "
+                        "mapping snapshot was captured"
+                    ),
+                    "combined_contact_sample_sha256": sample_sha256,
+                }
+            raise RuntimeError(
+                "runtime safety provider true collision claim drifted during snapshot"
+            )
+        if (
+            raw_provider_penetration_true
+            or snapshot_provider_penetration_true
+        ) and provider_penetration is not True:
+            if not penetration_claim_preexisting:
+                self.unverified_provider_penetration_claim = {
+                    "classification": "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM",
+                    "reported_sample_sim_step": provider_step,
+                    "reported_source": provider_source,
+                    "provider_payload_sha256": "",
+                    "provider_payload_sha256_error": "",
+                    "provider_contract_error": (
+                        "provider severe_penetration changed while the mapping snapshot was captured"
+                    ),
+                    "combined_contact_sample_sha256": sample_sha256,
+                }
+            raise RuntimeError(
+                "runtime safety provider true penetration claim drifted during snapshot"
+            )
+        penetration_provisional_claim_created = bool(
+            raw_penetration_true_claim_created
+            or snapshot_penetration_true_claim_created
+        )
+        if provider_penetration is True and (
+            penetration_provisional_claim_created
+            or not self.unverified_provider_penetration_claim
+        ):
+            self.unverified_provider_penetration_claim = {
+                "classification": "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM",
+                "reported_sample_sim_step": provider_step,
+                "reported_source": provider_source,
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "VALIDATION_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            penetration_provisional_claim_created = True
+        provisional_true_claim_created = bool(
+            raw_true_claim_created or snapshot_true_claim_created
+        )
+        if provider_collision is True and provisional_true_claim_created:
+            # The snapshot confirmed the preliminary exact-True read.  Enrich
+            # the already-durable claim with snapshot provenance before any
+            # remaining contract validation or canonical hashing can fail.
+            self.unverified_provider_collision_claim = {
+                "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                "reported_sample_sim_step": provider_step,
+                "reported_source": provider_source,
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "VALIDATION_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+        elif provider_collision is True and not self.unverified_provider_collision_claim:
+            # Persist the raw safety assertion before validating or hashing
+            # any other provider field.  Even a hostile/non-canonical extra
+            # value must not make a reported collision disappear from the
+            # durable terminal classification.
+            self.unverified_provider_collision_claim = {
+                "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                "reported_sample_sim_step": provider_step,
+                "reported_source": provider_source,
+                "provider_payload_sha256": "",
+                "provider_payload_sha256_error": "VALIDATION_PENDING",
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            provisional_true_claim_created = True
+        provider_true_contract_error = ""
+        if provider_collision is True or provider_penetration is True:
+            try:
+                self._validate_deployment_safety_evidence(
+                    result,
+                    expected_sim_step=sim_step,
+                    require_clear=False,
+                )
+            except BaseException as exc:
+                provider_true_contract_error = f"{type(exc).__name__}: {exc}"
+        if (
+            provider_collision is True or provider_penetration is True
+        ) and provider_true_contract_error:
+            try:
+                provider_payload_sha256 = _canonical_json_sha256(result)
+                provider_payload_sha256_error = ""
+            except BaseException as exc:
+                provider_payload_sha256 = ""
+                provider_payload_sha256_error = f"{type(exc).__name__}: {exc}"
+            claim = {
+                "classification": "UNVERIFIED_PROVIDER_TRUE_CLAIM",
+                "reported_sample_sim_step": provider_step,
+                "reported_source": provider_source,
+                "provider_payload_sha256": provider_payload_sha256,
+                "provider_payload_sha256_error": provider_payload_sha256_error,
+                "provider_contract_error": provider_true_contract_error,
+                "combined_contact_sample_sha256": sample_sha256,
+            }
+            existing_claim = dict(self.unverified_provider_collision_claim)
+            if (
+                existing_claim
+                and not provisional_true_claim_created
+                and existing_claim != claim
+            ):
+                raise RuntimeError(
+                    "runtime safety provider unverified collision claim drifted"
+                )
+            if provider_collision is True:
+                if provisional_true_claim_created:
+                    self.unverified_provider_collision_claim = claim
+            if provider_penetration is True:
+                if penetration_provisional_claim_created:
+                    self.unverified_provider_penetration_claim = {
+                        **claim,
+                        "classification": (
+                            "UNVERIFIED_PROVIDER_SEVERE_PENETRATION_TRUE_CLAIM"
+                        ),
+                    }
+            raise RuntimeError(
+                "runtime safety provider true collision claim is not a valid current-tick contract"
+                if provider_collision is True
+                else "runtime safety provider true penetration claim is not a valid current-tick contract"
+            )
+        if provider_available not in (None, False, True) or type(
+            provider_available
+        ) not in (bool, type(None)):
+            raise RuntimeError("runtime safety provider availability is malformed")
+        if provider_collision not in (None, False, True) or type(
+            provider_collision
+        ) not in (bool, type(None)):
+            raise RuntimeError("runtime dangerous-body collision value is malformed")
+        if provider_available is True and (
+            type(provider_step) is not int or provider_step != sim_step
+        ):
+            raise RuntimeError("runtime safety provider sample is stale")
+        if provider_step is not None and (
+            type(provider_step) is not int or provider_step != sim_step
+        ):
+            raise RuntimeError("runtime safety provider sample step mismatch")
+        result["dangerous_body_collision"] = bool(
+            contact_collision or provider_collision is True
+        )
+        result.setdefault("sample_sim_step", sim_step)
+        result["source"] = ";".join(
+            part
+            for part in (provider_source, contact_source)
+            if part
+        )
+        result["combined_contact_sample_sha256"] = sample_sha256
+        result["nonwheel_contact_row_count"] = len(rows)
+        result["filtered_nonwheel_collision"] = contact_collision
+        result["provider_dangerous_body_collision"] = provider_collision
+        result["provider_collision_available"] = provider_available is True
+        result["provider_collision_source"] = provider_source
+        result["provider_collision_sample_sim_step"] = provider_step
+        if provider_collision is True:
+            detection = {
+                "sample_sim_step": sim_step,
+                "source": result["source"],
+                "combined_contact_sample_sha256": sample_sha256,
+                "runtime_safety_evidence_sha256": _canonical_json_sha256(result),
+            }
+            if not self.dangerous_collision_detection_evidence:
+                self.dangerous_collision_detection_evidence = detection
+            self.dangerous_collision_detected = True
+            if provisional_true_claim_created:
+                self.unverified_provider_collision_claim = {}
+        if provider_penetration is True:
+            penetration_detection = {
+                "sample_sim_step": sim_step,
+                "source": result["source"],
+                "combined_contact_sample_sha256": sample_sha256,
+                "runtime_safety_evidence_sha256": _canonical_json_sha256(
+                    result
+                ),
+            }
+            if not self.severe_penetration_detection_evidence:
+                self.severe_penetration_detection_evidence = (
+                    penetration_detection
+                )
+            self.severe_penetration_detected = True
+            if penetration_provisional_claim_created:
+                self.unverified_provider_penetration_claim = {}
+        return result
 
     def _normalize_optional_runtime_bool(
         self,
@@ -2496,7 +6425,31 @@ class WorkerMacroFSMSession:
                 )
 
         tracker = self.optional_runtime_evidence[field]
+        last_step = tracker.get("last_sample_sim_step")
+        if last_step is not None:
+            if sample_sim_step < int(last_step):
+                raise RuntimeError(f"runtime {field} sample step regressed")
+            if sample_sim_step == int(last_step):
+                if (
+                    tracker.get("last_value") is not value
+                    or tracker.get("last_available") is not available
+                    or (available and tracker.get("source") != source)
+                ):
+                    raise RuntimeError(
+                        f"runtime {field} same-step evidence drifted"
+                    )
+                return {
+                    field: value,
+                    available_key: available,
+                    source_key: source,
+                    step_key: sample_sim_step,
+                }
         tracker["sample_count"] = int(tracker["sample_count"]) + 1
+        if tracker.get("first_sample_sim_step") is None:
+            tracker["first_sample_sim_step"] = sample_sim_step
+        tracker["last_sample_sim_step"] = sample_sim_step
+        tracker["last_value"] = value
+        tracker["last_available"] = available
         if available:
             prior_source = str(tracker.get("source", "") or "")
             if prior_source and prior_source != source:
@@ -2505,6 +6458,37 @@ class WorkerMacroFSMSession:
             tracker["available_sample_count"] = int(
                 tracker["available_sample_count"]
             ) + 1
+            tracker["detected_sample_count"] = int(
+                tracker["detected_sample_count"]
+            ) + int(value is True)
+            if value is True:
+                if not tracker.get("first_detection_evidence"):
+                    tracker["first_detection_evidence"] = {
+                        "sample_sim_step": sample_sim_step,
+                        "source": source,
+                        "combined_contact_sample_sha256": str(
+                            evidence.get(
+                                "combined_contact_sample_sha256", ""
+                            )
+                            or ""
+                        ),
+                        "runtime_safety_evidence_sha256": (
+                            _canonical_json_sha256(evidence)
+                        ),
+                    }
+                if field == "body_stuck":
+                    self.body_stuck_detected = True
+                elif field == "active_leg_trapped":
+                    self.active_leg_trapped_detected = True
+                # The complete current-tick contract has now been validated
+                # and recorded in the optional evidence ledger.  It safely
+                # supersedes the provisional pre-normalization True claim.
+                if (
+                    self._optional_true_claim_capture_serial.get(field)
+                    == self._runtime_safety_capture_serial
+                ):
+                    self.unverified_optional_runtime_true_claims[field] = {}
+                    self._optional_true_claim_capture_serial[field] = None
         return {
             field: value,
             available_key: available,
@@ -2520,13 +6504,52 @@ class WorkerMacroFSMSession:
         available_count = int(
             tracker.get("available_sample_count", 0) or 0
         )
-        complete_live_coverage = bool(
-            sample_count > 0 and available_count == sample_count
+        detected_count = int(
+            tracker.get("detected_sample_count", 0) or 0
         )
-        available = bool(detected or complete_live_coverage)
-        value = True if detected else False if complete_live_coverage else None
+        terminal_step = int(getattr(self.adapter, "sim_steps", -1))
+        terminal_time = float(
+            getattr(self.adapter, "sim_time", float("nan"))
+        )
+        first_step = tracker.get("first_sample_sim_step")
+        last_step = tracker.get("last_sample_sim_step")
+        unverified_true_claim = dict(
+            self.unverified_optional_runtime_true_claims[field]
+        )
+        terminal_time_valid = bool(
+            terminal_step >= 0
+            and math.isfinite(terminal_time)
+            and self.physics_dt_s is not None
+            and math.isclose(
+                terminal_time,
+                terminal_step * float(self.physics_dt_s),
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, float(self.physics_dt_s) * 1.0e-6),
+            )
+        )
+        complete_live_coverage = bool(
+            sample_count > 0
+            and available_count == sample_count
+            and detected_count == 0
+            and type(first_step) is int
+            and type(last_step) is int
+            and int(last_step) - int(first_step) + 1 == sample_count
+            and int(last_step) == terminal_step
+            and terminal_time_valid
+            and not unverified_true_claim
+        )
+        effective_detected = bool(
+            detected or detected_count > 0 or unverified_true_claim
+        )
+        available = bool(effective_detected or complete_live_coverage)
+        value = True if effective_detected else False if complete_live_coverage else None
         source = (
-            str(tracker.get("source", "") or "")
+            str(
+                unverified_true_claim.get("reported_source", "")
+                or unverified_true_claim.get("classification", "")
+                or tracker.get("source", "")
+                or ""
+            )
             if available
             else UNAVAILABLE_RUNTIME_EVIDENCE_SOURCE
         )
@@ -2537,7 +6560,17 @@ class WorkerMacroFSMSession:
             f"{field}_validation_source": source,
             f"{field}_sample_count": sample_count,
             f"{field}_available_sample_count": available_count,
+            f"{field}_detected_sample_count": detected_count,
             f"{field}_complete_live_coverage": complete_live_coverage,
+            f"{field}_first_sample_sim_step": first_step,
+            f"{field}_last_sample_sim_step": last_step,
+            f"{field}_terminal_adapter_sim_step": terminal_step,
+            f"{field}_terminal_adapter_sim_time_s": terminal_time,
+            f"{field}_terminal_time_identity_valid": terminal_time_valid,
+            f"{field}_unverified_true_claim": unverified_true_claim,
+            f"{field}_detection_evidence": dict(
+                tracker.get("first_detection_evidence", {}) or {}
+            ),
         }
 
     @staticmethod
@@ -2730,6 +6763,46 @@ class WorkerMacroFSMSession:
                 abs_tol=DRIVE_READBACK_TOLERANCE,
             ):
                 raise RuntimeError(f"actual servo drive-target readback drift at {name}")
+        standing_pose_deg_by_servo = {
+            name: math.degrees(float(servo_command[name]))
+            - float(JOINT_COMMAND_SIGN[name]) * float(command_servos[name])
+            for name in SERVO_JOINT_NAMES
+        }
+        servo_command_transform = {
+            "schema_version": _SERVO_COMMAND_TRANSFORM_SCHEMA,
+            "standing_pose_deg_by_servo": standing_pose_deg_by_servo,
+            "command_sign_by_servo": {
+                name: float(JOINT_COMMAND_SIGN[name])
+                for name in SERVO_JOINT_NAMES
+            },
+        }
+        if not self.durable_servo_command_transform:
+            self.durable_servo_command_transform = dict(
+                _jsonable(servo_command_transform)
+            )
+        elif not _strict_json_equal(
+            self.durable_servo_command_transform,
+            servo_command_transform,
+        ):
+            raise RuntimeError(
+                "servo command transform changed within one worker session"
+            )
+        if pending is not None and type(
+            pending.get("feedback_recovery_action_index")
+        ) is int:
+            transform = getattr(adapter, "command_to_actual_target_deg", None)
+            if not callable(transform) or any(
+                not math.isclose(
+                    standing_pose_deg_by_servo[name],
+                    float(transform(name, 0.0)),
+                    rel_tol=0.0,
+                    abs_tol=DRIVE_READBACK_TOLERANCE,
+                )
+                for name in SERVO_JOINT_NAMES
+            ):
+                raise RuntimeError(
+                    "feedback servo command transform differs from the live adapter calibration"
+                )
         wheel_command = self._strict_finite_map(
             evidence.get("wheel_target_velocity_by_name"),
             names=WHEEL_JOINT_NAMES,
@@ -2818,10 +6891,27 @@ class WorkerMacroFSMSession:
                     raise RuntimeError("pending command epoch identity mismatch at N+1")
         return {
             "sim_step": int(expected_sim_step),
-            "command_epoch": None if pending is None else pending.get("command_epoch"),
-            "batch_id": "" if pending is None else str(pending.get("batch_id", "")),
+            "command_epoch": (
+                self.last_verified_command_epoch
+                if pending is None
+                else pending.get("command_epoch")
+            ),
+            "batch_id": (
+                str(self.last_target_readback.get("batch_id", "") or "")
+                if pending is None
+                else str(pending.get("batch_id", ""))
+            ),
             "canonical_servo_targets_deg": command_servos,
             "canonical_wheel_targets_rad_s": command_wheels,
+            "servo_command_transform": servo_command_transform,
+            "servo_command_transform_sha256": _canonical_json_sha256(
+                servo_command_transform
+            ),
+            # This preimage is copied from the independently validated adapter
+            # command-target layer above.  Persisting it lets the durable
+            # feedback ledger bind the exact PhysX servo readback rather than
+            # accepting an arbitrary finite 8-map after the live check.
+            "expected_servo_drive_targets_rad": servo_command,
             "actual_servo_drive_targets_rad": servo_readback,
             "actual_wheel_drive_targets_rad_s": wheel_readback,
             "adapter_runtime_instance_id": evidence.get("adapter_runtime_instance_id"),
@@ -2932,6 +7022,47 @@ class WorkerMacroFSMSession:
             dispatch_row["n_plus_one_verified"] = True
             dispatch_row["n_plus_one_verified_sim_step"] = expected_step
             dispatch_row["n_plus_one_readback_sha256"] = readback_sha256
+            feedback_action_index = pending.get(
+                "feedback_recovery_action_index"
+            )
+            dispatch_is_feedback = (
+                dict(dispatch_row.get("command_provenance", {}) or {}).get(
+                    "kind"
+                )
+                == "FEEDBACK_RECOVERY"
+            )
+            if (feedback_action_index is not None) != dispatch_is_feedback:
+                raise RuntimeError(
+                    "pending feedback recovery/readback identity is incomplete"
+                )
+            if feedback_action_index is not None:
+                if (
+                    type(feedback_action_index) is not int
+                    or feedback_action_index < 0
+                    or feedback_action_index
+                    >= len(self.feedback_recovery_action_rows)
+                ):
+                    raise RuntimeError(
+                        "pending feedback recovery action index is invalid"
+                    )
+                action_row = self.feedback_recovery_action_rows[
+                    feedback_action_index
+                ]
+                if (
+                    action_row.get("batch_id") != pending["batch_id"]
+                    or action_row.get("dispatch_index") != dispatch_index
+                    or action_row.get("n_plus_one_verified") is not False
+                    or action_row.get("expected_n_plus_one_sim_step")
+                    != expected_step
+                ):
+                    raise RuntimeError(
+                        "pending feedback recovery action/readback identity drifted"
+                    )
+                action_row["n_plus_one_verified"] = True
+                action_row["n_plus_one_verified_sim_step"] = expected_step
+                action_row["n_plus_one_readback_sha256"] = readback_sha256
+                action_row["n_plus_one_readback"] = dict(_jsonable(evidence))
+                self.feedback_recovery_verified_action_count += 1
             if consumption_row is not None:
                 consumption_row["n_plus_one_verified"] = True
                 consumption_row["n_plus_one_verified_sim_step"] = expected_step
@@ -3004,6 +7135,7 @@ class WorkerMacroFSMSession:
         self.pending_readback = None
         if kind == "boundary":
             self.boundary_readback_verified = True
+            self.boundary_readback = dict(_jsonable(evidence))
         elif kind == "safe_stop":
             self.safe_stop_readback = dict(_jsonable(evidence))
             self.safe_stop_readback_sha256 = _canonical_json_sha256(
@@ -3026,9 +7158,221 @@ class WorkerMacroFSMSession:
         payload["physx_servo_drive_target_readback_rad"] = servo
         payload["physx_wheel_drive_target_readback_rad_s"] = wheels
 
+    def _active_centroidal_leg(self) -> str:
+        try:
+            leg = _enum_text(
+                self.bundle.graph.get(self.last_macro_state).active_leg
+            )
+        except Exception:
+            return ""
+        return leg if leg in LEGS else ""
+
+    def _build_centroidal_support_evidence(
+        self,
+        adapter: Any,
+        *,
+        active_leg: str,
+    ) -> CentroidalSupportEvidence:
+        sim_step = int(getattr(adapter, "sim_steps", -1))
+        sim_time = float(getattr(adapter, "sim_time", float("nan")))
+        frame = self.filtered_contact_frame
+        sample = self.filtered_contact_sample
+        if (
+            frame is None
+            or frame.physics_tick != sim_step
+            or self.filtered_contact_last_sim_step != sim_step
+            or sample.get("sample_sim_step") != sim_step
+            or not math.isclose(
+                frame.sim_time_s,
+                sim_time,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, frame.physics_dt_s * 1.0e-6),
+            )
+        ):
+            raise RuntimeError("centroidal evidence lacks the current combined contact sample")
+        expected_body_names = tuple(getattr(adapter.robot, "body_names", ()))
+        com = self.filtered_contact_com
+        if (
+            com is None
+            or not com.available
+            or com.physics_tick != sim_step
+            or com.body_names != expected_body_names
+        ):
+            raise RuntimeError(
+                "centroidal evidence lacks a current whole-body COM measurement"
+            )
+        angular_rate = measure_isaac_centroidal_angular_momentum_rate(
+            adapter,
+            com,
+            env_id=0,
+            expected_body_names=expected_body_names,
+        )
+        thresholds = frame.thresholds
+        support = assess_support_region(com, frame, thresholds=thresholds)
+        wrench = assess_contact_wrench_feasibility(
+            com,
+            frame,
+            angular_momentum_rate=angular_rate,
+        )
+        diagonal = assess_primary_diagonal_support(
+            com,
+            frame,
+            active_swing_leg=active_leg,
+            wrench_feasibility=wrench,
+            thresholds=thresholds,
+            require_wrench_feasibility=True,
+        )
+        evidence = CentroidalSupportEvidence.create(
+            sim_step=sim_step,
+            physics_time_s=sim_time,
+            physics_dt_s=float(self.physics_dt_s),
+            whole_body_com=com,
+            centroidal_angular_momentum_rate=angular_rate,
+            wheel_contacts=frame,
+            support_region=support,
+            contact_wrench_feasibility=wrench,
+            diagonal_support=diagonal,
+        )
+        # Reparse the JSON boundary so the controller never receives an
+        # envelope that only passed in-memory dataclass construction.
+        reparsed = CentroidalSupportEvidence.from_mapping(evidence.to_mapping())
+        self.last_centroidal_support_evidence = reparsed
+        return reparsed
+
+    @staticmethod
+    def _command_space_servo_state(
+        adapter: Any,
+        joint_q: Mapping[str, float],
+        joint_qd: Mapping[str, float],
+    ) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
+        positions: dict[str, float] = {}
+        velocities: dict[str, float] = {}
+        margins: dict[str, float] = {}
+        records = dict(getattr(adapter, "safe_joint_limit_records", {}) or {})
+        for name in SERVO_JOINT_NAMES:
+            actual_position_deg = math.degrees(float(joint_q[name]))
+            actual_velocity_deg_s = math.degrees(float(joint_qd[name]))
+            zero_actual_deg = float(adapter.command_to_actual_target_deg(name, 0.0))
+            sign = float(JOINT_COMMAND_SIGN[name])
+            positions[name] = sign * (actual_position_deg - zero_actual_deg)
+            velocities[name] = sign * actual_velocity_deg_s
+            record = records.get(name)
+            if not isinstance(record, Mapping):
+                raise RuntimeError(
+                    f"feedback recovery lacks safe joint-limit record for {name}"
+                )
+            lower = float(record.get("min_rad", float("nan")))
+            upper = float(record.get("max_rad", float("nan")))
+            actual = float(joint_q[name])
+            margin = min(actual - lower, upper - actual)
+            if not all(math.isfinite(value) for value in (lower, upper, actual, margin)):
+                raise RuntimeError(f"feedback recovery joint margin is non-finite at {name}")
+            margins[name] = max(0.0, math.degrees(margin))
+        return positions, velocities, margins
+
+    def _feedback_recovery_observation_mapping(
+        self,
+        *,
+        adapter: Any,
+        joint_q: Mapping[str, float],
+        joint_qd: Mapping[str, float],
+        payload: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        # Importing the controller remains lazy for pre-Isaac CLI imports.
+        from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+        readback = dict(self.last_target_readback or {})
+        current_sim_step = int(getattr(adapter, "sim_steps", -1))
+        if (
+            type(readback.get("sim_step")) is not int
+            or readback.get("sim_step") != current_sim_step
+        ):
+            raise RuntimeError(
+                "feedback recovery PhysX readback is not from the current physics tick"
+            )
+        readback_servos = self._validated_target_map(
+            readback.get("canonical_servo_targets_deg"),
+            names=SERVO_JOINT_NAMES,
+            label="feedback recovery PhysX readback servo targets",
+        )
+        readback_wheels = self._validated_target_map(
+            readback.get("canonical_wheel_targets_rad_s"),
+            names=WHEEL_JOINT_NAMES,
+            label="feedback recovery PhysX readback wheel targets",
+        )
+        measured_positions, measured_velocities, margins = (
+            self._command_space_servo_state(adapter, joint_q, joint_qd)
+        )
+        # The observed epoch is the epoch of the current, independently
+        # verified physical target map.  A post-dispatch bookkeeping failure
+        # can leave ``last_epoch`` uncommitted even though PhysX accepted and
+        # N+1 verified the batch; using that stale logical value would prevent
+        # the mandatory safe-stop from ever being observed or closed.
+        observed_epoch = int(
+            self.last_verified_command_epoch
+            if self.last_verified_command_epoch is not None
+            else 0
+        )
+        verified_epoch = (
+            observed_epoch
+            if self.pending_readback is None
+            and self.last_verified_command_epoch == observed_epoch
+            else None
+        )
+        readback_epoch = readback.get("command_epoch")
+        if readback_epoch is not None and (
+            type(readback_epoch) is not int or readback_epoch != observed_epoch
+        ):
+            raise RuntimeError(
+                "feedback recovery PhysX readback command epoch is not current"
+            )
+        base_position = payload.get("base_position_m")
+        if not isinstance(base_position, Mapping) or set(base_position) != {
+            "x",
+            "y",
+            "z",
+        }:
+            raise RuntimeError("feedback recovery base position is not exact")
+        value = FeedbackRecoveryObservation.create(
+            sim_step=int(getattr(adapter, "sim_steps", -1)),
+            physics_time_s=float(getattr(adapter, "sim_time", float("nan"))),
+            observed_command_epoch=observed_epoch,
+            n_plus_one_verified=verified_epoch is not None,
+            verified_command_epoch=verified_epoch,
+            readback_servo_targets_deg=readback_servos,
+            readback_wheel_targets_rad_s=readback_wheels,
+            measured_servo_positions_deg=measured_positions,
+            measured_servo_velocities_deg_s=measured_velocities,
+            joint_limit_margin_deg=margins,
+            base_position_m=[
+                base_position["x"],
+                base_position["y"],
+                base_position["z"],
+            ],
+            base_roll_rad=payload.get("base_roll_rad"),
+            base_pitch_rad=payload.get("base_pitch_rad"),
+            base_angular_velocity_rad_s=payload.get("root_angular_velocity_w"),
+            wheel_center_w_m=payload.get("wheel_center_w_m"),
+            wheel_front_face_clearance_m=payload.get(
+                "wheel_front_face_clearance_m"
+            ),
+            wheel_top_clearance_m=payload.get("wheel_top_clearance_m"),
+            obstacle_front_face_x_m=payload.get("obstacle_front_face_x_m"),
+            obstacle_top_z_m=payload.get("obstacle_top_z_m"),
+            body_crossed_front_face=payload.get("body_crossed_front_face"),
+            final_recoverable=payload.get("final_recoverable"),
+            posture_complete=payload.get("posture_complete"),
+        )
+        return FeedbackRecoveryObservation.from_mapping(value.to_mapping()).to_mapping()
+
     def _observation_payload(self, adapter: Any) -> dict[str, Any]:
-        safety_evidence = self._capture_runtime_safety_evidence(adapter)
         sim_step = int(getattr(adapter, "sim_steps", 0) or 0)
+        if self.filtered_contact_last_sim_step != sim_step:
+            self._refresh_filtered_contact_evidence(adapter)
+        # Runtime safety may consume the same sensor/cache surface.  Capture it
+        # only after the combined wheel/non-wheel bank has atomically published
+        # the current completed physics tick, never before a stale refresh.
+        safety_evidence = self._capture_runtime_safety_evidence(adapter)
         body_stuck_evidence = self._normalize_optional_runtime_bool(
             safety_evidence,
             field="body_stuck",
@@ -3103,13 +7447,23 @@ class WorkerMacroFSMSession:
             if self.started_sim_time_s is None
             else max(0.0, float(getattr(adapter, "sim_time", 0.0)) - self.started_sim_time_s)
         )
-        active_leg = ""
-        try:
-            active_leg = _enum_text(
-                self.bundle.graph.get(self.last_macro_state).active_leg
+        active_leg = self._active_centroidal_leg()
+        centroidal = self._build_centroidal_support_evidence(
+            adapter,
+            active_leg=active_leg,
+        )
+        contact_by_leg = centroidal.wheel_contacts.by_leg()
+        measured_contact_loads = {
+            leg: (
+                float(contact_by_leg[leg].normal_load_n or 0.0)
+                if contact_by_leg[leg].evidence_available
+                else None
             )
-        except Exception:
-            active_leg = ""
+            for leg in LEGS
+        }
+        physical_support_legs = tuple(
+            leg for leg in LEGS if contact_by_leg[leg].support_qualified
+        )
         if self.last_macro_state != self.active_traversal_state:
             self.active_traversal_state = self.last_macro_state
             self.active_traversal_leg = active_leg
@@ -3174,7 +7528,7 @@ class WorkerMacroFSMSession:
                     phase_record["top_seen"] = True
                     phase_record["top_first_s"] = relative_s
         violation, limit_available = self._joint_limit_violation(adapter, joint_q)
-        support_legs = tuple(
+        geometry_support_legs = tuple(
             leg for leg, value in wheel_classes.items() if value not in {"AIR", "UNKNOWN"}
         )
         velocity_stable = bool(
@@ -3188,7 +7542,8 @@ class WorkerMacroFSMSession:
             and math.isfinite(pitch)
             and abs(roll) < math.radians(70.0)
             and abs(pitch) < math.radians(70.0)
-            and len(support_legs) >= 2
+            and centroidal.whole_body_com.available
+            and len(physical_support_legs) >= 2
         )
         stability = (
             "stable"
@@ -3244,9 +7599,10 @@ class WorkerMacroFSMSession:
             "wheel_contact_class": wheel_classes,
             "wheel_front_face_clearance_m": face_clearance,
             "wheel_top_clearance_m": top_clearance,
-            "wheel_contact_load_n": {leg: None for leg in LEGS},
-            "support_legs": support_legs,
-            "geometry_support_candidate_count": len(support_legs),
+            "wheel_contact_load_n": measured_contact_loads,
+            "support_legs": physical_support_legs,
+            "geometry_support_legs": geometry_support_legs,
+            "geometry_support_candidate_count": len(geometry_support_legs),
             "obstacle_front_face_x_m": obstacle.front_face_x_m,
             "obstacle_top_z_m": obstacle.top_z_m,
             "obstacle_rear_face_x_m": obstacle.rear_face_x_m,
@@ -3275,16 +7631,37 @@ class WorkerMacroFSMSession:
             "final_recoverable": recoverable,
             "posture_complete": bool(
                 stability == "stable"
-                and len(wheel_classes) == len(LEGS)
-                and all(value == "TOP" for value in wheel_classes.values())
+                and all(
+                    contact_by_leg[leg].measurement.surface_kind
+                    == "OBSTACLE_TOP"
+                    and contact_by_leg[leg].support_qualified
+                    for leg in LEGS
+                )
             ),
             "stability_state": stability,
             "final_velocity_stable": velocity_stable,
-            "filtered_contact_bank_enabled": False,
-            "wheel_contact_load_available": False,
-            "com_measurement_available": False,
-            "com_proxy_source": "ROOT_POSITION_AND_WHEEL_GEOMETRY",
+            "filtered_contact_bank_enabled": True,
+            "filtered_contact_sample": dict(
+                _jsonable(self.filtered_contact_sample)
+            ),
+            "wheel_contact_load_available": centroidal.wheel_contacts.available,
+            "com_measurement_available": centroidal.whole_body_com.available,
+            "com_position_m": (
+                None
+                if not centroidal.whole_body_com.available
+                else list(centroidal.whole_body_com.position_w_m)
+            ),
+            "com_proxy_source": "",
+            "centroidal_support_evidence": centroidal.to_mapping(),
         }
+        payload["feedback_recovery_observation"] = (
+            self._feedback_recovery_observation_mapping(
+                adapter=adapter,
+                joint_q=joint_q,
+                joint_qd=joint_qd,
+                payload=payload,
+            )
+        )
         if self.residual_enabled:
             payload["nominal_servo_targets_deg"] = dict(
                 self.last_servo_targets
@@ -3370,9 +7747,34 @@ class WorkerMacroFSMSession:
                 value = runtime_safety.get(name)
                 if value is not None and type(value) is not bool:
                     raise RuntimeError(f"runtime safety evidence {name} is malformed")
+        collision_now = payload.get("dangerous_body_collision") is True
+        collision_detection: dict[str, Any] | None = None
+        if collision_now:
+            collision_source = runtime_safety.get("source")
+            collision_step = runtime_safety.get("sample_sim_step")
+            if (
+                type(collision_source) is not str
+                or not collision_source.strip()
+                or type(collision_step) is not int
+                or collision_step != payload.get("sim_step")
+            ):
+                raise RuntimeError(
+                    "dangerous collision detection lacks exact current provenance"
+                )
+            collision_detection = {
+                "sample_sim_step": collision_step,
+                "source": collision_source.strip(),
+                "combined_contact_sample_sha256": str(
+                    runtime_safety.get("combined_contact_sample_sha256", "") or ""
+                ),
+                "runtime_safety_evidence_sha256": _canonical_json_sha256(
+                    runtime_safety
+                ),
+            }
+        if collision_detection is not None and not self.dangerous_collision_detection_evidence:
+            self.dangerous_collision_detection_evidence = collision_detection
         self.dangerous_collision_detected = bool(
-            self.dangerous_collision_detected
-            or payload.get("dangerous_body_collision") is True
+            self.dangerous_collision_detected or collision_now
         )
         self.severe_penetration_detected = bool(
             self.severe_penetration_detected
@@ -4445,7 +8847,10 @@ class WorkerMacroFSMSession:
             "SUCCESS_ZERO_WHEELS",
             "COMPLETION_WHEEL_STOP",
         }
-        force_zero_residual = terminal
+        # Feedback recovery owns an independently bounded diagnostic target.
+        # A residual policy may observe it but must never perturb that probe or
+        # increment map.
+        force_zero_residual = terminal or provenance_kind == "FEEDBACK_RECOVERY"
         force_zero_wheels = bool(
             not terminal
             and (
@@ -4774,6 +9179,146 @@ class WorkerMacroFSMSession:
         if type(kind) is not str or kind not in _COMMAND_PROVENANCE_KINDS:
             raise RuntimeError("Macro decision command_provenance kind is invalid")
 
+        if kind == "FEEDBACK_RECOVERY":
+            if consumed is not False or target_changed is not True:
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY must change one target without consuming source"
+                )
+            for name, expected in {
+                "source_action_identity": "",
+                "source_version": "",
+                "source_segment_index": None,
+                "source_step_index": None,
+                "source_time_s": None,
+                "source_event_indices": [],
+                "commands": [],
+                "dispatch_kind": "",
+                "sequence_index": None,
+            }.items():
+                if not _strict_json_equal(provenance.get(name), expected):
+                    raise RuntimeError(
+                        "FEEDBACK_RECOVERY cannot claim Recording source identity"
+                    )
+            for name in (
+                "recovery_stage",
+                "recovery_action",
+                "recovery_leg",
+                "recovery_joint",
+            ):
+                if type(provenance.get(name)) is not str or not provenance[name]:
+                    raise RuntimeError(f"FEEDBACK_RECOVERY {name} is missing")
+            for name in (
+                "recovery_evidence_sha256",
+                "recovery_centroidal_evidence_sha256",
+                "recovery_feedback_observation_sha256",
+                "recovery_target_map_sha256",
+                "recovery_configuration_sha256",
+            ):
+                digest = provenance.get(name)
+                if (
+                    type(digest) is not str
+                    or len(digest) != 64
+                    or any(ch not in "0123456789abcdef" for ch in digest)
+                ):
+                    raise RuntimeError(f"FEEDBACK_RECOVERY {name} is invalid")
+            attempt = provenance.get("recovery_attempt")
+            leg = provenance.get("recovery_leg")
+            joint = provenance.get("recovery_joint")
+            stage = provenance.get("recovery_stage")
+            action = provenance.get("recovery_action")
+            direction_sign = provenance.get("recovery_direction_sign")
+            allowed_stage_actions = {
+                "SAFE_PROBE": "CONSERVATIVE_DIAGNOSTIC_PROBE",
+                "RETURN_TO_REFERENCE": "RETURN_TO_IMMUTABLE_REFERENCE",
+                "INCREMENT": "BOUNDED_DESCENT_INCREMENT",
+            }
+            leg_joints = {
+                "FL": {"front_left_hip", "front_left_knee"},
+                "FR": {"front_right_hip", "front_right_knee"},
+                "RL": {"rear_left_hip", "rear_left_knee"},
+                "RR": {"rear_right_hip", "rear_right_knee"},
+            }
+            if (
+                type(attempt) is not int
+                or attempt < 1
+                or leg not in leg_joints
+                or joint not in leg_joints[leg]
+                or type(direction_sign) is not int
+                or direction_sign not in {-1, 1}
+                or allowed_stage_actions.get(stage) != action
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY stage/action/sign/attempt/leg/joint is invalid"
+                )
+            centroidal_evidence = payload.get("centroidal_support_evidence")
+            feedback_observation = payload.get("feedback_recovery_observation")
+            if (
+                not isinstance(centroidal_evidence, Mapping)
+                or not isinstance(feedback_observation, Mapping)
+                or provenance["recovery_centroidal_evidence_sha256"]
+                != centroidal_evidence.get("payload_sha256")
+                or provenance["recovery_feedback_observation_sha256"]
+                != feedback_observation.get("payload_sha256")
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY does not bind the current physical evidence"
+                )
+            expected_evidence_sha256 = _canonical_json_sha256(
+                {
+                    "schema_version": "fsm50.feedback_recovery_evidence_binding.v1",
+                    "centroidal_support_evidence_sha256": provenance[
+                        "recovery_centroidal_evidence_sha256"
+                    ],
+                    "feedback_recovery_observation_sha256": provenance[
+                        "recovery_feedback_observation_sha256"
+                    ],
+                }
+            )
+            if provenance["recovery_evidence_sha256"] != expected_evidence_sha256:
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY composite evidence SHA is invalid"
+                )
+            expected_target_map_sha256 = _canonical_json_sha256(
+                {
+                    "schema_version": "fsm50.feedback_recovery_target_map.v1",
+                    "servo_targets_deg": dict(servos),
+                    "wheel_targets_rad_s": dict(wheels),
+                }
+            )
+            if (
+                provenance["recovery_target_map_sha256"]
+                != expected_target_map_sha256
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY target-map SHA differs from the 8+4 decision"
+                )
+            previous = self.last_servo_targets
+            changed_names = (
+                []
+                if previous is None
+                else [
+                    name
+                    for name in SERVO_JOINT_NAMES
+                    if float(servos[name]) != float(previous[name])
+                ]
+            )
+            if (
+                not self.outer_render_boundary_permit
+                or self.pending_readback is not None
+                or self.last_macro_state != "S10_POSTURE_RECOVERY"
+                or state != self.last_macro_state
+                or mapping.get("terminal") is not False
+                or list(mapping.get("transition_events", ()) or ())
+                or self.active_segment_completion_row_index is not None
+                or self.next_source_action_index != len(self.expected_source_actions)
+                or changed_names != [joint]
+                or any(float(value) != 0.0 for value in wheels.values())
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY differs from its source-free S10 boundary contract"
+                )
+            return provenance, None
+
         if kind != "SOURCE_ACTION":
             expected_empty = dict(_EMPTY_COMMAND_PROVENANCE)
             expected_empty["kind"] = kind
@@ -4984,7 +9529,12 @@ class WorkerMacroFSMSession:
             "n_plus_one_verified": False,
             "n_plus_one_verified_sim_step": None,
             "n_plus_one_readback_sha256": "",
-            "pre_action_verified_command_epoch": self.last_verified_command_epoch,
+            "pre_action_verified_command_epoch": self.last_target_readback.get(
+                "command_epoch"
+            ),
+            "pre_action_verified_readback": dict(
+                _jsonable(self.last_target_readback)
+            ),
             "pre_action_verified_readback_sha256": (
                 _canonical_json_sha256(self.last_target_readback)
                 if self.last_target_readback
@@ -4992,6 +9542,1148 @@ class WorkerMacroFSMSession:
             ),
         }
         return provenance, row
+
+    @staticmethod
+    def _feedback_target_maps_equal(
+        actual: Mapping[str, float], expected: Mapping[str, float]
+    ) -> bool:
+        return bool(
+            isinstance(actual, Mapping)
+            and isinstance(expected, Mapping)
+            and _strict_json_equal(dict(actual), dict(expected))
+        )
+
+    @staticmethod
+    def _feedback_probe_matrix_choice(
+        *,
+        sequence: Mapping[str, Any],
+        safe_pairs: tuple[tuple[str, int], ...],
+    ) -> tuple[str, int]:
+        completed_rows = [
+            (str(item[0]), int(item[1]))
+            for item in sequence.get("completed_probe_pairs", [])
+        ]
+        result_rows = [
+            dict(item) for item in sequence.get("probe_results", [])
+        ]
+        result_pairs = [
+            (str(item["joint"]), int(item["direction_sign"]))
+            for item in result_rows
+            if item.get("n_plus_one_response_verified") is True
+        ]
+        if (
+            len(completed_rows) != len(set(completed_rows))
+            or len(result_pairs) != len(set(result_pairs))
+            or set(completed_rows) != set(safe_pairs)
+            or set(result_pairs) != set(safe_pairs)
+        ):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY lacks the complete independently verified safe probe/return matrix"
+            )
+        choices = sorted(
+            (
+                float(result["dz_m"]),
+                str(result["joint"]),
+                int(result["direction_sign"]),
+            )
+            for result in result_rows
+            if (
+                result.get("n_plus_one_response_verified") is True
+                and result.get("sign_response_valid") is True
+                and result.get("baseline_preserved") is True
+                and float(result["dz_m"])
+                <= -float(
+                    FINAL_RECOVERY_FEEDBACK_LIMITS["minimum_descent_m"]
+                )
+                and (
+                    str(result["joint"]),
+                    int(result["direction_sign"]),
+                )
+                in set(completed_rows)
+            )
+        )
+        if not choices:
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY has no independently measured safe descent response"
+            )
+        return choices[0][1], choices[0][2]
+
+    def _feedback_durable_configuration_context(
+        self,
+        *,
+        row: Mapping[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, float], dict[str, Any]]:
+        """Rebuild one recovery configuration only from its durable preimages.
+
+        Runtime sequence state is deliberately not consulted here.  The first
+        physical SAFE_PROBE dispatch is the authority for the immutable
+        configuration and physical baseline used to re-evaluate every later
+        N+1 response in the same configuration.
+        """
+
+        configuration = row.get("configuration_payload")
+        if (
+            not isinstance(configuration, Mapping)
+            or set(configuration) != _FEEDBACK_RECOVERY_CONFIGURATION_KEYS
+            or configuration.get("schema_version")
+            != _FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA
+            or _canonical_json_sha256(configuration)
+            != row.get("configuration_sha256")
+        ):
+            raise RuntimeError(
+                "durable feedback configuration preimage/SHA is invalid"
+            )
+        configuration = dict(_jsonable(configuration))
+        configuration_sha = str(row["configuration_sha256"])
+        grouped = [
+            candidate
+            for candidate in self.feedback_recovery_action_rows
+            if candidate.get("configuration_sha256") == configuration_sha
+        ]
+        if not grouped:
+            raise RuntimeError("durable feedback configuration has no actions")
+        grouped.sort(key=lambda candidate: candidate.get("action_index", -1))
+        first = grouped[0]
+        if (
+            first.get("stage") != "SAFE_PROBE"
+            or first.get("action") != "CONSERVATIVE_DIAGNOSTIC_PROBE"
+            or not _strict_json_equal(
+                first.get("configuration_payload"), configuration
+            )
+            or any(
+                not _strict_json_equal(
+                    candidate.get("configuration_payload"), configuration
+                )
+                for candidate in grouped
+            )
+        ):
+            raise RuntimeError(
+                "durable feedback configuration does not begin with one bound SAFE_PROBE"
+            )
+        try:
+            first_centroidal = CentroidalSupportEvidence.from_mapping(
+                first.get("dispatch_centroidal_support_evidence", {})
+            )
+            from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+            first_feedback = FeedbackRecoveryObservation.from_mapping(
+                first.get("dispatch_feedback_recovery_observation", {})
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "durable feedback configuration first-dispatch evidence is invalid"
+            ) from exc
+        leg = configuration.get("leg")
+        reference = configuration.get("servo_reference_targets_deg")
+        measured = configuration.get("measured_servo_positions_deg")
+        centers = configuration.get("wheel_center_w_m")
+        if (
+            leg not in LEGS
+            or configuration.get("macro_state") != "S10_POSTURE_RECOVERY"
+            or configuration.get("selected_source_version")
+            != self.request.source_version
+            or configuration.get("centroidal_evidence_sha256")
+            != first_centroidal.payload_sha256
+            or configuration.get("feedback_observation_sha256")
+            != first_feedback.payload_sha256
+            or not isinstance(reference, Mapping)
+            or set(reference) != set(SERVO_JOINT_NAMES)
+            or not isinstance(measured, Mapping)
+            or set(measured) != set(SERVO_JOINT_NAMES)
+            or not isinstance(centers, Mapping)
+            or set(centers) != set(LEGS)
+            or not self._feedback_target_maps_equal(
+                reference, first_feedback.readback_servo_targets_deg
+            )
+            or not self._feedback_target_maps_equal(
+                measured, first_feedback.measured_servo_positions_deg
+            )
+            or not _strict_json_equal(
+                centers,
+                {
+                    item: list(first_feedback.wheel_center_w_m[item])
+                    for item in LEGS
+                },
+            )
+            or configuration.get("body_crossed_front_face")
+            is not first_feedback.body_crossed_front_face
+            or configuration.get("final_recoverable")
+            is not first_feedback.final_recoverable
+            or configuration.get("posture_complete")
+            is not first_feedback.posture_complete
+        ):
+            raise RuntimeError(
+                "durable feedback configuration differs from first dispatch evidence"
+            )
+        profile_actions = [
+            candidate
+            for candidate in self.expected_source_actions
+            if candidate.get("owner_state") == "S10_POSTURE_RECOVERY"
+            and candidate.get("profile_id")
+            == configuration.get("reference_profile_id")
+            and candidate.get("profile_source_version")
+            == configuration.get("reference_profile_source_version")
+            and candidate.get("source_plan_sha256")
+            == configuration.get("reference_profile_source_plan_sha256")
+        ]
+        source_indices = [
+            candidate.get("source_action_index") for candidate in profile_actions
+        ]
+        if (
+            not profile_actions
+            or any(type(value) is not int for value in source_indices)
+            or len(source_indices) != len(set(source_indices))
+        ):
+            raise RuntimeError(
+                "durable feedback configuration profile identity is not canonical"
+            )
+        terminal_reference_action = max(
+            profile_actions,
+            key=lambda candidate: int(candidate["source_action_index"]),
+        )
+        if not self._feedback_target_maps_equal(
+            reference,
+            terminal_reference_action.get("servo_targets_deg", {}),
+        ):
+            raise RuntimeError(
+                "durable feedback reference differs from the canonical terminal S10 source action"
+            )
+        support = self._validate_feedback_recovery_safety(
+            centroidal=first_centroidal,
+            feedback=first_feedback,
+        )
+        physical_baseline = {
+            "wheel_x_m": float(first_feedback.wheel_center_w_m[leg][0]),
+            "wheel_z_m": float(first_feedback.wheel_center_w_m[leg][2]),
+            "measured_servo_positions_deg": dict(
+                first_feedback.measured_servo_positions_deg
+            ),
+            "qualified_legs": tuple(support["qualified_legs"]),
+            "support_stability_margin_m": support[
+                "support_stability_margin_m"
+            ],
+            "wrench_force_residual_norm_n": support[
+                "wrench_force_residual_norm_n"
+            ],
+            "wrench_moment_residual_norm_nm": support[
+                "wrench_moment_residual_norm_nm"
+            ],
+            "wrench_maximum_friction_utilization": support[
+                "wrench_maximum_friction_utilization"
+            ],
+            "abs_roll_rad": abs(first_feedback.base_roll_rad),
+            "abs_pitch_rad": abs(first_feedback.base_pitch_rad),
+            "joint_limit_margin_deg": dict(
+                first_feedback.joint_limit_margin_deg
+            ),
+        }
+        return configuration, {
+            name: float(reference[name]) for name in SERVO_JOINT_NAMES
+        }, physical_baseline
+
+    @staticmethod
+    def _feedback_physical_support_snapshot(
+        centroidal: CentroidalSupportEvidence,
+    ) -> dict[str, Any]:
+        by_leg = centroidal.wheel_contacts.by_leg()
+        qualified = tuple(leg for leg in LEGS if by_leg[leg].support_qualified)
+        region = centroidal.support_region
+        validated = tuple(region.support_legs)
+        support_set_bound = validated == qualified
+        wrench = centroidal.contact_wrench_feasibility
+        wrench_proven = bool(
+            wrench.status.value == "PROVEN"
+            and wrench.proven_feasible
+            and wrench.physics_tick == centroidal.sim_step
+        )
+        hull_viable = bool(
+            support_set_bound
+            and len(validated) in {3, 4}
+            and region.status.value == "PROVEN"
+            and region.model.value == "STRICT_COPLANAR_CONVEX_HULL"
+            and region.signed_margin_m is not None
+            and region.signed_margin_m >= 0.0
+        )
+        diagonal_name = (
+            "FL_RR"
+            if frozenset(validated) == frozenset(("FL", "RR"))
+            else "FR_RL"
+        )
+        diagonal_viable = bool(
+            support_set_bound
+            and len(validated) == 2
+            and frozenset(validated)
+            in {frozenset(("FL", "RR")), frozenset(("FR", "RL"))}
+            and region.status.value == "PROVEN"
+            and region.model.value == "DIAGONAL_LINE_SEGMENT"
+            and region.diagonal == diagonal_name
+            and region.between_contacts is True
+            and region.finite_patch_approximation
+            and region.corridor_signed_margin_m is not None
+            and region.corridor_signed_margin_m >= 0.0
+        )
+        multi_height_viable = bool(
+            support_set_bound
+            and len(validated) in {3, 4}
+            and region.status.value == "NOT_PROVEN"
+            and region.model.value
+            == "MULTI_HEIGHT_OR_DYNAMIC_WRENCH_REQUIRED"
+            and wrench_proven
+        )
+        support_margin = (
+            region.signed_margin_m
+            if hull_viable
+            else region.corridor_signed_margin_m
+            if diagonal_viable
+            else None
+        )
+        return {
+            "qualified_legs": qualified,
+            "support_viable": bool(
+                centroidal.whole_body_com.available
+                and len(qualified) >= 2
+                and (hull_viable or diagonal_viable or multi_height_viable)
+            ),
+            "wrench_proven": wrench_proven,
+            "support_stability_margin_m": support_margin,
+            "wrench_force_residual_norm_n": wrench.force_residual_norm_n,
+            "wrench_moment_residual_norm_nm": wrench.moment_residual_norm_nm,
+            "wrench_maximum_friction_utilization": (
+                wrench.maximum_friction_utilization
+            ),
+        }
+
+    @staticmethod
+    def _feedback_baseline_preserved(
+        *,
+        sequence: Mapping[str, Any],
+        centroidal: CentroidalSupportEvidence,
+        feedback: Any,
+        joint: str,
+    ) -> tuple[bool, tuple[str, ...]]:
+        baseline = dict(sequence.get("physical_baseline", {}) or {})
+        return WorkerMacroFSMSession._feedback_baseline_preserved_values(
+            leg=str(sequence.get("leg", "") or ""),
+            baseline=baseline,
+            centroidal=centroidal,
+            feedback=feedback,
+            joint=joint,
+        )
+
+    @staticmethod
+    def _feedback_baseline_preserved_values(
+        *,
+        leg: str,
+        baseline: Mapping[str, Any],
+        centroidal: CentroidalSupportEvidence,
+        feedback: Any,
+        joint: str,
+    ) -> tuple[bool, tuple[str, ...]]:
+        baseline = dict(baseline or {})
+        if not baseline:
+            return False, ("immutable feedback physical baseline is unavailable",)
+        support = WorkerMacroFSMSession._feedback_physical_support_snapshot(
+            centroidal
+        )
+        reasons: list[str] = []
+        baseline_support = set(baseline["qualified_legs"])
+        current_support = set(support["qualified_legs"])
+        if not (baseline_support - {leg}).issubset(current_support):
+            reasons.append("qualified support set worsened")
+        if (
+            abs(feedback.base_roll_rad) > baseline["abs_roll_rad"] + 1.0e-9
+            or abs(feedback.base_pitch_rad)
+            > baseline["abs_pitch_rad"] + 1.0e-9
+        ):
+            reasons.append("body attitude worsened")
+        if (
+            feedback.joint_limit_margin_deg[joint] + 1.0e-9
+            < baseline["joint_limit_margin_deg"][joint]
+        ):
+            reasons.append("probed-joint limit margin worsened")
+        baseline_margin = baseline["support_stability_margin_m"]
+        current_margin = support["support_stability_margin_m"]
+        if (
+            baseline_margin is not None
+            and current_margin is not None
+            and current_margin + 1.0e-9 < baseline_margin
+        ):
+            reasons.append("support-region stability margin worsened")
+        for key, label in (
+            ("wrench_force_residual_norm_n", "force residual"),
+            ("wrench_moment_residual_norm_nm", "moment residual"),
+            (
+                "wrench_maximum_friction_utilization",
+                "friction utilization",
+            ),
+        ):
+            baseline_value = baseline[key]
+            current_value = support[key]
+            if (
+                baseline_value is not None
+                and current_value is not None
+                and current_value > baseline_value + 1.0e-9
+            ):
+                reasons.append(f"contact-wrench {label} worsened")
+        return not reasons, tuple(reasons)
+
+    @staticmethod
+    def _validate_feedback_recovery_safety(
+        *,
+        centroidal: CentroidalSupportEvidence,
+        feedback: Any,
+    ) -> dict[str, Any]:
+        support = WorkerMacroFSMSession._feedback_physical_support_snapshot(
+            centroidal
+        )
+        state = build_default_macro_graph().get(
+            MacroStateId.S10_POSTURE_RECOVERY
+        )
+        failures: list[str] = []
+        if (
+            abs(feedback.base_roll_rad)
+            > state.completion_guard.maximum_abs_roll_rad
+            or abs(feedback.base_pitch_rad)
+            > state.completion_guard.maximum_abs_pitch_rad
+        ):
+            failures.append("feedback recovery attitude safety bound exceeded")
+        if not support["support_viable"] or not support["wrench_proven"]:
+            failures.append(
+                "feedback recovery lost proven support/wrench feasibility"
+            )
+        if min(feedback.joint_limit_margin_deg.values()) < float(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"]
+        ):
+            failures.append("feedback recovery joint-limit margin is unsafe")
+        if failures:
+            raise RuntimeError("; ".join(failures))
+        return support
+
+    def _feedback_recovery_profile_identity(
+        self, mapping: Mapping[str, Any]
+    ) -> tuple[str, str, str]:
+        profile_id = str(mapping.get("profile_id", "") or "")
+        profile_source = str(
+            mapping.get("profile_source_version", "") or ""
+        )
+        matches = {
+            (
+                str(row.get("profile_id", "") or ""),
+                str(row.get("profile_source_version", "") or ""),
+                str(row.get("source_plan_sha256", "") or ""),
+            )
+            for row in self.expected_source_actions
+            if row.get("owner_state") == "S10_POSTURE_RECOVERY"
+            and row.get("profile_id") == profile_id
+            and row.get("profile_source_version") == profile_source
+        }
+        if len(matches) != 1:
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY lacks one exact S10 reference profile identity"
+            )
+        return next(iter(matches))
+
+    def _prepare_feedback_recovery_action(
+        self,
+        *,
+        provenance: Mapping[str, Any],
+        mapping: Mapping[str, Any],
+        payload: Mapping[str, Any],
+        servos: Mapping[str, float],
+        wheels: Mapping[str, float],
+    ) -> dict[str, Any]:
+        from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+        try:
+            centroidal = CentroidalSupportEvidence.from_mapping(
+                payload.get("centroidal_support_evidence", {})
+            )
+            feedback = FeedbackRecoveryObservation.from_mapping(
+                payload.get("feedback_recovery_observation", {})
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY physical evidence failed strict revalidation"
+            ) from exc
+        if (
+            feedback.sim_step != centroidal.sim_step
+            or not math.isclose(
+                feedback.physics_time_s,
+                centroidal.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, centroidal.physics_dt_s * 1.0e-6),
+            )
+            or feedback.observed_command_epoch
+            != self.last_verified_command_epoch
+            or feedback.verified_command_epoch
+            != self.last_verified_command_epoch
+            or feedback.n_plus_one_verified is not True
+            or self.last_verified_servo_targets is None
+            or self.last_verified_wheel_targets is None
+            or not self._feedback_target_maps_equal(
+                feedback.readback_servo_targets_deg,
+                self.last_verified_servo_targets,
+            )
+            or not self._feedback_target_maps_equal(
+                feedback.readback_wheel_targets_rad_s,
+                self.last_verified_wheel_targets,
+            )
+        ):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY is not based on the current verified 8+4 readback"
+            )
+        support_snapshot = self._validate_feedback_recovery_safety(
+            centroidal=centroidal,
+            feedback=feedback,
+        )
+        if (
+            self.last_servo_targets is None
+            or self.last_wheel_targets is None
+            or self.last_applied_servo_targets is None
+            or self.last_applied_wheel_targets is None
+            or not self._feedback_target_maps_equal(
+                self.last_applied_servo_targets, self.last_servo_targets
+            )
+            or not self._feedback_target_maps_equal(
+                self.last_applied_wheel_targets, self.last_wheel_targets
+            )
+            or not self._feedback_target_maps_equal(
+                self.last_servo_targets, self.last_verified_servo_targets
+            )
+            or not self._feedback_target_maps_equal(
+                self.last_wheel_targets, self.last_verified_wheel_targets
+            )
+            or any(float(value) != 0.0 for value in self.last_wheel_targets.values())
+            or any(
+                float(value) != 0.0
+                for value in self.last_applied_wheel_targets.values()
+            )
+            or (
+                self.residual_enabled
+                and any(
+                    float(value) != 0.0
+                    for value in self.last_applied_residual
+                )
+            )
+        ):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY requires a zero-residual, zero-wheel verified baseline"
+            )
+
+        attempt = int(provenance["recovery_attempt"])
+        if (
+            attempt != len(self.feedback_recovery_action_rows) + 1
+            or attempt > FEEDBACK_RECOVERY_MAXIMUM_ACTIONS
+        ):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY attempts must start at one, remain contiguous, and stay bounded"
+            )
+        leg = str(provenance["recovery_leg"])
+        joint = str(provenance["recovery_joint"])
+        sign = int(provenance["recovery_direction_sign"])
+        stage = str(provenance["recovery_stage"])
+        action = str(provenance["recovery_action"])
+        configuration = str(provenance["recovery_configuration_sha256"])
+        leg_joints = {
+            "FR": ("front_right_hip", "front_right_knee"),
+            "FL": ("front_left_hip", "front_left_knee"),
+            "RR": ("rear_right_hip", "rear_right_knee"),
+            "RL": ("rear_left_hip", "rear_left_knee"),
+        }
+        if stage == "INCREMENT":
+            contact = centroidal.wheel_contacts.by_leg()[leg]
+            if (
+                contact.evidence_available
+                and contact.measurement.active
+                and contact.measurement.surface_kind == "OBSTACLE_TOP"
+                and contact.normal_load_n is not None
+                and contact.normal_load_n
+                >= centroidal.wheel_contacts.thresholds.minimum_normal_force_n
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY must hold a newly load-bearing TOP contact for dwell"
+                )
+        sequence = self.feedback_recovery_sequence_by_configuration.get(
+            configuration
+        )
+        new_configuration = sequence is None
+        if new_configuration:
+            if stage != "SAFE_PROBE" or action != "CONSERVATIVE_DIAGNOSTIC_PROBE":
+                raise RuntimeError(
+                    "a new FEEDBACK_RECOVERY configuration must begin with SAFE_PROBE"
+                )
+            if leg in self.feedback_recovery_configuration_by_leg:
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY cannot reuse a completed leg configuration"
+                )
+            if configuration in self.feedback_recovery_configuration_by_leg.values():
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY configuration SHA cannot be shared across legs"
+                )
+            contact_by_leg = centroidal.wheel_contacts.by_leg()
+            eligible_legs = tuple(
+                candidate_leg
+                for candidate_leg in ("FR", "FL", "RR", "RL")
+                if (
+                    contact_by_leg[candidate_leg].evidence_available
+                    and not contact_by_leg[candidate_leg].measurement.active
+                    and contact_by_leg[candidate_leg].measurement.surface_kind
+                    == "AIR"
+                    and feedback.wheel_center_w_m[candidate_leg][0]
+                    > feedback.obstacle_front_face_x_m
+                    and feedback.wheel_center_w_m[candidate_leg][2]
+                    >= feedback.obstacle_top_z_m - 0.02
+                    and not contact_by_leg[candidate_leg].support_qualified
+                )
+            )
+            if not eligible_legs or eligible_legs[0] != leg:
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY first probe leg is not the deterministic current AIR/crossed/top-height candidate"
+                )
+            if self.feedback_recovery_active_leg:
+                prior_leg = self.feedback_recovery_active_leg
+                prior = centroidal.wheel_contacts.by_leg()[prior_leg]
+                measurement = prior.measurement
+                if not (
+                    prior.support_qualified
+                    and measurement.active
+                    and measurement.surface_kind == "OBSTACLE_TOP"
+                    and measurement.surface_dwell_verified
+                    and measurement.dwell_s is not None
+                    and measurement.dwell_s
+                    >= FEEDBACK_RECOVERY_CONTACT_DWELL_S
+                ):
+                    raise RuntimeError(
+                        "FEEDBACK_RECOVERY cannot change legs before current TOP load dwell"
+                    )
+            profile_id, profile_source, source_plan_sha = (
+                self._feedback_recovery_profile_identity(mapping)
+            )
+            configuration_payload = {
+                "schema_version": _FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA,
+                "leg": leg,
+                "macro_state": "S10_POSTURE_RECOVERY",
+                "selected_source_version": self.request.source_version,
+                "reference_profile_id": profile_id,
+                "reference_profile_source_version": profile_source,
+                "reference_profile_source_plan_sha256": source_plan_sha,
+                "centroidal_evidence_sha256": centroidal.payload_sha256,
+                "feedback_observation_sha256": feedback.payload_sha256,
+                "servo_reference_targets_deg": dict(self.last_servo_targets),
+                "measured_servo_positions_deg": dict(
+                    feedback.measured_servo_positions_deg
+                ),
+                "wheel_center_w_m": {
+                    item: list(feedback.wheel_center_w_m[item])
+                    for item in LEGS
+                },
+                "body_crossed_front_face": feedback.body_crossed_front_face,
+                "final_recoverable": feedback.final_recoverable,
+                "posture_complete": feedback.posture_complete,
+            }
+            expected_configuration = _canonical_json_sha256(
+                configuration_payload
+            )
+            if configuration != expected_configuration:
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY configuration SHA is not independently reproducible"
+                )
+            sequence = {
+                "leg": leg,
+                "configuration_payload": dict(_jsonable(configuration_payload)),
+                "reference_targets_deg": dict(self.last_servo_targets),
+                "physical_baseline": {
+                    "wheel_x_m": feedback.wheel_center_w_m[leg][0],
+                    "wheel_z_m": feedback.wheel_center_w_m[leg][2],
+                    "measured_servo_positions_deg": dict(
+                        feedback.measured_servo_positions_deg
+                    ),
+                    "qualified_legs": tuple(
+                        support_snapshot["qualified_legs"]
+                    ),
+                    "support_stability_margin_m": support_snapshot[
+                        "support_stability_margin_m"
+                    ],
+                    "wrench_force_residual_norm_n": support_snapshot[
+                        "wrench_force_residual_norm_n"
+                    ],
+                    "wrench_moment_residual_norm_nm": support_snapshot[
+                        "wrench_moment_residual_norm_nm"
+                    ],
+                    "wrench_maximum_friction_utilization": support_snapshot[
+                        "wrench_maximum_friction_utilization"
+                    ],
+                    "abs_roll_rad": abs(feedback.base_roll_rad),
+                    "abs_pitch_rad": abs(feedback.base_pitch_rad),
+                    "joint_limit_margin_deg": dict(
+                        feedback.joint_limit_margin_deg
+                    ),
+                },
+                "probe_index": 0,
+                "awaiting_return": False,
+                "last_probe_joint": "",
+                "last_probe_sign": 0,
+                "completed_probe_pairs": [],
+                "probe_results": [],
+                "increment_joint": "",
+                "increment_sign": 0,
+                "increment_count": 0,
+            }
+        else:
+            sequence = dict(sequence)
+            if (
+                sequence.get("leg") != leg
+                or not isinstance(
+                    sequence.get("configuration_payload"), Mapping
+                )
+                or _canonical_json_sha256(
+                    sequence["configuration_payload"]
+                )
+                != configuration
+                or self.feedback_recovery_configuration_by_leg.get(leg)
+                != configuration
+                or self.feedback_recovery_active_leg != leg
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY configuration/leg sequence identity drifted"
+                )
+
+        reference = dict(sequence["reference_targets_deg"])
+        probe_order = (
+            (leg_joints[leg][0], 1),
+            (leg_joints[leg][0], -1),
+            (leg_joints[leg][1], 1),
+            (leg_joints[leg][1], -1),
+        )
+
+        def target_map_within_feedback_limits(
+            candidate_targets: Mapping[str, float],
+        ) -> bool:
+            margin = float(
+                FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"]
+            )
+            return all(
+                command_limits_for_servo(name)[0] + margin
+                <= float(target)
+                <= command_limits_for_servo(name)[1] - margin
+                for name, target in candidate_targets.items()
+            )
+
+        def probe_target_within_limits(candidate_joint: str, candidate_sign: int) -> bool:
+            candidate_targets = dict(reference)
+            candidate_targets[candidate_joint] += (
+                candidate_sign * FEEDBACK_RECOVERY_PROBE_DELTA_DEG
+            )
+            return target_map_within_feedback_limits(candidate_targets)
+
+        expected_targets = dict(reference)
+        if stage == "SAFE_PROBE":
+            probe_index = int(sequence["probe_index"])
+            while (
+                probe_index < len(probe_order)
+                and probe_order[probe_index] != (joint, sign)
+            ):
+                skipped_joint, skipped_sign = probe_order[probe_index]
+                if probe_target_within_limits(skipped_joint, skipped_sign):
+                    raise RuntimeError(
+                        "FEEDBACK_RECOVERY cannot skip a command-limit-safe probe"
+                    )
+                probe_index += 1
+            if (
+                sequence["awaiting_return"] is not False
+                or sequence["increment_joint"]
+                or probe_index >= len(probe_order)
+                or (joint, sign) != probe_order[probe_index]
+                or not probe_target_within_limits(joint, sign)
+            ):
+                raise RuntimeError("FEEDBACK_RECOVERY probe sequence is not exact")
+            sequence["probe_index"] = probe_index
+            expected_targets[joint] += sign * FEEDBACK_RECOVERY_PROBE_DELTA_DEG
+            sequence["awaiting_return"] = True
+            sequence["last_probe_joint"] = joint
+            sequence["last_probe_sign"] = sign
+        elif stage == "RETURN_TO_REFERENCE":
+            if (
+                sequence["awaiting_return"] is not True
+                or joint != sequence["last_probe_joint"]
+                or sign != sequence["last_probe_sign"]
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY return does not match its preceding probe"
+                )
+            sequence["awaiting_return"] = False
+            sequence["probe_index"] = int(sequence["probe_index"]) + 1
+        elif stage == "INCREMENT":
+            probe_index = int(sequence["probe_index"])
+            while probe_index < len(probe_order):
+                skipped_joint, skipped_sign = probe_order[probe_index]
+                if probe_target_within_limits(skipped_joint, skipped_sign):
+                    break
+                probe_index += 1
+            sequence["probe_index"] = probe_index
+            if (
+                sequence["awaiting_return"] is not False
+                or probe_index != len(probe_order)
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY increment precedes the complete probe matrix"
+                )
+            if not sequence["increment_joint"]:
+                safe_pairs = tuple(
+                    pair
+                    for pair in probe_order
+                    if probe_target_within_limits(pair[0], pair[1])
+                )
+                selected_pair = self._feedback_probe_matrix_choice(
+                    sequence=sequence,
+                    safe_pairs=safe_pairs,
+                )
+                if (joint, sign) not in set(safe_pairs):
+                    raise RuntimeError(
+                        "FEEDBACK_RECOVERY selected descent was not physically probed and returned"
+                    )
+                if (joint, sign) != selected_pair:
+                    raise RuntimeError(
+                        "FEEDBACK_RECOVERY selected descent is not the deterministic best independently measured response"
+                    )
+                sequence["increment_joint"] = joint
+                sequence["increment_sign"] = sign
+            elif (
+                sequence["increment_joint"] != joint
+                or sequence["increment_sign"] != sign
+            ):
+                raise RuntimeError(
+                    "FEEDBACK_RECOVERY selected descent joint/sign drifted"
+                )
+            increment_count = int(sequence["increment_count"]) + 1
+            if increment_count > FEEDBACK_RECOVERY_MAXIMUM_INCREMENTS_PER_LEG:
+                raise RuntimeError("FEEDBACK_RECOVERY per-leg increment bound exceeded")
+            sequence["increment_count"] = increment_count
+            expected_targets[joint] += (
+                sign * FEEDBACK_RECOVERY_INCREMENT_DELTA_DEG * increment_count
+            )
+        else:
+            raise RuntimeError("FEEDBACK_RECOVERY dispatch stage is invalid")
+        if not self._feedback_target_maps_equal(servos, expected_targets):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY target map differs from its bounded sequence"
+            )
+        if not target_map_within_feedback_limits(expected_targets):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY target map violates the command-limit margin"
+            )
+        if any(float(value) != 0.0 for value in wheels.values()):
+            raise RuntimeError("FEEDBACK_RECOVERY wheel targets must remain zero")
+        return {
+            "configuration_sha256": configuration,
+            "configuration_payload": dict(
+                _jsonable(sequence["configuration_payload"])
+            ),
+            "new_configuration": new_configuration,
+            "leg": leg,
+            "sequence": sequence,
+            "attempt": attempt,
+            "stage": stage,
+            "action": action,
+            "joint": joint,
+            "direction_sign": sign,
+            "centroidal_evidence_sha256": centroidal.payload_sha256,
+            "feedback_observation_sha256": feedback.payload_sha256,
+            "dispatch_centroidal_support_evidence": centroidal.to_mapping(),
+            "dispatch_feedback_recovery_observation": feedback.to_mapping(),
+        }
+
+    def _commit_feedback_recovery_action(
+        self,
+        *,
+        update: Mapping[str, Any],
+        provenance: Mapping[str, Any],
+        batch_id: str,
+        dispatch_index: int,
+        sim_step: int,
+        expected_sim_step: int,
+        ack: Mapping[str, Any],
+    ) -> int:
+        configuration = str(update["configuration_sha256"])
+        leg = str(update["leg"])
+        if update["new_configuration"] is True:
+            self.feedback_recovery_configuration_by_leg[leg] = configuration
+            self.feedback_recovery_active_leg = leg
+        self.feedback_recovery_sequence_by_configuration[configuration] = dict(
+            update["sequence"]
+        )
+        row = {
+            "schema_version": FEEDBACK_RECOVERY_ACTION_SCHEMA,
+            "action_index": len(self.feedback_recovery_action_rows),
+            "attempt": int(update["attempt"]),
+            "sim_step": int(sim_step),
+            "expected_n_plus_one_sim_step": int(expected_sim_step),
+            "stage": str(update["stage"]),
+            "action": str(update["action"]),
+            "leg": leg,
+            "joint": str(update["joint"]),
+            "direction_sign": int(update["direction_sign"]),
+            "configuration_sha256": configuration,
+            "configuration_payload": dict(
+                _jsonable(update["configuration_payload"])
+            ),
+            "centroidal_evidence_sha256": str(
+                update["centroidal_evidence_sha256"]
+            ),
+            "feedback_observation_sha256": str(
+                update["feedback_observation_sha256"]
+            ),
+            "command_provenance": dict(provenance),
+            "batch_id": str(batch_id),
+            "dispatch_index": int(dispatch_index),
+            "dispatch_ack": dict(_jsonable(ack)),
+            "ack_sha256": _canonical_json_sha256(ack),
+            "n_plus_one_verified": False,
+            "n_plus_one_verified_sim_step": None,
+            "n_plus_one_readback_sha256": "",
+            "n_plus_one_readback": {},
+            "dispatch_centroidal_support_evidence": dict(
+                update["dispatch_centroidal_support_evidence"]
+            ),
+            "dispatch_feedback_recovery_observation": dict(
+                update["dispatch_feedback_recovery_observation"]
+            ),
+            "physical_response_verified": False,
+            "physical_response_sim_step": None,
+            "physical_response_centroidal_evidence_sha256": "",
+            "physical_response_feedback_observation_sha256": "",
+            "physical_response_centroidal_support_evidence": {},
+            "physical_response_feedback_recovery_observation": {},
+            "physical_response": {},
+        }
+        self.feedback_recovery_action_rows.append(row)
+        return int(row["action_index"])
+
+    def _capture_feedback_recovery_n_plus_one_response(
+        self,
+        *,
+        payload: Mapping[str, Any],
+        sim_step: int,
+    ) -> None:
+        from .fsm50_macro_controller import FeedbackRecoveryObservation
+
+        pending_rows = [
+            row
+            for row in self.feedback_recovery_action_rows
+            if row.get("n_plus_one_verified") is True
+            and row.get("n_plus_one_verified_sim_step") == sim_step
+            and row.get("physical_response_verified") is False
+        ]
+        if not pending_rows:
+            return
+        if len(pending_rows) != 1:
+            raise RuntimeError(
+                "feedback recovery has multiple N+1 responses on one physics tick"
+            )
+        row = pending_rows[0]
+        try:
+            centroidal = CentroidalSupportEvidence.from_mapping(
+                payload.get("centroidal_support_evidence", {})
+            )
+            feedback = FeedbackRecoveryObservation.from_mapping(
+                payload.get("feedback_recovery_observation", {})
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "feedback recovery N+1 physical response failed strict evidence validation"
+            ) from exc
+        dispatch_index = row.get("dispatch_index")
+        if (
+            type(dispatch_index) is not int
+            or dispatch_index < 0
+            or dispatch_index >= len(self.dispatch_rows)
+        ):
+            raise RuntimeError(
+                "feedback recovery N+1 response lacks its dispatch identity"
+            )
+        dispatch = self.dispatch_rows[dispatch_index]
+        if (
+            feedback.sim_step != sim_step
+            or centroidal.sim_step != sim_step
+            or row.get("expected_n_plus_one_sim_step") != sim_step
+            or not math.isclose(
+                feedback.physics_time_s,
+                centroidal.physics_time_s,
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, centroidal.physics_dt_s * 1.0e-6),
+            )
+            or feedback.observed_command_epoch != dispatch.get("command_epoch")
+            or feedback.verified_command_epoch != dispatch.get("command_epoch")
+            or feedback.n_plus_one_verified is not True
+            or not self._feedback_target_maps_equal(
+                feedback.readback_servo_targets_deg,
+                dispatch.get("servo_targets_deg", {}),
+            )
+            or not self._feedback_target_maps_equal(
+                feedback.readback_wheel_targets_rad_s,
+                dispatch.get("wheel_targets_rad_s", {}),
+            )
+        ):
+            raise RuntimeError(
+                "feedback recovery N+1 response is not bound to its exact epoch/full map"
+            )
+        self._validate_feedback_recovery_safety(
+            centroidal=centroidal,
+            feedback=feedback,
+        )
+        configuration = str(row["configuration_sha256"])
+        sequence = self.feedback_recovery_sequence_by_configuration.get(
+            configuration
+        )
+        if not isinstance(sequence, Mapping):
+            raise RuntimeError(
+                "feedback recovery N+1 response lacks its configuration sequence"
+            )
+        sequence = dict(sequence)
+        joint = str(row["joint"])
+        sign = int(row["direction_sign"])
+        action = str(row["action"])
+        baseline = dict(sequence.get("physical_baseline", {}) or {})
+        if not baseline:
+            raise RuntimeError(
+                "feedback recovery N+1 response lacks its immutable physical baseline"
+            )
+        response: dict[str, Any]
+        if action == "CONSERVATIVE_DIAGNOSTIC_PROBE":
+            baseline_q = float(
+                baseline["measured_servo_positions_deg"][joint]
+            )
+            current_q = float(feedback.measured_servo_positions_deg[joint])
+            dq = current_q - baseline_q
+            dx = float(feedback.wheel_center_w_m[row["leg"]][0]) - float(
+                baseline["wheel_x_m"]
+            )
+            dz = float(feedback.wheel_center_w_m[row["leg"]][2]) - float(
+                baseline["wheel_z_m"]
+            )
+            sign_response_valid = bool(
+                abs(dq) >= 0.02 and (dq > 0.0) == (sign > 0)
+            )
+            baseline_preserved, unsafe_reasons = (
+                self._feedback_baseline_preserved(
+                    sequence=sequence,
+                    centroidal=centroidal,
+                    feedback=feedback,
+                    joint=joint,
+                )
+            )
+            response = {
+                "joint": joint,
+                "direction_sign": sign,
+                "dq_deg": dq,
+                "dx_m": dx,
+                "dz_m": dz,
+                "sign_response_valid": sign_response_valid,
+                "baseline_preserved": baseline_preserved,
+                "unsafe_reasons": list(unsafe_reasons),
+                "n_plus_one_response_verified": True,
+            }
+            results = [
+                dict(item) for item in sequence.get("probe_results", [])
+            ]
+            if any(
+                item.get("joint") == joint
+                and item.get("direction_sign") == sign
+                for item in results
+            ):
+                raise RuntimeError(
+                    "feedback recovery probe physical response was duplicated"
+                )
+            results.append(dict(response))
+            sequence["probe_results"] = results
+        elif action == "RETURN_TO_IMMUTABLE_REFERENCE":
+            baseline_q = float(
+                baseline["measured_servo_positions_deg"][joint]
+            )
+            return_error = abs(
+                float(feedback.measured_servo_positions_deg[joint]) - baseline_q
+            )
+            if return_error > 0.2:
+                raise RuntimeError(
+                    "feedback probe failed to return to immutable reference"
+                )
+            matching = [
+                item
+                for item in sequence.get("probe_results", [])
+                if item.get("joint") == joint
+                and item.get("direction_sign") == sign
+                and item.get("n_plus_one_response_verified") is True
+            ]
+            if len(matching) != 1:
+                raise RuntimeError(
+                    "feedback recovery return lacks one verified probe response"
+                )
+            completed = [
+                (str(item[0]), int(item[1]))
+                for item in sequence.get("completed_probe_pairs", [])
+            ]
+            if (joint, sign) in completed:
+                raise RuntimeError(
+                    "feedback recovery return physical response was duplicated"
+                )
+            completed.append((joint, sign))
+            sequence["completed_probe_pairs"] = completed
+            response = {
+                "joint": joint,
+                "direction_sign": sign,
+                "return_error_deg": return_error,
+                "n_plus_one_response_verified": True,
+            }
+        elif action == "BOUNDED_DESCENT_INCREMENT":
+            baseline_preserved, unsafe_reasons = (
+                self._feedback_baseline_preserved(
+                    sequence=sequence,
+                    centroidal=centroidal,
+                    feedback=feedback,
+                    joint=joint,
+                )
+            )
+            if not baseline_preserved:
+                raise RuntimeError(
+                    "selected descent degraded its independently verified baseline: "
+                    + "; ".join(unsafe_reasons)
+                )
+            response = {
+                "joint": joint,
+                "direction_sign": sign,
+                "baseline_preserved": True,
+                "unsafe_reasons": [],
+                "n_plus_one_response_verified": True,
+            }
+        else:
+            raise RuntimeError(
+                "feedback recovery N+1 response action is invalid"
+            )
+        self.feedback_recovery_sequence_by_configuration[configuration] = sequence
+        row["physical_response_verified"] = True
+        row["physical_response_sim_step"] = sim_step
+        row["physical_response_centroidal_evidence_sha256"] = (
+            centroidal.payload_sha256
+        )
+        row["physical_response_feedback_observation_sha256"] = (
+            feedback.payload_sha256
+        )
+        row["physical_response_centroidal_support_evidence"] = (
+            centroidal.to_mapping()
+        )
+        row["physical_response_feedback_recovery_observation"] = (
+            feedback.to_mapping()
+        )
+        row["physical_response"] = response
+        dispatch["feedback_recovery_physical_response_verified"] = True
+        dispatch["feedback_recovery_physical_response_sim_step"] = sim_step
+        dispatch["feedback_recovery_physical_response_centroidal_sha256"] = (
+            centroidal.payload_sha256
+        )
+        dispatch["feedback_recovery_physical_response_observation_sha256"] = (
+            feedback.payload_sha256
+        )
+        dispatch["feedback_recovery_physical_response"] = dict(response)
 
     def _process_decision(
         self,
@@ -5081,6 +10773,17 @@ class WorkerMacroFSMSession:
             wheels=wheels,
             payload=payload,
         )
+        feedback_recovery_update = (
+            self._prepare_feedback_recovery_action(
+                provenance=provenance,
+                mapping=mapping,
+                payload=payload,
+                servos=servos,
+                wheels=wheels,
+            )
+            if provenance.get("kind") == "FEEDBACK_RECOVERY"
+            else None
+        )
         completion_control, completion_spec = (
             self._validate_segment_completion_control(
                 mapping=mapping,
@@ -5090,6 +10793,13 @@ class WorkerMacroFSMSession:
                 consumption_row=consumption_row,
             )
         )
+        if (
+            provenance.get("kind") == "FEEDBACK_RECOVERY"
+            and completion_control.get("kind") != "NONE"
+        ):
+            raise RuntimeError(
+                "FEEDBACK_RECOVERY cannot start or complete a Recording segment"
+            )
         # reset() may intentionally publish the verified adapter snapshot at
         # epoch zero without dispatching it again.  The nominal epoch/target
         # relationship remains controller-owned; the optional transform below
@@ -5292,7 +11002,28 @@ class WorkerMacroFSMSession:
                 expected_source="fsm50_macro_controller",
                 expected_recording_metadata=recording_metadata,
             )
+            # Freeze only the validated atomic ACK surface.  Adapter-specific
+            # diagnostics are intentionally excluded so a malformed extra
+            # field cannot leave an already-applied physical command without
+            # its pending N+1/action/dispatch ledger records.
+            ack = self._durable_motion_batch_ack(
+                ack,
+                expected_recording_metadata=recording_metadata,
+            )
             dispatch_index = len(self.dispatch_rows)
+            feedback_recovery_action_index = None
+            if feedback_recovery_update is not None:
+                feedback_recovery_action_index = (
+                    self._commit_feedback_recovery_action(
+                        update=feedback_recovery_update,
+                        provenance=provenance,
+                        batch_id=batch_id,
+                        dispatch_index=dispatch_index,
+                        sim_step=current_step,
+                        expected_sim_step=int(ack["first_physics_step"]),
+                        ack=ack,
+                    )
+                )
             self._establish_pending_readback(
                 kind="controller",
                 batch_id=batch_id,
@@ -5310,6 +11041,10 @@ class WorkerMacroFSMSession:
                     else int(consumption_row["source_action_index"])
                 ),
             )
+            if feedback_recovery_action_index is not None:
+                self.pending_readback[
+                    "feedback_recovery_action_index"
+                ] = feedback_recovery_action_index
             changed_servos = [
                 name
                 for name in SERVO_JOINT_NAMES
@@ -5427,6 +11162,8 @@ class WorkerMacroFSMSession:
         if terminal:
             outcome = str(mapping.get("terminal_outcome", "") or "")
             reason = str(mapping.get("reason", "") or outcome or "Macro controller terminal")
+            self.controller_terminal_outcome = outcome
+            self.controller_terminal_reason = reason
             if _is_task_success_outcome(outcome):
                 coverage_errors = self._successful_coverage_errors()
                 if coverage_errors:
@@ -5434,8 +11171,6 @@ class WorkerMacroFSMSession:
                         "Macro task-success terminal lacks exact source-action coverage: "
                         + "; ".join(coverage_errors)
                     )
-            self.controller_terminal_outcome = outcome
-            self.controller_terminal_reason = reason
             self.terminal_stop_request = {
                 "success_after_stop": _is_task_success_outcome(outcome),
                 "outcome": outcome,
@@ -5559,6 +11294,48 @@ class WorkerMacroFSMSession:
         ):
             raise RuntimeError("motion batch ACK recording metadata mismatch")
 
+    @staticmethod
+    def _durable_motion_batch_ack(
+        ack: Mapping[str, Any],
+        *,
+        expected_recording_metadata: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Select the exact, validated ACK contract before artifact commit.
+
+        Production adapters may add diagnostic timing fields.  Those fields
+        are deliberately outside the durable atomic 8+4 contract and must not
+        be allowed to inject a post-apply normalization failure.  Every value
+        selected here has already passed ``_validate_batch_ack``; metadata is
+        reconstructed from the trusted pre-dispatch payload rather than an
+        adapter-owned extra-field mapping.
+        """
+
+        durable = {
+            "batch_id": ack.get("batch_id"),
+            "source": ack.get("source"),
+            "error": ack.get("error"),
+            "applied_sim_step": ack.get("applied_sim_step"),
+            "first_physics_step": ack.get("first_physics_step"),
+            "motion_start_skew_s": ack.get("motion_start_skew_s"),
+            "physics_dt_s": ack.get("physics_dt_s"),
+            "servo_applied": ack.get("servo_applied"),
+            "wheel_applied": ack.get("wheel_applied"),
+            "servo_targets_applied": dict(
+                ack.get("servo_targets_applied", {})
+            ),
+            "wheel_targets_applied": dict(
+                ack.get("wheel_targets_applied", {})
+            ),
+            "recording_metadata": dict(
+                _jsonable(expected_recording_metadata)
+            ),
+        }
+        if set(durable) != _DURABLE_MOTION_BATCH_ACK_KEYS:
+            raise RuntimeError("durable motion batch ACK keys are not exact")
+        # Canonicalization now cannot observe arbitrary adapter diagnostics.
+        _canonical_json_sha256(durable)
+        return durable
+
     def _sample(
         self,
         payload: Mapping[str, Any],
@@ -5595,6 +11372,17 @@ class WorkerMacroFSMSession:
             "retry_count": mapping.get("retry_count", 0),
             "controller_terminal": mapping.get("terminal", False),
             "controller_terminal_outcome": mapping.get("terminal_outcome", ""),
+            "controller_reason": mapping.get("reason", ""),
+            "guard_evidence": dict(mapping.get("guard_evidence", {}) or {}),
+            "feedback_recovery_stage": mapping.get(
+                "feedback_recovery_stage", ""
+            ),
+            "feedback_recovery_action_count": mapping.get(
+                "feedback_recovery_action_count", 0
+            ),
+            "feedback_recovery_exhaustion_reason": mapping.get(
+                "feedback_recovery_exhaustion_reason", ""
+            ),
         }
         self.rows.append(dict(_jsonable(row)))
 
@@ -5824,9 +11612,33 @@ class WorkerMacroFSMSession:
         segment_completion_path = (
             self.request.run_dir / "macro_segment_completion_ledger.jsonl"
         )
+        feedback_recovery_path = (
+            self.request.run_dir / "macro_feedback_recovery_action_ledger.jsonl"
+        )
+        dispatch_path = self.request.run_dir / "macro_dispatch_ledger.jsonl"
         segment_completion_sha256 = (
             _sha256_file(segment_completion_path)
             if segment_completion_path.is_file()
+            else ""
+        )
+        feedback_recovery_sha256 = (
+            _sha256_file(feedback_recovery_path)
+            if feedback_recovery_path.is_file()
+            else ""
+        )
+        dispatch_sha256 = (
+            _sha256_file(dispatch_path) if dispatch_path.is_file() else ""
+        )
+        feedback_recovery_errors = self._feedback_recovery_coverage_errors()
+        feedback_recovery_complete = not feedback_recovery_errors
+        feedback_recovery_response_count = sum(
+            row.get("physical_response_verified") is True
+            for row in self.feedback_recovery_action_rows
+        )
+        boundary_readback = dict(_jsonable(self.boundary_readback))
+        boundary_readback_sha256 = (
+            _canonical_json_sha256(boundary_readback)
+            if boundary_readback
             else ""
         )
         obstacle_front = final.get("obstacle_front_face_x_m")
@@ -5848,7 +11660,7 @@ class WorkerMacroFSMSession:
             for record in self.phase_traversal.values()
         )
         stability = str(final.get("stability_state", "unknown") or "unknown")
-        support_count = int(final.get("geometry_support_candidate_count", 0) or 0)
+        support_count = len(tuple(final.get("support_legs", ()) or ()))
         recoverable = bool(
             body_crossed and support_count >= 2 and stability in {"stable", "recoverable"}
         )
@@ -5921,12 +11733,42 @@ class WorkerMacroFSMSession:
             "segment_completion_count": completed_segment_count,
             "source_action_coverage_complete": source_coverage_complete,
             "source_action_coverage_errors": coverage_errors,
+            "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
+            "start_boundary_readback": boundary_readback,
+            "start_boundary_readback_sha256": boundary_readback_sha256,
             "segment_completion_coverage_complete": (
                 segment_completion_complete
             ),
             "segment_completion_coverage_errors": segment_completion_errors,
             "segment_completion_ledger_path": str(segment_completion_path),
             "segment_completion_ledger_sha256": segment_completion_sha256,
+            "feedback_recovery_action_ledger_schema_version": (
+                FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+            ),
+            "feedback_recovery_action_count": len(
+                self.feedback_recovery_action_rows
+            ),
+            "feedback_recovery_verified_action_count": (
+                self.feedback_recovery_verified_action_count
+            ),
+            "feedback_recovery_physical_response_verified_action_count": (
+                feedback_recovery_response_count
+            ),
+            "feedback_recovery_action_coverage_complete": (
+                feedback_recovery_complete
+            ),
+            "feedback_recovery_action_coverage_errors": (
+                feedback_recovery_errors
+            ),
+            "feedback_recovery_action_ledger_path": str(
+                feedback_recovery_path
+            ),
+            "feedback_recovery_action_ledger_sha256": (
+                feedback_recovery_sha256
+            ),
+            "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
+            "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
+            "feedback_recovery_dispatch_count": len(self.dispatch_rows),
             "consumed_segment_start_count": consumed_segment_start_count,
             "physical_command_dispatch_count": self.command_dispatch_count,
             "dispatch_complete": dispatch_complete,
@@ -5977,6 +11819,9 @@ class WorkerMacroFSMSession:
                 "expected_source_action_count": expected_source_action_count,
                 "source_action_consumption_count": completed_source_action_count,
                 "source_action_coverage_complete": source_coverage_complete,
+                "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
+                "start_boundary_readback": boundary_readback,
+                "start_boundary_readback_sha256": boundary_readback_sha256,
                 "segment_completion_count": completed_segment_count,
                 "expected_segment_completion_count": expected_segment_count,
                 "segment_completion_coverage_complete": (
@@ -5991,6 +11836,33 @@ class WorkerMacroFSMSession:
                 "segment_completion_ledger_sha256": (
                     segment_completion_sha256
                 ),
+                "feedback_recovery_action_ledger_schema_version": (
+                    FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+                ),
+                "feedback_recovery_action_count": len(
+                    self.feedback_recovery_action_rows
+                ),
+                "feedback_recovery_verified_action_count": (
+                    self.feedback_recovery_verified_action_count
+                ),
+                "feedback_recovery_physical_response_verified_action_count": (
+                    feedback_recovery_response_count
+                ),
+                "feedback_recovery_action_coverage_complete": (
+                    feedback_recovery_complete
+                ),
+                "feedback_recovery_action_coverage_errors": (
+                    feedback_recovery_errors
+                ),
+                "feedback_recovery_action_ledger_path": str(
+                    feedback_recovery_path
+                ),
+                "feedback_recovery_action_ledger_sha256": (
+                    feedback_recovery_sha256
+                ),
+                "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
+                "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
+                "feedback_recovery_dispatch_count": len(self.dispatch_rows),
                 "transition_count": len(self.transition_rows),
             },
             "deployment_safety_evidence": self.deployment_safety_evidence,
@@ -6002,6 +11874,162 @@ class WorkerMacroFSMSession:
                     _jsonable(self.last_residual_transform)
                 ),
             }
+        final_centroidal: CentroidalSupportEvidence | None = None
+        try:
+            final_centroidal = CentroidalSupportEvidence.from_mapping(
+                final.get("centroidal_support_evidence", {})
+            )
+        except Exception:
+            final_centroidal = None
+        final_contact_by_leg = (
+            {}
+            if final_centroidal is None
+            else final_centroidal.wheel_contacts.by_leg()
+        )
+        final_load_available = bool(
+            final_centroidal is not None
+            and final_centroidal.wheel_contacts.available
+            and set(final_contact_by_leg) == set(LEGS)
+        )
+        final_all_loaded = bool(
+            final_load_available
+            and all(final_contact_by_leg[leg].support_qualified for leg in LEGS)
+        )
+        final_all_top = bool(
+            final_load_available
+            and all(
+                final_contact_by_leg[leg].measurement.surface_kind
+                == "OBSTACLE_TOP"
+                for leg in LEGS
+            )
+        )
+        collision_tracker = dict(self.runtime_contact_collision_evidence)
+        collision_sample_count = int(
+            collision_tracker.get("sample_count", 0) or 0
+        )
+        collision_clear_count = int(
+            collision_tracker.get("clear_sample_count", 0) or 0
+        )
+        collision_detected_count = int(
+            collision_tracker.get("detected_sample_count", 0) or 0
+        )
+        collision_counts_consistent = bool(
+            collision_clear_count >= 0
+            and collision_detected_count >= 0
+            and collision_clear_count + collision_detected_count
+            == collision_sample_count
+        )
+        terminal_adapter_sim_step = int(
+            getattr(self.adapter, "sim_steps", -1)
+        )
+        terminal_adapter_sim_time_s = float(
+            getattr(self.adapter, "sim_time", float("nan"))
+        )
+        terminal_time_identity_valid = bool(
+            terminal_adapter_sim_step >= 0
+            and math.isfinite(terminal_adapter_sim_time_s)
+            and self.physics_dt_s is not None
+            and self.filtered_contact_last_sim_time_s is not None
+            and math.isclose(
+                terminal_adapter_sim_time_s,
+                terminal_adapter_sim_step * float(self.physics_dt_s),
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, float(self.physics_dt_s) * 1.0e-6),
+            )
+            and math.isclose(
+                terminal_adapter_sim_time_s,
+                float(self.filtered_contact_last_sim_time_s),
+                rel_tol=0.0,
+                abs_tol=max(1.0e-9, float(self.physics_dt_s) * 1.0e-6),
+            )
+        )
+        collision_coverage_complete = bool(
+            collision_sample_count > 0
+            and collision_counts_consistent
+            and collision_detected_count == 0
+            and collision_clear_count == collision_sample_count
+            and collision_tracker.get("last_collision") is False
+            and collision_sample_count == self.filtered_contact_sample_epoch
+            and type(collision_tracker.get("first_sample_sim_step")) is int
+            and type(collision_tracker.get("last_sample_sim_step")) is int
+            and int(collision_tracker["last_sample_sim_step"])
+            - int(collision_tracker["first_sample_sim_step"])
+            + 1
+            == collision_sample_count
+            and collision_tracker.get("last_sample_epoch")
+            == self.filtered_contact_sample_epoch
+            and collision_tracker.get("last_sample_sim_step")
+            == self.filtered_contact_last_sim_step
+            and collision_tracker.get("last_sample_sim_step")
+            == terminal_adapter_sim_step
+            and terminal_time_identity_valid
+        )
+        effective_collision_detected = bool(
+            self.dangerous_collision_detected or collision_detected_count > 0
+        )
+        unverified_provider_collision = bool(
+            self.unverified_provider_collision_claim
+        )
+        unverified_provider_penetration = bool(
+            self.unverified_provider_penetration_claim
+        )
+        effective_penetration_detected = bool(
+            self.severe_penetration_detected
+            or unverified_provider_penetration
+        )
+        collision_clear_proven = bool(
+            collision_coverage_complete and not unverified_provider_collision
+        )
+        dangerous_collision_available = bool(
+            effective_collision_detected or collision_clear_proven
+        )
+        dangerous_collision_value = (
+            True
+            if effective_collision_detected
+            else False
+            if collision_clear_proven
+            else None
+        )
+        contact_detection_evidence = (
+            {}
+            if collision_detected_count <= 0
+            else {
+                "sample_sim_step": collision_tracker.get(
+                    "first_detected_sim_step"
+                ),
+                "source": (
+                    str(collision_tracker.get("source", "") or "")
+                    + ":"
+                    + str(
+                        collision_tracker.get(
+                            "first_detected_sample_sha256", ""
+                        )
+                        or ""
+                    )
+                ),
+                "combined_contact_sample_sha256": collision_tracker.get(
+                    "first_detected_sample_sha256", ""
+                ),
+                "runtime_safety_evidence_sha256": "",
+            }
+        )
+        effective_detection_evidence = dict(
+            self.dangerous_collision_detection_evidence
+            or contact_detection_evidence
+        )
+        runtime_collision_evidence = {
+            **collision_tracker,
+            "counts_consistent": collision_counts_consistent,
+            "coverage_complete": collision_coverage_complete,
+            "published_contact_sample_epoch": self.filtered_contact_sample_epoch,
+            "last_published_contact_sim_step": self.filtered_contact_last_sim_step,
+            "last_published_contact_sim_time_s": (
+                self.filtered_contact_last_sim_time_s
+            ),
+            "terminal_adapter_sim_step": terminal_adapter_sim_step,
+            "terminal_adapter_sim_time_s": terminal_adapter_sim_time_s,
+            "terminal_time_identity_valid": terminal_time_identity_valid,
+        }
         physical_evidence = {
             "source_version": self.request.source_version,
             "body_crossed_front_face": body_crossed,
@@ -6010,10 +12038,48 @@ class WorkerMacroFSMSession:
             "robot_fell": True if stability == "fallen" else False if stability in {"stable", "recoverable"} else None,
             **body_stuck_evidence,
             "wheel_drive_up_without_required_lift": any_illegal,
-            "dangerous_collision": (
-                True if self.dangerous_collision_detected else None
+            "dangerous_collision": dangerous_collision_value,
+            "dangerous_collision_available": dangerous_collision_available,
+            "dangerous_collision_validation_source": (
+                str(
+                    self.unverified_provider_collision_claim.get(
+                        "reported_source", ""
+                    )
+                    or self.unverified_provider_collision_claim.get(
+                        "classification", ""
+                    )
+                )
+                if unverified_provider_collision
+                else effective_detection_evidence.get("source", "")
+                if effective_collision_detected
+                else collision_tracker.get("source", "")
+                if collision_clear_proven
+                else UNAVAILABLE_RUNTIME_EVIDENCE_SOURCE
             ),
-            "dangerous_collision_available": False,
+            "runtime_nonwheel_collision_evidence": runtime_collision_evidence,
+            "feedback_recovery_action_ledger": {
+                "schema_version": FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA,
+                "path": str(feedback_recovery_path),
+                "sha256": feedback_recovery_sha256,
+                "action_count": len(self.feedback_recovery_action_rows),
+                "n_plus_one_verified_action_count": (
+                    self.feedback_recovery_verified_action_count
+                ),
+                "physical_response_verified_action_count": sum(
+                    row.get("physical_response_verified") is True
+                    for row in self.feedback_recovery_action_rows
+                ),
+            },
+            "dangerous_collision_detection_evidence": effective_detection_evidence,
+            "unverified_provider_collision_claim": dict(
+                self.unverified_provider_collision_claim
+            ),
+            "unverified_provider_penetration_claim": dict(
+                self.unverified_provider_penetration_claim
+            ),
+            "severe_penetration_detection_evidence": dict(
+                self.severe_penetration_detection_evidence
+            ),
             "joint_limit_violation": self.joint_limit_violation_detected,
             "joint_limit_evidence_available": True,
             "nonfinite_core_state_detected": self.nonfinite_state_detected,
@@ -6022,13 +12088,30 @@ class WorkerMacroFSMSession:
             "unsafe_joint_target_validation_source": self.target_audit.get("source", ""),
             **active_leg_trapped_evidence,
             "severe_penetration": (
-                True if self.severe_penetration_detected else None
+                True if effective_penetration_detected else None
             ),
-            "penetration_evidence_available": False,
+            "penetration_evidence_available": effective_penetration_detected,
+            "penetration_validation_source": (
+                self.unverified_provider_penetration_claim.get(
+                    "reported_source", ""
+                )
+                if unverified_provider_penetration
+                else self.severe_penetration_detection_evidence.get("source", "")
+                if self.severe_penetration_detected
+                else UNAVAILABLE_RUNTIME_EVIDENCE_SOURCE
+            ),
             "runtime_collision_penetration_classification": (
                 "DETECTED_HARD_FAILURE"
-                if self.dangerous_collision_detected
-                or self.severe_penetration_detected
+                if effective_collision_detected
+                or effective_penetration_detected
+                else "UNVERIFIED_PROVIDER_TRUE_CLAIM_HARD_STOP"
+                if unverified_provider_collision
+                else (
+                    "DANGEROUS_COLLISION_CLEAR_BY_FULL_CURRENT_TICK_FILTERED_"
+                    "CONTACT_COVERAGE;PENETRATION_NOT_EVALUATED_REQUIRES_"
+                    "SHA_BOUND_FULL_VIDEO_REVIEW"
+                )
+                if collision_coverage_complete
                 else "NOT_EVALUATED_REQUIRES_SHA_BOUND_FULL_VIDEO_REVIEW"
             ),
             "initial_deployment_collision_penetration_clear": bool(
@@ -6044,17 +12127,11 @@ class WorkerMacroFSMSession:
                 "deployment_binding_sha256", ""
             ),
             "final_wheel_contact_classes": dict(final.get("wheel_contact_classes", {}) or {}),
-            "final_all_top": bool(
-                len(dict(final.get("wheel_contact_classes", {}) or {})) == len(LEGS)
-                and all(value == "TOP" for value in dict(final.get("wheel_contact_classes", {}) or {}).values())
-            ),
-            "final_all_loaded": None,
-            "final_load_available": False,
+            "final_all_top": final_all_top,
+            "final_all_loaded": final_all_loaded,
+            "final_load_available": final_load_available,
             "final_velocity_stable": final.get("final_velocity_stable"),
-            "final_posture_complete": bool(
-                stability == "stable"
-                and all(value == "TOP" for value in dict(final.get("wheel_contact_classes", {}) or {}).values())
-            ),
+            "final_posture_complete": bool(final.get("posture_complete") is True),
             "maximum_abs_roll_rad": self.peak_roll_rad,
             "maximum_abs_pitch_rad": self.peak_pitch_rad,
             "traversal": {
@@ -6064,14 +12141,31 @@ class WorkerMacroFSMSession:
                 "lift_authority": "ACTIVE_LEG_PHASE_LOCAL",
             },
             "observation_scope": {
-                "contact_load_available": False,
-                "wheel_classification": "GEOMETRY_ONLY",
-                "filtered_contact_bank_enabled": False,
-                "strict_rest_blocking": False,
-                "contact_drift_blocking": False,
-                "final_all_top_blocking": False,
-                "com_measurement_available": False,
-                "com_proxy_source": "ROOT_POSITION_AND_WHEEL_GEOMETRY",
+                "contact_load_available": final_load_available,
+                "wheel_classification": (
+                    "FILTERED_CONTACT_PLUS_GEOMETRY"
+                    if final_load_available
+                    else "FILTERED_CONTACT_UNAVAILABLE"
+                ),
+                "filtered_contact_bank_enabled": self.filtered_contact_bank_enabled,
+                "strict_rest_blocking": True,
+                "contact_drift_blocking": True,
+                "final_all_top_blocking": True,
+                "com_measurement_available": bool(
+                    final_centroidal is not None
+                    and final_centroidal.whole_body_com.available
+                ),
+                "com_proxy_source": "",
+                "centroidal_support_evidence_sha256": (
+                    ""
+                    if final_centroidal is None
+                    else final_centroidal.payload_sha256
+                ),
+                "combined_contact_sample_sha256": str(
+                    dict(final.get("filtered_contact_sample", {}) or {}).get(
+                        "sample_sha256", ""
+                    )
+                ),
             },
         }
         final.update(physical_evidence)
@@ -6087,7 +12181,6 @@ class WorkerMacroFSMSession:
             return dict(self.terminal_payload)
         if self.adapter is not None:
             try:
-                final_payload = self._observation_payload(self.adapter)
                 if (
                     self.last_verified_servo_targets is not None
                     and self.last_verified_wheel_targets is not None
@@ -6102,6 +12195,11 @@ class WorkerMacroFSMSession:
                             ),
                         )
                     )
+                final_payload = self._observation_payload(self.adapter)
+                if (
+                    self.last_verified_servo_targets is not None
+                    and self.last_verified_wheel_targets is not None
+                ):
                     final_payload["actuator_targets_applied"] = True
                     final_payload[
                         "actuator_target_source"
@@ -6165,6 +12263,9 @@ class WorkerMacroFSMSession:
         segment_completion_path = (
             self.request.run_dir / "macro_segment_completion_ledger.jsonl"
         )
+        feedback_recovery_path = (
+            self.request.run_dir / "macro_feedback_recovery_action_ledger.jsonl"
+        )
         timeline_path = self.request.run_dir / "macro_controller_timeline.json"
         _write_jsonl(telemetry_jsonl, self.rows)
         _write_csv(telemetry_csv, self.rows)
@@ -6174,8 +12275,14 @@ class WorkerMacroFSMSession:
             source_consumption_path, self.source_action_consumption_rows
         )
         _write_jsonl(segment_completion_path, self.segment_completion_rows)
+        _write_jsonl(
+            feedback_recovery_path,
+            self.feedback_recovery_action_rows,
+        )
         source_consumption_sha256 = _sha256_file(source_consumption_path)
         segment_completion_sha256 = _sha256_file(segment_completion_path)
+        feedback_recovery_sha256 = _sha256_file(feedback_recovery_path)
+        dispatch_sha256 = _sha256_file(dispatch_path)
         timeline = list(_attribute(self.controller, "timeline", []) or [])
         _atomic_write_json(timeline_path, {"timeline": timeline})
         inputs = self._task_inputs(success=success, error=self.error)
@@ -6184,6 +12291,20 @@ class WorkerMacroFSMSession:
         root_write_count = getattr(self.adapter, "root_state_write_count", None)
         durable_root_write_count = (
             root_write_count if type(root_write_count) is int else -1
+        )
+        durable_servo_command_transform = dict(
+            _jsonable(self.durable_servo_command_transform)
+        )
+        durable_servo_command_transform_sha256 = (
+            _canonical_json_sha256(durable_servo_command_transform)
+            if durable_servo_command_transform
+            else ""
+        )
+        durable_boundary_readback = dict(_jsonable(self.boundary_readback))
+        durable_boundary_readback_sha256 = (
+            _canonical_json_sha256(durable_boundary_readback)
+            if durable_boundary_readback
+            else ""
         )
         result = {
             "schema_version": SESSION_SCHEMA,
@@ -6196,8 +12317,17 @@ class WorkerMacroFSMSession:
             "adapter_runtime_instance_id": str(
                 getattr(self.adapter, "runtime_instance_id", "") or ""
             ),
+            "servo_command_transform": durable_servo_command_transform,
+            "servo_command_transform_sha256": (
+                durable_servo_command_transform_sha256
+            ),
             "artifact_request_id": "",
             "root_state_write_count": durable_root_write_count,
+            "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
+            "start_boundary_readback": durable_boundary_readback,
+            "start_boundary_readback_sha256": (
+                durable_boundary_readback_sha256
+            ),
             **self.bundle_identity,
             "run_dir": str(self.request.run_dir),
             "macro_fsm_complete": success,
@@ -6226,6 +12356,34 @@ class WorkerMacroFSMSession:
             "segment_completion_sha256": segment_completion_sha256,
             "segment_completion_ledger_path": str(segment_completion_path),
             "segment_completion_ledger_sha256": segment_completion_sha256,
+            "feedback_recovery_action_count": len(
+                self.feedback_recovery_action_rows
+            ),
+            "feedback_recovery_action_ledger_schema_version": (
+                FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+            ),
+            "feedback_recovery_verified_action_count": (
+                self.feedback_recovery_verified_action_count
+            ),
+            "feedback_recovery_physical_response_verified_action_count": sum(
+                row.get("physical_response_verified") is True
+                for row in self.feedback_recovery_action_rows
+            ),
+            "feedback_recovery_action_coverage_complete": not (
+                self._feedback_recovery_coverage_errors()
+            ),
+            "feedback_recovery_action_coverage_errors": (
+                self._feedback_recovery_coverage_errors()
+            ),
+            "feedback_recovery_action_ledger_path": str(
+                feedback_recovery_path
+            ),
+            "feedback_recovery_action_ledger_sha256": (
+                feedback_recovery_sha256
+            ),
+            "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
+            "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
+            "feedback_recovery_dispatch_count": len(self.dispatch_rows),
             "transition_count": len(self.transition_rows),
             "telemetry_sample_count": len(self.rows),
             "telemetry_jsonl_path": str(telemetry_jsonl),
@@ -6245,7 +12403,7 @@ class WorkerMacroFSMSession:
             "safe_stop_readback_sha256": self.safe_stop_readback_sha256,
             "video": video,
             "video_writer_quiesced": self.video_writer_quiesced,
-            "filtered_contact_bank_enabled": False,
+            "filtered_contact_bank_enabled": self.filtered_contact_bank_enabled,
             "physics_dt_s": self.physics_dt_s,
             "error": self.error,
         }
@@ -6270,8 +12428,17 @@ class WorkerMacroFSMSession:
             "adapter_runtime_instance_id": str(
                 getattr(self.adapter, "runtime_instance_id", "") or ""
             ),
+            "servo_command_transform": durable_servo_command_transform,
+            "servo_command_transform_sha256": (
+                durable_servo_command_transform_sha256
+            ),
             "artifact_request_id": "",
             "root_state_write_count": durable_root_write_count,
+            "start_boundary_ack": dict(_jsonable(self.boundary_ack)),
+            "start_boundary_readback": durable_boundary_readback,
+            "start_boundary_readback_sha256": (
+                durable_boundary_readback_sha256
+            ),
             "source_version": self.request.source_version,
             "profile_id": self.request.profile_id,
             **self.bundle_identity,
@@ -6282,6 +12449,34 @@ class WorkerMacroFSMSession:
             "segment_completion_sha256": segment_completion_sha256,
             "segment_completion_ledger_path": str(segment_completion_path),
             "segment_completion_ledger_sha256": segment_completion_sha256,
+            "feedback_recovery_action_count": len(
+                self.feedback_recovery_action_rows
+            ),
+            "feedback_recovery_action_ledger_schema_version": (
+                FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+            ),
+            "feedback_recovery_verified_action_count": (
+                self.feedback_recovery_verified_action_count
+            ),
+            "feedback_recovery_physical_response_verified_action_count": sum(
+                row.get("physical_response_verified") is True
+                for row in self.feedback_recovery_action_rows
+            ),
+            "feedback_recovery_action_coverage_complete": not (
+                self._feedback_recovery_coverage_errors()
+            ),
+            "feedback_recovery_action_coverage_errors": (
+                self._feedback_recovery_coverage_errors()
+            ),
+            "feedback_recovery_action_ledger_path": str(
+                feedback_recovery_path
+            ),
+            "feedback_recovery_action_ledger_sha256": (
+                feedback_recovery_sha256
+            ),
+            "feedback_recovery_dispatch_ledger_path": str(dispatch_path),
+            "feedback_recovery_dispatch_ledger_sha256": dispatch_sha256,
+            "feedback_recovery_dispatch_count": len(self.dispatch_rows),
             "segment_completion_count": sum(
                 row.get("terminal_kind") == SegmentDecisionKind.COMPLETE.value
                 for row in self.segment_completion_rows
@@ -6303,7 +12498,7 @@ class WorkerMacroFSMSession:
             "safe_stop_readback_sha256": self.safe_stop_readback_sha256,
             "deployment_safety_evidence": self.deployment_safety_evidence,
             "last_target_readback": self.last_target_readback,
-            "filtered_contact_bank_enabled": False,
+            "filtered_contact_bank_enabled": self.filtered_contact_bank_enabled,
             "physics_dt_s": self.physics_dt_s,
             "error": self.error,
             "task_inputs": inputs,
@@ -6322,6 +12517,7 @@ __all__ = [
     "RESIDUAL_POLICY_OBSERVATION_SCHEMA",
     "WorkerMacroFSMRequest",
     "WorkerMacroFSMSession",
+    "configure_scene_for_macro_fsm",
     "load_worker_macro_fsm_request",
     "validate_worker_macro_start_binding",
 ]

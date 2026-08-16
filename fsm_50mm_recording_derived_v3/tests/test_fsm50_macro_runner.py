@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from command_model import JOINT_COMMAND_SIGN, SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
 from completion_aware_segment import SegmentDecision, SegmentDecisionKind
 from fsm_50mm_recording_derived_v3 import fsm50_macro_runner as runner
 from fsm_50mm_recording_derived_v3.fsm50_macro_controller import build_gate_c_bundle
@@ -82,6 +82,7 @@ def _synthetic_segment_completion_row(
     row_index: int,
     *,
     start_step: int | None = None,
+    physical_start: bool = True,
 ) -> dict:
     provenance = dict(expected_action["command_provenance"])
     binding = dict(expected_action["segment_completion_binding"])
@@ -187,13 +188,19 @@ def _synthetic_segment_completion_row(
         "start_command_epoch": row_index + 1,
         "start_sim_step": start_step,
         "start_sim_time_s": start_time,
-        "start_physical_dispatch": True,
-        "start_batch_id": f"fake-batch-{row_index + 1}",
-        "start_first_physics_step": start_step + 1,
+        "start_physical_dispatch": physical_start,
+        "start_batch_id": (
+            f"fake-batch-{row_index + 1}" if physical_start else ""
+        ),
+        "start_first_physics_step": (
+            start_step + 1 if physical_start else None
+        ),
         "start_readback_verified": True,
-        "start_readback_verified_sim_step": start_step + 1,
+        "start_readback_verified_sim_step": (
+            start_step + 1 if physical_start else start_step
+        ),
         "start_readback_sha256": readback_sha,
-        "retained_epoch_same_target": False,
+        "retained_epoch_same_target": not physical_start,
         "tracking_begin_count": tracking_calls,
         "tracking_begin_sim_step": start_step,
         "tracking_begin_evidence": {
@@ -223,6 +230,86 @@ def _synthetic_segment_completion_row(
         "terminal_sim_step": terminal_step,
         "terminal_sim_time_s": terminal_time,
         "terminal_decision_sha256": final_sha,
+    }
+
+
+def _synthetic_retained_source_consumption_row(
+    expected_action: dict,
+    *,
+    expected_action_count: int,
+    source_action_index: int,
+    sim_step: int,
+    runtime_instance_id: str,
+) -> dict:
+    """Build one canonical same-target source-consumption row for runner tests."""
+
+    command_transform = {
+        "schema_version": "fsm50.servo_command_transform.v1",
+        "standing_pose_deg_by_servo": {
+            name: 0.0 for name in SERVO_JOINT_NAMES
+        },
+        "command_sign_by_servo": {
+            name: float(JOINT_COMMAND_SIGN[name])
+            for name in SERVO_JOINT_NAMES
+        },
+    }
+    pre_action_readback = {
+        "sim_step": sim_step,
+        "command_epoch": 0,
+        "batch_id": "synthetic-start-boundary",
+        "canonical_servo_targets_deg": dict(
+            expected_action["servo_targets_deg"]
+        ),
+        "canonical_wheel_targets_rad_s": dict(
+            expected_action["wheel_targets_rad_s"]
+        ),
+        "servo_command_transform": command_transform,
+        "servo_command_transform_sha256": runner._sha256_mapping(
+            command_transform
+        ),
+        "expected_servo_drive_targets_rad": {
+            name: 0.0 for name in SERVO_JOINT_NAMES
+        },
+        "actual_servo_drive_targets_rad": {
+            name: 0.0 for name in SERVO_JOINT_NAMES
+        },
+        "actual_wheel_drive_targets_rad_s": {
+            name: 0.0 for name in WHEEL_JOINT_NAMES
+        },
+        "adapter_runtime_instance_id": runtime_instance_id,
+        "root_state_write_count": 0,
+        "physics_dt_s": 1.0 / 120.0,
+    }
+    readback_sha = runner._sha256_mapping(pre_action_readback)
+    return {
+        "schema_version": "fsm50.source_action_consumption.v1",
+        "source_action_index": source_action_index,
+        "expected_source_action_count": expected_action_count,
+        "sim_time_s": sim_step / 120.0,
+        "sim_step": sim_step,
+        "macro_state": expected_action["owner_state"],
+        "subphase": "",
+        "profile_id": expected_action["profile_id"],
+        "profile_source_version": expected_action["profile_source_version"],
+        "profile_strategy": expected_action["profile_strategy"],
+        "source_plan_sha256": expected_action["source_plan_sha256"],
+        "profile_library_sha256": _FakeBundle.profile_library_sha256,
+        "bundle_sha256": _FakeBundle.bundle_sha256,
+        "command_provenance": dict(expected_action["command_provenance"]),
+        "servo_targets_deg": dict(expected_action["servo_targets_deg"]),
+        "wheel_targets_rad_s": dict(expected_action["wheel_targets_rad_s"]),
+        "target_changed": False,
+        "dispatch_epoch": source_action_index + 1,
+        "physical_dispatch_required": False,
+        "physical_dispatch_applied": False,
+        "physical_dispatch_index": None,
+        "batch_id": "",
+        "n_plus_one_verified": False,
+        "n_plus_one_verified_sim_step": None,
+        "n_plus_one_readback_sha256": "",
+        "pre_action_verified_command_epoch": 0,
+        "pre_action_verified_readback": pre_action_readback,
+        "pre_action_verified_readback_sha256": readback_sha,
     }
 
 
@@ -402,7 +489,7 @@ class _FakeClient:
                 "request_id": request["request_id"],
                 "bundle_sha256": request["bundle_sha256"],
                 "state": "ready_for_start",
-                "filtered_contact_bank_enabled": False,
+                "filtered_contact_bank_enabled": True,
                 "deployment_safety_evidence": {
                     "available": True,
                     "dangerous_body_collision": False,
@@ -435,7 +522,14 @@ class _FakeClient:
         run_dir.mkdir(parents=True, exist_ok=True)
         worker_result = run_dir / "worker_macro_fsm_result.json"
         task_inputs = run_dir / "macro_task_inputs.json"
+        source_consumption = (
+            run_dir / "macro_source_action_consumption.jsonl"
+        )
         segment_completion = run_dir / "macro_segment_completion_ledger.jsonl"
+        feedback_recovery = (
+            run_dir / "macro_feedback_recovery_action_ledger.jsonl"
+        )
+        dispatch_ledger = run_dir / "macro_dispatch_ledger.jsonl"
         video = run_dir / "actual_viewport_video.mp4"
         if request["bundle_sha256"] == _FakeBundle.bundle_sha256:
             ledger_bundle = _FakeBundle(request["source_version"])
@@ -451,9 +545,94 @@ class _FakeClient:
             run_dir=run_dir,
         )
         segment_rows = [
-            _synthetic_segment_completion_row(expected, index)
+            _synthetic_segment_completion_row(
+                expected,
+                index,
+                physical_start=False,
+            )
             for index, expected in enumerate(expected_starts)
         ]
+        source_rows = [
+            _synthetic_retained_source_consumption_row(
+                expected,
+                expected_action_count=len(expected_starts),
+                source_action_index=index,
+                sim_step=109 + index * 100000,
+                runtime_instance_id=f"adapter-{self.pid}",
+            )
+            for index, expected in enumerate(expected_starts)
+        ]
+        command_transform = dict(
+            source_rows[0]["pre_action_verified_readback"][
+                "servo_command_transform"
+            ]
+        )
+        command_transform_sha256 = runner._sha256_mapping(command_transform)
+        boundary_ack = {
+            "batch_id": "synthetic-start-boundary",
+            "source": "fsm50_macro_start_boundary",
+            "error": "",
+            "applied_sim_step": 100,
+            "first_physics_step": 101,
+            "motion_start_skew_s": 0.0,
+            "physics_dt_s": 1.0 / 120.0,
+            "servo_applied": True,
+            "wheel_applied": True,
+            "servo_targets_applied": {
+                name: 0.0 for name in SERVO_JOINT_NAMES
+            },
+            "wheel_targets_applied": {
+                name: 0.0 for name in WHEEL_JOINT_NAMES
+            },
+            "recording_metadata": {},
+        }
+        boundary_readback = {
+            "sim_step": 101,
+            "command_epoch": 0,
+            "batch_id": boundary_ack["batch_id"],
+            "canonical_servo_targets_deg": dict(
+                boundary_ack["servo_targets_applied"]
+            ),
+            "canonical_wheel_targets_rad_s": dict(
+                boundary_ack["wheel_targets_applied"]
+            ),
+            "servo_command_transform": command_transform,
+            "servo_command_transform_sha256": command_transform_sha256,
+            "expected_servo_drive_targets_rad": {
+                name: 0.0 for name in SERVO_JOINT_NAMES
+            },
+            "actual_servo_drive_targets_rad": {
+                name: 0.0 for name in SERVO_JOINT_NAMES
+            },
+            "actual_wheel_drive_targets_rad_s": {
+                name: 0.0 for name in WHEEL_JOINT_NAMES
+            },
+            "adapter_runtime_instance_id": f"adapter-{self.pid}",
+            "root_state_write_count": 0,
+            "physics_dt_s": 1.0 / 120.0,
+        }
+        boundary_claim = {
+            "start_boundary_ack": boundary_ack,
+            "start_boundary_readback": boundary_readback,
+            "start_boundary_readback_sha256": runner._sha256_mapping(
+                boundary_readback
+            ),
+        }
+        source_consumption.write_text(
+            "".join(
+                json.dumps(
+                    row,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                + "\n"
+                for row in source_rows
+            ),
+            encoding="utf-8",
+        )
+        source_sha256 = runner.sha256_file(source_consumption)
         segment_completion.write_text(
             "".join(
                 json.dumps(
@@ -469,6 +648,20 @@ class _FakeClient:
             encoding="utf-8",
         )
         segment_sha256 = runner.sha256_file(segment_completion)
+        feedback_recovery.write_text("", encoding="utf-8")
+        feedback_recovery_sha256 = runner.sha256_file(feedback_recovery)
+        dispatch_ledger.write_text("", encoding="utf-8")
+        dispatch_ledger_sha256 = runner.sha256_file(dispatch_ledger)
+        source_claim = {
+            "source_action_consumption_path": str(source_consumption),
+            "source_action_consumption_sha256": source_sha256,
+            "source_action_consumption_count": len(source_rows),
+            "expected_source_action_count": len(source_rows),
+            "source_action_coverage_complete": True,
+            "source_action_coverage_errors": [],
+            "command_dispatch_count": 0,
+            **boundary_claim,
+        }
         ledger_claim = {
             "segment_completion_ledger_path": str(segment_completion),
             "segment_completion_ledger_sha256": segment_sha256,
@@ -477,13 +670,38 @@ class _FakeClient:
             "segment_completion_coverage_complete": True,
             "segment_completion_coverage_errors": [],
         }
+        feedback_claim = {
+            "feedback_recovery_action_ledger_schema_version": (
+                runner.FEEDBACK_RECOVERY_ACTION_LEDGER_SCHEMA
+            ),
+            "feedback_recovery_action_count": 0,
+            "feedback_recovery_verified_action_count": 0,
+            "feedback_recovery_physical_response_verified_action_count": 0,
+            "feedback_recovery_action_coverage_complete": True,
+            "feedback_recovery_action_coverage_errors": [],
+            "feedback_recovery_action_ledger_path": str(feedback_recovery),
+            "feedback_recovery_action_ledger_sha256": (
+                feedback_recovery_sha256
+            ),
+            "feedback_recovery_dispatch_ledger_path": str(dispatch_ledger),
+            "feedback_recovery_dispatch_ledger_sha256": (
+                dispatch_ledger_sha256
+            ),
+            "feedback_recovery_dispatch_count": 0,
+        }
         task_payload = {
             "schema_version": runner.TASK_INPUTS_SCHEMA,
             "completed_result": {
+                **source_claim,
                 **ledger_claim,
+                **feedback_claim,
                 "dispatch_complete": True,
                 "scheduler_complete": True,
-                "macro_controller": dict(ledger_claim),
+                "macro_controller": {
+                    **source_claim,
+                    **ledger_claim,
+                    **feedback_claim,
+                },
             },
             "physical_evidence": {
                 "body_stuck": None,
@@ -515,13 +733,15 @@ class _FakeClient:
                 "run_dir": request["run_dir"],
                 "macro_fsm_complete": True,
                 "video_writer_quiesced": True,
-                "filtered_contact_bank_enabled": False,
+                "filtered_contact_bank_enabled": True,
                 "physics_dt_s": 1.0 / 120.0,
                 "worker_pid": self.pid,
                 "worker_session_id": f"worker-{self.pid}",
                 "adapter_runtime_instance_id": f"adapter-{self.pid}",
                 "artifact_request_id": "",
                 "root_state_write_count": 0,
+                "servo_command_transform": command_transform,
+                "servo_command_transform_sha256": command_transform_sha256,
                 "safe_stop_status": "VERIFIED",
                 "safe_stop_verified": True,
                 "safe_stop_error": "",
@@ -529,7 +749,9 @@ class _FakeClient:
                 "task_inputs_path": str(task_inputs),
                 "segment_completion_path": str(segment_completion),
                 "segment_completion_sha256": segment_sha256,
+                **source_claim,
                 **ledger_claim,
+                **feedback_claim,
             },
         )
         video.write_bytes(b"video")
@@ -549,18 +771,7 @@ class _FakeClient:
                 "graph_sha256": request["graph_sha256"],
                 "profile_library_sha256": request["profile_library_sha256"],
                 "bundle_sha256": request["bundle_sha256"],
-                "start_boundary_ack": {
-                    "applied_sim_step": 100,
-                    "first_physics_step": 101,
-                    "motion_start_skew_s": 0.0,
-                    "physics_dt_s": 1.0 / 120.0,
-                    "servo_targets_applied": {
-                        name: 0.0 for name in SERVO_JOINT_NAMES
-                    },
-                    "wheel_targets_applied": {
-                        name: 0.0 for name in WHEEL_JOINT_NAMES
-                    },
-                },
+                "start_boundary_ack": boundary_ack,
                 "first_controller_tick_physics_step": 101,
                 "earliest_profile_dispatch_physics_step": 108,
                 "earliest_profile_actuation_physics_step": 109,
@@ -584,13 +795,15 @@ class _FakeClient:
             "task_inputs_path": str(task_inputs),
             "video_path": str(video),
             "video_writer_quiesced": True,
-            "filtered_contact_bank_enabled": False,
+            "filtered_contact_bank_enabled": True,
             "physics_dt_s": 1.0 / 120.0,
             "worker_pid": self.pid,
             "worker_session_id": f"worker-{self.pid}",
             "adapter_runtime_instance_id": f"adapter-{self.pid}",
             "artifact_request_id": "",
             "root_state_write_count": 0,
+            "servo_command_transform": command_transform,
+            "servo_command_transform_sha256": command_transform_sha256,
             "safe_stop_status": "VERIFIED",
             "safe_stop_verified": True,
             "safe_stop_error": "",
@@ -598,7 +811,9 @@ class _FakeClient:
             "task_inputs": task_payload,
             "segment_completion_path": str(segment_completion),
             "segment_completion_sha256": segment_sha256,
+            **source_claim,
             **ledger_claim,
+            **feedback_claim,
         }
         self.latest_macro_fsm_terminal = terminal
         self._history.append(

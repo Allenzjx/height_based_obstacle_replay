@@ -75,6 +75,7 @@ from fsm_50mm_recording_derived_v3.worker_task_replay_session import (
 )
 from fsm_50mm_recording_derived_v3.worker_macro_fsm_session import (
     WorkerMacroFSMSession,
+    configure_scene_for_macro_fsm,
     load_worker_macro_fsm_request,
     validate_worker_macro_start_binding,
 )
@@ -1635,11 +1636,23 @@ def run_worker(args: argparse.Namespace) -> int:
         logger.log(f"[worker] creating scene for {height_mm}mm")
         scene_config = config_from_args(args, height_mm)
         configure_scene_for_worker_recording(scene_config, gate_request)
+        macro_scene_request = (
+            macro_request
+            if macro_request is not None
+            else (
+                residual_request.base_request
+                if residual_request is not None
+                else None
+            )
+        )
+        configure_scene_for_macro_fsm(scene_config, macro_scene_request)
         scene_handle = create_scene(
             scene_config,
             simulation_app=simulation_app,
             phase_callback=lambda name, details=None: set_phase(name, details),
         )
+        if macro_session is not None:
+            macro_session.bind_filtered_contact_bank_scene(scene_handle)
 
         publish_status(ready=False, starting=True)
         logger.log("[worker] scene created")
@@ -2263,6 +2276,9 @@ def run_worker(args: argparse.Namespace) -> int:
                         "request_id": request_id,
                         "plan_id": requested_plan_id,
                         "plan_sha256": requested_sha,
+                        "execution_semantics": str(
+                            plan.execution_semantics or ""
+                        ),
                         "validated_plan_sha256": str(
                             integrity.get("plan_sha256", "") or ""
                         ),
@@ -2506,6 +2522,9 @@ def run_worker(args: argparse.Namespace) -> int:
                             plan_id=requested_plan_id,
                             plan_sha256=str(integrity.get("plan_sha256", "") or ""),
                             profile=str(plan.profile or "raw"),
+                            execution_semantics=str(
+                                plan.execution_semantics or ""
+                            ),
                             event_count=int(integrity.get("event_count", 0) or 0),
                             segment_count=int(integrity.get("segment_count", 0) or 0),
                             input_step_count=int(integrity.get("input_step_count", 0) or 0),

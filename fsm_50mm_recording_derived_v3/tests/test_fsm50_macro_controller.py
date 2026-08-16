@@ -6,22 +6,50 @@ import math
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
-from command_model import SERVO_JOINT_NAMES, WHEEL_JOINT_NAMES
+from command_model import (
+    SERVO_JOINT_NAMES,
+    WHEEL_JOINT_NAMES,
+    command_limits_for_servo,
+)
 from completion_aware_segment import (
     CompletionAwareSegmentExecutor,
     SegmentCompletionSpec,
     SegmentFeedback,
 )
 from fsm_50mm_recording_derived_v3.fsm50_macro_controller import (
-    MacroFSMController,
+    FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA,
+    FEEDBACK_RECOVERY_EVIDENCE_BINDING_SCHEMA,
+    FEEDBACK_RECOVERY_OBSERVATION_PAYLOAD_KEYS,
+    FEEDBACK_RECOVERY_TARGET_MAP_SCHEMA,
+    FeedbackRecoveryAction,
+    FeedbackRecoveryObservation,
+    FeedbackRecoveryStage,
+    MacroFSMController as ProductionMacroFSMController,
     MacroObservation,
     MacroSegmentCompletionToken,
     MacroTerminalOutcome,
     SOURCE_ACTION_IDENTITY_SCHEMA_VERSION,
+    _canonical_command_provenance,
+    _empty_command_provenance,
     build_gate_c_bundle,
 )
+from fsm_50mm_recording_derived_v3.fsm50_centroidal_support import (
+    CentroidalAngularMomentumRateMeasurement,
+    CentroidalSupportEvidence,
+    ContactWrenchFeasibility,
+    EvidenceStatus,
+    WholeBodyCOMMeasurement,
+    WheelContactMeasurement,
+    assess_contact_wrench_feasibility,
+    assess_primary_diagonal_support,
+    assess_support_region,
+    unavailable_whole_body_com,
+    validate_wheel_contact_frame,
+)
 from fsm_50mm_recording_derived_v3.fsm50_macro_state_model import (
+    FINAL_RECOVERY_FEEDBACK_LIMITS,
     MacroGuardKind,
     MacroStateId,
     MacroSubphase,
@@ -48,6 +76,234 @@ def _complete_servos(value: float = 0.0) -> dict[str, float]:
 
 def _complete_wheels(value: float = 0.0) -> dict[str, float]:
     return {name: value for name in WHEEL_JOINT_NAMES}
+
+
+def _attach_strict_evidence(
+    payload: dict[str, object],
+    *,
+    physics_time_s: float = 0.0,
+    sim_step: int | None = None,
+    observed_command_epoch: int = 0,
+    verified_command_epoch: int | None = None,
+    readback_targets: dict[str, float] | None = None,
+    readback_wheel_targets: dict[str, float] | None = None,
+) -> dict[str, object]:
+    """Build synthetic physical evidence for pure controller unit tests."""
+
+    result = dict(payload)
+    time_s = float(physics_time_s)
+    step = (
+        max(0, int(round(time_s * 1_000_000.0)))
+        if sim_step is None
+        else sim_step
+    )
+    dt = 1.0e-6 if step == 0 else time_s / step
+    base_raw = result.get("base_position_m", (0.0, 0.0, 0.1))
+    if isinstance(base_raw, dict):
+        base = tuple(float(base_raw[key]) for key in ("x", "y", "z"))
+    else:
+        base = tuple(float(value) for value in base_raw)  # type: ignore[arg-type]
+    evidence_base = base if len(base) == 3 else (0.0, 0.0, 0.1)
+    classes = dict(result["wheel_contact_classes"])  # type: ignore[arg-type]
+    centers = dict(result["wheel_center_w_m"])  # type: ignore[arg-type]
+    active_centers = [
+        tuple(float(value) for value in centers[leg])
+        for leg in ("FL", "FR", "RL", "RR")
+        if str(classes[leg]).upper() in {"GROUND", "TOP"}
+    ]
+    if active_centers:
+        support_center_xy = (
+            sum(value[0] for value in active_centers) / len(active_centers),
+            sum(value[1] for value in active_centers) / len(active_centers),
+        )
+    else:
+        support_center_xy = (0.0, 0.0)
+    requested_com = result.get(
+        "test_whole_body_com_position_m",
+        (
+            support_center_xy[0],
+            support_center_xy[1],
+            evidence_base[2],
+        ),
+    )
+    com_position = tuple(float(value) for value in requested_com)  # type: ignore[arg-type]
+    com_available = result.get("test_whole_body_com_available", True) is True
+    com = (
+        WholeBodyCOMMeasurement(
+            com_measurement_available=True,
+            acceleration_available=True,
+            physics_tick=step,
+            sim_time_s=time_s,
+            physics_dt_s=dt,
+            body_names=("synthetic_body",),
+            body_masses_kg=(10.0,),
+            total_mass_kg=10.0,
+            position_w_m=com_position,
+            velocity_w_m_s=(0.0, 0.0, 0.0),
+            acceleration_w_m_s2=(0.0, 0.0, 0.0),
+            source="unit_test.synthetic_whole_body_com",
+        )
+        if com_available
+        else unavailable_whole_body_com(
+            "unit test requested unavailable COM",
+            source="unit_test.unavailable",
+        )
+    )
+    angular = CentroidalAngularMomentumRateMeasurement(
+        available=com_available,
+        physics_tick=step if com_available else None,
+        sim_time_s=time_s if com_available else None,
+        body_names=("synthetic_body",) if com_available else (),
+        angular_momentum_rate_w_nm=(0.0, 0.0, 0.0) if com_available else None,
+        source="unit_test.synthetic_angular_rate",
+        errors=() if com_available else ("unavailable",),
+    )
+    obstacle_top = float(result["obstacle_top_z_m"])
+    requested_loads = dict(result["wheel_contact_load_n"])  # type: ignore[arg-type]
+    active_count = sum(
+        str(classes[leg]).upper() in {"GROUND", "TOP"} for leg in ("FL", "FR", "RL", "RR")
+    )
+    default_load = 98.1 / active_count if active_count else 0.0
+    dwell_by_leg = dict(
+        result.get("test_contact_dwell_s", {leg: 0.5 for leg in ("FL", "FR", "RL", "RR")})  # type: ignore[arg-type]
+    )
+    dwell_verified_by_leg = dict(
+        result.get(
+            "test_contact_dwell_verified",
+            {leg: True for leg in ("FL", "FR", "RL", "RR")},
+        )  # type: ignore[arg-type]
+    )
+    wrench_requested = result.get("test_wrench_proven", True) is True
+    measurements = []
+    for leg in ("FL", "FR", "RL", "RR"):
+        contact_class = str(classes[leg]).upper()
+        active = contact_class in {"GROUND", "TOP"}
+        surface = "OBSTACLE_TOP" if contact_class == "TOP" else "GROUND" if active else "AIR"
+        surface_height = obstacle_top if surface == "OBSTACLE_TOP" else 0.0 if surface == "GROUND" else None
+        requested_load = requested_loads.get(leg)
+        load = float(
+            requested_load
+            if requested_load is not None
+            else default_load
+            if active
+            else 0.0
+        )
+        center = tuple(float(value) for value in centers[leg])
+        point = (center[0], center[1], float(surface_height)) if active else None
+        measurements.append(
+            WheelContactMeasurement(
+                leg=leg,
+                wheel_body_name={"FL": "front_left_wheel", "FR": "front_right_wheel", "RL": "rear_left_wheel", "RR": "rear_right_wheel"}[leg],
+                physics_tick=step,
+                sim_time_s=time_s,
+                surface_kind=surface,
+                surface_height_m=surface_height,
+                surface_normal_w=(0.0, 0.0, 1.0) if active else None,
+                active=active,
+                contact_point_w_m=point,
+                normal_force_w_n=(0.0, 0.0, load),
+                friction_force_w_n=(0.0, 0.0, 0.0),
+                contact_moment_w_nm=(0.0, 0.0, 0.0) if active else None,
+                contact_moment_model=(
+                    "MEASURED"
+                    if active and wrench_requested
+                    else "POINT_CONTACT_ZERO_CONSERVATIVE"
+                    if active
+                    else ""
+                ),
+                dwell_s=float(dwell_by_leg[leg]) if active else None,
+                surface_dwell_verified=(
+                    bool(dwell_verified_by_leg[leg]) if active else False
+                ),
+                slip_speed_m_s=0.0 if active else None,
+                contact_drift_speed_m_s=0.0 if active else None,
+                friction_coefficient=0.8 if active else None,
+                finite_patch_radius_m=0.03 if active else None,
+                source="unit_test.synthetic_contact",
+            )
+        )
+    contacts = validate_wheel_contact_frame(
+        measurements,
+        physics_tick=step,
+        sim_time_s=time_s,
+        physics_dt_s=dt,
+    )
+    support = assess_support_region(com, contacts)
+    wrench = assess_contact_wrench_feasibility(
+        com,
+        contacts,
+        angular_momentum_rate=angular,
+    )
+    diagonal = assess_primary_diagonal_support(
+        com,
+        contacts,
+        active_swing_leg=str(result.get("test_active_swing_leg", "RL")),
+        wrench_feasibility=wrench,
+    )
+    centroidal = CentroidalSupportEvidence.create(
+        sim_step=step,
+        physics_time_s=time_s,
+        physics_dt_s=dt,
+        whole_body_com=com,
+        centroidal_angular_momentum_rate=angular,
+        wheel_contacts=contacts,
+        support_region=support,
+        contact_wrench_feasibility=wrench,
+        diagonal_support=diagonal,
+    )
+    readback = dict(readback_targets or result["servo_targets_deg"])  # type: ignore[arg-type]
+    readback_wheels = dict(
+        readback_wheel_targets or result["wheel_targets_rad_s"]  # type: ignore[arg-type]
+    )
+    result["servo_targets_deg"] = readback
+    result["wheel_targets_rad_s"] = readback_wheels
+    measured = dict(result.get("test_measured_servo_positions_deg", readback))  # type: ignore[arg-type]
+    velocities = dict(result.get("test_measured_servo_velocities_deg_s", _complete_servos()))  # type: ignore[arg-type]
+    margins = dict(result.get("test_joint_limit_margin_deg", _complete_servos(20.0)))  # type: ignore[arg-type]
+    feedback = FeedbackRecoveryObservation.create(
+        sim_step=step,
+        physics_time_s=time_s,
+        observed_command_epoch=observed_command_epoch,
+        n_plus_one_verified=verified_command_epoch is not None,
+        verified_command_epoch=verified_command_epoch,
+        readback_servo_targets_deg=readback,
+        readback_wheel_targets_rad_s=readback_wheels,
+        measured_servo_positions_deg=measured,
+        measured_servo_velocities_deg_s=velocities,
+        joint_limit_margin_deg=margins,
+        base_position_m=evidence_base,
+        base_roll_rad=(
+            float(result["base_roll_rad"])
+            if math.isfinite(float(result["base_roll_rad"]))
+            else 0.0
+        ),
+        base_pitch_rad=(
+            float(result["base_pitch_rad"])
+            if math.isfinite(float(result["base_pitch_rad"]))
+            else 0.0
+        ),
+        base_angular_velocity_rad_s=(
+            result["base_angular_velocity_rad_s"]
+            if isinstance(result["base_angular_velocity_rad_s"], (tuple, list))
+            and len(result["base_angular_velocity_rad_s"]) == 3  # type: ignore[arg-type]
+            and all(
+                math.isfinite(float(value))
+                for value in result["base_angular_velocity_rad_s"]  # type: ignore[union-attr]
+            )
+            else (0.0, 0.0, 0.0)
+        ),
+        wheel_center_w_m=centers,
+        wheel_front_face_clearance_m=result["wheel_front_face_clearance_m"],  # type: ignore[arg-type]
+        wheel_top_clearance_m=result["wheel_top_clearance_m"],  # type: ignore[arg-type]
+        obstacle_front_face_x_m=float(result["obstacle_front_face_x_m"]),
+        obstacle_top_z_m=float(result["obstacle_top_z_m"]),
+        body_crossed_front_face=bool(result["body_crossed_front_face"]),
+        final_recoverable=bool(result["final_recoverable"]),
+        posture_complete=bool(result["posture_complete"]),
+    )
+    result["centroidal_support_evidence"] = centroidal.to_mapping()
+    result["feedback_recovery_observation"] = feedback.to_mapping()
+    return result
 
 
 def _synthetic_binding(
@@ -195,7 +451,7 @@ def _observation_mapping(
         "posture_complete": False,
     }
     payload.update(updates)
-    return payload
+    return _attach_strict_evidence(payload)
 
 
 def _with_leg(
@@ -212,10 +468,14 @@ def _with_leg(
     top[leg] = 0.01 if contact_class == "AIR" else 0.0 if contact_class == "TOP" else -0.05
     result["wheel_top_clearance_m"] = top
     centers = dict(result["wheel_center_w_m"])  # type: ignore[arg-type]
-    x, y, z = centers[leg]
-    centers[leg] = (0.6 if crossed else 0.2, y, z)
+    _x, y, z = centers[leg]
+    if crossed:
+        x = 0.7 if leg in {"FL", "FR"} else 0.5
+    else:
+        x = 0.2 if leg in {"FL", "FR"} else -0.2
+    centers[leg] = (x, y, z)
     result["wheel_center_w_m"] = centers
-    return result
+    return _attach_strict_evidence(result)
 
 
 def _top_legs(payload: dict[str, object], *legs: str) -> dict[str, object]:
@@ -267,7 +527,7 @@ def _clean_gate_a_observation(row: dict[str, object]) -> dict[str, object]:
         and support_count >= 2
     )
     velocity_stable = bool(row.get("final_velocity_stable", False))
-    return {
+    return _attach_strict_evidence({
         "robot_state_finite": bool(row["robot_state_finite"]),
         "actuator_targets_applied": True,
         "base_position_m": base,
@@ -302,7 +562,98 @@ def _clean_gate_a_observation(row: dict[str, object]) -> dict[str, object]:
             and velocity_stable
             and all(value == "TOP" for value in classes.values())
         ),
+    })
+
+
+def _observation_payload(value: MacroObservation | dict[str, object]) -> dict[str, object]:
+    if isinstance(value, dict):
+        return dict(value)
+    return {
+        "robot_state_finite": value.robot_state_finite,
+        "actuator_targets_applied": value.actuator_targets_applied,
+        "base_position_m": value.base_position_m,
+        "base_roll_rad": value.base_roll_rad,
+        "base_pitch_rad": value.base_pitch_rad,
+        "base_angular_velocity_rad_s": value.base_angular_velocity_rad_s,
+        "com_position_m": value.com_position_m,
+        "servo_targets_deg": dict(value.servo_targets_deg),
+        "wheel_targets_rad_s": dict(value.wheel_targets_rad_s),
+        "wheel_center_w_m": dict(value.wheel_center_w_m),
+        "wheel_contact_classes": dict(value.wheel_contact_classes),
+        "wheel_contact_load_n": dict(value.wheel_contact_load_n),
+        "wheel_front_face_clearance_m": dict(value.wheel_front_face_clearance_m),
+        "wheel_top_clearance_m": dict(value.wheel_top_clearance_m),
+        "obstacle_front_face_x_m": value.obstacle_front_face_x_m,
+        "obstacle_top_z_m": value.obstacle_top_z_m,
+        "dispatch_error": value.dispatch_error,
+        "robot_fell": value.robot_fell,
+        "body_stuck": value.body_stuck,
+        "dangerous_collision": value.dangerous_collision,
+        "severe_penetration": value.severe_penetration,
+        "joint_limit_violation": value.joint_limit_violation,
+        "unsafe_joint_target": value.unsafe_joint_target,
+        "active_leg_trapped": value.active_leg_trapped,
+        "wheel_drive_up_without_required_lift": value.wheel_drive_up_without_required_lift,
+        "body_crossed_front_face": value.body_crossed_front_face,
+        "final_recoverable": value.final_recoverable,
+        "posture_complete": value.posture_complete,
     }
+
+
+def _current_test_observation(
+    value: MacroObservation | dict[str, object],
+    *,
+    sim_time_s: float,
+    sim_step: int,
+    command_epoch: int,
+    verified_command_epoch: int | None,
+    readback_targets: dict[str, float],
+    readback_wheel_targets: dict[str, float],
+) -> MacroObservation:
+    payload = _observation_payload(value)
+    payload = _attach_strict_evidence(
+        payload,
+        physics_time_s=sim_time_s,
+        sim_step=sim_step,
+        observed_command_epoch=command_epoch,
+        verified_command_epoch=verified_command_epoch,
+        readback_targets=readback_targets,
+        readback_wheel_targets=readback_wheel_targets,
+    )
+    return MacroObservation.from_mapping(payload)
+
+
+class MacroFSMController(ProductionMacroFSMController):
+    """Legacy test adapter that refreshes synthetic evidence every callback."""
+
+    def reset(self, initial_observation, *, sim_time_s, **kwargs):  # type: ignore[no-untyped-def]
+        self._test_evidence_step = 0
+        initial_payload = _observation_payload(initial_observation)
+        observed = _current_test_observation(
+            initial_observation,
+            sim_time_s=sim_time_s,
+            sim_step=self._test_evidence_step,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=dict(initial_payload["servo_targets_deg"]),  # type: ignore[arg-type]
+            readback_wheel_targets=dict(initial_payload["wheel_targets_rad_s"]),  # type: ignore[arg-type]
+        )
+        return super().reset(observed, sim_time_s=sim_time_s, **kwargs)
+
+    def tick(self, observation, *, sim_time_s, **kwargs):  # type: ignore[no-untyped-def]
+        self._test_evidence_step += 1
+        pending = self._feedback_pending_epoch
+        epoch = pending if pending is not None else self._command_epoch
+        observed = _current_test_observation(
+            observation,
+            sim_time_s=sim_time_s,
+            sim_step=self._test_evidence_step,
+            command_epoch=epoch,
+            verified_command_epoch=pending,
+            readback_targets=dict(self._current_servo_targets),
+            readback_wheel_targets=dict(self._current_wheel_targets),
+        )
+        return super().tick(observed, sim_time_s=sim_time_s, **kwargs)
 
 
 def _physical_evidence_ready(
@@ -490,6 +841,63 @@ def _test_library() -> MotionProfileLibrary:
         profiles=tuple(profiles),
         successful_sources=sources,
         alignment_path="synthetic-short-profiles-derived-from-real-success-identities",
+    )
+
+
+def _hermetic_feedback_library() -> MotionProfileLibrary:
+    """Minimal source/profile identity for feedback-only contract tests.
+
+    This intentionally does not stand in for Gate-A admission.  Real recording
+    tests continue to fail closed when their plan fingerprints are stale.
+    """
+
+    frame = MotionKeyframe(
+        time_s=0.0,
+        source_time_s=0.0,
+        sequence_index=0,
+        source_segment_index=0,
+        source_step_index=1,
+        physical_phase="FINAL_POSTURE_RECOVERY",
+        subphase=MacroSubphase.RECOVERY,
+        servo_targets_deg=_complete_servos(),
+        wheel_targets_rad_s=_complete_wheels(),
+        commands=("servo front_right_hip 0.0",),
+        source_event_indices=(0,),
+    )
+    source_plan_sha256 = "1" * 64
+    source_plan_payload_sha256 = "2" * 64
+    accepted_steps_sha256 = "3" * 64
+    binding = _synthetic_binding(
+        source_version=DEFAULT_PRIMARY_VERSION,
+        source_plan_sha256=source_plan_sha256,
+        source_plan_payload_sha256=source_plan_payload_sha256,
+        accepted_steps_sha256=accepted_steps_sha256,
+        frame=frame,
+    )
+    profile = PhaseMotionProfile(
+        profile_id="hermetic-feedback-configuration:S10",
+        source_version=DEFAULT_PRIMARY_VERSION,
+        state_id=MacroStateId.S10_POSTURE_RECOVERY,
+        strategy="RECOVERY_PROFILE",
+        physical_phases=("FINAL_POSTURE_RECOVERY",),
+        keyframes=(frame,),
+        nominal_duration_s=0.0,
+        source_plan_sha256=source_plan_sha256,
+        source_plan_file_sha256="4" * 64,
+        gate_a_run_dir="HERMETIC_FEEDBACK_CONTRACT_ONLY",
+        source_segment_range=(0, 0),
+        source_step_indices=(1,),
+        source_commands=frame.commands,
+        accepted_steps_sha256=accepted_steps_sha256,
+        source_plan_payload_sha256=source_plan_payload_sha256,
+        segment_bindings=(binding,),
+    )
+    return MotionProfileLibrary(
+        profiles=(profile,),
+        successful_sources=(
+            SimpleNamespace(source_version=DEFAULT_PRIMARY_VERSION),
+        ),
+        alignment_path="hermetic-feedback-configuration-contract-only",
     )
 
 
@@ -706,6 +1114,66 @@ class MacroObservationContractTests(unittest.TestCase):
         self.assertFalse(observation.leg_crossed("FR"))
         self.assertFalse(observation.leg_top("FR"))
 
+    def test_strict_feedback_schema_is_exact_sha_bound_and_deeply_immutable(self) -> None:
+        observation = MacroObservation.from_mapping(_observation_mapping())
+        feedback = observation.feedback_recovery_observation
+        mapping = feedback.to_mapping()
+        self.assertEqual(
+            set(mapping["payload"]),
+            FEEDBACK_RECOVERY_OBSERVATION_PAYLOAD_KEYS,
+        )
+        with self.assertRaises(TypeError):
+            feedback.readback_servo_targets_deg[SERVO_JOINT_NAMES[0]] = 99.0  # type: ignore[index]
+        with self.assertRaises(TypeError):
+            feedback.wheel_center_w_m["FR"] = (9.0, 9.0, 9.0)  # type: ignore[index]
+
+        tampered = feedback.to_mapping()
+        tampered["payload"]["measured_servo_positions_deg"][  # type: ignore[index]
+            SERVO_JOINT_NAMES[0]
+        ] = 1.0
+        with self.assertRaisesRegex(ValueError, "payload SHA"):
+            FeedbackRecoveryObservation.from_mapping(tampered)
+
+        extra = feedback.to_mapping()
+        extra["payload"]["unknown"] = 1  # type: ignore[index]
+        with self.assertRaisesRegex(ValueError, "payload keys"):
+            FeedbackRecoveryObservation.from_mapping(extra)
+
+    def test_tampered_centroid_and_cross_tick_feedback_are_rejected(self) -> None:
+        payload = _observation_mapping()
+        centroidal = json.loads(
+            json.dumps(payload["centroidal_support_evidence"])
+        )
+        centroidal["payload"]["whole_body_com"]["position_w_m"][0] = 0.1
+        payload["centroidal_support_evidence"] = centroidal
+        with self.assertRaisesRegex(ValueError, "payload SHA"):
+            MacroObservation.from_mapping(payload)
+
+        payload = _observation_mapping()
+        feedback = json.loads(
+            json.dumps(payload["feedback_recovery_observation"])
+        )
+        feedback["payload"]["sim_step"] = 1
+        feedback["payload_sha256"] = hashlib.sha256(
+            json.dumps(
+                feedback["payload"],
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        payload["feedback_recovery_observation"] = feedback
+        with self.assertRaisesRegex(ValueError, "same tick"):
+            MacroObservation.from_mapping(payload)
+
+    def test_sha_bound_feedback_duplicates_must_match_macro_observation(self) -> None:
+        payload = _observation_mapping()
+        centers = dict(payload["wheel_center_w_m"])  # type: ignore[arg-type]
+        centers["FR"] = (9.0, -0.2, 0.05)
+        payload["wheel_center_w_m"] = centers
+        with self.assertRaisesRegex(ValueError, "SHA-bound feedback fields"):
+            MacroObservation.from_mapping(payload)
+
 
 class _CompletionDrivingController(MacroFSMController):
     """Test harness that supplies exact measured-completion tokens on demand."""
@@ -780,6 +1248,91 @@ class MacroControllerTests(unittest.TestCase):
             self.library,
             primary_source_version=DEFAULT_PRIMARY_VERSION,
         )
+
+    def _production_s10(
+        self, payload: dict[str, object]
+    ) -> tuple[ProductionMacroFSMController, MacroObservation]:
+        initial = _current_test_observation(
+            payload,
+            sim_time_s=0.0,
+            sim_step=0,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=dict(payload["servo_targets_deg"]),  # type: ignore[arg-type]
+            readback_wheel_targets=dict(payload["wheel_targets_rad_s"]),  # type: ignore[arg-type]
+        )
+        controller = ProductionMacroFSMController(
+            self.graph,
+            self.library,
+            primary_source_version=DEFAULT_PRIMARY_VERSION,
+        )
+        controller.reset(initial, sim_time_s=0.0)
+        controller._enter_state(
+            MacroStateId.S10_POSTURE_RECOVERY,
+            initial,
+            0.0,
+        )
+        controller._active_profile = None
+        return controller, initial
+
+    @staticmethod
+    def _s10_air_candidate() -> dict[str, object]:
+        payload = _top_legs(_observation_mapping(), "FL", "RR", "RL")
+        payload = _with_leg(payload, "FR", "AIR", crossed=True)
+        payload.update(
+            body_crossed_front_face=True,
+            final_recoverable=True,
+            posture_complete=False,
+        )
+        return _attach_strict_evidence(payload)
+
+    @staticmethod
+    def _worker_reconstructed_configuration_sha256(
+        controller: ProductionMacroFSMController,
+        observation: MacroObservation,
+        *,
+        leg: str,
+        reference_targets: dict[str, float],
+    ) -> str:
+        feedback = observation.feedback_recovery_observation
+        profile = controller._active_profile
+        payload = {
+            "schema_version": FEEDBACK_RECOVERY_CONFIGURATION_SCHEMA,
+            "leg": leg,
+            "macro_state": controller._state_id.value,
+            "selected_source_version": controller._source_version,
+            "reference_profile_id": "" if profile is None else profile.profile_id,
+            "reference_profile_source_version": (
+                "" if profile is None else profile.source_version
+            ),
+            "reference_profile_source_plan_sha256": (
+                "" if profile is None else profile.source_plan_sha256
+            ),
+            "centroidal_evidence_sha256": (
+                observation.centroidal_support_evidence.payload_sha256
+            ),
+            "feedback_observation_sha256": feedback.payload_sha256,
+            "servo_reference_targets_deg": reference_targets,
+            "measured_servo_positions_deg": dict(
+                feedback.measured_servo_positions_deg
+            ),
+            "wheel_center_w_m": {
+                item: list(feedback.wheel_center_w_m[item])
+                for item in ("FL", "FR", "RL", "RR")
+            },
+            "body_crossed_front_face": feedback.body_crossed_front_face,
+            "final_recoverable": feedback.final_recoverable,
+            "posture_complete": feedback.posture_complete,
+        }
+        return hashlib.sha256(
+            json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
 
     def _start_raw_s1(
         self,
@@ -1087,6 +1640,7 @@ class MacroControllerTests(unittest.TestCase):
         face = dict(approach["wheel_front_face_clearance_m"])  # type: ignore[arg-type]
         face["RR"] = -0.05
         approach["wheel_front_face_clearance_m"] = face
+        approach = _attach_strict_evidence(approach)
         s4_controller = self._v010_controller(approach)
         s4_controller._episode_top_seen["FR"] = True
         s4_controller._episode_top_seen["FL"] = True
@@ -2159,502 +2713,785 @@ class MacroControllerTests(unittest.TestCase):
         self.assertFalse(stale.satisfied)
         self.assertFalse(stale.evidence["predecessor_carry_fresh"])
 
-    def test_s5_accepts_only_fresh_predecessor_projected_displacement(self) -> None:
+    def test_s5_rejects_body_proxy_and_accepts_current_com_or_rr_unload(self) -> None:
         controller = self._controller()
-        start = _observation_mapping(base=(0.0, 0.0, 0.1))
+        start = _observation_mapping(
+            base=(0.0, 0.0, 0.1),
+            test_whole_body_com_position_m=(0.0, 0.0, 0.1),
+        )
         controller.reset(start, sim_time_s=0.0)
-        controller._state_id = MacroStateId.S4_FRONT_PAIR_ADVANCE
-        controller._entry_body_position = (0.0, 0.0, 0.1)
-        moved = _observation_mapping(base=(0.06, 0.03, 0.1))
-        moved_observation = MacroObservation.from_mapping(moved)
-        controller._record_boundary_carry(
-            MacroStateId.S4_FRONT_PAIR_ADVANCE,
-            MacroStateId.S5_PRE_RR_COM_SHIFT,
-            moved_observation,
-        )
         controller._enter_state(
-            MacroStateId.S5_PRE_RR_COM_SHIFT, moved_observation, 1.0
-        )
-        fresh = controller._evaluate_guard(
-            controller.graph.get(MacroStateId.S5_PRE_RR_COM_SHIFT),
-            moved_observation,
-            timeline_complete=True,
-        )
-        self.assertTrue(fresh.satisfied)
-        self.assertTrue(fresh.evidence["inherited_displacement_fresh"])
-        self.assertGreater(
-            fresh.evidence["inherited_target_direction_displacement_m"], 0.003
+            MacroStateId.S5_PRE_RR_COM_SHIFT,
+            MacroObservation.from_mapping(start),
+            0.0,
         )
 
-        controller._boundary_from_state = MacroStateId.S3_FL_TRAVERSE
-        stale = controller._evaluate_guard(
+        body_only = _observation_mapping(
+            base=(0.06, 0.03, 0.1),
+            test_whole_body_com_position_m=(0.0, 0.0, 0.1),
+        )
+        proxy_rejected = controller._evaluate_guard(
             controller.graph.get(MacroStateId.S5_PRE_RR_COM_SHIFT),
-            moved_observation,
+            MacroObservation.from_mapping(body_only),
             timeline_complete=True,
         )
-        self.assertFalse(stale.satisfied)
+        self.assertFalse(proxy_rejected.satisfied)
+        self.assertFalse(proxy_rejected.evidence["body_root_proxy_guard_eligible"])
 
-    def test_four_success_held_telemetry_shadow_is_causal_and_nonterminal_safe(self) -> None:
-        graph = build_default_macro_graph()
+        com_shift = _observation_mapping(
+            test_whole_body_com_position_m=(0.01, 0.01, 0.1)
+        )
+        current_com = controller._evaluate_guard(
+            controller.graph.get(MacroStateId.S5_PRE_RR_COM_SHIFT),
+            MacroObservation.from_mapping(com_shift),
+            timeline_complete=True,
+        )
+        self.assertTrue(current_com.satisfied)
+        self.assertTrue(current_com.evidence["true_com_displacement_ready"])
+
+        rr_air = _with_leg(start, "RR", "AIR", crossed=False)
+        measured_unload = controller._evaluate_guard(
+            controller.graph.get(MacroStateId.S5_PRE_RR_COM_SHIFT),
+            MacroObservation.from_mapping(rr_air),
+            timeline_complete=True,
+        )
+        self.assertTrue(measured_unload.satisfied)
+        self.assertTrue(measured_unload.evidence["active_leg_measured_unloaded"])
+
+    def test_s1_rejects_root_proxy_and_accepts_true_com_or_fr_unload(self) -> None:
+        controller = self._controller()
+        start = _observation_mapping(
+            base=(0.0, 0.0, 0.1),
+            test_whole_body_com_position_m=(0.0, 0.0, 0.1),
+        )
+        controller.reset(start, sim_time_s=0.0)
+        controller._enter_state(
+            MacroStateId.S1_APPROACH_AND_PRE_FR_SHIFT,
+            MacroObservation.from_mapping(start),
+            0.0,
+        )
+        state = controller.graph.get(MacroStateId.S1_APPROACH_AND_PRE_FR_SHIFT)
+
+        root_only = _observation_mapping(
+            base=(-0.06, 0.04, 0.1),
+            test_whole_body_com_position_m=(0.0, 0.0, 0.1),
+        )
+        rejected = controller._evaluate_guard(
+            state, MacroObservation.from_mapping(root_only), timeline_complete=True
+        )
+        self.assertFalse(rejected.satisfied)
+        self.assertFalse(rejected.evidence["body_root_proxy_guard_eligible"])
+
+        true_com = _observation_mapping(
+            test_whole_body_com_position_m=(-0.01, 0.01, 0.1)
+        )
+        shifted = controller._evaluate_guard(
+            state, MacroObservation.from_mapping(true_com), timeline_complete=True
+        )
+        self.assertTrue(shifted.satisfied)
+        self.assertTrue(shifted.evidence["true_com_displacement_ready"])
+
+        fr_air = _with_leg(start, "FR", "AIR", crossed=False)
+        unloaded = controller._evaluate_guard(
+            state, MacroObservation.from_mapping(fr_air), timeline_complete=True
+        )
+        self.assertTrue(unloaded.satisfied)
+        self.assertTrue(unloaded.evidence["active_leg_measured_unloaded"])
+
+    def test_recording_telemetry_identity_is_not_new_physical_evidence(self) -> None:
         library = build_profile_library(PROJECT_ROOT)
         expected_action_counts = {"v003": 112, "v008": 119, "v009": 132, "v010": 142}
-        expected_same_target_counts = {"v003": 3, "v008": 3, "v009": 4, "v010": 2}
-        traversal_states = {
-            MacroStateId.S2_FR_TRAVERSE,
-            MacroStateId.S3_FL_TRAVERSE,
-            MacroStateId.S6_RR_TRAVERSE,
-            MacroStateId.S8_RL_COM_SHIFT_AND_TRAVERSE,
-        }
-        owner_by_key = {
-            (item.source_version, item.state_id): item
-            for item in library.segment_ownership
-        }
         for source in library.successful_sources:
             with self.subTest(source=source.source_version):
-                telemetry_path = source.gate_a_run_dir / "minimal_telemetry.jsonl"
                 rows = [
                     json.loads(line)
-                    for line in telemetry_path.read_text(encoding="utf-8").splitlines()
+                    for line in source.gate_a_run_dir.joinpath(
+                        "minimal_telemetry.jsonl"
+                    ).read_text(encoding="utf-8").splitlines()
                     if line.strip()
                 ]
-                first_time = float(rows[0]["sim_time_s"])
-                relative_times = [float(row["sim_time_s"]) - first_time for row in rows]
-                controller = MacroFSMController(
-                    graph,
-                    library,
-                    primary_source_version=DEFAULT_PRIMARY_VERSION,
+                self.assertTrue(rows)
+                self.assertTrue(
+                    all(
+                        "centroidal_support_evidence" not in row
+                        and "feedback_recovery_observation" not in row
+                        for row in rows
+                    )
                 )
-                reset = controller.reset(
-                    _clean_gate_a_observation(rows[0]),
-                    sim_time_s=0.0,
-                    source_version=source.source_version,
+
+                profiles = tuple(
+                    profile
+                    for profile in library.profiles
+                    if profile.source_version == source.source_version
                 )
-                previous_decision = reset
-                source_action_ledger: list[dict[str, object]] = []
-                source_action_steps: set[int] = set()
-                physical_batch_steps: set[int] = set()
-                coalesced_transition_starts: list[
-                    tuple[MacroStateId, MacroStateId, int]
-                ] = []
-                same_target_source_segments: list[int] = []
-                row_index = 0
-                transitions: dict[MacroStateId, tuple[float, int, str]] = {}
-                state_entry_s = {MacroStateId.S0_INITIALIZE: 0.0}
-                physical_evidence_s: dict[MacroStateId, float] = {}
-                hold_enter_s: dict[MacroStateId, float] = {}
-                hold_snapshots: dict[
-                    MacroStateId,
-                    tuple[set[tuple[object, ...]], dict[str, float]],
-                ] = {}
-                active_start_control: dict[str, object] | None = None
-                active_start_step = 0
-                active_wheel_stop_acked = False
-                profile_completion_s: dict[MacroStateId, float] = {}
-                decision = None
-                end_step = math.ceil((relative_times[-1] + 10.0) * 120.0)
-                for step in range(1, end_step + 1):
-                    now = step / 120.0
-                    while (
-                        row_index + 1 < len(rows)
-                        and relative_times[row_index + 1] <= now + 1.0e-12
-                    ):
-                        row_index += 1
-                    active_before = MacroStateId(controller.status["macro_state"])
-                    observation = MacroObservation.from_mapping(
-                        _clean_gate_a_observation(rows[row_index])
-                    )
-                    cursor_permit = step % 8 == 0
-                    completion_token = None
-                    generated_kind = ""
-                    if cursor_permit and active_start_control is not None:
-                        next_is_source_stop = False
-                        if (
-                            controller._active_profile is not None
-                            and controller._visible_cursor
-                            < len(controller._visible_keyframe_indices)
-                            and not active_wheel_stop_acked
-                        ):
-                            next_frame = controller._active_profile.keyframes[
-                                controller._visible_keyframe_indices[
-                                    controller._visible_cursor
-                                ]
-                            ]
-                            next_is_source_stop = bool(
-                                next_frame.source_segment_index
-                                == active_start_control["source_segment_index"]
-                                and next_frame.dispatch_kind
-                                == "wheel_channel_completion_stop"
-                            )
-                        production_cursor = int(rows[row_index]["segment_cursor"])
-                        if next_is_source_stop:
-                            generated_kind = "WHEEL_STOP_DUE"
-                        elif production_cursor > int(
-                            active_start_control["source_segment_index"]
-                        ):
-                            generated_kind = "COMPLETE"
-                        else:
-                            generated_kind = "WAIT"
-                        helper_decision = _completion_decision_mapping(
-                            active_start_control,
-                            kind=generated_kind,
-                            sim_time_s=now,
-                            sim_step=step,
-                            wheel_stop_acknowledged=active_wheel_stop_acked,
-                        )
-                        completion_token = (
-                            MacroSegmentCompletionToken.from_control_decision(
-                                active_start_control,
-                                helper_decision,
-                                start_sim_step=active_start_step,
-                                start_readback_sha256="b" * 64,
-                            )
-                        )
-                        if generated_kind == "COMPLETE":
-                            owner = owner_by_key.get(
-                                (
-                                    source.source_version,
-                                    MacroStateId(
-                                        active_start_control["owner_state"]
-                                    ),
-                                )
-                            )
-                            if (
-                                owner is not None
-                                and int(
-                                    active_start_control[
-                                        "source_segment_index"
-                                    ]
-                                )
-                                == owner.last_segment
-                            ):
-                                profile_completion_s[owner.state_id] = now
-                    decision = controller.tick(
-                        observation,
-                        sim_time_s=now,
-                        segment_completion_token=completion_token,
-                        source_cursor_permit=cursor_permit,
-                    )
-                    completion_control = dict(
-                        decision.segment_completion_control
-                    )
-                    if completion_control["kind"] == "START":
-                        active_start_control = completion_control
-                        active_start_step = step
-                        active_wheel_stop_acked = False
-                    elif completion_control["kind"] == "WHEEL_STOP":
-                        active_wheel_stop_acked = True
-                    elif generated_kind == "COMPLETE":
-                        active_start_control = None
-                        active_wheel_stop_acked = False
-                    prior_decision = previous_decision
-                    exact_map_changed = bool(
-                        dict(decision.servo_targets_deg)
-                        != dict(previous_decision.servo_targets_deg)
-                        or dict(decision.wheel_targets_rad_s)
-                        != dict(previous_decision.wheel_targets_rad_s)
-                    )
-                    self.assertEqual(decision.target_changed, exact_map_changed)
-                    self.assertEqual(decision.command_changed, exact_map_changed)
-                    self.assertEqual(
-                        decision.command_epoch - previous_decision.command_epoch,
-                        1 if exact_map_changed else 0,
-                    )
-                    if exact_map_changed:
-                        self.assertNotIn(step, physical_batch_steps)
-                        physical_batch_steps.add(step)
-                    provenance = dict(decision.command_provenance)
-                    if decision.source_action_consumed:
-                        self.assertTrue(cursor_permit)
-                        self.assertEqual(step % 8, 0)
-                        self.assertNotIn(step, source_action_steps)
-                        source_action_steps.add(step)
-                        self.assertEqual(provenance["kind"], "SOURCE_ACTION")
-                        source_action_ledger.append(provenance)
-                        if not decision.target_changed:
-                            same_target_source_segments.append(
-                                int(provenance["source_segment_index"])
-                            )
-                    elif exact_map_changed:
-                        self.assertIn(
-                            provenance["kind"],
-                            {
-                                "BOUNDARY_ZERO_WHEELS",
-                                "HOLD_ZERO_WHEELS",
-                                "SAFE_STOP_ZERO_WHEELS",
-                                "SUCCESS_ZERO_WHEELS",
-                            },
-                        )
-                    else:
-                        self.assertEqual(provenance["kind"], "NONE")
-                        self.assertEqual(provenance["source_action_identity"], "")
-                    previous_decision = decision
-                    active_spec = graph.get(active_before)
-                    if (
-                        active_before not in physical_evidence_s
-                        and _physical_evidence_ready(
-                            active_spec,
-                            dict(decision.guard_evidence),
-                            observation,
-                        )
-                    ):
-                        physical_evidence_s[active_before] = now
-                    for event in decision.transition_events:
-                        if event.startswith("HOLD:"):
-                            held_state = MacroStateId(event.split(":", 1)[1])
-                            hold_enter_s[held_state] = now
-                            hold_snapshots[held_state] = (
-                                set(controller._consumed_source_actions),
-                                dict(decision.servo_targets_deg),
-                            )
-                    if active_before in hold_snapshots:
-                        held_actions, held_servos = hold_snapshots[active_before]
-                        self.assertEqual(
-                            controller._consumed_source_actions, held_actions
-                        )
-                        self.assertEqual(decision.servo_targets_deg, held_servos)
-                        self.assertTrue(
-                            all(
-                                abs(value) <= 1.0e-12
-                                for value in decision.wheel_targets_rad_s.values()
-                            )
-                        )
-                    exits = [
-                        event.split(":", 1)[1]
-                        for event in decision.transition_events
-                        if event.startswith("EXIT:")
-                    ]
-                    enters = [
-                        event.split(":", 1)[1]
-                        for event in decision.transition_events
-                        if event.startswith("ENTER:")
-                    ]
-                    if exits and decision.source_action_consumed:
-                        self.assertEqual(generated_kind, "COMPLETE")
-                        self.assertEqual(len(exits), 1)
-                        self.assertEqual(len(enters), 1)
-                        self.assertTrue(
-                            all(
-                                abs(value) <= 1.0e-12
-                                for value in prior_decision.wheel_targets_rad_s.values()
-                            )
-                        )
-                        self.assertEqual(
-                            decision.segment_completion_control["kind"], "START"
-                        )
-                        self.assertEqual(
-                            decision.segment_completion_control["owner_state"],
-                            enters[0],
-                        )
-                        coalesced_transition_starts.append(
-                            (
-                                MacroStateId(exits[0]),
-                                MacroStateId(enters[0]),
-                                int(provenance["source_segment_index"]),
-                            )
-                        )
-                    elif exits:
-                        self.assertTrue(
-                            all(
-                                abs(value) <= 1.0e-12
-                                for value in decision.wheel_targets_rad_s.values()
-                            )
-                        )
-                    for exited_value in exits:
-                        exited = MacroStateId(exited_value)
-                        cursor = int(rows[row_index]["segment_cursor"])
-                        transitions[exited] = (
-                            now,
-                            cursor,
-                            str(rows[row_index]["wheel_contact_classes"].get(
-                                graph.get(exited).active_leg, ""
-                            )),
-                        )
-                        owner = owner_by_key.get((source.source_version, exited))
-                        if owner is not None:
-                            self.assertIn(
-                                (
-                                    source.source_version,
-                                    owner.last_segment,
-                                    "segment_start",
-                                ),
-                                controller._consumed_source_coordinates,
-                            )
-                            if exited in traversal_states:
-                                self.assertGreaterEqual(
-                                    cursor, owner.last_segment + 1
-                                )
-                    for event in decision.transition_events:
-                        if event.startswith("ENTER:"):
-                            entered = MacroStateId(event.split(":", 1)[1])
-                            state_entry_s[entered] = now
-                    if decision.terminal:
-                        break
-                self.assertIsNotNone(decision)
-                self.assertNotEqual(
-                    decision.terminal_outcome,
-                    MacroTerminalOutcome.SAFE_STOP,
-                    msg=(
-                        f"{source.source_version}: {decision.reason}; "
-                        f"phase_elapsed={decision.phase_elapsed_s}; "
-                        f"guard={decision.guard_evidence}; transitions={transitions}"
-                    ),
-                )
-                self.assertIn(
-                    decision.terminal_outcome,
-                    {
-                        MacroTerminalOutcome.TASK_SUCCESS,
-                        MacroTerminalOutcome.TASK_SUCCESS_POSTURE_INCOMPLETE,
-                    },
+                frames = tuple(
+                    frame for profile in profiles for frame in profile.keyframes
                 )
                 prefix = source.source_version.split("_", 1)[0]
-                expected_frames = sorted(
-                    (
-                        frame
-                        for profile in library.profiles
-                        if profile.source_version == source.source_version
-                        for frame in profile.keyframes
-                    ),
-                    key=lambda frame: (
-                        frame.source_segment_index,
-                        frame.dispatch_kind,
-                    ),
-                )
-                self.assertEqual(len(expected_frames), expected_action_counts[prefix])
-                self.assertEqual(len(source_action_ledger), len(expected_frames))
-                self.assertEqual(len(source_action_steps), len(source_action_ledger))
-                self.assertEqual(
-                    len(physical_batch_steps),
-                    decision.command_epoch - reset.command_epoch,
-                )
-                for old_state, new_state, _ in coalesced_transition_starts:
-                    self.assertEqual(graph.get(old_state).next_state, new_state)
-                actual_coordinates = [
-                    (
-                        item["source_version"],
-                        item["source_segment_index"],
-                        item["dispatch_kind"],
-                    )
-                    for item in source_action_ledger
-                ]
-                expected_coordinates = [
-                    (
-                        source.source_version,
-                        frame.source_segment_index,
-                        frame.dispatch_kind,
-                    )
-                    for frame in expected_frames
-                ]
-                self.assertEqual(actual_coordinates, expected_coordinates)
-                self.assertEqual(len(set(actual_coordinates)), len(actual_coordinates))
-                for item, frame in zip(source_action_ledger, expected_frames):
-                    self.assertEqual(item["source_step_index"], frame.source_step_index)
-                    self.assertEqual(item["source_time_s"], frame.source_time_s)
-                    self.assertEqual(
-                        tuple(item["source_event_indices"]), frame.source_event_indices
-                    )
-                    self.assertEqual(tuple(item["commands"]), frame.commands)
-                    self.assertEqual(item["sequence_index"], frame.sequence_index)
-                    identity_payload = {
-                        "schema_version": SOURCE_ACTION_IDENTITY_SCHEMA_VERSION,
-                        "source_version": item["source_version"],
-                        "source_segment_index": item["source_segment_index"],
-                        "source_step_index": item["source_step_index"],
-                        "source_time_s": item["source_time_s"],
-                        "source_event_indices": list(item["source_event_indices"]),
-                        "commands": list(item["commands"]),
-                        "dispatch_kind": item["dispatch_kind"],
-                        "sequence_index": item["sequence_index"],
-                    }
-                    expected_identity = hashlib.sha256(
-                        json.dumps(
-                            identity_payload,
-                            ensure_ascii=False,
-                            sort_keys=True,
-                            separators=(",", ":"),
-                        ).encode("utf-8")
-                    ).hexdigest()
-                    self.assertEqual(
-                        item["source_action_identity"], expected_identity
-                    )
-                self.assertEqual(
-                    len(same_target_source_segments), expected_same_target_counts[prefix]
-                )
-                if prefix == "v003":
-                    self.assertEqual(same_target_source_segments, [7, 41, 57])
-                    self.assertEqual(
-                        len(source_action_ledger) - len(same_target_source_segments),
-                        109,
-                    )
-                self.assertTrue(traversal_states.issubset(transitions))
-                for state_id, (transition_s, _, _) in transitions.items():
-                    if state_id in {
-                        MacroStateId.SUCCESS,
-                        MacroStateId.SAFE_STOP,
-                    }:
-                        continue
-                    evidence_s = physical_evidence_s[state_id]
-                    completion_s = profile_completion_s.get(
-                        state_id, state_entry_s[state_id]
-                    )
-                    if evidence_s > completion_s + 2.0 / 120.0 + 1.0e-9:
-                        self.assertIn(state_id, hold_enter_s)
-                        self.assertGreaterEqual(
-                            hold_enter_s[state_id], completion_s
+                self.assertEqual(len(frames), expected_action_counts[prefix])
+                coordinates = {
+                    (source.source_version, frame.source_segment_index, frame.dispatch_kind)
+                    for frame in frames
+                }
+                self.assertEqual(len(coordinates), len(frames))
+                for profile in profiles:
+                    self.assertEqual(profile.source_version, source.source_version)
+                    for frame in profile.keyframes:
+                        provenance = ProductionMacroFSMController._source_action_provenance(
+                            profile, frame
                         )
-                    self.assertGreaterEqual(
-                        transition_s + 1.0 / 120.0,
-                        max(completion_s, evidence_s),
+                        self.assertEqual(
+                            provenance["source_version"], source.source_version
+                        )
+                        self.assertEqual(provenance["kind"], "SOURCE_ACTION")
+                s10_profiles = tuple(
+                    profile
+                    for profile in profiles
+                    if profile.state_id == MacroStateId.S10_POSTURE_RECOVERY
+                )
+                self.assertTrue(s10_profiles)
+                self.assertTrue(
+                    all(
+                        profile.source_version == source.source_version
+                        for profile in s10_profiles
                     )
-                if source.source_version.startswith("v003_"):
-                    self.assertGreaterEqual(
-                        transitions[MacroStateId.S3_FL_TRAVERSE][1], 41
-                    )
+                )
+
+    def test_feedback_provenance_exact_pair_leg_joint_and_composite_binding(self) -> None:
+        centroid_sha = "a" * 64
+        feedback_sha = "b" * 64
+        evidence_sha = hashlib.sha256(
+            json.dumps(
+                {
+                    "schema_version": FEEDBACK_RECOVERY_EVIDENCE_BINDING_SCHEMA,
+                    "centroidal_support_evidence_sha256": centroid_sha,
+                    "feedback_recovery_observation_sha256": feedback_sha,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+                allow_nan=False,
+            ).encode("utf-8")
+        ).hexdigest()
+        provenance = dict(_empty_command_provenance())
+        provenance.update(
+            kind="FEEDBACK_RECOVERY",
+            recovery_stage=FeedbackRecoveryStage.SAFE_PROBE.value,
+            recovery_action=(
+                FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE.value
+            ),
+            recovery_evidence_sha256=evidence_sha,
+            recovery_centroidal_evidence_sha256=centroid_sha,
+            recovery_feedback_observation_sha256=feedback_sha,
+            recovery_target_map_sha256="c" * 64,
+            recovery_direction_sign=1,
+            recovery_attempt=1,
+            recovery_leg="FR",
+            recovery_joint="front_right_hip",
+            recovery_configuration_sha256="d" * 64,
+        )
+        canonical = _canonical_command_provenance(provenance)
+        self.assertEqual(canonical["recovery_evidence_sha256"], evidence_sha)
+        self.assertEqual(canonical["recovery_direction_sign"], 1)
+
+        invalid_pair = dict(provenance)
+        invalid_pair["recovery_stage"] = FeedbackRecoveryStage.INCREMENT.value
+        with self.assertRaisesRegex(ValueError, "stage/action pair"):
+            _canonical_command_provenance(invalid_pair)
+        cross_leg = dict(provenance)
+        cross_leg["recovery_joint"] = "front_left_hip"
+        with self.assertRaisesRegex(ValueError, "leg/joint"):
+            _canonical_command_provenance(cross_leg)
+        rebound = dict(provenance)
+        rebound["recovery_feedback_observation_sha256"] = "e" * 64
+        with self.assertRaisesRegex(ValueError, "composite evidence"):
+            _canonical_command_provenance(rebound)
+
+    def test_s7_requires_current_model_bound_support_and_proven_wrench(self) -> None:
+        controller = self._controller()
+        ground = _observation_mapping()
+        controller.reset(ground, sim_time_s=0.0)
+        state = controller.graph.get(MacroStateId.S7_PRE_RL_SUPPORT_SETUP)
+
+        primary = _observation_mapping(
+            classes={"FL": "TOP", "FR": "AIR", "RL": "AIR", "RR": "TOP"},
+            face={"FL": 0.1, "FR": -0.1, "RL": -0.1, "RR": 0.1},
+            top_clearance={"FL": 0.0, "FR": 0.01, "RL": 0.01, "RR": 0.0},
+            test_active_swing_leg="RL",
+        )
+        primary_result = controller._evaluate_guard(
+            state, MacroObservation.from_mapping(primary), timeline_complete=True
+        )
+        self.assertTrue(primary_result.satisfied)
+        self.assertTrue(primary_result.evidence["required_primary_diagonal_proven"])
+
+        alternate = _with_leg(
+            _top_legs(_observation_mapping(), "FR", "FL", "RR"),
+            "RL",
+            "AIR",
+            crossed=False,
+        )
+        alternate_result = controller._evaluate_guard(
+            state, MacroObservation.from_mapping(alternate), timeline_complete=True
+        )
+        self.assertTrue(alternate_result.satisfied)
+        self.assertTrue(
+            alternate_result.evidence["declaratively_validated_alternate_support"]
+        )
+        self.assertTrue(
+            alternate_result.evidence[
+                "support_set_bound_to_current_qualified_contacts"
+            ]
+        )
+
+        missing_required = _with_leg(alternate, "RR", "AIR", crossed=False)
+        missing_result = controller._evaluate_guard(
+            state,
+            MacroObservation.from_mapping(missing_required),
+            timeline_complete=True,
+        )
+        self.assertFalse(missing_result.satisfied)
+        self.assertFalse(
+            missing_result.evidence["declaratively_validated_alternate_support"]
+        )
+
+        geometry_only = dict(alternate)
+        geometry_only["test_wrench_proven"] = False
+        geometry_only = _attach_strict_evidence(geometry_only)
+        geometry_result = controller._evaluate_guard(
+            state,
+            MacroObservation.from_mapping(geometry_only),
+            timeline_complete=True,
+        )
+        self.assertFalse(geometry_result.satisfied)
+        self.assertFalse(geometry_result.evidence["support_wrench_proven"])
+
+    def test_s8_holds_rl_lift_cursor_then_releases_once_from_s7_com_baseline(self) -> None:
+        baseline = _with_leg(
+            _top_legs(_observation_mapping(), "FR", "FL", "RR"),
+            "RL",
+            "AIR",
+            crossed=False,
+        )
+        controller = self._controller()
+        controller.reset(baseline, sim_time_s=0.0)
+        baseline_observation = MacroObservation.from_mapping(baseline)
+        controller._enter_state(
+            MacroStateId.S7_PRE_RL_SUPPORT_SETUP, baseline_observation, 0.0
+        )
+        baseline_sha = controller._s8_release_baseline_evidence_sha256
+        controller._enter_state(
+            MacroStateId.S8_RL_COM_SHIFT_AND_TRAVERSE,
+            baseline_observation,
+            0.0,
+        )
+        profile = controller._active_profile
+        self.assertIsNotNone(profile)
+        assert profile is not None
+        frame = replace(
+            profile.keyframes[0], physical_phase="RL_UNLOAD_AND_LIFT"
+        )
+        controller._active_profile = replace(profile, keyframes=(frame,))
+        controller._visible_keyframe_indices = [0]
+        controller._visible_cursor = 0
+        before_count = len(controller._consumed_source_actions)
+
+        held = controller._start_next_segment(baseline_observation)
+        self.assertFalse(held.source_action_consumed)
+        self.assertEqual(controller._visible_cursor, 0)
+        self.assertEqual(len(controller._consumed_source_actions), before_count)
+        self.assertTrue(all(value == 0.0 for value in controller._current_wheel_targets.values()))
+
+        centers = dict(baseline["wheel_center_w_m"])  # type: ignore[arg-type]
+        loads = {"FR": 40.0, "FL": 29.05, "RR": 29.05, "RL": 0.0}
+        total = sum(loads.values())
+        shifted_com = (
+            sum(loads[leg] * centers[leg][0] for leg in ("FR", "FL", "RR")) / total,
+            sum(loads[leg] * centers[leg][1] for leg in ("FR", "FL", "RR")) / total,
+            0.1,
+        )
+        shifted = dict(baseline)
+        shifted["wheel_contact_load_n"] = loads
+        shifted["test_whole_body_com_position_m"] = shifted_com
+        shifted = _attach_strict_evidence(shifted)
+        shifted_observation = MacroObservation.from_mapping(shifted)
+        released = controller._start_next_segment(shifted_observation)
+        self.assertTrue(released.source_action_consumed)
+        self.assertTrue(controller._s8_release_open)
+        self.assertEqual(controller._visible_cursor, 1)
+        self.assertEqual(controller._s8_release_baseline_evidence_sha256, baseline_sha)
+        second = controller._start_next_segment(shifted_observation)
+        self.assertFalse(second.source_action_consumed)
+        self.assertEqual(len(controller._consumed_source_actions), before_count + 1)
+
+    def test_feedback_probe_return_negative_probe_is_permit_gated_and_n_plus_one_bound(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, _initial = self._production_s10(payload)
+        source_count = len(controller._consumed_source_actions)
+
+        step1 = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        positive = controller.tick(
+            step1, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertEqual(positive.command_provenance["kind"], "FEEDBACK_RECOVERY")
+        self.assertEqual(positive.command_provenance["recovery_direction_sign"], 1)
+        self.assertEqual(
+            positive.command_provenance["recovery_action"],
+            FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE.value,
+        )
+        self.assertTrue(all(value == 0.0 for value in positive.wheel_targets_rad_s.values()))
+
+        measured_positive = dict(controller._current_servo_targets)
+        centers_positive = dict(payload["wheel_center_w_m"])  # type: ignore[arg-type]
+        x, y, z = centers_positive["FR"]
+        centers_positive["FR"] = (x, y, z - 0.001)
+        positive_ack_payload = dict(payload)
+        positive_ack_payload["wheel_center_w_m"] = centers_positive
+        positive_ack_payload["test_measured_servo_positions_deg"] = measured_positive
+        step2 = _current_test_observation(
+            positive_ack_payload,
+            sim_time_s=2.0e-6,
+            sim_step=2,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=controller._command_epoch,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        acknowledged = controller.tick(
+            step2, sim_time_s=2.0e-6, source_cursor_permit=False
+        )
+        self.assertFalse(acknowledged.command_changed)
+        self.assertEqual(
+            controller.status["feedback_recovery_stage"],
+            FeedbackRecoveryStage.RETURN_TO_REFERENCE.value,
+        )
+
+        step3 = _current_test_observation(
+            positive_ack_payload,
+            sim_time_s=3.0e-6,
+            sim_step=3,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=controller._command_epoch,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        returned = controller.tick(
+            step3, sim_time_s=3.0e-6, source_cursor_permit=True
+        )
+        self.assertEqual(
+            returned.command_provenance["recovery_action"],
+            FeedbackRecoveryAction.RETURN_TO_IMMUTABLE_REFERENCE.value,
+        )
+        self.assertEqual(returned.command_provenance["recovery_direction_sign"], 1)
+
+        return_ack_payload = dict(payload)
+        return_ack_payload["test_measured_servo_positions_deg"] = _complete_servos()
+        step4 = _current_test_observation(
+            return_ack_payload,
+            sim_time_s=4.0e-6,
+            sim_step=4,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=controller._command_epoch,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        return_ack = controller.tick(
+            step4, sim_time_s=4.0e-6, source_cursor_permit=False
+        )
+        self.assertFalse(return_ack.command_changed)
+
+        step5 = _current_test_observation(
+            return_ack_payload,
+            sim_time_s=5.0e-6,
+            sim_step=5,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=controller._command_epoch,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        negative = controller.tick(
+            step5, sim_time_s=5.0e-6, source_cursor_permit=True
+        )
+        self.assertEqual(
+            negative.command_provenance["recovery_action"],
+            FeedbackRecoveryAction.CONSERVATIVE_DIAGNOSTIC_PROBE.value,
+        )
+        self.assertEqual(negative.command_provenance["recovery_direction_sign"], -1)
+        self.assertEqual(len(controller._consumed_source_actions), source_count)
+
+    def _assert_safe_first_probe_freezes_worker_reconstructible_dispatch_configuration(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, _initial = self._production_s10(payload)
+        reference_targets = dict(controller._current_servo_targets)
+        current = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=reference_targets,
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        expected = self._worker_reconstructed_configuration_sha256(
+            controller,
+            current,
+            leg="FR",
+            reference_targets=reference_targets,
+        )
+        issued = controller.tick(
+            current, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertTrue(issued.command_changed)
+        self.assertEqual(
+            issued.command_provenance["recovery_configuration_sha256"], expected
+        )
+        self.assertEqual(controller._feedback_configuration_sha256, expected)
+        self.assertEqual(controller._feedback_baseline["configuration_sha256"], expected)
+        self.assertEqual(controller._feedback_reference_targets, reference_targets)
+
+    def _assert_unsafe_first_sign_skip_freezes_configuration_at_first_actual_dispatch(self) -> None:
+        payload = self._s10_air_candidate()
+        reference_targets = dict(payload["servo_targets_deg"])  # type: ignore[arg-type]
+        _lower, upper = command_limits_for_servo("front_right_hip")
+        reference_targets["front_right_hip"] = upper - float(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["joint_limit_margin_deg"]
+        )
+        payload["servo_targets_deg"] = reference_targets
+        payload = _attach_strict_evidence(payload)
+        controller, initial = self._production_s10(payload)
+
+        first = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=reference_targets,
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        skipped = controller.tick(
+            first, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertFalse(skipped.command_changed)
+        self.assertEqual(controller._feedback_action_count, 0)
+        self.assertEqual(controller._feedback_configuration_sha256, "")
+        self.assertEqual(controller._feedback_baseline, {})
+        self.assertEqual(controller._feedback_reference_targets, reference_targets)
+        stale_candidate = controller._recovery_configuration_identity(initial, "FR")
+
+        later_payload = dict(payload)
+        centers = dict(later_payload["wheel_center_w_m"])  # type: ignore[arg-type]
+        x, y, z = centers["FR"]
+        centers["FR"] = (x, y, z - 0.001)
+        later_payload["wheel_center_w_m"] = centers
+        later = _current_test_observation(
+            later_payload,
+            sim_time_s=2.0e-6,
+            sim_step=2,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=reference_targets,
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        expected = self._worker_reconstructed_configuration_sha256(
+            controller,
+            later,
+            leg="FR",
+            reference_targets=reference_targets,
+        )
+        self.assertNotEqual(expected, stale_candidate)
+        issued = controller.tick(
+            later, sim_time_s=2.0e-6, source_cursor_permit=True
+        )
+        self.assertTrue(issued.command_changed)
+        self.assertEqual(
+            issued.command_provenance["recovery_direction_sign"], -1
+        )
+        self.assertEqual(
+            issued.command_provenance["recovery_configuration_sha256"], expected
+        )
+        self.assertEqual(controller._feedback_configuration_sha256, expected)
+        self.assertEqual(
+            controller._feedback_baseline["wheel_z_m"],
+            later.feedback_recovery_observation.wheel_center_w_m["FR"][2],
+        )
+        self.assertEqual(controller._feedback_reference_targets, reference_targets)
+
+    def test_feedback_skipped_n_plus_one_fails_closed(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, _initial = self._production_s10(payload)
+        issued_observation = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        issued = controller.tick(
+            issued_observation, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertTrue(issued.command_changed)
+        skipped = _current_test_observation(
+            payload,
+            sim_time_s=3.0e-6,
+            sim_step=3,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=controller._command_epoch,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        stopped = controller.tick(
+            skipped, sim_time_s=3.0e-6, source_cursor_permit=False
+        )
+        self.assertEqual(stopped.terminal_outcome, MacroTerminalOutcome.SAFE_STOP)
+        self.assertIn("exact issued-step+1", stopped.reason)
+
+    def test_feedback_baseline_rejects_stale_command_epoch_or_readback(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, _initial = self._production_s10(payload)
+        controller._command_epoch = 1
+        controller._last_decision_command_epoch = 1
+        stale = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=0,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        stopped = controller.tick(
+            stale, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertEqual(stopped.terminal_outcome, MacroTerminalOutcome.SAFE_STOP)
+        self.assertIn("current command epoch/full 8+4", stopped.reason)
+
+    def test_first_top_load_holds_for_dwell_before_another_increment(self) -> None:
+        first_contact = _top_legs(_observation_mapping(), "FL", "FR", "RR", "RL")
+        first_contact.update(
+            body_crossed_front_face=True,
+            final_recoverable=True,
+            posture_complete=False,
+            test_contact_dwell_s={
+                leg: 0.05 if leg == "FR" else 0.5
+                for leg in ("FL", "FR", "RL", "RR")
+            },
+            test_contact_dwell_verified={
+                leg: leg != "FR" for leg in ("FL", "FR", "RL", "RR")
+            },
+        )
+        first_contact = _attach_strict_evidence(first_contact)
+        controller, _initial = self._production_s10(first_contact)
+        controller._feedback_active_leg = "FR"
+        controller._feedback_reference_targets = dict(controller._current_servo_targets)
+        controller._feedback_configuration_sha256 = "f" * 64
+        controller._feedback_selected_joint = "front_right_hip"
+        controller._feedback_selected_sign = 1
+        controller._feedback_selected_signs[
+            ("FR", "front_right_hip", controller._feedback_configuration_sha256)
+        ] = 1
+        controller._feedback_stage = FeedbackRecoveryStage.INCREMENT
+        before_epoch = controller._command_epoch
+        before_targets = dict(controller._current_servo_targets)
+        current = _current_test_observation(
+            first_contact,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=before_epoch,
+            verified_command_epoch=None,
+            readback_targets=before_targets,
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        held = controller.tick(current, sim_time_s=1.0e-6, source_cursor_permit=True)
+        self.assertFalse(held.command_changed)
+        self.assertEqual(controller._command_epoch, before_epoch)
+        self.assertEqual(dict(held.servo_targets_deg), before_targets)
+        self.assertEqual(
+            controller.status["feedback_recovery_stage"],
+            FeedbackRecoveryStage.CONTACT_DWELL.value,
+        )
+
+    def test_feedback_action_bound_is_preflighted_without_target_mutation(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, initial = self._production_s10(payload)
+        controller._begin_recovery_leg(initial, "FR")
+        controller._feedback_action_count = int(
+            FINAL_RECOVERY_FEEDBACK_LIMITS["maximum_feedback_actions"]
+        )
+        before_epoch = controller._command_epoch
+        before_targets = dict(controller._current_servo_targets)
+        current = _current_test_observation(
+            payload,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=before_epoch,
+            verified_command_epoch=None,
+            readback_targets=before_targets,
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        decision = controller.tick(
+            current, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertFalse(decision.command_changed)
+        self.assertEqual(controller._command_epoch, before_epoch)
+        self.assertEqual(dict(decision.servo_targets_deg), before_targets)
+        self.assertEqual(
+            controller.status["feedback_recovery_stage"],
+            FeedbackRecoveryStage.SETTLE.value,
+        )
+
+    def test_feedback_recovery_safety_breach_safe_stops(self) -> None:
+        payload = self._s10_air_candidate()
+        controller, _initial = self._production_s10(payload)
+        unsafe = dict(payload)
+        unsafe["base_roll_rad"] = math.radians(31.0)
+        unsafe = _attach_strict_evidence(unsafe)
+        current = _current_test_observation(
+            unsafe,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        stopped = controller.tick(
+            current, sim_time_s=1.0e-6, source_cursor_permit=True
+        )
+        self.assertEqual(stopped.terminal_outcome, MacroTerminalOutcome.SAFE_STOP)
+        self.assertIn("attitude safety bound", stopped.reason)
+
+    def test_four_top_contact_dwell_and_settle_reaches_full_success(self) -> None:
+        complete = _top_legs(_observation_mapping(), "FL", "FR", "RR", "RL")
+        complete.update(
+            body_crossed_front_face=True,
+            final_recoverable=True,
+            posture_complete=True,
+        )
+        complete = _attach_strict_evidence(complete)
+        controller, _initial = self._production_s10(complete)
+        settling = _current_test_observation(
+            complete,
+            sim_time_s=1.0e-6,
+            sim_step=1,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        first = controller.tick(
+            settling, sim_time_s=1.0e-6, source_cursor_permit=False
+        )
+        self.assertFalse(first.terminal)
+        settled = _current_test_observation(
+            complete,
+            sim_time_s=0.251001,
+            sim_step=2,
+            command_epoch=controller._command_epoch,
+            verified_command_epoch=None,
+            readback_targets=dict(controller._current_servo_targets),
+            readback_wheel_targets=dict(controller._current_wheel_targets),
+        )
+        terminal = controller.tick(
+            settled, sim_time_s=0.251001, source_cursor_permit=False
+        )
+        self.assertEqual(terminal.macro_state, MacroStateId.SUCCESS)
+        self.assertEqual(terminal.terminal_outcome, MacroTerminalOutcome.TASK_SUCCESS)
 
     def test_feedback_path_reaches_posture_incomplete_success(self) -> None:
         controller = self._controller()
-        p = _observation_mapping()
-        controller.reset(p, sim_time_s=0.0)
-        controller.tick(p, sim_time_s=0.01)
-        controller.tick(p, sim_time_s=0.02)
-        shifted = _observation_mapping(base=(-0.01, 0.01, 0.1))
-        controller.tick(shifted, sim_time_s=0.03)
-        fr_air = _with_leg(shifted, "FR", "AIR")
-        controller.tick(fr_air, sim_time_s=0.04)
-        front = _top_legs(shifted, "FR")
-        controller.tick(front, sim_time_s=0.05)
-        controller.tick(_with_leg(front, "FL", "AIR"), sim_time_s=0.06)
-        front = _top_legs(front, "FR", "FL")
-        controller.tick(front, sim_time_s=0.07)
-        controller.tick(front, sim_time_s=0.08)
-        approach = dict(front)
-        face = dict(approach["wheel_front_face_clearance_m"])  # type: ignore[arg-type]
-        face["RR"] = -0.05
-        approach["wheel_front_face_clearance_m"] = face
-        controller.tick(approach, sim_time_s=0.09)
-        rr_air = _with_leg(approach, "RR", "AIR")
-        controller.tick(rr_air, sim_time_s=0.10)
-        controller.tick(rr_air, sim_time_s=0.11)
-        controller.tick(rr_air, sim_time_s=0.12)
-        three_top = _top_legs(front, "FR", "FL", "RR")
-        controller.tick(three_top, sim_time_s=0.13)
-        controller.tick(three_top, sim_time_s=0.14)
-        controller.tick(_with_leg(three_top, "RL", "AIR"), sim_time_s=0.15)
-        all_top = _top_legs(three_top, "RL")
-        controller.tick(all_top, sim_time_s=0.16)
-        crossed = dict(all_top)
-        crossed["body_crossed_front_face"] = True
-        controller.tick(crossed, sim_time_s=0.17)
-        controller.tick(crossed, sim_time_s=0.18)
-        recoverable = dict(crossed)
-        recoverable["final_recoverable"] = True
-        controller.tick(recoverable, sim_time_s=0.19)
-        terminal = controller.tick(recoverable, sim_time_s=0.20)
+        supported = _top_legs(_observation_mapping(), "FL", "RR", "RL")
+        supported.update(
+            body_crossed_front_face=True,
+            final_recoverable=True,
+            posture_complete=False,
+        )
+        supported = _attach_strict_evidence(supported)
+        observation = MacroObservation.from_mapping(supported)
+        controller.reset(observation, sim_time_s=0.0)
+        controller._enter_state(
+            MacroStateId.S10_POSTURE_RECOVERY,
+            observation,
+            0.0,
+        )
+        controller._active_profile = None
+        source_count = int(controller.status["consumed_source_action_count"])
+
+        settling = controller.tick(supported, sim_time_s=0.01)
+        self.assertEqual(settling.macro_state, MacroStateId.S10_POSTURE_RECOVERY)
+        self.assertEqual(
+            controller.status["feedback_recovery_stage"],
+            FeedbackRecoveryStage.SETTLE.value,
+        )
+        terminal = controller.tick(supported, sim_time_s=0.27)
         self.assertEqual(terminal.macro_state, MacroStateId.SUCCESS)
         self.assertEqual(
             terminal.terminal_outcome,
             MacroTerminalOutcome.TASK_SUCCESS_POSTURE_INCOMPLETE,
         )
         self.assertTrue(terminal.terminal)
+        self.assertEqual(
+            controller.status["consumed_source_action_count"], source_count
+        )
+
+
+class FeedbackConfigurationFreezeTests(unittest.TestCase):
+    """Hermetic regression for the worker-reconstructible S10 configuration."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.graph = build_default_macro_graph()
+        cls.library = _hermetic_feedback_library()
+
+    _controller = MacroControllerTests._controller
+    _production_s10 = MacroControllerTests._production_s10
+    _s10_air_candidate = staticmethod(MacroControllerTests._s10_air_candidate)
+    _worker_reconstructed_configuration_sha256 = staticmethod(
+        MacroControllerTests._worker_reconstructed_configuration_sha256
+    )
+    test_safe_first_probe_freezes_worker_reconstructible_dispatch_configuration = (
+        MacroControllerTests._assert_safe_first_probe_freezes_worker_reconstructible_dispatch_configuration
+    )
+    test_unsafe_first_sign_skip_freezes_configuration_at_first_actual_dispatch = (
+        MacroControllerTests._assert_unsafe_first_sign_skip_freezes_configuration_at_first_actual_dispatch
+    )
+    test_feedback_provenance_exact_pair_leg_joint_and_composite_binding = (
+        MacroControllerTests.test_feedback_provenance_exact_pair_leg_joint_and_composite_binding
+    )
+    test_feedback_probe_return_negative_probe_is_permit_gated_and_n_plus_one_bound = (
+        MacroControllerTests.test_feedback_probe_return_negative_probe_is_permit_gated_and_n_plus_one_bound
+    )
+    test_feedback_skipped_n_plus_one_fails_closed = (
+        MacroControllerTests.test_feedback_skipped_n_plus_one_fails_closed
+    )
+    test_feedback_baseline_rejects_stale_command_epoch_or_readback = (
+        MacroControllerTests.test_feedback_baseline_rejects_stale_command_epoch_or_readback
+    )
+    test_first_top_load_holds_for_dwell_before_another_increment = (
+        MacroControllerTests.test_first_top_load_holds_for_dwell_before_another_increment
+    )
+    test_feedback_action_bound_is_preflighted_without_target_mutation = (
+        MacroControllerTests.test_feedback_action_bound_is_preflighted_without_target_mutation
+    )
+    test_feedback_recovery_safety_breach_safe_stops = (
+        MacroControllerTests.test_feedback_recovery_safety_breach_safe_stops
+    )
+    test_four_top_contact_dwell_and_settle_reaches_full_success = (
+        MacroControllerTests.test_four_top_contact_dwell_and_settle_reaches_full_success
+    )
+    test_feedback_path_reaches_posture_incomplete_success = (
+        MacroControllerTests.test_feedback_path_reaches_posture_incomplete_success
+    )
 
 
 if __name__ == "__main__":

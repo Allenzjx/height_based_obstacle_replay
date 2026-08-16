@@ -144,7 +144,7 @@ class RecordingIntegrityTests(unittest.TestCase):
         lock = audit._environment_lock([])
         config_root = Path(__file__).resolve().parents[1] / "configs"
         expected = {str(path.resolve()) for path in config_root.rglob("*.json")}
-        self.assertEqual(3, len(expected))
+        self.assertEqual(4, len(expected))
         self.assertTrue(
             expected.issubset(set(lock["source_sha256"])),
             "the lock builder must seal every Gate-E JSON config",

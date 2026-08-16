@@ -22,6 +22,7 @@ from fsm_50mm_recording_derived_v3.worker_task_replay_session import (  # noqa: 
     load_worker_task_replay_request,
     validate_worker_task_plan_binding,
 )
+from completion_aware_segment import RECORDED_TIMELINE_OPEN_LOOP_V1  # noqa: E402
 from fsm_50mm_recording_derived_v3.v003_static_provenance import (  # noqa: E402
     DEFAULT_V003_DIRECTORY,
     V003_VERSION_ID,
@@ -247,6 +248,7 @@ def _request_payload(run_dir: Path, steps_path: Path) -> dict:
         "request_id": "request-v003",
         "plan_id": "plan-v003",
         "plan_sha256": "a" * 64,
+        "execution_semantics": RECORDED_TIMELINE_OPEN_LOOP_V1,
         "plan_event_count": 2,
         "plan_segment_count": 2,
         "source_version": "v003_test",
@@ -300,6 +302,7 @@ class WorkerTaskReplaySessionTests(unittest.TestCase):
         }
         plan = SimpleNamespace(
             profile="motion_only",
+            execution_semantics=request.execution_semantics,
             plan_sha256=request.plan_sha256,
             events=[1, 2],
             segments=[
@@ -413,11 +416,18 @@ class WorkerTaskReplaySessionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "forbids the filtered"):
                 load_worker_task_replay_request(path)
 
+            payload = _request_payload(root / "run", steps)
+            payload["execution_semantics"] = "measured_endpoint_v1"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "execution_semantics"):
+                load_worker_task_replay_request(path)
+
     def test_plan_binding_requires_exact_production_fast_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             request = self._loaded_request(Path(temp))
             plan = SimpleNamespace(
                 profile="motion_only",
+                execution_semantics=request.execution_semantics,
                 plan_sha256="a" * 64,
                 events=[1, 2],
                 segments=[1, 2],
@@ -434,6 +444,19 @@ class WorkerTaskReplaySessionTests(unittest.TestCase):
             plan.profile = "raw"
             self.assertIn(
                 "production Fast profile motion_only",
+                "; ".join(
+                    validate_worker_task_plan_binding(
+                        request,
+                        plan=plan,
+                        request_id="request-v003",
+                        plan_id="plan-v003",
+                    )
+                ),
+            )
+            plan.profile = "motion_only"
+            plan.execution_semantics = "measured_endpoint_v1"
+            self.assertIn(
+                "execution_semantics",
                 "; ".join(
                     validate_worker_task_plan_binding(
                         request,
@@ -614,6 +637,7 @@ class WorkerTaskReplaySessionTests(unittest.TestCase):
                 final_time_s=0.1,
                 label="normal task callback regression",
                 profile="motion_only",
+                execution_semantics=RECORDED_TIMELINE_OPEN_LOOP_V1,
                 total_steps=1,
             )
             plan.plan_sha256 = plan_fingerprint(plan)
