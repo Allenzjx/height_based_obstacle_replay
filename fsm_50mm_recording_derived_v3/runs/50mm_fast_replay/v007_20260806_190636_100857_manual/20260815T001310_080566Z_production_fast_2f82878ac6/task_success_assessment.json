@@ -1,0 +1,46 @@
+{
+  "body_crossed_front_face": false,
+  "classification_reasons": [
+    "an evaluated task-level hard failure was observed"
+  ],
+  "evaluation_status": "EVALUATED",
+  "fast_segment_count": 92,
+  "final_recoverable": true,
+  "final_wheel_classes": {
+    "FL": "TOP",
+    "FR": "AIR",
+    "RL": "FRONT_FACE",
+    "RR": "TOP"
+  },
+  "first_actual_failure_phase": "RR placement / before RL traversal at 63.83 s (source step 16, segment 75; front_left_hip actuator_unstable)",
+  "hard_failure_reasons": [
+    "SCHEDULER_EVENT_COUNT_MISMATCH",
+    "SCHEDULER_SEGMENT_COUNT_MISMATCH",
+    "COMMAND_DISPATCH_INCOMPLETE",
+    "SCHEDULER_INCOMPLETE",
+    "BODY_NOT_CROSSED_FRONT_FACE",
+    "REQUIRED_LEG_LIFT_MISSING",
+    "MANUAL_VIDEO_CONFIRMED_FAILURE"
+  ],
+  "not_evaluated_reasons": [],
+  "notes": [
+    "All 973 sealed viewport frames decoded and were reviewed.",
+    "FR, FL, and RR traversed and the body crossed, but RL remained at FRONT_FACE when dispatch stopped.",
+    "The hard task failure is incomplete command execution and missing RL traversal after actuator_unstable; no fall, dangerous collision, severe penetration, wheel-only drive-up, or joint-limit-like pose was visible."
+  ],
+  "peak_pitch": 0.14980002789590674,
+  "peak_roll": 0.24806918565436986,
+  "posture_result": "NOT_APPLICABLE",
+  "required_leg_lift_completed": false,
+  "secondary_diagnostics": [
+    "SECONDARY_DIAGNOSTIC_UNAVAILABLE:physical_evidence.final_all_loaded",
+    "FINAL_NOT_ALL_TOP",
+    "STRICT_REST_INCOMPLETE",
+    "FINAL_SINGLE_WHEEL_AIR",
+    "MANUAL_VIDEO_POSTURE_INCOMPLETE"
+  ],
+  "step_count": 21,
+  "task_result": "REPLAY_TASK_FAIL",
+  "version": "v007_20260806_190636_100857_manual",
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v007_20260806_190636_100857_manual\\20260815T001310_080566Z_production_fast_2f82878ac6\\actual_viewport_video.mp4"
+}

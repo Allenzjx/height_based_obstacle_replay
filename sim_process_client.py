@@ -91,6 +91,8 @@ VALUE_FLAGS = {
     "--telemetry-config",
     "--worker-config-file",
     "--fsm50-gate-request-path",
+    "--fsm50-task-request-path",
+    "--fsm50-macro-request-path",
 }
 
 
@@ -235,6 +237,15 @@ def build_worker_config(args: Any, *, host: str, port: int) -> dict[str, Any]:
         "experience": str(getattr(args, "experience", "") or "").strip(),
         "fsm50_gate_request_path": str(
             getattr(args, "fsm50_gate_request_path", "") or ""
+        ).strip(),
+        "fsm50_task_request_path": str(
+            getattr(args, "fsm50_task_request_path", "") or ""
+        ).strip(),
+        "fsm50_macro_request_path": str(
+            getattr(args, "fsm50_macro_request_path", "") or ""
+        ).strip(),
+        "fsm50_residual_macro_request_path": str(
+            getattr(args, "fsm50_residual_macro_request_path", "") or ""
         ).strip(),
     }
     for key, value in optional_values.items():
@@ -559,6 +570,88 @@ def build_child_environment(args: Any) -> tuple[dict[str, str], dict[str, Any]]:
     return env, status
 
 
+def _last_request_matched_message(
+    rows: Any,
+    *,
+    request_id: str,
+    message_type: str = "",
+    operation: str = "",
+    close_event_type: str = "",
+) -> dict[str, Any]:
+    """Return the newest shutdown/close row bound to one controller request."""
+
+    expected_request_id = str(request_id or "")
+    candidates = list(rows or []) if isinstance(rows, (list, tuple, deque)) else []
+    for raw in reversed(candidates):
+        if not isinstance(raw, dict):
+            continue
+        row = dict(raw)
+        if expected_request_id and str(row.get("request_id", "") or "") != expected_request_id:
+            continue
+        if message_type and str(row.get("type", "") or "") != message_type:
+            continue
+        if operation and str(row.get("operation", "") or "") != operation:
+            continue
+        if close_event_type and str(row.get("close_event_type", "") or "") != close_event_type:
+            continue
+        return row
+    return {}
+
+
+def _request_matched_shutdown_evidence(
+    status: dict[str, Any], *, request_id: str
+) -> dict[str, dict[str, Any]]:
+    """Extract only the ACK/receipt chain for the requested shutdown."""
+
+    operation_rows = list(status.get("operation_ack_history", []) or [])
+    last_operation = status.get("last_operation_ack")
+    if isinstance(last_operation, dict):
+        operation_rows.append(dict(last_operation))
+
+    close_rows = list(status.get("close_event_history", []) or [])
+    for key in ("close_requested_ack", "close_returned_ack"):
+        row = status.get(key)
+        if isinstance(row, dict):
+            close_rows.append(dict(row))
+
+    receipt_rows = list(status.get("close_receipt_history", []) or [])
+    for key in ("close_requested_receipt", "close_returned_receipt"):
+        row = status.get(key)
+        if isinstance(row, dict):
+            receipt_rows.append(dict(row))
+
+    return {
+        "shutdown_ack": _last_request_matched_message(
+            operation_rows,
+            request_id=request_id,
+            message_type="operation_ack",
+            operation="shutdown",
+        ),
+        "close_requested_ack": _last_request_matched_message(
+            close_rows,
+            request_id=request_id,
+            message_type="close_requested",
+        ),
+        "close_requested_receipt": _last_request_matched_message(
+            receipt_rows,
+            request_id=request_id,
+            message_type="close_receipt",
+            close_event_type="close_requested",
+        ),
+        "close_returned_ack": _last_request_matched_message(
+            close_rows,
+            request_id=request_id,
+            message_type="close_returned",
+        ),
+        "close_returned_receipt": _last_request_matched_message(
+            receipt_rows,
+            request_id=request_id,
+            message_type="close_receipt",
+            close_event_type="close_returned",
+        ),
+    }
+
+
 class SimProcessClient:
     def __init__(self, args: Any):
         self.args = args
@@ -588,6 +681,10 @@ class SimProcessClient:
         self.latest_detailed_status: dict[str, Any] = {}
         self.latest_artifact_ack: dict[str, Any] = {}
         self.latest_artifact_terminal: dict[str, Any] = {}
+        self.latest_task_replay_ack: dict[str, Any] = {}
+        self.latest_task_replay_terminal: dict[str, Any] = {}
+        self.latest_macro_fsm_ack: dict[str, Any] = {}
+        self.latest_macro_fsm_terminal: dict[str, Any] = {}
         self.latest_close_ack: dict[str, Any] = {}
         self.start_time = 0.0
         self.last_status_time = 0.0
@@ -610,6 +707,10 @@ class SimProcessClient:
             return
         self.latest_artifact_ack = {}
         self.latest_artifact_terminal = {}
+        self.latest_task_replay_ack = {}
+        self.latest_task_replay_terminal = {}
+        self.latest_macro_fsm_ack = {}
+        self.latest_macro_fsm_terminal = {}
         self.latest_close_ack = {}
         self._reset_socket()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -860,6 +961,105 @@ class SimProcessClient:
             )
         )
 
+    def start_macro_fsm(
+        self,
+        *,
+        request_id: str,
+        worker_session_id: str,
+        source_version: str,
+        profile_id: str,
+        graph_id: str,
+        graph_sha256: str,
+        profile_library_sha256: str,
+        bundle_sha256: str,
+    ) -> None:
+        """Start the locally rebuilt, request-bound Macro FSM."""
+
+        self._send_or_queue(
+            make_message(
+                "start_macro_fsm",
+                request_id=str(request_id or ""),
+                worker_session_id=str(worker_session_id or ""),
+                source_version=str(source_version or ""),
+                profile_id=str(profile_id or ""),
+                graph_id=str(graph_id or ""),
+                graph_sha256=str(graph_sha256 or ""),
+                profile_library_sha256=str(profile_library_sha256 or ""),
+                bundle_sha256=str(bundle_sha256 or ""),
+            )
+        )
+
+    def start_residual_macro_fsm(
+        self,
+        *,
+        request_id: str,
+        request_identity_sha256: str,
+        worker_session_id: str,
+        source_version: str,
+        profile_id: str,
+        graph_id: str,
+        graph_sha256: str,
+        profile_library_sha256: str,
+        bundle_sha256: str,
+        policy_kind: str,
+        policy_sha256: str,
+        residual_core_sha256: str,
+        envelope_canonical_sha256: str,
+    ) -> None:
+        """Send the exact Gate-E start schema on the existing Macro transport."""
+
+        text_fields = {
+            "request_id": request_id,
+            "worker_session_id": worker_session_id,
+            "source_version": source_version,
+            "profile_id": profile_id,
+            "graph_id": graph_id,
+        }
+        for label, value in text_fields.items():
+            if type(value) is not str or not value or value != value.strip():
+                raise ValueError(f"Gate-E start {label} must be exact non-empty text")
+        sha_fields = {
+            "request_identity_sha256": request_identity_sha256,
+            "graph_sha256": graph_sha256,
+            "profile_library_sha256": profile_library_sha256,
+            "bundle_sha256": bundle_sha256,
+            "policy_sha256": policy_sha256,
+            "residual_core_sha256": residual_core_sha256,
+            "envelope_canonical_sha256": envelope_canonical_sha256,
+        }
+        for label, value in sha_fields.items():
+            if (
+                type(value) is not str
+                or len(value) != 64
+                or value != value.lower()
+                or any(character not in "0123456789abcdef" for character in value)
+            ):
+                raise ValueError(
+                    f"Gate-E start {label} must be a lowercase SHA-256"
+                )
+        if policy_kind != "ZERO":
+            raise ValueError("Gate-E R0 start requires policy_kind=ZERO")
+        self._send_or_queue(
+            make_message(
+                "start_macro_fsm",
+                schema_version="fsm50.start_residual_macro_fsm.v1",
+                operation="residual_macro_fsm",
+                request_id=request_id,
+                request_identity_sha256=request_identity_sha256,
+                worker_session_id=worker_session_id,
+                source_version=source_version,
+                profile_id=profile_id,
+                graph_id=graph_id,
+                graph_sha256=graph_sha256,
+                profile_library_sha256=profile_library_sha256,
+                bundle_sha256=bundle_sha256,
+                policy_kind=policy_kind,
+                policy_sha256=policy_sha256,
+                residual_core_sha256=residual_core_sha256,
+                envelope_canonical_sha256=envelope_canonical_sha256,
+            )
+        )
+
     def pause_playback(self) -> None:
         self._send_or_queue(make_message("pause_playback"))
 
@@ -999,6 +1199,10 @@ class SimProcessClient:
                 break
             time.sleep(0.005)
         returncode = None if self.process is None else self.process.poll()
+        shutdown_evidence = _request_matched_shutdown_evidence(
+            self.latest_status,
+            request_id=str(request_id or ""),
+        )
         outcome = {
             "pid": pid,
             "returncode": returncode,
@@ -1008,8 +1212,21 @@ class SimProcessClient:
             "force_on_timeout": bool(force_on_timeout),
             "requested_mode": normalized_mode or "normal",
             "request_id": str(request_id or ""),
-            "close_requested": dict(self.latest_status.get("close_requested_ack", {}) or {}),
-            "close_returned": dict(self.latest_status.get("close_returned_ack", {}) or {}),
+            "shutdown_ack": shutdown_evidence["shutdown_ack"],
+            "close_requested_ack": shutdown_evidence["close_requested_ack"],
+            "close_requested_receipt": shutdown_evidence[
+                "close_requested_receipt"
+            ],
+            "close_returned_ack": shutdown_evidence["close_returned_ack"],
+            "close_returned_receipt": shutdown_evidence[
+                "close_returned_receipt"
+            ],
+            # Backward-compatible names retained for existing supervisors.
+            "close_requested": shutdown_evidence["close_requested_ack"],
+            # Native ``SimulationApp.close`` may never return on the supported
+            # Isaac build.  An absent event stays absent; it is never inferred
+            # from process exit or the verified close-requested barrier.
+            "close_returned": shutdown_evidence["close_returned_ack"],
         }
         self.latest_status["shutdown_outcome"] = dict(outcome)
         if returncode is not None or force_on_timeout:
@@ -1097,8 +1314,18 @@ class SimProcessClient:
                         "last_artifact_ack",
                         "last_artifact_terminal",
                         "artifact_ack_history",
+                        "last_task_replay_ack",
+                        "last_task_replay_terminal",
+                        "task_replay_ack_history",
+                        "last_macro_fsm_ack",
+                        "last_macro_fsm_terminal",
+                        "macro_fsm_ack_history",
                         "close_requested_ack",
                         "close_returned_ack",
+                        "close_requested_receipt",
+                        "close_returned_receipt",
+                        "close_event_history",
+                        "close_receipt_history",
                         "requested_launch_mode",
                     )
                     if key in self.latest_status
@@ -1132,12 +1359,39 @@ class SimProcessClient:
                 )
                 artifact_history.append(dict(message))
                 self.latest_status["artifact_ack_history"] = artifact_history[-16:]
+            elif str(message.get("operation", "") or "") == "task_replay":
+                self.latest_task_replay_ack = dict(message)
+                self.latest_status["last_task_replay_ack"] = dict(message)
+                task_history = list(
+                    self.latest_status.get("task_replay_ack_history", []) or []
+                )
+                task_history.append(dict(message))
+                self.latest_status["task_replay_ack_history"] = task_history[-16:]
+            elif str(message.get("operation", "") or "") == "macro_fsm":
+                self.latest_macro_fsm_ack = dict(message)
+                self.latest_status["last_macro_fsm_ack"] = dict(message)
+                macro_history = list(
+                    self.latest_status.get("macro_fsm_ack_history", []) or []
+                )
+                macro_history.append(dict(message))
+                self.latest_status["macro_fsm_ack_history"] = macro_history[-16:]
         elif message_type in {"artifact_complete", "artifact_failed"}:
             self.latest_artifact_terminal = dict(message)
             self.latest_status["last_artifact_terminal"] = dict(message)
+        elif message_type in {"task_replay_complete", "task_replay_failed"}:
+            self.latest_task_replay_terminal = dict(message)
+            self.latest_status["last_task_replay_terminal"] = dict(message)
+        elif message_type in {"macro_fsm_complete", "macro_fsm_failed"}:
+            self.latest_macro_fsm_terminal = dict(message)
+            self.latest_status["last_macro_fsm_terminal"] = dict(message)
         elif message_type in {"close_requested", "close_returned"}:
             self.latest_close_ack = dict(message)
             self.latest_status[f"{message_type}_ack"] = dict(message)
+            close_history = list(
+                self.latest_status.get("close_event_history", []) or []
+            )
+            close_history.append(dict(message))
+            self.latest_status["close_event_history"] = close_history[-16:]
             # A formal fast-close must not enter Kit's native teardown until
             # the controller has decoded and durably retained the ordered
             # shutdown/close event stream.  Echoing the exact close identity
@@ -1166,10 +1420,39 @@ class SimProcessClient:
                 runtime_version=str(message.get("runtime_version", "") or ""),
                 received_wall_time=time.time(),
             )
+            if "schema_version" in message:
+                receipt["schema_version"] = str(
+                    message.get("schema_version", "") or ""
+                )
+            if "task_replay_request_id" in message:
+                receipt["task_replay_request_id"] = str(
+                    message.get("task_replay_request_id", "") or ""
+                )
+            if "macro_fsm_request_id" in message:
+                receipt["macro_fsm_request_id"] = str(
+                    message.get("macro_fsm_request_id", "") or ""
+                )
+            if "residual_macro_fsm_request_id" in message:
+                receipt["residual_macro_fsm_request_id"] = str(
+                    message.get("residual_macro_fsm_request_id", "") or ""
+                )
+            if "base_macro_fsm_request_id" in message:
+                receipt["base_macro_fsm_request_id"] = str(
+                    message.get("base_macro_fsm_request_id", "") or ""
+                )
+            if "gate_e_zero_residual" in message:
+                receipt["gate_e_zero_residual"] = message.get(
+                    "gate_e_zero_residual"
+                )
             # Append rather than byte-prepend: pending_send_buffer may contain
             # the unsent suffix of a JSONL frame and must never be split.
             self._send_or_queue(receipt)
             self.latest_status[f"{message_type}_receipt"] = dict(receipt)
+            receipt_history = list(
+                self.latest_status.get("close_receipt_history", []) or []
+            )
+            receipt_history.append(dict(receipt))
+            self.latest_status["close_receipt_history"] = receipt_history[-16:]
         self.latest_status["worker_pid"] = self.pid
         self.latest_status["worker_returncode"] = self.returncode
 
@@ -1413,6 +1696,11 @@ def _append_worker_config_as_cli(command: list[str], config: dict[str, Any]) -> 
         "livestream": "--livestream",
         "experience": "--experience",
         "fsm50_gate_request_path": "--fsm50-gate-request-path",
+        "fsm50_task_request_path": "--fsm50-task-request-path",
+        "fsm50_macro_request_path": "--fsm50-macro-request-path",
+        "fsm50_residual_macro_request_path": (
+            "--fsm50-residual-macro-request-path"
+        ),
     }
     for key, flag in flag_map.items():
         value = config.get(key)

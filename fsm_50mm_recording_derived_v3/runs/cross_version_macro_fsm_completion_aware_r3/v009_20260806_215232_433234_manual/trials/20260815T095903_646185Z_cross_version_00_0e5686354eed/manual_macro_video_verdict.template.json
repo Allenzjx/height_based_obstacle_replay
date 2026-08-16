@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919",
+  "request_id": "58d7ef3d2b534c47b4ff536e65231381",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_r3\\v009_20260806_215232_433234_manual\\trials\\20260815T095903_646185Z_cross_version_00_0e5686354eed",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v009_20260806_215232_433234_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_r3\\v009_20260806_215232_433234_manual\\trials\\20260815T095903_646185Z_cross_version_00_0e5686354eed\\macro_task_inputs.json",
+  "task_inputs_sha256": "eb05e5d7f3a2ad9d0310b9fd441832555f11439044f11bef1ef57725c3fd71de",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_r3\\v009_20260806_215232_433234_manual\\trials\\20260815T095903_646185Z_cross_version_00_0e5686354eed\\actual_viewport_video.mp4",
+  "video_sha256": "30dcca51331a915c36b4f894875e18fba56f8af8f1d0cb9d005048c30120608e",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_r3\\v009_20260806_215232_433234_manual\\trials\\20260815T095903_646185Z_cross_version_00_0e5686354eed\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "961993da76dacf8f3f6d87ab5b9199c1cc7808446a469fab18bb75f385d55dd6"
+}

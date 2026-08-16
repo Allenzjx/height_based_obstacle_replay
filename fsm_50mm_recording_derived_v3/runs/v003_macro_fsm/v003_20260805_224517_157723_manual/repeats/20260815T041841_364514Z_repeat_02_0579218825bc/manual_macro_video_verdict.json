@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "0579218825bcfdd4dabf7ab6225268ac04279a83ed96cad2ed390955414deebc",
+  "request_id": "ca0c0a64501441fca5b84a1c0098557d",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T04:25:27.5935048Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\repeats\\20260815T041841_364514Z_repeat_02_0579218825bc",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\repeats\\20260815T041841_364514Z_repeat_02_0579218825bc\\macro_task_inputs.json",
+  "task_inputs_sha256": "05bf7de6a1bd3c3fb24ac4948fe6d92c21946277aec0baea812b05b282dc2aad",
+  "verdict": {
+    "body_crossed_front_face": true,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": true,
+    "joint_limit_violation": false,
+    "notes": "Independent SHA-bound review fully decoded all 1,187 frames (1280x720, 15 fps); there were no decode gaps, dark frames, or flat frames. Dense FR/FL/RR/RL phase-window inspection showed every required leg visibly lifted before crossing the obstacle front face and reached the top; the body subsequently crossed and remained on the top surface. No fall, sustained unrecovered body stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible. The final stance is upright and recoverable but asymmetric/non-neutral with FL visibly airborne, so posture recovery remains incomplete. As an all-frame trajectory cross-check, per-frame alignment to the accepted baseline was 0.270/255 mean, 0.326/255 worst.",
+    "posture_incomplete": true,
+    "required_leg_lift_completed": true,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": true,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\repeats\\20260815T041841_364514Z_repeat_02_0579218825bc\\actual_viewport_video.mp4",
+  "video_sha256": "fd870f9afac41334dee0ece2c764920a3340974550f57361b1a26f2002180ab2",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\repeats\\20260815T041841_364514Z_repeat_02_0579218825bc\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "c175b4eaaa392aa549ed725d4163a1cbdebb4a0d913e4c51bf6b97959d87e976"
+}

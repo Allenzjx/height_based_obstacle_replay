@@ -529,6 +529,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
             servo_base_duration_s=0.1,
             servo_duration_s=0.1,
             servo_targets={"front_left_hip": 10.0},
+            legacy_missing_endpoint=True,
             wheel_base_velocity={"front_left_ankle": 1.0},
             wheel_requested_velocity_rad_s={"front_left_ankle": 1.0},
             wheel_applied_target_rad_s={"front_left_ankle": 1.0},
@@ -1649,6 +1650,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
                 servo_base_duration_s=0.1,
                 servo_duration_s=0.1,
                 servo_targets={"front_left_hip": 10.0},
+                legacy_missing_endpoint=True,
             ),
             PlaybackSegment(
                 segment_index=105,
@@ -1662,6 +1664,7 @@ class PlanIntegrityAndCompletionTest(unittest.TestCase):
                 servo_base_duration_s=0.1,
                 servo_duration_s=0.1,
                 servo_targets={"front_left_hip": 20.0},
+                legacy_missing_endpoint=True,
             ),
         ]
         plan = PlaybackPlan(

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 import hashlib
 import importlib.metadata
 import json
@@ -30,7 +31,12 @@ from height_manifest import (
 )
 from playback import SimTimePlaybackService, playback_plan_from_payload, validate_plan_integrity
 from motion_speed import load_motion_reference
-from sim_ipc_protocol import JsonLineBuffer, encode_message, make_message
+from sim_ipc_protocol import (
+    MACRO_FAST_CLOSE_SCHEMA,
+    JsonLineBuffer,
+    encode_message,
+    make_message,
+)
 from sim_obstacle_scene import (
     DEFAULT_ROBOT_USD_PATH,
     DEFAULT_SCENE_SAVE_PATH,
@@ -62,8 +68,26 @@ from fsm_50mm_recording_derived_v3.worker_recording_session import (
     load_worker_recording_gate_request,
     validate_worker_plan_binding,
 )
+from fsm_50mm_recording_derived_v3.worker_task_replay_session import (
+    WorkerTaskReplaySession,
+    load_worker_task_replay_request,
+    validate_worker_task_plan_binding,
+)
+from fsm_50mm_recording_derived_v3.worker_macro_fsm_session import (
+    WorkerMacroFSMSession,
+    load_worker_macro_fsm_request,
+    validate_worker_macro_start_binding,
+)
+from fsm_50mm_recording_derived_v3.worker_residual_macro_fsm_session import (
+    GateEResidualMacroFSMSession,
+    GateEResidualMacroFSMSessionFactory,
+    WorkerResidualMacroFSMRequest,
+    load_worker_residual_macro_fsm_request,
+    validate_worker_residual_start_binding,
+)
 
 
+@functools.lru_cache(maxsize=1)
 def _worker_runtime_version() -> str:
     for distribution in ("isaacsim", "isaac-sim"):
         try:
@@ -164,6 +188,10 @@ class WorkerIpc:
             "save_result",
             "artifact_complete",
             "artifact_failed",
+            "task_replay_complete",
+            "task_replay_failed",
+            "macro_fsm_complete",
+            "macro_fsm_failed",
             "close_requested",
             "close_returned",
         }
@@ -307,6 +335,30 @@ def _wait_for_close_receipt(
         "close_kwargs": dict(close_event.get("close_kwargs", {}) or {}),
         "runtime_version": str(close_event.get("runtime_version", "") or ""),
     }
+    if "schema_version" in close_event:
+        expected["schema_version"] = str(
+            close_event.get("schema_version", "") or ""
+        )
+    if "task_replay_request_id" in close_event:
+        expected["task_replay_request_id"] = str(
+            close_event.get("task_replay_request_id", "") or ""
+        )
+    if "macro_fsm_request_id" in close_event:
+        expected["macro_fsm_request_id"] = str(
+            close_event.get("macro_fsm_request_id", "") or ""
+        )
+    if "residual_macro_fsm_request_id" in close_event:
+        expected["residual_macro_fsm_request_id"] = str(
+            close_event.get("residual_macro_fsm_request_id", "") or ""
+        )
+    if "base_macro_fsm_request_id" in close_event:
+        expected["base_macro_fsm_request_id"] = str(
+            close_event.get("base_macro_fsm_request_id", "") or ""
+        )
+    if "gate_e_zero_residual" in close_event:
+        expected["gate_e_zero_residual"] = close_event.get(
+            "gate_e_zero_residual"
+        )
     while deadline is None or time.monotonic() <= deadline:
         for message in ipc.poll():
             if str(message.get("type", "") or "") != "close_receipt":
@@ -321,6 +373,318 @@ def _wait_for_close_receipt(
                 return dict(message)
         time.sleep(0.002)
     return {}
+
+
+def _wait_for_task_exception_fast_shutdown(
+    ipc: Any,
+    *,
+    task_session: Any,
+    adapter: Any,
+    worker_session_id: str,
+) -> str:
+    """Hold a failed task worker for the controller-owned fast-close request.
+
+    A normal Kit close is known to stall in the supported Isaac version.  This
+    path does not manufacture a receipt or close the app itself: it accepts one
+    explicit fast shutdown only after the task result is durable and its video
+    writer is quiesced.  The regular finally block then performs the existing
+    close_requested/receipt/native-close/close_returned sequence.
+    """
+
+    if task_session is None or not bool(task_session.fast_close_ready):
+        return ""
+    while True:
+        for message in ipc.poll():
+            if str(message.get("type", "") or "") != "shutdown":
+                continue
+            request_id = str(message.get("request_id", "") or "")
+            mode = str(message.get("mode", "") or "").strip().lower()
+            if mode != "fast":
+                ipc.send(
+                    make_message(
+                        "operation_ack",
+                        operation="shutdown",
+                        accepted=False,
+                        request_id=request_id,
+                        mode=mode or "normal",
+                        error=(
+                            "terminal task-replay exception requires the verified "
+                            "fast-close receipt path"
+                        ),
+                    )
+                )
+                continue
+            if not request_id:
+                ipc.send(
+                    make_message(
+                        "operation_ack",
+                        operation="shutdown",
+                        accepted=False,
+                        request_id="",
+                        mode="fast",
+                        error="fast shutdown request_id is required",
+                    )
+                )
+                continue
+            ipc.send(
+                make_message(
+                    "operation_ack",
+                    operation="shutdown",
+                    accepted=True,
+                    request_id=request_id,
+                    mode="fast",
+                    **_worker_ack_identity(
+                        adapter,
+                        worker_session_id=worker_session_id,
+                        artifact_request_id="",
+                    ),
+                    task_replay_request_id=task_session.request.request_id,
+                    close_kwargs={
+                        "wait_for_replicator": False,
+                        "skip_cleanup": True,
+                    },
+                    runtime_version=_worker_runtime_version(),
+                    error="",
+                )
+            )
+            return request_id
+        ipc.flush()
+        time.sleep(0.002)
+
+
+def _wait_for_macro_exception_fast_shutdown(
+    ipc: Any,
+    *,
+    macro_session: Any,
+    adapter: Any,
+    worker_session_id: str,
+) -> str:
+    """Hold a terminal Macro worker for its controller-owned fast close."""
+
+    if macro_session is None or not bool(macro_session.fast_close_ready):
+        return ""
+    while True:
+        for message in ipc.poll():
+            if str(message.get("type", "") or "") != "shutdown":
+                continue
+            request_id = str(message.get("request_id", "") or "")
+            mode = str(message.get("mode", "") or "").strip().lower()
+            if mode != "fast" or not request_id:
+                ipc.send(
+                    make_message(
+                        "operation_ack",
+                        operation="shutdown",
+                        accepted=False,
+                        request_id=request_id,
+                        mode=mode or "normal",
+                        error=(
+                            "terminal Macro FSM requires a non-empty request_id "
+                            "on the verified fast-close receipt path"
+                        ),
+                        **_macro_route_ack_identity(
+                            macro_session, payload_role="shutdown_ack"
+                        ),
+                    )
+                )
+                continue
+            ipc.send(
+                make_message(
+                    "operation_ack",
+                    operation="shutdown",
+                    accepted=True,
+                    request_id=request_id,
+                    mode="fast",
+                    **_worker_ack_identity(
+                        adapter,
+                        worker_session_id=worker_session_id,
+                        artifact_request_id="",
+                    ),
+                    **_macro_route_ack_identity(
+                        macro_session, payload_role="shutdown_ack"
+                    ),
+                    close_kwargs={
+                        "wait_for_replicator": False,
+                        "skip_cleanup": True,
+                    },
+                    runtime_version=_worker_runtime_version(),
+                    schema_version=MACRO_FAST_CLOSE_SCHEMA,
+                    error="",
+                )
+            )
+            return request_id
+        ipc.flush()
+        time.sleep(0.002)
+
+
+def _finalize_active_task_session_for_worker_exit(
+    task_session: Any,
+    *,
+    terminal_sent: bool,
+    publish_terminal: Any,
+    reason: str,
+) -> bool:
+    """Make an unexpected worker-loop exit durable before any Kit close."""
+
+    if task_session is None or bool(terminal_sent):
+        return bool(terminal_sent)
+    resolved_reason = str(reason or "worker loop exited")
+    app_stopped = "simulation app stopped" in resolved_reason.lower()
+    publish_terminal(
+        task_session.fail(
+            resolved_reason,
+            infrastructure_failure=True,
+            simulation_app_stopped=app_stopped,
+        )
+    )
+    return True
+
+
+def _finalize_active_macro_session_for_worker_exit(
+    macro_session: Any,
+    *,
+    terminal_sent: bool,
+    publish_terminal: Any,
+    reason: str,
+) -> bool:
+    """Make an unexpected Macro worker-loop exit durable before Kit close."""
+
+    if macro_session is None or bool(terminal_sent):
+        return bool(terminal_sent)
+    terminal = macro_session.fail(
+        str(reason or "worker loop exited"),
+        infrastructure_failure=True,
+        simulation_app_stopped=True,
+    )
+    if terminal is None:
+        raise RuntimeError(
+            "Macro worker exit did not produce a durable terminal result"
+        )
+    publish_terminal(terminal)
+    return True
+
+
+def _load_exclusive_fsm50_worker_requests(
+    args: argparse.Namespace,
+    *,
+    gate_loader: Any | None = None,
+    task_loader: Any | None = None,
+    macro_loader: Any | None = None,
+    residual_loader: Any | None = None,
+) -> tuple[Any | None, Any | None, Any | None, Any | None]:
+    """Load exactly zero or one worker-owned FSM50 request route."""
+
+    gate_fn = gate_loader or load_worker_recording_gate_request
+    task_fn = task_loader or load_worker_task_replay_request
+    macro_fn = macro_loader or load_worker_macro_fsm_request
+    residual_fn = residual_loader or load_worker_residual_macro_fsm_request
+    gate_request = gate_fn(getattr(args, "fsm50_gate_request_path", ""))
+    task_request = task_fn(getattr(args, "fsm50_task_request_path", ""))
+    macro_request = macro_fn(getattr(args, "fsm50_macro_request_path", ""))
+    residual_request = residual_fn(
+        getattr(args, "fsm50_residual_macro_request_path", "")
+    )
+    if sum(
+        request is not None
+        for request in (
+            gate_request,
+            task_request,
+            macro_request,
+            residual_request,
+        )
+    ) > 1:
+        raise ValueError(
+            "Gate-1 recording, normal task replay, Macro FSM, and Gate-E "
+            "residual Macro FSM requests are mutually exclusive"
+        )
+    return gate_request, task_request, macro_request, residual_request
+
+
+def _macro_route_ack_identity(macro_session: Any, *, payload_role: str) -> dict[str, Any]:
+    residual_request = getattr(macro_session, "residual_request", None)
+    if residual_request is None:
+        return {"macro_fsm_request_id": macro_session.request.request_id}
+    return {
+        "macro_fsm_request_id": residual_request.request_id,
+        "residual_macro_fsm_request_id": residual_request.request_id,
+        "base_macro_fsm_request_id": macro_session.request.request_id,
+        "gate_e_zero_residual": residual_request.gate_e_identity(
+            payload_role=payload_role
+        ),
+    }
+
+
+def _validate_macro_route_start_binding(
+    macro_session: Any,
+    residual_request: Any | None,
+    message: dict[str, Any],
+    *,
+    expected_worker_session_id: str,
+    macro_validator: Any | None = None,
+    residual_validator: Any | None = None,
+) -> list[str]:
+    if residual_request is None:
+        validator = macro_validator or validate_worker_macro_start_binding
+        return list(
+            validator(
+                macro_session.request,
+                message,
+                expected_worker_session_id=expected_worker_session_id,
+            )
+        )
+    if getattr(macro_session, "residual_request", None) is not residual_request:
+        return ["Gate-E residual session/request route binding mismatch"]
+    validator = residual_validator or validate_worker_residual_start_binding
+    return list(
+        validator(
+            residual_request,
+            message,
+            expected_worker_session_id=expected_worker_session_id,
+        )
+    )
+
+
+def _build_macro_start_operation_ack(
+    *,
+    message: dict[str, Any],
+    accepted: bool,
+    rejection_reason: str,
+    adapter: Any,
+    worker_session_id: str,
+    start_payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the shared-transport Macro start ACK without overlay collisions."""
+
+    excluded = {
+        "accepted",
+        "type",
+        "operation",
+        "request_id",
+        "rejection_reason",
+        "error",
+        "worker_pid",
+        "worker_session_id",
+        "adapter_runtime_instance_id",
+        "artifact_request_id",
+        "root_state_write_count",
+    }
+    return make_message(
+        "operation_ack",
+        operation="start_macro_fsm",
+        request_id=str(message.get("request_id", "") or ""),
+        accepted=bool(accepted),
+        rejection_reason=str(rejection_reason or ""),
+        error=str(rejection_reason or ""),
+        **_worker_ack_identity(
+            adapter,
+            worker_session_id=worker_session_id,
+            artifact_request_id="",
+        ),
+        **{
+            key: value
+            for key, value in start_payload.items()
+            if key not in excluded
+        },
+    )
 
 
 def _strict_json_value_equal(actual: Any, expected: Any) -> bool:
@@ -796,6 +1160,13 @@ def run_worker(args: argparse.Namespace) -> int:
     gate_request = None
     artifact_session: WorkerRecordingSession | None = None
     artifact_terminal_sent = False
+    task_request = None
+    task_session: WorkerTaskReplaySession | None = None
+    task_terminal_sent = False
+    macro_request = None
+    residual_request: WorkerResidualMacroFSMRequest | None = None
+    macro_session: WorkerMacroFSMSession | GateEResidualMacroFSMSession | None = None
+    macro_terminal_sent = False
 
     def publish_status(
         *,
@@ -861,6 +1232,7 @@ def run_worker(args: argparse.Namespace) -> int:
             compact=not detailed,
         )
         status["worker_session_id"] = worker_session_id
+        status["runtime_version"] = _worker_runtime_version()
         status["worker_artifact_session"] = (
             {"enabled": False}
             if artifact_session is None
@@ -871,6 +1243,65 @@ def run_worker(args: argparse.Namespace) -> int:
             if gate_request is None
             else gate_request.preflight_payload()
         )
+        if task_request is not None:
+            status["worker_task_replay_session"] = (
+                {"enabled": False}
+                if task_session is None
+                else task_session.status_dict()
+            )
+            status["worker_task_replay_preflight"] = (
+                task_request.preflight_payload()
+            )
+            status["task_replay_preflight_ready"] = bool(
+                task_session is not None and task_session.state == "ready_for_plan"
+            )
+            status["task_replay_request_id"] = task_request.request_id
+            status["adapter_runtime_instance_id"] = str(
+                getattr(adapter, "runtime_instance_id", "") or ""
+            )
+            status["root_state_write_count"] = int(
+                getattr(adapter, "root_state_write_count", 0) or 0
+            )
+        if macro_request is not None:
+            status["worker_macro_fsm_session"] = (
+                {"enabled": False}
+                if macro_session is None
+                else macro_session.status_dict()
+            )
+            status["worker_macro_fsm_preflight"] = macro_request.preflight_payload()
+            status["macro_fsm_preflight_ready"] = bool(
+                macro_session is not None and macro_session.state == "ready_for_start"
+            )
+            status["macro_fsm_request_id"] = macro_request.request_id
+            status["adapter_runtime_instance_id"] = str(
+                getattr(adapter, "runtime_instance_id", "") or ""
+            )
+            status["root_state_write_count"] = int(
+                getattr(adapter, "root_state_write_count", 0) or 0
+            )
+        if residual_request is not None:
+            status["worker_residual_macro_fsm_session"] = (
+                {"enabled": False}
+                if macro_session is None
+                else macro_session.status_dict()
+            )
+            status["worker_residual_macro_fsm_preflight"] = (
+                residual_request.preflight_payload()
+            )
+            status["residual_macro_fsm_preflight_ready"] = bool(
+                macro_session is not None
+                and macro_session.state == "ready_for_start"
+            )
+            status["residual_macro_fsm_request_id"] = residual_request.request_id
+            status["base_macro_fsm_request_id"] = (
+                residual_request.base_request.request_id
+            )
+            status["adapter_runtime_instance_id"] = str(
+                getattr(adapter, "runtime_instance_id", "") or ""
+            )
+            status["root_state_write_count"] = int(
+                getattr(adapter, "root_state_write_count", 0) or 0
+            )
         artifact_status = dict(status["worker_artifact_session"] or {})
         if (
             artifact_session is not None
@@ -1019,13 +1450,115 @@ def run_worker(args: argparse.Namespace) -> int:
         )
         artifact_terminal_sent = True
 
+    def send_task_terminal(terminal: dict[str, Any]) -> None:
+        """Publish one durable normal-development task terminal and ACK."""
+
+        nonlocal task_terminal_sent
+        if task_terminal_sent:
+            return
+        ipc.send(dict(terminal))
+        # The durable terminal itself is the critical delivery.  Mark it sent
+        # before publishing the convenience operation ACK so an ACK failure
+        # cannot cause the terminal frame to be emitted twice.
+        task_terminal_sent = True
+        complete = str(terminal.get("type", "") or "") == "task_replay_complete"
+        excluded = {
+            "type",
+            "operation",
+            "phase",
+            "accepted",
+            "task_replay_complete",
+            "worker_pid",
+            "worker_session_id",
+            "adapter_runtime_instance_id",
+            "artifact_request_id",
+            "root_state_write_count",
+        }
+        ipc.send(
+            make_message(
+                "operation_ack",
+                operation="task_replay",
+                phase="TASK_REPLAY_COMPLETE" if complete else "TASK_REPLAY_FAILED",
+                accepted=complete,
+                task_replay_complete=complete,
+                **_worker_ack_identity(
+                    adapter,
+                    worker_session_id=worker_session_id,
+                    artifact_request_id="",
+                ),
+                **{
+                    key: value
+                    for key, value in terminal.items()
+                    if key not in excluded
+                },
+            )
+        )
+
+    def send_macro_terminal(terminal: dict[str, Any]) -> None:
+        """Publish one durable normal-development Macro terminal and ACK."""
+
+        nonlocal macro_terminal_sent
+        if macro_terminal_sent:
+            return
+        ipc.send(dict(terminal))
+        macro_terminal_sent = True
+        complete = str(terminal.get("type", "") or "") == "macro_fsm_complete"
+        excluded = {
+            "type",
+            "operation",
+            "phase",
+            "accepted",
+            "macro_fsm_complete",
+            "worker_pid",
+            "worker_session_id",
+            "adapter_runtime_instance_id",
+            "artifact_request_id",
+            "root_state_write_count",
+        }
+        ipc.send(
+            make_message(
+                "operation_ack",
+                operation="macro_fsm",
+                phase="MACRO_FSM_COMPLETE" if complete else "MACRO_FSM_FAILED",
+                accepted=complete,
+                macro_fsm_complete=complete,
+                **_worker_ack_identity(
+                    adapter,
+                    worker_session_id=worker_session_id,
+                    artifact_request_id="",
+                ),
+                **{key: value for key, value in terminal.items() if key not in excluded},
+            )
+        )
+
+    def request_macro_failure(
+        reason: str,
+        *,
+        infrastructure_failure: bool,
+        simulation_app_stopped: bool = False,
+    ) -> None:
+        """Request the session's atomic stop; publish only after verification."""
+
+        if macro_session is None or macro_terminal_sent:
+            return
+        terminal = macro_session.fail(
+            reason,
+            infrastructure_failure=infrastructure_failure,
+            simulation_app_stopped=simulation_app_stopped,
+        )
+        if terminal is not None:
+            send_macro_terminal(terminal)
+
     try:
         ipc.send(make_message("hello", pid=os.getpid(), phase=phase, ready=False, starting=True))
         logger.log(f"[worker] pid={os.getpid()} connected; initial height={height_mm}mm")
 
-        gate_request = load_worker_recording_gate_request(
-            getattr(args, "fsm50_gate_request_path", "")
-        )
+        (
+            gate_request,
+            task_request,
+            macro_request,
+            residual_request,
+        ) = _load_exclusive_fsm50_worker_requests(args)
         if gate_request is not None:
             if height_mm != gate_request.height_mm:
                 raise ValueError(
@@ -1039,6 +1572,57 @@ def run_worker(args: argparse.Namespace) -> int:
             logger.log(
                 "[worker] FSM50 Gate-1 artifact request accepted pre-scene "
                 f"request_id={gate_request.request_id}"
+            )
+        if task_request is not None:
+            if height_mm != task_request.height_mm:
+                raise ValueError(
+                    f"worker height {height_mm}mm does not match task replay request "
+                    f"{task_request.height_mm}mm"
+                )
+            task_session = WorkerTaskReplaySession(
+                task_request,
+                worker_session_id=worker_session_id,
+            )
+            logger.log(
+                "[worker] FSM50 normal task replay request accepted pre-scene "
+                f"request_id={task_request.request_id}"
+            )
+        if macro_request is not None:
+            if bool(getattr(args, "no_continuous_sim_step", False)):
+                raise ValueError(
+                    "Macro FSM requires the existing continuous production physics loop"
+                )
+            if height_mm != macro_request.height_mm:
+                raise ValueError(
+                    f"worker height {height_mm}mm does not match Macro FSM request "
+                    f"{macro_request.height_mm}mm"
+                )
+            macro_session = WorkerMacroFSMSession(
+                macro_request,
+                worker_session_id=worker_session_id,
+            )
+            logger.log(
+                "[worker] FSM50 normal Macro FSM request accepted pre-scene "
+                f"request_id={macro_request.request_id}"
+            )
+        if residual_request is not None:
+            if bool(getattr(args, "no_continuous_sim_step", False)):
+                raise ValueError(
+                    "Gate-E residual Macro FSM requires the existing continuous "
+                    "production physics loop"
+                )
+            if height_mm != residual_request.base_request.height_mm:
+                raise ValueError(
+                    f"worker height {height_mm}mm does not match Gate-E residual "
+                    f"Macro request {residual_request.base_request.height_mm}mm"
+                )
+            macro_session = GateEResidualMacroFSMSessionFactory(
+                residual_request
+            ).build_session(worker_session_id=worker_session_id)
+            logger.log(
+                "[worker] FSM50 Gate-E R0 ZERO residual Macro request accepted "
+                f"pre-scene request_id={residual_request.request_id} "
+                f"base_request_id={residual_request.base_request.request_id}"
             )
 
         set_phase("starting_app")
@@ -1130,6 +1714,12 @@ def run_worker(args: argparse.Namespace) -> int:
                 scene_handle=scene_handle,
                 startup_ground=ground_init,
                 robot_usd=Path(args.robot_usd),
+            )
+        if macro_session is not None:
+            macro_session.prepare_after_adapter(
+                adapter=adapter,
+                scene_handle=scene_handle,
+                project_root=Path(__file__).resolve().parent,
             )
         set_phase("adapter_ready")
         publish_status(ready=True, starting=False)
@@ -1230,6 +1820,22 @@ def run_worker(args: argparse.Namespace) -> int:
                         error="",
                     )
                 )
+                if (
+                    macro_session is not None
+                    and macro_session.state
+                    in {
+                        "boundary_pending",
+                        "running",
+                        "terminal_command_pending_readback",
+                        "safe_stop_pending_readback",
+                        "settling",
+                    }
+                    and not macro_terminal_sent
+                ):
+                    request_macro_failure(
+                        "external safety stop interrupted Macro FSM execution",
+                        infrastructure_failure=False,
+                    )
                 publish_status(ready=True, starting=False)
             for message in polled_messages:
                 kind = str(message.get("type", ""))
@@ -1237,14 +1843,22 @@ def run_worker(args: argparse.Namespace) -> int:
                     continue
                 if kind == "shutdown":
                     requested_shutdown_mode = str(message.get("mode", "") or "").strip().lower()
-                    if requested_shutdown_mode == "fast" and artifact_session is None:
+                    if (
+                        requested_shutdown_mode == "fast"
+                        and artifact_session is None
+                        and task_session is None
+                        and macro_session is None
+                    ):
                         ipc.send(
                             make_message(
                                 "operation_ack",
                                 operation="shutdown",
                                 accepted=False,
                                 request_id=str(message.get("request_id", "") or ""),
-                                error="fast shutdown is restricted to an explicit FSM50 Gate-1 artifact worker",
+                                error=(
+                                    "fast shutdown is restricted to an explicit FSM50 "
+                                    "artifact, normal task-replay, or Macro FSM worker"
+                                ),
                             )
                         )
                         continue
@@ -1264,6 +1878,126 @@ def run_worker(args: argparse.Namespace) -> int:
                                     "fast shutdown requires an ARTIFACT_COMPLETE "
                                     f"worker session; state={artifact_session.state}"
                                 ),
+                            )
+                        )
+                        continue
+                    if (
+                        requested_shutdown_mode == "fast"
+                        and task_session is not None
+                        and not task_session.fast_close_ready
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                mode="fast",
+                                error=(
+                                    "fast shutdown requires a durable terminal normal task "
+                                    "replay with quiesced video writer; "
+                                    f"state={task_session.state}"
+                                ),
+                            )
+                        )
+                        continue
+                    if (
+                        requested_shutdown_mode == "fast"
+                        and macro_session is not None
+                        and not macro_session.fast_close_ready
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                mode="fast",
+                                **_macro_route_ack_identity(
+                                    macro_session, payload_role="shutdown_ack"
+                                ),
+                                error=(
+                                    "fast shutdown requires a durable terminal Macro FSM "
+                                    "with quiesced video writer; "
+                                    f"state={macro_session.state}"
+                                ),
+                            )
+                        )
+                        continue
+                    if (
+                        task_session is not None
+                        and requested_shutdown_mode != "fast"
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                mode=requested_shutdown_mode or "normal",
+                                task_replay_request_id=(
+                                    task_session.request.request_id
+                                ),
+                                error=(
+                                    "normal task replay requires the verified fast-close "
+                                    "receipt path after a durable terminal result"
+                                ),
+                            )
+                        )
+                        continue
+                    if macro_session is not None and requested_shutdown_mode != "fast":
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id=str(message.get("request_id", "") or ""),
+                                mode=requested_shutdown_mode or "normal",
+                                **_macro_route_ack_identity(
+                                    macro_session, payload_role="shutdown_ack"
+                                ),
+                                error=(
+                                    "normal Macro FSM requires the verified fast-close "
+                                    "receipt path after a durable terminal result"
+                                ),
+                            )
+                        )
+                        continue
+                    if (
+                        task_session is not None
+                        and requested_shutdown_mode == "fast"
+                        and not str(message.get("request_id", "") or "")
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id="",
+                                mode="fast",
+                                task_replay_request_id=(
+                                    task_session.request.request_id
+                                ),
+                                error="fast shutdown request_id is required",
+                            )
+                        )
+                        continue
+                    if (
+                        macro_session is not None
+                        and requested_shutdown_mode == "fast"
+                        and not str(message.get("request_id", "") or "")
+                    ):
+                        ipc.send(
+                            make_message(
+                                "operation_ack",
+                                operation="shutdown",
+                                accepted=False,
+                                request_id="",
+                                mode="fast",
+                                **_macro_route_ack_identity(
+                                    macro_session, payload_role="shutdown_ack"
+                                ),
+                                error="fast shutdown request_id is required",
                             )
                         )
                         continue
@@ -1309,6 +2043,26 @@ def run_worker(args: argparse.Namespace) -> int:
                                     else artifact_session.request
                                 ),
                             ),
+                            **(
+                                {}
+                                if task_session is None
+                                else {
+                                    "task_replay_request_id": (
+                                        task_session.request.request_id
+                                    )
+                                }
+                            ),
+                            **(
+                                {}
+                                if macro_session is None
+                                else {
+                                    **_macro_route_ack_identity(
+                                        macro_session,
+                                        payload_role="shutdown_ack",
+                                    ),
+                                    "schema_version": MACRO_FAST_CLOSE_SCHEMA,
+                                }
+                            ),
                             close_kwargs=close_kwargs,
                             runtime_version=_worker_runtime_version(),
                             error="",
@@ -1316,6 +2070,95 @@ def run_worker(args: argparse.Namespace) -> int:
                     )
                     shutdown_requested = True
                     break
+                if kind == "start_macro_fsm":
+                    rejection_reasons: list[str] = []
+                    if macro_session is None:
+                        rejection_reasons.append(
+                            "worker was not launched with an explicit Macro FSM request"
+                        )
+                    else:
+                        if macro_session.state != "ready_for_start":
+                            rejection_reasons.append(
+                                "Macro FSM preflight is not ready: "
+                                f"state={macro_session.state}"
+                            )
+                        if playback_service.active:
+                            rejection_reasons.append(
+                                "production playback already owns the dispatch slot"
+                            )
+                        rejection_reasons.extend(
+                            _validate_macro_route_start_binding(
+                                macro_session,
+                                residual_request,
+                                message,
+                                expected_worker_session_id=worker_session_id,
+                            )
+                        )
+                    accepted = not rejection_reasons
+                    start_payload: dict[str, Any] = {}
+                    if accepted and macro_session is not None:
+                        try:
+                            start_payload = dict(macro_session.start())
+                        except Exception as macro_exc:
+                            rejection_reasons.append(
+                                "Macro FSM start failed: "
+                                f"{type(macro_exc).__name__}: {macro_exc}"
+                            )
+                            accepted = False
+                    rejection_reason = "; ".join(rejection_reasons)
+                    if not accepted and macro_session is not None and not macro_terminal_sent:
+                        request_macro_failure(
+                            rejection_reason or "Macro FSM start rejected",
+                            infrastructure_failure=True,
+                        )
+                    ipc.send(
+                        _build_macro_start_operation_ack(
+                            message=message,
+                            accepted=accepted,
+                            rejection_reason=rejection_reason,
+                            adapter=adapter,
+                            worker_session_id=worker_session_id,
+                            start_payload=start_payload,
+                        )
+                    )
+                    publish_status(ready=True, starting=False)
+                    continue
+                if macro_session is not None and kind in {
+                    "command",
+                    "apply_motion_batch",
+                    "start_playback_plan",
+                    "pause_playback",
+                    "resume_playback",
+                    "stop_playback",
+                    "set_height",
+                    "set_height_respawn",
+                    "recalibrate_ground_reference",
+                    "respawn",
+                    "restore_sim_state",
+                }:
+                    rejection_reason = (
+                        f"{kind} is forbidden while the Macro FSM worker owns "
+                        "the production dispatch slot"
+                    )
+                    if not macro_terminal_sent:
+                        request_macro_failure(
+                            rejection_reason,
+                            infrastructure_failure=False,
+                        )
+                    ipc.send(
+                        make_message(
+                            "operation_ack",
+                            operation=kind,
+                            request_id=str(message.get("request_id", "") or ""),
+                            accepted=False,
+                            **_macro_route_ack_identity(
+                                macro_session, payload_role="shutdown_ack"
+                            ),
+                            error=rejection_reason,
+                        )
+                    )
+                    publish_status(ready=False, starting=False, error=rejection_reason)
+                    continue
                 if kind == "command":
                     adapter.handle_command(_command_message_from_ipc(message))
                 elif kind == "apply_motion_batch":
@@ -1368,6 +2211,14 @@ def run_worker(args: argparse.Namespace) -> int:
                             "FSM50 artifact preflight is not ready: "
                             f"state={artifact_session.state}"
                         )
+                    if (
+                        task_session is not None
+                        and task_session.state != "ready_for_plan"
+                    ):
+                        rejection_reasons.append(
+                            "FSM50 normal task replay preflight is not ready: "
+                            f"state={task_session.state}"
+                        )
                     if artifact_session is not None:
                         rejection_reasons.extend(
                             validate_worker_plan_binding(
@@ -1378,6 +2229,15 @@ def run_worker(args: argparse.Namespace) -> int:
                                     message.get("worker_session_id", "") or ""
                                 ),
                                 expected_worker_session_id=worker_session_id,
+                            )
+                        )
+                    if task_session is not None:
+                        rejection_reasons.extend(
+                            validate_worker_task_plan_binding(
+                                task_session.request,
+                                plan=plan,
+                                request_id=request_id,
+                                plan_id=requested_plan_id,
                             )
                         )
                     current_motion_start_step = int(
@@ -1546,6 +2406,33 @@ def run_worker(args: argparse.Namespace) -> int:
                                         artifact_session.fail(rejection_reasons[-1])
                                     )
                                     ok = False
+                            if ok and task_session is not None:
+                                try:
+                                    task_session.attach_verified_plan(
+                                        plan=plan,
+                                        service=playback_service,
+                                        adapter=adapter,
+                                        scene_handle=scene_handle,
+                                    )
+                                except Exception as task_exc:
+                                    rejection_reasons.append(
+                                        "FSM50 normal task replay plan admission failed: "
+                                        f"{type(task_exc).__name__}: {task_exc}"
+                                    )
+                                    playback_service.stop(
+                                        adapter,
+                                        current_sim_time_s=float(
+                                            getattr(adapter, "sim_time", sim_time)
+                                            or sim_time
+                                        ),
+                                        current_wall_time_s=time.time(),
+                                        reason="task_replay_plan_admission_failed",
+                                        stop_wheels=True,
+                                    )
+                                    send_task_terminal(
+                                        task_session.fail(rejection_reasons[-1])
+                                    )
+                                    ok = False
                             if not ok:
                                 boundary_ok = False
                             else:
@@ -1578,6 +2465,8 @@ def run_worker(args: argparse.Namespace) -> int:
                             }
                             if boundary_ok and artifact_session is not None:
                                 artifact_session.record_start_boundary()
+                            if boundary_ok and task_session is not None:
+                                task_session.record_start_boundary()
                             if not boundary_ok:
                                 rejection_reasons.append(
                                     "playback zero-wheel start boundary failed: "
@@ -1649,6 +2538,17 @@ def run_worker(args: argparse.Namespace) -> int:
                     )
                     if not ok:
                         logger.log(f"[worker] playback plan rejected: {rejection_reason}")
+                        if (
+                            task_session is not None
+                            and not task_session.terminal
+                            and not task_terminal_sent
+                        ):
+                            send_task_terminal(
+                                task_session.fail(
+                                    rejection_reason
+                                    or "production scheduler rejected task replay"
+                                )
+                            )
                     else:
                         logger.log(
                             "[worker] playback plan scheduled "
@@ -1994,6 +2894,10 @@ def run_worker(args: argparse.Namespace) -> int:
                 )
                 if artifact_session is not None:
                     artifact_session.before_adapter_step()
+                if task_session is not None and not task_session.terminal:
+                    task_session.before_adapter_step()
+                if macro_session is not None and not macro_session.terminal:
+                    macro_session.before_adapter_step()
                 adapter.step(dt)
                 sim_time = float(getattr(adapter, "sim_time", sim_time + dt))
                 sim_steps = int(getattr(adapter, "sim_steps", sim_steps + 1))
@@ -2001,6 +2905,14 @@ def run_worker(args: argparse.Namespace) -> int:
                     terminal = artifact_session.after_adapter_step()
                     if terminal is not None and not artifact_terminal_sent:
                         send_artifact_terminal(terminal)
+                if task_session is not None and not task_session.terminal:
+                    terminal = task_session.after_adapter_step()
+                    if terminal is not None and not task_terminal_sent:
+                        send_task_terminal(terminal)
+                if macro_session is not None and not macro_session.terminal:
+                    terminal = macro_session.after_adapter_step()
+                    if terminal is not None and not macro_terminal_sent:
+                        send_macro_terminal(terminal)
             else:
                 time.sleep(min(dt, 0.02))
             now = time.monotonic()
@@ -2012,6 +2924,60 @@ def run_worker(args: argparse.Namespace) -> int:
                 logger.log("[worker] smoke test complete")
                 break
 
+        if task_session is not None and not task_terminal_sent:
+            if shutdown_requested:
+                task_exit_reason = "worker shutdown requested before task replay terminal"
+            elif smoke_deadline is not None and time.monotonic() >= smoke_deadline:
+                task_exit_reason = "worker smoke deadline reached before task replay terminal"
+            else:
+                task_exit_reason = "simulation app stopped before task replay terminal"
+            task_terminal_sent = _finalize_active_task_session_for_worker_exit(
+                task_session,
+                terminal_sent=task_terminal_sent,
+                publish_terminal=send_task_terminal,
+                reason=task_exit_reason,
+            )
+        if macro_session is not None and not macro_terminal_sent:
+            if shutdown_requested:
+                macro_exit_reason = "worker shutdown requested before Macro FSM terminal"
+            elif smoke_deadline is not None and time.monotonic() >= smoke_deadline:
+                macro_exit_reason = "worker smoke deadline reached before Macro FSM terminal"
+            else:
+                macro_exit_reason = "simulation app stopped before Macro FSM terminal"
+            macro_terminal_sent = _finalize_active_macro_session_for_worker_exit(
+                macro_session,
+                terminal_sent=macro_terminal_sent,
+                publish_terminal=send_macro_terminal,
+                reason=macro_exit_reason,
+            )
+        if (
+            task_session is not None
+            and task_session.fast_close_ready
+            and shutdown_mode != "fast"
+            and getattr(ipc, "sock", None) is not None
+        ):
+            shutdown_request_id = _wait_for_task_exception_fast_shutdown(
+                ipc,
+                task_session=task_session,
+                adapter=adapter,
+                worker_session_id=worker_session_id,
+            )
+            if shutdown_request_id:
+                shutdown_mode = "fast"
+        if (
+            macro_session is not None
+            and macro_session.fast_close_ready
+            and shutdown_mode != "fast"
+            and getattr(ipc, "sock", None) is not None
+        ):
+            shutdown_request_id = _wait_for_macro_exception_fast_shutdown(
+                ipc,
+                macro_session=macro_session,
+                adapter=adapter,
+                worker_session_id=worker_session_id,
+            )
+            if shutdown_request_id:
+                shutdown_mode = "fast"
         set_phase("shutdown", publish=False)
         publish_status(ready=False, starting=False)
         return 0
@@ -2026,10 +2992,55 @@ def run_worker(args: argparse.Namespace) -> int:
                 )
             except Exception:
                 pass
+        if task_session is not None and not task_terminal_sent:
+            try:
+                send_task_terminal(
+                    task_session.fail(
+                        f"{type(exc).__name__}: {exc}",
+                        infrastructure_failure=True,
+                    )
+                )
+            except Exception:
+                pass
+        if macro_session is not None and not macro_terminal_sent:
+            try:
+                request_macro_failure(
+                    f"{type(exc).__name__}: {exc}",
+                    infrastructure_failure=True,
+                    simulation_app_stopped=True,
+                )
+            except Exception:
+                pass
         try:
             ipc.send(make_message("error", phase=phase, error=str(exc), traceback=tb, ready=False, starting=False))
         except Exception:
             pass
+        if (
+            task_session is not None
+            and task_session.fast_close_ready
+            and getattr(ipc, "sock", None) is not None
+        ):
+            shutdown_request_id = _wait_for_task_exception_fast_shutdown(
+                ipc,
+                task_session=task_session,
+                adapter=adapter,
+                worker_session_id=worker_session_id,
+            )
+            if shutdown_request_id:
+                shutdown_mode = "fast"
+        if (
+            macro_session is not None
+            and macro_session.fast_close_ready
+            and getattr(ipc, "sock", None) is not None
+        ):
+            shutdown_request_id = _wait_for_macro_exception_fast_shutdown(
+                ipc,
+                macro_session=macro_session,
+                adapter=adapter,
+                worker_session_id=worker_session_id,
+            )
+            if shutdown_request_id:
+                shutdown_mode = "fast"
         return 1
     finally:
         try:
@@ -2040,7 +3051,22 @@ def run_worker(args: argparse.Namespace) -> int:
         except Exception:
             pass
         try:
-            if shutdown_mode == "fast" and artifact_session is not None:
+            if shutdown_mode == "fast" and (
+                artifact_session is not None
+                or task_session is not None
+                or macro_session is not None
+            ):
+                fast_artifact_request = (
+                    None if artifact_session is None else artifact_session.request
+                )
+                fast_artifact_request_id = (
+                    ""
+                    if fast_artifact_request is None
+                    else fast_artifact_request.request_id
+                )
+                fast_task_request_id = (
+                    "" if task_session is None else task_session.request.request_id
+                )
                 close_requested = make_message(
                     "close_requested",
                     mode="fast",
@@ -2050,8 +3076,24 @@ def run_worker(args: argparse.Namespace) -> int:
                     **_worker_ack_identity(
                         adapter,
                         worker_session_id=worker_session_id,
-                        artifact_request_id=artifact_session.request.request_id,
-                        artifact_request=artifact_session.request,
+                        artifact_request_id=fast_artifact_request_id,
+                        artifact_request=fast_artifact_request,
+                    ),
+                    **(
+                        {}
+                        if task_session is None
+                        else {"task_replay_request_id": fast_task_request_id}
+                    ),
+                    **(
+                        {}
+                        if macro_session is None
+                        else {
+                            **_macro_route_ack_identity(
+                                macro_session,
+                                payload_role="close_requested",
+                            ),
+                            "schema_version": MACRO_FAST_CLOSE_SCHEMA,
+                        }
                     ),
                     close_kwargs={
                         "wait_for_replicator": False,
@@ -2066,7 +3108,7 @@ def run_worker(args: argparse.Namespace) -> int:
                     timeout_s=None,
                 )
                 logger.log(
-                    "[worker] formal close_requested receipt accepted "
+                    "[worker] verified close_requested receipt accepted "
                     f"request_id={close_receipt.get('request_id', '')}"
                 )
                 if simulation_app is not None:
@@ -2084,8 +3126,24 @@ def run_worker(args: argparse.Namespace) -> int:
                         **_worker_ack_identity(
                             adapter,
                             worker_session_id=worker_session_id,
-                            artifact_request_id=artifact_session.request.request_id,
-                            artifact_request=artifact_session.request,
+                            artifact_request_id=fast_artifact_request_id,
+                            artifact_request=fast_artifact_request,
+                        ),
+                        **(
+                            {}
+                            if task_session is None
+                            else {"task_replay_request_id": fast_task_request_id}
+                        ),
+                        **(
+                            {}
+                            if macro_session is None
+                            else {
+                                **_macro_route_ack_identity(
+                                    macro_session,
+                                    payload_role="close_returned",
+                                ),
+                                "schema_version": MACRO_FAST_CLOSE_SCHEMA,
+                            }
                         ),
                         close_kwargs={
                             "wait_for_replicator": False,
@@ -2100,10 +3158,14 @@ def run_worker(args: argparse.Namespace) -> int:
             elif simulation_app is not None:
                 simulation_app.close()
         except Exception as close_exc:
-            if shutdown_mode == "fast" and artifact_session is not None:
+            if shutdown_mode == "fast" and (
+                artifact_session is not None
+                or task_session is not None
+                or macro_session is not None
+            ):
                 try:
                     logger.log(
-                        "[worker] formal fast close ERROR: "
+                        "[worker] verified fast close ERROR: "
                         f"{type(close_exc).__name__}: {close_exc}"
                     )
                 except Exception:
@@ -2295,6 +3357,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--fsm50-gate-request-path",
         "--fsm50_gate_request_path",
         dest="fsm50_gate_request_path",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "--fsm50-task-request-path",
+        "--fsm50_task_request_path",
+        dest="fsm50_task_request_path",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "--fsm50-macro-request-path",
+        "--fsm50_macro_request_path",
+        dest="fsm50_macro_request_path",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "--fsm50-residual-macro-request-path",
+        "--fsm50_residual_macro_request_path",
+        dest="fsm50_residual_macro_request_path",
         type=str,
         default="",
     )

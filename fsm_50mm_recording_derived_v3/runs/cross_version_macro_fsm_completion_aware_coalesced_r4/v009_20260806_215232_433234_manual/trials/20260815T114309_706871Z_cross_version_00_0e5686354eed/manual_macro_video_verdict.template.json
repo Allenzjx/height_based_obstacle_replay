@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919",
+  "request_id": "289876a6de16490fa63a28ced73da4fe",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v009_20260806_215232_433234_manual\\trials\\20260815T114309_706871Z_cross_version_00_0e5686354eed",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v009_20260806_215232_433234_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v009_20260806_215232_433234_manual\\trials\\20260815T114309_706871Z_cross_version_00_0e5686354eed\\macro_task_inputs.json",
+  "task_inputs_sha256": "6df6529da34104afb5f64f9196ddd6c52720882f54461359ff5ec24cf6acb5cf",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v009_20260806_215232_433234_manual\\trials\\20260815T114309_706871Z_cross_version_00_0e5686354eed\\actual_viewport_video.mp4",
+  "video_sha256": "2168ba48840b460297e4953421b83a3ce304619e49492ab1aed50ea48ee722c3",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v009_20260806_215232_433234_manual\\trials\\20260815T114309_706871Z_cross_version_00_0e5686354eed\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "64c3ad74ae5248a0371344a9f166db00f0c5eb7ca0e3461fe985573de697ba0f"
+}

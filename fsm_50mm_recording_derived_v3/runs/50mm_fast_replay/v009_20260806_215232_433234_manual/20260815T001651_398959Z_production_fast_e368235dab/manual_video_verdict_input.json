@@ -1,0 +1,34 @@
+{
+  "plan_id": "fsm50-task-v009-ea9aa35eda22",
+  "request_id": "6d979dc3292b40bd8ab37ebf973c697f",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T00:25:34.1703575Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v009_20260806_215232_433234_manual\\20260815T001651_398959Z_production_fast_e368235dab",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v009_20260806_215232_433234_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v009_20260806_215232_433234_manual\\20260815T001651_398959Z_production_fast_e368235dab\\classifier_inputs.json",
+  "task_inputs_sha256": "2a9fe26bccab2ed71e192ba45fd9f05bf59bac70906c20d0e45622e5348bf7be",
+  "verdict": {
+    "body_crossed_front_face": true,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": true,
+    "first_actual_failure_phase": "",
+    "irrecoverable": false,
+    "joint_limit_violation": false,
+    "notes": [
+      "The complete 1346-frame SHA-bound active-viewport video was sequentially decoded with no malformed frames and reviewed across the full trajectory.",
+      "FR, FL, RR, and RL each visibly lifted, crossed the obstacle front face, and reached the top; the body crossed during the rear-right phase.",
+      "No fall, sustained stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible.",
+      "The final all-top stance is upright, recoverable, level, and visually near-neutral; strict final velocity remains a secondary diagnostic."
+    ],
+    "posture_incomplete": false,
+    "required_leg_lift_completed": true,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": true,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v009_20260806_215232_433234_manual\\20260815T001651_398959Z_production_fast_e368235dab\\actual_viewport_video.mp4",
+  "video_sha256": "0dc5f08adf75f5e1f08f46032146e1ad90e2943e297fbaea4fd63466173b17d1"
+}

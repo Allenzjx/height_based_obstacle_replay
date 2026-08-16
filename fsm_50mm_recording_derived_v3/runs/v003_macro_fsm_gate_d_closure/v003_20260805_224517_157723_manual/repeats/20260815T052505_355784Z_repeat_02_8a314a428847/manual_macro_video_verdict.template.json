@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "8a314a4288479c20d17abc1e55685d5b25f8c79f2c1ea940415dc8ce9abc39c3",
+  "request_id": "507e0a34a3c44af7abc95c86898bd46f",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T052505_355784Z_repeat_02_8a314a428847",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T052505_355784Z_repeat_02_8a314a428847\\macro_task_inputs.json",
+  "task_inputs_sha256": "6447f2585920c5aa8058828f0607bf302268a16d124624be99ca8d93ffc81435",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T052505_355784Z_repeat_02_8a314a428847\\actual_viewport_video.mp4",
+  "video_sha256": "538b176f46471c62f97f03557f286a9a11aed9a8f5716f8bcc5ea397bedb542b",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T052505_355784Z_repeat_02_8a314a428847\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "31785bc1c9fb9aa4823370348e6cfc2c7837a78e2e9b73f696094cdfaec82936"
+}

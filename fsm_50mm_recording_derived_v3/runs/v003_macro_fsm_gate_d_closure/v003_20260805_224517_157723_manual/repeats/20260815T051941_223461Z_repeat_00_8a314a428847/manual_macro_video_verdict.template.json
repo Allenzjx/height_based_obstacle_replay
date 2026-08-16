@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "8a314a4288479c20d17abc1e55685d5b25f8c79f2c1ea940415dc8ce9abc39c3",
+  "request_id": "58bd201d604e4c9bbc784ef01f1f03f5",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T051941_223461Z_repeat_00_8a314a428847",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T051941_223461Z_repeat_00_8a314a428847\\macro_task_inputs.json",
+  "task_inputs_sha256": "ef298ca560d9e52d9201a333cc1873f7c3bfeefc7b44cc886ac7205bd6aafd2c",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T051941_223461Z_repeat_00_8a314a428847\\actual_viewport_video.mp4",
+  "video_sha256": "95fb5a0944c376860ed5ba8a90cb1456c69501f1364003e641c96e228fcdb519",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_gate_d_closure\\v003_20260805_224517_157723_manual\\repeats\\20260815T051941_223461Z_repeat_00_8a314a428847\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "e97ae2b9512521020dff7928669aaf454ce5a7f7e5171414b77076b4362d8a4b"
+}

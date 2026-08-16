@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "1cdaa51b5890ac25aa30a6c8bbfd6fdbe0f32a0bfb17cd81c330debf8d847988",
+  "request_id": "8d4f87889694468abeee9c464725aa21",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm\\v009_20260806_215232_433234_manual\\trials\\20260815T060352_044724Z_cross_version_00_1cdaa51b5890",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v009_20260806_215232_433234_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm\\v009_20260806_215232_433234_manual\\trials\\20260815T060352_044724Z_cross_version_00_1cdaa51b5890\\macro_task_inputs.json",
+  "task_inputs_sha256": "3f3112d83da6d624694d287ea1b5a3bc4f59bf0f02e2d73ea9d13ef6944bb1f3",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm\\v009_20260806_215232_433234_manual\\trials\\20260815T060352_044724Z_cross_version_00_1cdaa51b5890\\actual_viewport_video.mp4",
+  "video_sha256": "e6de3dd55dccfeab1fc159a50d9c7c1429b9526482d81cc438546ff1f8715e6f",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm\\v009_20260806_215232_433234_manual\\trials\\20260815T060352_044724Z_cross_version_00_1cdaa51b5890\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "3819d7c3851bfe1c72fcfac45a7feecd84331e7cae50c154d375d9b4ef084860"
+}

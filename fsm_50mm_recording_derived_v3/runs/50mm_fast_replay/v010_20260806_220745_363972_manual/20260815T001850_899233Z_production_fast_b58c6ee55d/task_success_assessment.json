@@ -1,0 +1,37 @@
+{
+  "body_crossed_front_face": true,
+  "classification_reasons": [
+    "task core complete: dispatch, crossing, required lifting, recoverability, and hard-safety checks passed",
+    "final posture or settling remains incomplete but recoverable"
+  ],
+  "evaluation_status": "EVALUATED",
+  "fast_segment_count": 142,
+  "final_recoverable": true,
+  "final_wheel_classes": {
+    "FL": "TOP",
+    "FR": "TOP",
+    "RL": "TOP",
+    "RR": "TOP"
+  },
+  "first_actual_failure_phase": "",
+  "hard_failure_reasons": [],
+  "not_evaluated_reasons": [],
+  "notes": [
+    "The complete 1461-frame SHA-bound active-viewport video was sequentially decoded with no malformed frames and reviewed across the full trajectory.",
+    "FR, FL, RR, and RL each visibly lifted, crossed the obstacle front face, and reached the top; the body crossed during the rear-leg sequence.",
+    "No fall, sustained stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible.",
+    "The final all-top stance is upright, recoverable, level, and visually near-neutral; strict final velocity remains a secondary diagnostic."
+  ],
+  "peak_pitch": 0.19783655623819688,
+  "peak_roll": 0.27194308058491007,
+  "posture_result": "POSTURE_INCOMPLETE",
+  "required_leg_lift_completed": true,
+  "secondary_diagnostics": [
+    "SECONDARY_DIAGNOSTIC_UNAVAILABLE:physical_evidence.final_all_loaded",
+    "STRICT_REST_INCOMPLETE"
+  ],
+  "step_count": 26,
+  "task_result": "REPLAY_TASK_SUCCESS_POSTURE_INCOMPLETE",
+  "version": "v010_20260806_220745_363972_manual",
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v010_20260806_220745_363972_manual\\20260815T001850_899233Z_production_fast_b58c6ee55d\\actual_viewport_video.mp4"
+}

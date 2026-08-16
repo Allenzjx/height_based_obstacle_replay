@@ -7,6 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 
+MACRO_FAST_CLOSE_SCHEMA = "fsm50.macro_fast_close.v1"
+
+
 MESSAGE_TYPES = {
     "hello",
     "status",
@@ -18,6 +21,7 @@ MESSAGE_TYPES = {
     "respawn",
     "stop_wheels",
     "start_playback_plan",
+    "start_macro_fsm",
     "pause_playback",
     "resume_playback",
     "stop_playback",
@@ -31,6 +35,10 @@ MESSAGE_TYPES = {
     "save_result",
     "artifact_complete",
     "artifact_failed",
+    "task_replay_complete",
+    "task_replay_failed",
+    "macro_fsm_complete",
+    "macro_fsm_failed",
     "close_requested",
     "close_receipt",
     "close_returned",

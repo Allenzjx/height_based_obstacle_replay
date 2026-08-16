@@ -140,6 +140,7 @@ class MixedChannelCompletionTest(unittest.TestCase):
         def __init__(self, *, measured_deg: float, velocity_deg_s: float) -> None:
             self.measured_deg = measured_deg
             self.velocity_deg_s = velocity_deg_s
+            self.joint_command_deg = {"front_left_hip": 0.0}
             self.commands: list[str] = []
             self.stop_count = 0
 

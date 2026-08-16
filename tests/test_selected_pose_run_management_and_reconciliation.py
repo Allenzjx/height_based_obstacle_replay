@@ -366,8 +366,10 @@ class ContactResidualCompletionContractTest(unittest.TestCase):
         def __init__(self, actual_deg: float, velocity_deg_s: float = 0.0) -> None:
             self.actual_deg = actual_deg
             self.velocity_deg_s = velocity_deg_s
+            self.joint_command_deg = {"front_left_hip": 0.0}
 
         def apply_motion_batch(self, _payload):
+            self.joint_command_deg.update(_payload.get("servo_targets_deg", {}))
             return {}
 
         def get_actual_joint_state(self):
@@ -446,6 +448,7 @@ class ContactResidualCompletionContractTest(unittest.TestCase):
         adapter = self.Adapter(float("nan"))
         service = SimTimePlaybackService()
         self.assertTrue(service.start_plan(self.plan(), current_sim_time_s=0.0, current_wall_time_s=0.0))
+        service.update(adapter, current_sim_time_s=0.0, current_sim_step=0, current_wall_time_s=0.0)
         service.update(adapter, current_sim_time_s=0.1, current_sim_step=1, current_wall_time_s=0.1)
         self.assertFalse(service.active)
         self.assertEqual(service.stop_reason, "invalid_joint_state")
@@ -454,6 +457,7 @@ class ContactResidualCompletionContractTest(unittest.TestCase):
         adapter = self.Adapter(3.2, velocity_deg_s=2.0)
         service = SimTimePlaybackService()
         self.assertTrue(service.start_plan(self.plan(), current_sim_time_s=0.0, current_wall_time_s=0.0))
+        service.update(adapter, current_sim_time_s=0.0, current_sim_step=0, current_wall_time_s=0.0)
         service.update(adapter, current_sim_time_s=0.1, current_sim_step=1, current_wall_time_s=0.1)
         adapter.actual_deg = 3.6
         service.update(adapter, current_sim_time_s=0.8, current_sim_step=2, current_wall_time_s=0.8)
@@ -467,6 +471,7 @@ class ContactResidualCompletionContractTest(unittest.TestCase):
         adapter = self.Adapter(3.2, velocity_deg_s=-2.0)
         service = SimTimePlaybackService()
         self.assertTrue(service.start_plan(self.plan(), current_sim_time_s=0.0, current_wall_time_s=0.0))
+        service.update(adapter, current_sim_time_s=0.0, current_sim_step=0, current_wall_time_s=0.0)
         service.update(adapter, current_sim_time_s=0.1, current_sim_step=1, current_wall_time_s=0.1)
         adapter.actual_deg = 3.6
         service.update(adapter, current_sim_time_s=0.8, current_sim_step=2, current_wall_time_s=0.8)

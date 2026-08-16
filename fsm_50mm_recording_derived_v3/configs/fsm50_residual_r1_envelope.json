@@ -1,0 +1,334 @@
+{
+  "schema_version": "fsm50.residual_envelope.v1",
+  "envelope_id": "fsm50-residual-r1-reviewed-success-sources-v1",
+  "canonical_payload_sha256": "fa5002690737d94fab7304f40044293da46de34cd197af19f3f1140047ae7fbe",
+  "canonical_action_order": [
+    "front_left_hip",
+    "front_left_knee",
+    "front_right_hip",
+    "front_right_knee",
+    "rear_left_hip",
+    "rear_left_knee",
+    "rear_right_hip",
+    "rear_right_knee",
+    "front_left_ankle",
+    "front_right_ankle",
+    "rear_left_ankle",
+    "rear_right_ankle"
+  ],
+  "units_by_action": [
+    "deg",
+    "deg",
+    "deg",
+    "deg",
+    "deg",
+    "deg",
+    "deg",
+    "deg",
+    "rad_s",
+    "rad_s",
+    "rad_s",
+    "rad_s"
+  ],
+  "decision_provenance_allowlist": [
+    "SOURCE_ACTION"
+  ],
+  "default_max_abs_residual": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "global_limits": {
+    "active_servo_max_abs_deg": 2.0,
+    "support_servo_max_abs_deg": 1.0,
+    "wheel_max_abs_rad_s": 0.1,
+    "servo_slew_deg_s": 10.0,
+    "wheel_slew_rad_s2": 0.5,
+    "wheel_nominal_nonzero_epsilon_rad_s": 1e-12
+  },
+  "hard_exclusions": {
+    "source_versions": [
+      "v010_20260806_220745_363972_manual"
+    ],
+    "unknown_sources_default_zero": true,
+    "legacy_checkpoints_permitted": false,
+    "old_action_truth_permitted": false
+  },
+  "evidence_statistics": {
+    "servo_nonzero_delta_count": 324,
+    "servo_delta_deg_min": 0.5,
+    "servo_delta_deg_p10": 1.1,
+    "servo_delta_deg_median": 4.3,
+    "servo_delta_deg_p90": 20.1,
+    "servo_delta_deg_max": 47.6,
+    "wheel_nonzero_delta_count": 141,
+    "wheel_delta_rad_s_min": 0.3,
+    "wheel_delta_rad_s_p10": 0.3,
+    "wheel_delta_rad_s_median": 0.3,
+    "wheel_delta_rad_s_p90": 1.07,
+    "wheel_delta_rad_s_max": 2.0943951023931953
+  },
+  "source_allowlist": {
+    "v003_20260805_224517_157723_manual": {
+      "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+      "state_max_abs_residual": {
+        "S5_PRE_RR_COM_SHIFT": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "S7_PRE_RL_SUPPORT_SETUP": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "S8_RL_COM_SHIFT_AND_TRAVERSE": [
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          2.0,
+          2.0,
+          0.0,
+          0.0,
+          0.1,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "S10_POSTURE_RECOVERY": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "evidence": {
+        "run_dir": "fsm_50mm_recording_derived_v3/runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438",
+        "accepted_steps": {
+          "path": "saved_height_steps_fsm_reference_v2/height_050mm/versions/v003_20260805_224517_157723_manual/accepted_steps.jsonl",
+          "sha256": "06e13153b7ba75a4283e117d875f1da4895748835a9032c6faadef2bda25b394"
+        },
+        "manual_verdict": {
+          "path": "manual_macro_video_verdict.json",
+          "sha256": "63141b536216b8aac1c123df13db3eb39392d00ac3a6a808b481f023235f1782"
+        },
+        "task_inputs": {
+          "path": "macro_task_inputs.json",
+          "sha256": "10cb7ad90b9b1d5ceeab43b24813596dd8ea02ec4d206c6d950e4983cfdb8848"
+        },
+        "video": {
+          "path": "actual_viewport_video.mp4",
+          "sha256": "9a446fbfab7aae0ae84d167e5ac15e1bf38a3495582c7aa04d884fb27fed00f7"
+        },
+        "worker_result": {
+          "path": "worker_macro_fsm_result.json",
+          "sha256": "dc7dd6d4e08d82ad82e5eab847194c25342a6cab72d6df7e4ae0cae75d5daa30"
+        }
+      }
+    },
+    "v008_20260806_211408_578700_manual": {
+      "bundle_sha256": "0a47cee05cbb41a3a09b23836386bddcf9ae1ab2aca5bbe451ee20a0cbaa8c41",
+      "state_max_abs_residual": {
+        "S5_PRE_RR_COM_SHIFT": [
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          0.1,
+          0.0,
+          0.0
+        ],
+        "S7_PRE_RL_SUPPORT_SETUP": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "S8_RL_COM_SHIFT_AND_TRAVERSE": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          2.0,
+          2.0,
+          1.0,
+          1.0,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "S10_POSTURE_RECOVERY": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "evidence": {
+        "run_dir": "fsm_50mm_recording_derived_v3/runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb",
+        "accepted_steps": {
+          "path": "saved_height_steps_fsm_reference_v2/height_050mm/versions/v008_20260806_211408_578700_manual/accepted_steps.jsonl",
+          "sha256": "737b23a2152275e6ca716cd49006f3f34f1ae01466ac16960bc64d528dc4ea8c"
+        },
+        "manual_verdict": {
+          "path": "manual_macro_video_verdict.json",
+          "sha256": "05721928e11a83708bb542538a5c06884fd47023d9353a614d73900ab05095b1"
+        },
+        "task_inputs": {
+          "path": "macro_task_inputs.json",
+          "sha256": "5b1c1d7efc26fbeaff17a4f42a7cbf0d12df7e0ef2ef1197383962b4a86cfa12"
+        },
+        "video": {
+          "path": "actual_viewport_video.mp4",
+          "sha256": "4920b7f2f79f2caf61423b9e0c105794654d4d153313e02ad60682ac71ccf3a1"
+        },
+        "worker_result": {
+          "path": "worker_macro_fsm_result.json",
+          "sha256": "332ba356dbf2d52d271bed991509d9f9378a6aec9898df035bda7a96725abbc9"
+        }
+      }
+    },
+    "v009_20260806_215232_433234_manual": {
+      "bundle_sha256": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919",
+      "state_max_abs_residual": {
+        "S5_PRE_RR_COM_SHIFT": [
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "S7_PRE_RL_SUPPORT_SETUP": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.1,
+          0.0
+        ],
+        "S8_RL_COM_SHIFT_AND_TRAVERSE": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          2.0,
+          2.0,
+          1.0,
+          1.0,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ],
+        "S10_POSTURE_RECOVERY": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "evidence": {
+        "run_dir": "fsm_50mm_recording_derived_v3/runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed",
+        "accepted_steps": {
+          "path": "saved_height_steps_fsm_reference_v2/height_050mm/versions/v009_20260806_215232_433234_manual/accepted_steps.jsonl",
+          "sha256": "60db11a138088fd4a4c2886a681e0a195402a896f66932220c6c393d3d6c17c1"
+        },
+        "manual_verdict": {
+          "path": "manual_macro_video_verdict.json",
+          "sha256": "1fe1e673b44b812a10698d043554f8c761695699f289fb3da1741fb317daaa93"
+        },
+        "task_inputs": {
+          "path": "macro_task_inputs.json",
+          "sha256": "6df6529da34104afb5f64f9196ddd6c52720882f54461359ff5ec24cf6acb5cf"
+        },
+        "video": {
+          "path": "actual_viewport_video.mp4",
+          "sha256": "2168ba48840b460297e4953421b83a3ce304619e49492ab1aed50ea48ee722c3"
+        },
+        "worker_result": {
+          "path": "worker_macro_fsm_result.json",
+          "sha256": "64c3ad74ae5248a0371344a9f166db00f0c5eb7ca0e3461fe985573de697ba0f"
+        }
+      }
+    }
+  }
+}

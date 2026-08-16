@@ -139,6 +139,17 @@ class RecordingIntegrityTests(unittest.TestCase):
             self.assertEqual([{"sentinel": "live-run"}], lock["runtime_readbacks"])
             self.assertEqual("runtime_readback_available", lock["status"])
 
+    def test_environment_lock_builder_seals_recursive_module_json_configs(self) -> None:
+        audit = RecordingAudit()
+        lock = audit._environment_lock([])
+        config_root = Path(__file__).resolve().parents[1] / "configs"
+        expected = {str(path.resolve()) for path in config_root.rglob("*.json")}
+        self.assertEqual(3, len(expected))
+        self.assertTrue(
+            expected.issubset(set(lock["source_sha256"])),
+            "the lock builder must seal every Gate-E JSON config",
+        )
+
 
 class ContactAndSupportTests(unittest.TestCase):
     def setUp(self) -> None:

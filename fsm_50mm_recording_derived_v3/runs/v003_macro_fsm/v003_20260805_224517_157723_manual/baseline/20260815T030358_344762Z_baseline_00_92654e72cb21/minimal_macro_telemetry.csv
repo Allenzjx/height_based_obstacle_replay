@@ -1,0 +1,2 @@
+sim_time_s,sim_step,macro_state,subphase,profile_id,phase_elapsed_s,profile_fraction,command_epoch,base_x_m,base_y_m,base_z_m,base_roll_rad,base_pitch_rad,base_yaw_rad,active_leg,geometry_support_candidate_count,robot_state_finite,joint_limit_violation,stability_state,retry_count,controller_terminal,controller_terminal_outcome
+1.4999999999999971,180,,,fsm50-gate-c-successful-recording-profiles-v1,,,,-0.003959653899073601,-0.0009929761290550232,0.09901974350214005,-3.884937598026425e-05,-0.012019878918690493,0.0030496544279654675,,4,True,False,stable,0,False,

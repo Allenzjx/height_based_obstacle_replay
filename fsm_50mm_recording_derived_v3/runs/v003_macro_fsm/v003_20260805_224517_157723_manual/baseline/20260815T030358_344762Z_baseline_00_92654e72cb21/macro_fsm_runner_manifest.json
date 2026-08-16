@@ -1,0 +1,129 @@
+{
+  "bundle": {
+    "bundle_id": "fsm50-gate-c-control-bundle-v1",
+    "graph_id": "fsm50-recording-derived-macro-v1",
+    "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+    "primary_source_version": "v003_20260805_224517_157723_manual",
+    "profile_library_id": "fsm50-gate-c-successful-recording-profiles-v1",
+    "profile_library_sha256": "ff0b0f8f3f91665cfdf672b7ee21c8c1571807a6da95989fb51690858a5f0f6a",
+    "schema_version": "fsm50.macro_controller_bundle.v1",
+    "successful_source_versions": [
+      "v003_20260805_224517_157723_manual",
+      "v008_20260806_211408_578700_manual",
+      "v009_20260806_215232_433234_manual",
+      "v010_20260806_220745_363972_manual"
+    ]
+  },
+  "bundle_sha256": "92654e72cb21a68596897493deb5521350bd86f7e95df47c3272ade22c53d3a5",
+  "controller_complete": false,
+  "created_utc": "2026-08-15T03:04:51.430272+00:00",
+  "error": "MacroRunnerContractError: worker startup failed: deployed collision/penetration evidence is unavailable: live initial geometry evidence dangerous_body_collision is not exact bool; live initial geometry evidence severe_penetration is not exact bool; deployed ground penetration tolerance is invalid; initial collision penetration exceeds the deployed tolerance",
+  "manual_review_status": "NOT_ELIGIBLE",
+  "request_id": "13f275e0b74248a08d6f5e151d8fc125",
+  "request_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\baseline\\20260815T030358_344762Z_baseline_00_92654e72cb21\\worker_macro_fsm_request.json",
+  "request_sha256": "a1cbbc2d167043f2d341fa158f9dbeb7c0585dac1af61a0af4c563e350d7d8f4",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\baseline\\20260815T030358_344762Z_baseline_00_92654e72cb21",
+  "schema_version": "fsm50.macro_fsm_runner_manifest.v1",
+  "shutdown_outcome": {
+    "close_requested": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "cf063b8a9fd146688aa1d62e42b6d70f",
+      "artifact_request_id": "",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "macro_fsm_request_id": "13f275e0b74248a08d6f5e151d8fc125",
+      "mode": "fast",
+      "request_id": "8c75f221f7f54bb3988e2bfd0b6296bc",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "schema_version": "fsm50.macro_fast_close.v1",
+      "type": "close_requested",
+      "worker_pid": 27036,
+      "worker_session_id": "18e1ac09fbbd487597640350bdcaf717"
+    },
+    "close_requested_ack": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "cf063b8a9fd146688aa1d62e42b6d70f",
+      "artifact_request_id": "",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "macro_fsm_request_id": "13f275e0b74248a08d6f5e151d8fc125",
+      "mode": "fast",
+      "request_id": "8c75f221f7f54bb3988e2bfd0b6296bc",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "schema_version": "fsm50.macro_fast_close.v1",
+      "type": "close_requested",
+      "worker_pid": 27036,
+      "worker_session_id": "18e1ac09fbbd487597640350bdcaf717"
+    },
+    "close_requested_receipt": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "cf063b8a9fd146688aa1d62e42b6d70f",
+      "artifact_request_id": "",
+      "close_event_type": "close_requested",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "enqueued_wall_time": 1786763089.208267,
+      "error": "",
+      "macro_fsm_request_id": "13f275e0b74248a08d6f5e151d8fc125",
+      "mode": "fast",
+      "received": true,
+      "received_wall_time": 1786763089.208267,
+      "request_id": "8c75f221f7f54bb3988e2bfd0b6296bc",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "schema_version": "fsm50.macro_fast_close.v1",
+      "type": "close_receipt",
+      "worker_pid": 27036,
+      "worker_session_id": "18e1ac09fbbd487597640350bdcaf717"
+    },
+    "close_returned": {},
+    "close_returned_ack": {},
+    "close_returned_receipt": {},
+    "force_on_timeout": true,
+    "forced_termination": false,
+    "normal_exit": true,
+    "pid": 27036,
+    "request_id": "8c75f221f7f54bb3988e2bfd0b6296bc",
+    "requested_mode": "fast",
+    "returncode": 0,
+    "shutdown_ack": {
+      "accepted": true,
+      "adapter_runtime_instance_id": "cf063b8a9fd146688aa1d62e42b6d70f",
+      "artifact_request_id": "",
+      "close_kwargs": {
+        "skip_cleanup": true,
+        "wait_for_replicator": false
+      },
+      "error": "",
+      "macro_fsm_request_id": "13f275e0b74248a08d6f5e151d8fc125",
+      "mode": "fast",
+      "operation": "shutdown",
+      "request_id": "8c75f221f7f54bb3988e2bfd0b6296bc",
+      "root_state_write_count": 0,
+      "runtime_version": "5.1.0.0",
+      "schema_version": "fsm50.macro_fast_close.v1",
+      "type": "operation_ack",
+      "worker_pid": 27036,
+      "worker_session_id": "18e1ac09fbbd487597640350bdcaf717"
+    },
+    "timed_out": false
+  },
+  "shutdown_verified": false,
+  "source_version": "v003_20260805_224517_157723_manual",
+  "start_ack": {},
+  "terminal": {},
+  "terminal_ack": {},
+  "trial_index": 0,
+  "trial_kind": "baseline",
+  "worker_binding": {}
+}

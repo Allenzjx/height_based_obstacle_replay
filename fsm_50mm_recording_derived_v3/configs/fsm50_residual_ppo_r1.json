@@ -1,0 +1,129 @@
+{
+  "config_sha256": "9df218c850a5c19862bca7197da3a200d3b5ec11f75eaba4b09b0e530e773e25",
+  "payload": {
+    "algorithm": "PPO",
+    "availability": "AVAILABLE_PHASE_LOCAL_ONLY",
+    "environment": {
+      "action_dim": 12,
+      "actor_observation_dim": 115,
+      "device": "cuda:0",
+      "entry_ids": [
+        "v003_20260805_224517_157723_manual:S5_PRE_RR_COM_SHIFT",
+        "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT",
+        "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT",
+        "v003_20260805_224517_157723_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "v008_20260806_211408_578700_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY",
+        "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY",
+        "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY"
+      ],
+      "entry_roles": {
+        "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY": "TRAIN_NONZERO_AUTHORITY",
+        "v003_20260805_224517_157723_manual:S5_PRE_RR_COM_SHIFT": "EVAL_ZERO_AUTHORITY_ONLY",
+        "v003_20260805_224517_157723_manual:S7_PRE_RL_SUPPORT_SETUP": "EVAL_ZERO_AUTHORITY_ONLY",
+        "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE": "TRAIN_NONZERO_AUTHORITY",
+        "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY": "TRAIN_NONZERO_AUTHORITY",
+        "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT": "TRAIN_NONZERO_AUTHORITY",
+        "v008_20260806_211408_578700_manual:S7_PRE_RL_SUPPORT_SETUP": "EVAL_ZERO_AUTHORITY_ONLY",
+        "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE": "TRAIN_NONZERO_AUTHORITY",
+        "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY": "TRAIN_NONZERO_AUTHORITY",
+        "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT": "TRAIN_NONZERO_AUTHORITY",
+        "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP": "TRAIN_NONZERO_AUTHORITY",
+        "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE": "TRAIN_NONZERO_AUTHORITY"
+      },
+      "episode_length_s": 60.0,
+      "exact_substeps_per_action": 8,
+      "gym_id": "Isaac-Fsm50-Residual-PhaseLocal-Direct-v0",
+      "mode": "PHASE_LOCAL",
+      "num_envs": 9,
+      "physics_hz": 120,
+      "policy_hz": 15
+    },
+    "evaluation": {
+      "deterministic_action": "mean_actions",
+      "maximum_hard_failure_rate": 0.0,
+      "maximum_phase_completion_drop_vs_zero": 0.0,
+      "minimum_episode_count_per_arm": 27,
+      "require_exact_eight_cadence": true,
+      "require_residual_transform_per_episode": true,
+      "require_verified_physical_epoch": true,
+      "require_n_plus_one": true,
+      "require_one_batch": true
+    },
+    "framework": "torch",
+    "legacy_inputs": {
+      "allow_checkpoint_resume": false,
+      "allow_legacy_checkpoint": false,
+      "allow_legacy_environment": false,
+      "allow_v010_execution": false
+    },
+    "model": {
+      "actor_hidden": [256, 256, 128],
+      "critic_hidden": [256, 256, 128],
+      "initial_log_std": -4.0,
+      "maximum_log_std": -2.5,
+      "minimum_log_std": -5.0,
+      "zero_mean_head_required": true
+    },
+    "normalization": {
+      "clip_threshold": 5.0,
+      "epsilon": 1e-08,
+      "observation": "RunningStandardScaler",
+      "state_embedded_in_checkpoint": true,
+      "value": "RunningStandardScaler"
+    },
+    "ppo": {
+      "discount_factor": 0.99,
+      "entropy_loss_scale": 0.001,
+      "gae_lambda": 0.95,
+      "grad_norm_clip": 0.5,
+      "kl_threshold": 0.02,
+      "learning_epochs": 8,
+      "learning_rate": 0.0003,
+      "learning_starts": 0,
+      "mini_batches": 4,
+      "mixed_precision": false,
+      "random_timesteps": 0,
+      "ratio_clip": 0.2,
+      "rollouts": 32,
+      "time_limit_bootstrap": false,
+      "value_clip": 0.2,
+      "value_loss_scale": 1.0
+    },
+    "required_package_versions": {
+      "gymnasium": "1.2.1",
+      "isaaclab": "0.54.3",
+      "isaaclab_assets": "0.2.4",
+      "isaaclab_rl": "0.5.1",
+      "isaaclab_tasks": "0.11.16",
+      "isaacsim": "5.1.0.0",
+      "numpy": "1.26.0",
+      "skrl": "2.0.0",
+      "torch": "2.7.0+cu128"
+    },
+    "seed_allowlist": [20260815, 20260816, 20260817],
+    "source_split": {
+      "held_out": ["v010_20260806_220745_363972_manual"],
+      "held_out_execution": "FORBIDDEN_FAILED_PROFILE_IDENTITY_ONLY",
+      "train": [
+        "v003_20260805_224517_157723_manual",
+        "v008_20260806_211408_578700_manual",
+        "v009_20260806_215232_433234_manual"
+      ]
+    },
+    "stage": "R1",
+    "trainer": {
+      "checkpoint_interval": 0,
+      "close_environment_at_exit": false,
+      "disable_progressbar": false,
+      "headless": true,
+      "timesteps": 2000000,
+      "write_interval": 10000
+    }
+  },
+  "schema_version": "fsm50.residual_ppo_stage_config.v1"
+}

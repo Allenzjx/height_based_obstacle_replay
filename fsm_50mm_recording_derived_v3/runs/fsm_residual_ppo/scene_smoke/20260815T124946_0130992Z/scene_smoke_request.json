@@ -1,0 +1,20 @@
+{
+  "payload": {
+    "device": "cuda:0",
+    "env_spacing_m": 3.5,
+    "expected_motion_reference_sha256": "143bbb71fe50fcde22360901552f36b397b9d102bde21172213bf3a316333747",
+    "expected_motion_speed_source_sha256": "5e41f5501b841ff7764ee6c2a9975afb256d6c121d22519ffc38842737b49421",
+    "expected_robot_usd_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+    "expected_scene_manifest_sha256": "af3e05b4294eebdfa14e1688187da89c82826941565f815f6c478a46715ee891",
+    "expected_scene_source_sha256": "76d1117f2ad780226e4b24421d79a76af5efcb0178c3800a78318ebf594390c0",
+    "expected_smoke_source_sha256": "b86f1c985fc92df22504d9971082b4edb07f9263a7b1496886a2c30ba7d14b2c",
+    "headless_required": true,
+    "num_envs": 2,
+    "physics_steps": 24,
+    "request_id": "eb2a77ff97134632be904b27c084403d",
+    "result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\scene_smoke\\20260815T124946_0130992Z\\scene_smoke_result.json",
+    "servo_reference_velocity_deg_s": 150.0
+  },
+  "payload_sha256": "f23096796f91a048c53a5bc557567dccbde2ad40edf4cd287bb24dca3f264dde",
+  "schema_version": "fsm50-residual-scene-smoke-request-v1"
+}

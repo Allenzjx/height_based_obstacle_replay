@@ -1,0 +1,36 @@
+{
+  "bundle": {
+    "bundle_id": "fsm50-gate-c-control-bundle-v1",
+    "graph_id": "fsm50-recording-derived-macro-v1",
+    "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+    "primary_source_version": "v003_20260805_224517_157723_manual",
+    "profile_library_id": "fsm50-gate-c-successful-recording-profiles-v1",
+    "profile_library_sha256": "ff0b0f8f3f91665cfdf672b7ee21c8c1571807a6da95989fb51690858a5f0f6a",
+    "schema_version": "fsm50.macro_controller_bundle.v1",
+    "successful_source_versions": [
+      "v003_20260805_224517_157723_manual",
+      "v008_20260806_211408_578700_manual",
+      "v009_20260806_215232_433234_manual",
+      "v010_20260806_220745_363972_manual"
+    ]
+  },
+  "bundle_sha256": "92654e72cb21a68596897493deb5521350bd86f7e95df47c3272ade22c53d3a5",
+  "controller_complete": false,
+  "created_utc": "2026-08-15T03:03:29.385989+00:00",
+  "error": "MacroRunnerContractError: worker startup failed: No launchable Isaac interpreter found. isaaclab-bat: C:\\robotics_sim\\IsaacLab\\isaaclab.bat -> Selected Python cannot import isaacsim: IsaacLab batch preflight did not produce JSON (returncode 0).",
+  "manual_review_status": "NOT_ELIGIBLE",
+  "request_id": "a5d6587a32224a5ea5cc8ae20eef40b7",
+  "request_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\baseline\\20260815T030328_817617Z_baseline_00_92654e72cb21\\worker_macro_fsm_request.json",
+  "request_sha256": "bd30d543f7f9919620c15b8310fdc418c97d07765607edc0334143d9d4e58d54",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm\\v003_20260805_224517_157723_manual\\baseline\\20260815T030328_817617Z_baseline_00_92654e72cb21",
+  "schema_version": "fsm50.macro_fsm_runner_manifest.v1",
+  "shutdown_outcome": {},
+  "shutdown_verified": false,
+  "source_version": "v003_20260805_224517_157723_manual",
+  "start_ack": {},
+  "terminal": {},
+  "terminal_ack": {},
+  "trial_index": 0,
+  "trial_kind": "baseline",
+  "worker_binding": {}
+}

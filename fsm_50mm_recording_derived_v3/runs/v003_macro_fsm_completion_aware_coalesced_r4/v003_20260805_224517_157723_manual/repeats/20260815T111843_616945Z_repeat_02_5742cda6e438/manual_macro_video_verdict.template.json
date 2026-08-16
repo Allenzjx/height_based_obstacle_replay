@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+  "request_id": "dea7e061f3a64f4784218a37df4785b5",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\repeats\\20260815T111843_616945Z_repeat_02_5742cda6e438",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\repeats\\20260815T111843_616945Z_repeat_02_5742cda6e438\\macro_task_inputs.json",
+  "task_inputs_sha256": "444888eaae31ca8317af255b91b5bd8f651fe2ec65f977464949b76e1f890ad0",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\repeats\\20260815T111843_616945Z_repeat_02_5742cda6e438\\actual_viewport_video.mp4",
+  "video_sha256": "ed7a75d79cff4f44707ce4d7d180d3036e3c1afed459e21a3af8149c780fe2b0",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\repeats\\20260815T111843_616945Z_repeat_02_5742cda6e438\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "122db4724ca13ff07b709ce29fb3d66d5da08269dc009e174af5f4c804ddc217"
+}

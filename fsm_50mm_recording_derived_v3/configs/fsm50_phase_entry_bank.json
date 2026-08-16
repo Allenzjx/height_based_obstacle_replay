@@ -1,0 +1,1984 @@
+{
+  "bank_sha256": "46cfd697d130225478e87a7bf890285e682ca455b172d424ef6c04f3c33d8177",
+  "payload": {
+    "bank_id": "fsm50-current-r4-reviewed-phase-entry-bank-v1",
+    "cursor_policy": "FIRST_SOURCE_ACTION_AT_OR_AFTER_STATE_ENTRY",
+    "entries": [
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v003_20260805_224517_157723_manual:S5_PRE_RR_COM_SHIFT",
+        "entry_profile": {
+          "command_epoch": 42,
+          "profile_fraction": 1.0,
+          "profile_free": true,
+          "profile_id": "",
+          "profile_source_version": "",
+          "profile_strategy": "",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "0131919904f10dc1cf211dafa4447b3f9ed9e936e291d0205eee2de9da76e155",
+        "entry_sim_step": 7181,
+        "entry_sim_time_s": 59.84166666666391,
+        "entry_transition_index": 5,
+        "entry_transition_row_sha256": "aa9122631948cecadd9b8635b0197f2ca579cd6f1bb85f9108afb454d227187a",
+        "joint_q_rad": [
+          0.4856344163417816,
+          -0.14663170278072357,
+          0.08757334202528,
+          -0.18176890909671783,
+          -0.03453849256038666,
+          0.006658699829131365,
+          0.00043061739415861666,
+          -0.0030782828107476234,
+          -1.2896372079849243,
+          -1.2049098014831543,
+          -2.121147871017456,
+          1.3159257173538208
+        ],
+        "joint_qd_rad_s": [
+          -0.040396347641944885,
+          -0.026931846514344215,
+          0.0023924745619297028,
+          0.04051394760608673,
+          0.12508414685726166,
+          -0.08234070986509323,
+          -0.020370669662952423,
+          -0.034999314695596695,
+          -0.0010317097185179591,
+          0.20906856656074524,
+          0.15834438800811768,
+          -0.0012228051200509071
+        ],
+        "nominal_servo_targets_deg": [
+          28.1,
+          -8.1,
+          3.7,
+          -10.2,
+          1.6,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S5_PRE_RR_COM_SHIFT",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S5_PRE_RR_COM_SHIFT",
+        "root_angular_velocity_rad_s": [
+          -0.0897749662399292,
+          0.10736076533794403,
+          0.01912882551550865
+        ],
+        "root_linear_velocity_m_s": [
+          0.013253707438707352,
+          0.01642332412302494,
+          0.005737298168241978
+        ],
+        "root_orientation_wxyz": [
+          0.9993613362312317,
+          -0.01037220936268568,
+          -0.033608414232730865,
+          -0.00632053567096591
+        ],
+        "root_position_m": [
+          0.6616092920303345,
+          -0.002786584198474884,
+          0.11382168531417847
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": null,
+          "command_epoch": 42,
+          "macro_state": "S5_PRE_RR_COM_SHIFT",
+          "profile_fraction": 1.0,
+          "profile_id": "",
+          "profile_source_version": "",
+          "profile_strategy": "",
+          "subphase": "HOLD"
+        },
+        "snapshot_sim_step": 7188,
+        "snapshot_sim_time_s": 59.89999999999724,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "38649dbf355afd96b410a7581c0f112a37784a6e439a61c8d286c512cb26d7de",
+          "dispatch_sim_step": 7212,
+          "dispatch_sim_time_s": 60.09999999999723,
+          "owner_state": "S6_RR_TRAVERSE",
+          "profile_id": "v003_20260805_224517_157723_manual:S6_RR_TRAVERSE:PRIMARY_PROFILE:segments-41-56",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "segment_completion_index": 41,
+          "servo_targets_deg": [
+            28.1,
+            -8.1,
+            3.7,
+            -10.2,
+            1.6,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_action_identity": "1411aa05ade96960d718cca6bf2cb12363494dcc5c94374c9f103b24f6ba88e2",
+          "source_action_index": 41,
+          "source_action_row_sha256": "ced4a1d28e376730d1de6d1a9a30b15494571923ee582e18303386dbce1a9503",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "f62b00c917a7bec8e7561a1c12b361dc3b800a5c0b73ca7d2b49b0ac6a9ea296",
+          "source_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+          "source_segment_index": 41,
+          "source_step_id": "step_011_recorded_height_050mm_dur_20.00s",
+          "source_step_index": 11,
+          "source_time_s": 0.0,
+          "subphase": "UNLOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v003_20260805_224517_157723_manual",
+        "telemetry_latency_physics_steps": 7,
+        "telemetry_relation_to_entry": "FIRST_POST_ENTRY_TELEMETRY_OBSERVATION",
+        "telemetry_row_index": 875,
+        "telemetry_row_sha256": "4fa487b825fa4f616e2fd5cf76c485fb1899e85cafd9464bc843abd3ae59c44d"
+      },
+      {
+        "coalesced_successor_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "coalesced_transition_index": 9,
+        "entry_id": "v003_20260805_224517_157723_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "entry_profile": {
+          "command_epoch": 58,
+          "profile_fraction": 1.0,
+          "profile_free": true,
+          "profile_id": "",
+          "profile_source_version": "",
+          "profile_strategy": "",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "0ce6a6207bb246a8413ae46ea2d640001d43969ffe522cd6e3d22572b7b1f614",
+        "entry_sim_step": 8460,
+        "entry_sim_time_s": 70.50000000000217,
+        "entry_transition_index": 8,
+        "entry_transition_row_sha256": "7d3706e88fe4c51dcd0597b688a3113b83f982912795afc21cba9123f28bcfd6",
+        "joint_q_rad": [
+          0.49079230427742004,
+          -0.1393841803073883,
+          0.3430696129798889,
+          0.2867140769958496,
+          -0.03296748548746109,
+          0.004474623128771782,
+          0.5383605360984802,
+          0.7228432893753052,
+          -3.3376288414001465,
+          4.45483922958374,
+          -3.889188766479492,
+          3.3600821495056152
+        ],
+        "joint_qd_rad_s": [
+          -0.19257310032844543,
+          0.0932006761431694,
+          0.12896139919757843,
+          0.09957613795995712,
+          -0.11162217706441879,
+          0.037296950817108154,
+          -0.02275831811130047,
+          -0.08286833018064499,
+          0.028347142040729523,
+          2.0942490100860596,
+          -0.021482162177562714,
+          -0.16159620881080627
+        ],
+        "nominal_servo_targets_deg": [
+          28.1,
+          -8.1,
+          19.6,
+          16.2,
+          1.6,
+          0.0,
+          -31.2,
+          -40.9
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          2.0943951023931953,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S6_RR_TRAVERSE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S7_PRE_RL_SUPPORT_SETUP",
+        "root_angular_velocity_rad_s": [
+          -0.026530738919973373,
+          -0.07057135552167892,
+          -0.009265786036849022
+        ],
+        "root_linear_velocity_m_s": [
+          -0.0024346602149307728,
+          0.00709730526432395,
+          0.010428069159388542
+        ],
+        "root_orientation_wxyz": [
+          0.9995337128639221,
+          -0.013622664846479893,
+          0.01025459449738264,
+          -0.025333920493721962
+        ],
+        "root_position_m": [
+          0.7463934421539307,
+          -0.014993429183959961,
+          0.08837351202964783
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 56,
+          "command_epoch": 57,
+          "macro_state": "S6_RR_TRAVERSE",
+          "profile_fraction": 0.9375,
+          "profile_id": "v003_20260805_224517_157723_manual:S6_RR_TRAVERSE:PRIMARY_PROFILE:segments-41-56",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "subphase": "TOP_PLACE"
+        },
+        "snapshot_sim_step": 8460,
+        "snapshot_sim_time_s": 70.50000000000217,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "029a4892285b6db89b3e64fd75e880923499cdf6aba5814d1c24940e2343c244",
+          "dispatch_sim_step": 8468,
+          "dispatch_sim_time_s": 70.5666666666689,
+          "owner_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_id": "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:PRIMARY_PROFILE:segments-57-101",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "segment_completion_index": 57,
+          "servo_targets_deg": [
+            28.1,
+            -8.1,
+            19.6,
+            16.2,
+            1.6,
+            0.0,
+            -31.2,
+            -40.9
+          ],
+          "source_action_identity": "071dbf5bab0aded9c532c78f1812cfe898679067a089a831bc02fe1e3bef6d7f",
+          "source_action_index": 57,
+          "source_action_row_sha256": "4fe56042ae9e17b3969e3705768a0ae6ac214e367032c7fd3d74537654dcea82",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "f62b00c917a7bec8e7561a1c12b361dc3b800a5c0b73ca7d2b49b0ac6a9ea296",
+          "source_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+          "source_segment_index": 57,
+          "source_step_id": "step_014_recorded_height_050mm_dur_17.73s",
+          "source_step_index": 14,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v003_20260805_224517_157723_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 1034,
+        "telemetry_row_sha256": "f2866aa5632fcbad9edaf68f2b308c32cac709d91e856cab9d9fa15c3fa5022e"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "entry_profile": {
+          "command_epoch": 58,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:PRIMARY_PROFILE:segments-57-101",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "316afc52344e85dfd49ebd48bc873e027cadeb18447948c1d1b8669313f68942",
+        "entry_sim_step": 8461,
+        "entry_sim_time_s": 70.50833333333551,
+        "entry_transition_index": 9,
+        "entry_transition_row_sha256": "bc1b4cefa6b86ac3e67a233644b0fd5dfd3ab8965a437237118c8764c7d7300d",
+        "joint_q_rad": [
+          0.48604512214660645,
+          -0.13585315644741058,
+          0.3470635712146759,
+          0.2912585437297821,
+          -0.03826223313808441,
+          0.008983876556158066,
+          0.5349532961845398,
+          0.7274682521820068,
+          -3.3366403579711914,
+          4.45507287979126,
+          -3.887551784515381,
+          3.356346607208252
+        ],
+        "joint_qd_rad_s": [
+          -0.1404670625925064,
+          0.06113499030470848,
+          0.08602328598499298,
+          0.052863821387290955,
+          -0.058185797184705734,
+          -0.00810277834534645,
+          0.006962155923247337,
+          -0.1292666792869568,
+          0.030171791091561317,
+          0.0004596096114255488,
+          -0.023033352568745613,
+          -0.1581907868385315
+        ],
+        "nominal_servo_targets_deg": [
+          28.1,
+          -8.1,
+          19.6,
+          16.2,
+          1.6,
+          0.0,
+          -31.2,
+          -40.9
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "root_angular_velocity_rad_s": [
+          -0.03503919392824173,
+          -0.04474341869354248,
+          -0.008019999600946903
+        ],
+        "root_linear_velocity_m_s": [
+          5.485570363816805e-05,
+          0.007605544291436672,
+          0.012707892805337906
+        ],
+        "root_orientation_wxyz": [
+          0.999550461769104,
+          -0.013307109475135803,
+          0.009036424569785595,
+          -0.025303980335593224
+        ],
+        "root_position_m": [
+          0.7462283372879028,
+          -0.015018492937088013,
+          0.08825872093439102
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": null,
+          "command_epoch": 58,
+          "macro_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_fraction": 0.0,
+          "profile_id": "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:PRIMARY_PROFILE:segments-57-101",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "subphase": "PRELOAD"
+        },
+        "snapshot_sim_step": 8468,
+        "snapshot_sim_time_s": 70.5666666666689,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "029a4892285b6db89b3e64fd75e880923499cdf6aba5814d1c24940e2343c244",
+          "dispatch_sim_step": 8468,
+          "dispatch_sim_time_s": 70.5666666666689,
+          "owner_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_id": "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:PRIMARY_PROFILE:segments-57-101",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "segment_completion_index": 57,
+          "servo_targets_deg": [
+            28.1,
+            -8.1,
+            19.6,
+            16.2,
+            1.6,
+            0.0,
+            -31.2,
+            -40.9
+          ],
+          "source_action_identity": "071dbf5bab0aded9c532c78f1812cfe898679067a089a831bc02fe1e3bef6d7f",
+          "source_action_index": 57,
+          "source_action_row_sha256": "4fe56042ae9e17b3969e3705768a0ae6ac214e367032c7fd3d74537654dcea82",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "f62b00c917a7bec8e7561a1c12b361dc3b800a5c0b73ca7d2b49b0ac6a9ea296",
+          "source_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+          "source_segment_index": 57,
+          "source_step_id": "step_014_recorded_height_050mm_dur_17.73s",
+          "source_step_index": 14,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v003_20260805_224517_157723_manual",
+        "telemetry_latency_physics_steps": 7,
+        "telemetry_relation_to_entry": "FIRST_POST_ENTRY_TELEMETRY_OBSERVATION",
+        "telemetry_row_index": 1035,
+        "telemetry_row_sha256": "6bb8c0df3e750da2af217f7d9b6ff4a6f62edb6f60254d2f3eb2156d58861147"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY",
+        "entry_profile": {
+          "command_epoch": 105,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_2:segments-104-111",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "RECOVERY_PROFILE_2",
+          "subphase": "RECOVERY"
+        },
+        "entry_sha256": "4f36bc3fbfa098b0793781f680878d64b4cd621ff7713c78bff626d7f6c870dc",
+        "entry_sim_step": 10764,
+        "entry_sim_time_s": 89.70000000001745,
+        "entry_transition_index": 11,
+        "entry_transition_row_sha256": "ba5d13ddc30f5cd1654907f46b3f1801ff8f708602ef4f6cc7537e6355068b41",
+        "joint_q_rad": [
+          -0.4212758541107178,
+          -0.6481782793998718,
+          0.5319451093673706,
+          0.30024802684783936,
+          0.5518907904624939,
+          0.33861085772514343,
+          0.530907154083252,
+          0.6819291114807129,
+          -3.117077589035034,
+          -4.907111167907715,
+          4.84483003616333,
+          -6.259583473205566
+        ],
+        "joint_qd_rad_s": [
+          -0.007938424125313759,
+          -0.00477719958871603,
+          -0.10088759660720825,
+          0.014010705053806305,
+          0.062195442616939545,
+          -0.17620669305324554,
+          -0.007742846850305796,
+          -0.07347821444272995,
+          0.0001827992673497647,
+          -0.07583533972501755,
+          0.05909017473459244,
+          -0.0447939895093441
+        ],
+        "nominal_servo_targets_deg": [
+          -25.9,
+          -38.8,
+          30.2,
+          16.2,
+          -28.1,
+          -16.6,
+          -31.2,
+          -40.9
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S9_FINAL_ADVANCE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S10_POSTURE_RECOVERY",
+        "root_angular_velocity_rad_s": [
+          0.03877323120832443,
+          -0.020442601293325424,
+          -0.007321985438466072
+        ],
+        "root_linear_velocity_m_s": [
+          0.006273557897657156,
+          -0.007317876443266869,
+          0.01754467934370041
+        ],
+        "root_orientation_wxyz": [
+          0.996372640132904,
+          0.053402114659547806,
+          0.0655779242515564,
+          -0.009454004466533661
+        ],
+        "root_position_m": [
+          0.8704246878623962,
+          -0.03385704755783081,
+          0.1221228763461113
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 103,
+          "command_epoch": 104,
+          "macro_state": "S9_FINAL_ADVANCE",
+          "profile_fraction": 0.5,
+          "profile_id": "v003_20260805_224517_157723_manual:S9_FINAL_ADVANCE:PRIMARY_PROFILE:segments-102-103",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "PRIMARY_PROFILE",
+          "subphase": "ADVANCE"
+        },
+        "snapshot_sim_step": 10764,
+        "snapshot_sim_time_s": 89.70000000001745,
+        "source_cursor": {
+          "commands": [
+            "servo front_left_hip 0.5",
+            "servo front_left_knee -0.7",
+            "servo front_right_hip 30.2",
+            "servo front_right_knee 16.2",
+            "servo rear_left_hip -28.1",
+            "servo rear_left_knee -16.6",
+            "servo rear_right_hip -31.2",
+            "servo rear_right_knee -40.9",
+            "wheel fl 1.93"
+          ],
+          "completion_row_sha256": "e76e2cbce17de12cb0913a7d65ce5c2a30676d03764a2a277629d71cc015e3a6",
+          "dispatch_sim_step": 10764,
+          "dispatch_sim_time_s": 89.70000000001745,
+          "owner_state": "S10_POSTURE_RECOVERY",
+          "profile_id": "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_2:segments-104-111",
+          "profile_source_version": "v003_20260805_224517_157723_manual",
+          "profile_strategy": "RECOVERY_PROFILE_2",
+          "segment_completion_index": 104,
+          "servo_targets_deg": [
+            0.5,
+            -0.7,
+            30.2,
+            16.2,
+            -28.1,
+            -16.6,
+            -31.2,
+            -40.9
+          ],
+          "source_action_identity": "7117e558830918ee48c09ac08f5baf019f47f5546365301ec74061e701cb3622",
+          "source_action_index": 104,
+          "source_action_row_sha256": "da9340cae7c34eee763907d0c718237ab6d25e0bd4968ad4b9c639a035e87cde",
+          "source_event_indices": [
+            0
+          ],
+          "source_plan_payload_sha256": "f62b00c917a7bec8e7561a1c12b361dc3b800a5c0b73ca7d2b49b0ac6a9ea296",
+          "source_plan_sha256": "a53acff942cbb19782c2f804add7feaca3662202107ecffadd110a3fb4acd76c",
+          "source_segment_index": 104,
+          "source_step_id": "step_023_recorded_height_050mm_dur_19.27s",
+          "source_step_index": 23,
+          "source_time_s": 0.0,
+          "subphase": "RECOVERY",
+          "wheel_targets_rad_s": [
+            1.93,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v003_20260805_224517_157723_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 1322,
+        "telemetry_row_sha256": "96a702c2086304192822b0aaf33293a5aea5ca88823f22dee60df3f6cb7962ef"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT",
+        "entry_profile": {
+          "command_epoch": 42,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT:ALTERNATE_PROFILE_2:segments-41-60",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "8719414c6bca995518b37c970c90799bc89dc1bbda21c450117f8923c318d1b9",
+        "entry_sim_step": 7180,
+        "entry_sim_time_s": 59.83333333333058,
+        "entry_transition_index": 5,
+        "entry_transition_row_sha256": "b9e9ec7d8363bde1c72e1a7c8cb842ee70445f1885aa5d19295c5de941fdd524",
+        "joint_q_rad": [
+          0.05447690188884735,
+          0.17579719424247742,
+          -0.1442883014678955,
+          0.9881606101989746,
+          0.11699807643890381,
+          0.02709973230957985,
+          -0.07098878920078278,
+          -0.039372656494379044,
+          -0.5316213369369507,
+          1.5749711990356445,
+          -2.8539278507232666,
+          1.9066334962844849
+        ],
+        "joint_qd_rad_s": [
+          0.0038829795084893703,
+          -0.00715294573456049,
+          -0.10337801277637482,
+          0.03891173005104065,
+          0.09948417544364929,
+          -0.1569429636001587,
+          0.0004311399534344673,
+          -0.045178648084402084,
+          0.00034245895221829414,
+          -0.1815616339445114,
+          -0.018110260367393494,
+          0.03611111268401146
+        ],
+        "nominal_servo_targets_deg": [
+          7.9,
+          8.8,
+          -10.1,
+          55.4,
+          -0.5,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S4_FRONT_PAIR_ADVANCE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S5_PRE_RR_COM_SHIFT",
+        "root_angular_velocity_rad_s": [
+          0.054615568369627,
+          -0.02652035653591156,
+          -0.006611131131649017
+        ],
+        "root_linear_velocity_m_s": [
+          0.003344655968248844,
+          -0.007653287146240473,
+          0.015037458389997482
+        ],
+        "root_orientation_wxyz": [
+          0.9990891814231873,
+          0.023192282766103745,
+          -0.033788882195949554,
+          0.011885271407663822
+        ],
+        "root_position_m": [
+          0.6594748497009277,
+          0.0017248988151550293,
+          0.12412068992853165
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 40,
+          "command_epoch": 41,
+          "macro_state": "S4_FRONT_PAIR_ADVANCE",
+          "profile_fraction": 0.5,
+          "profile_id": "v008_20260806_211408_578700_manual:S4_FRONT_PAIR_ADVANCE:ALTERNATE_PROFILE_2:segments-39-40",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "subphase": "ADVANCE"
+        },
+        "snapshot_sim_step": 7180,
+        "snapshot_sim_time_s": 59.83333333333058,
+        "source_cursor": {
+          "commands": [
+            "servo front_left_knee 9.9"
+          ],
+          "completion_row_sha256": "91646210dbb5ea8f4136e70232baf3ccca80d8371da4e1c62f37f4365a648529",
+          "dispatch_sim_step": 7180,
+          "dispatch_sim_time_s": 59.83333333333058,
+          "owner_state": "S5_PRE_RR_COM_SHIFT",
+          "profile_id": "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT:ALTERNATE_PROFILE_2:segments-41-60",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "segment_completion_index": 41,
+          "servo_targets_deg": [
+            7.9,
+            9.9,
+            -10.1,
+            55.4,
+            -0.5,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_action_identity": "8240a1ef7e71d55e5507402d997002fa74dd0d4b906a53410ddbffc4f197be8b",
+          "source_action_index": 41,
+          "source_action_row_sha256": "55f0053a26910a4b733958334650a79f712abebe998d40b2f90a5ea97b91bd8c",
+          "source_event_indices": [
+            0
+          ],
+          "source_plan_payload_sha256": "bfb2045df862749db3105fdcc4aa867f31fdeccf4e0c8854337c7a181343018e",
+          "source_plan_sha256": "a80928c079c0fdca8080999993d2b8705d17a4686f962914eb5effe4e5993b7c",
+          "source_segment_index": 41,
+          "source_step_id": "step_010_recorded_height_050mm_dur_8.07s",
+          "source_step_index": 10,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v008_20260806_211408_578700_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 874,
+        "telemetry_row_sha256": "3d0b9eee6418c3eb9ce5529c41f538e301bcecd24c72c039b33a51088a69cff5"
+      },
+      {
+        "coalesced_successor_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "coalesced_transition_index": 8,
+        "entry_id": "v008_20260806_211408_578700_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "entry_profile": {
+          "command_epoch": 76,
+          "profile_fraction": 1.0,
+          "profile_free": true,
+          "profile_id": "",
+          "profile_source_version": "",
+          "profile_strategy": "",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "074a0885a0d60e41ed64e91a29dd6030ec6a92f1b94e18e744c6c8a7508327ef",
+        "entry_sim_step": 8428,
+        "entry_sim_time_s": 70.2333333333353,
+        "entry_transition_index": 7,
+        "entry_transition_row_sha256": "3576ed8ad53e81eb65cc015b332aa9ca81fcb36a89605a7964be85ffb627a8d6",
+        "joint_q_rad": [
+          -0.06661775708198547,
+          0.0028228233568370342,
+          -0.17740315198898315,
+          0.39435407519340515,
+          0.005576692521572113,
+          -0.42787525057792664,
+          0.5410068035125732,
+          0.18708689510822296,
+          -0.35793963074684143,
+          1.347530722618103,
+          -3.5260560512542725,
+          2.9425272941589355
+        ],
+        "joint_qd_rad_s": [
+          0.31778156757354736,
+          0.43669095635414124,
+          0.07319929450750351,
+          -0.1502067595720291,
+          0.035409361124038696,
+          -0.8019686937332153,
+          -0.4173787236213684,
+          0.1688886284828186,
+          1.2510300874710083,
+          0.0044992282055318356,
+          -0.5140691995620728,
+          0.04625938832759857
+        ],
+        "nominal_servo_targets_deg": [
+          -3.7,
+          0.4,
+          -10.1,
+          22.6,
+          -0.5,
+          24.7,
+          -31.2,
+          -10.2
+        ],
+        "nominal_wheel_targets_rad_s": [
+          -1.08,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S6_RR_TRAVERSE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S7_PRE_RL_SUPPORT_SETUP",
+        "root_angular_velocity_rad_s": [
+          -0.020707963034510612,
+          -0.049450598657131195,
+          0.21818138659000397
+        ],
+        "root_linear_velocity_m_s": [
+          -0.0043471199460327625,
+          0.029597880318760872,
+          -0.03947144374251366
+        ],
+        "root_orientation_wxyz": [
+          0.9954965114593506,
+          -0.07358169555664062,
+          -0.05973266437649727,
+          0.0021014800295233727
+        ],
+        "root_position_m": [
+          0.8068721890449524,
+          0.02543095499277115,
+          0.14576247334480286
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 74,
+          "command_epoch": 75,
+          "macro_state": "S6_RR_TRAVERSE",
+          "profile_fraction": 0.9285714285714286,
+          "profile_id": "v008_20260806_211408_578700_manual:S6_RR_TRAVERSE:ALTERNATE_PROFILE_2:segments-61-74",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "subphase": "TOP_PLACE"
+        },
+        "snapshot_sim_step": 8428,
+        "snapshot_sim_time_s": 70.2333333333353,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "7881b3fef993dc0063050441f6ffc52f3625015e62e0229e7d2e3e1ecaaeca70",
+          "dispatch_sim_step": 8436,
+          "dispatch_sim_time_s": 70.30000000000202,
+          "owner_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_id": "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_2:segments-75-117",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "segment_completion_index": 75,
+          "servo_targets_deg": [
+            -3.7,
+            0.4,
+            -10.1,
+            22.6,
+            -0.5,
+            24.7,
+            -31.2,
+            -10.2
+          ],
+          "source_action_identity": "dc1205350edf0f712d8a6d2cc342f9c911697e2856993f343787b70ff1463d9b",
+          "source_action_index": 75,
+          "source_action_row_sha256": "233581d71e2b8da7d581b49d5b7e77b1d37739848c28ad809e1fdc65206d9a70",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "bfb2045df862749db3105fdcc4aa867f31fdeccf4e0c8854337c7a181343018e",
+          "source_plan_sha256": "a80928c079c0fdca8080999993d2b8705d17a4686f962914eb5effe4e5993b7c",
+          "source_segment_index": 75,
+          "source_step_id": "step_015_recorded_height_050mm_dur_15.60s",
+          "source_step_index": 15,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v008_20260806_211408_578700_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 1030,
+        "telemetry_row_sha256": "be113c96e64333cd93fd8792dc698fef8767c6ace7548e27a5b7fc3aac789277"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "entry_profile": {
+          "command_epoch": 76,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_2:segments-75-117",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "ec385d7cc4d558c2eb85c2fd96b111d9133145f9b0e8b0e3e0a7ddf2effe039b",
+        "entry_sim_step": 8429,
+        "entry_sim_time_s": 70.24166666666864,
+        "entry_transition_index": 8,
+        "entry_transition_row_sha256": "a1d59dff63e476d7c7efa2916bbafabf5e77850477318c0bdd00ca20576acacb",
+        "joint_q_rad": [
+          -0.05131932348012924,
+          -0.003192882752045989,
+          -0.17941166460514069,
+          0.38960206508636475,
+          0.002913134638220072,
+          -0.4313623905181885,
+          0.5356751680374146,
+          0.184651717543602,
+          -0.37828752398490906,
+          1.3475912809371948,
+          -3.5211329460144043,
+          2.9273319244384766
+        ],
+        "joint_qd_rad_s": [
+          0.08162512630224228,
+          0.4439406991004944,
+          0.16009987890720367,
+          -0.07505998015403748,
+          0.06508609652519226,
+          -0.30804505944252014,
+          -0.08541392534971237,
+          -0.07749249786138535,
+          0.18713226914405823,
+          0.00562806474044919,
+          -0.11213737726211548,
+          -0.15913239121437073
+        ],
+        "nominal_servo_targets_deg": [
+          -3.7,
+          0.4,
+          -10.1,
+          22.6,
+          -0.5,
+          24.7,
+          -31.2,
+          -10.2
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "root_angular_velocity_rad_s": [
+          0.037585802376270294,
+          -0.02429308369755745,
+          0.017000233754515648
+        ],
+        "root_linear_velocity_m_s": [
+          0.007195546757429838,
+          0.025035567581653595,
+          -0.011937364935874939
+        ],
+        "root_orientation_wxyz": [
+          0.9954410195350647,
+          -0.07524531334638596,
+          -0.05853120982646942,
+          0.0030652780551463366
+        ],
+        "root_position_m": [
+          0.807375431060791,
+          0.025891654193401337,
+          0.14446568489074707
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": null,
+          "command_epoch": 76,
+          "macro_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_fraction": 0.0,
+          "profile_id": "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_2:segments-75-117",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "subphase": "PRELOAD"
+        },
+        "snapshot_sim_step": 8436,
+        "snapshot_sim_time_s": 70.30000000000202,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "7881b3fef993dc0063050441f6ffc52f3625015e62e0229e7d2e3e1ecaaeca70",
+          "dispatch_sim_step": 8436,
+          "dispatch_sim_time_s": 70.30000000000202,
+          "owner_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_id": "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_2:segments-75-117",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_2",
+          "segment_completion_index": 75,
+          "servo_targets_deg": [
+            -3.7,
+            0.4,
+            -10.1,
+            22.6,
+            -0.5,
+            24.7,
+            -31.2,
+            -10.2
+          ],
+          "source_action_identity": "dc1205350edf0f712d8a6d2cc342f9c911697e2856993f343787b70ff1463d9b",
+          "source_action_index": 75,
+          "source_action_row_sha256": "233581d71e2b8da7d581b49d5b7e77b1d37739848c28ad809e1fdc65206d9a70",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "bfb2045df862749db3105fdcc4aa867f31fdeccf4e0c8854337c7a181343018e",
+          "source_plan_sha256": "a80928c079c0fdca8080999993d2b8705d17a4686f962914eb5effe4e5993b7c",
+          "source_segment_index": 75,
+          "source_step_id": "step_015_recorded_height_050mm_dur_15.60s",
+          "source_step_index": 15,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v008_20260806_211408_578700_manual",
+        "telemetry_latency_physics_steps": 7,
+        "telemetry_relation_to_entry": "FIRST_POST_ENTRY_TELEMETRY_OBSERVATION",
+        "telemetry_row_index": 1031,
+        "telemetry_row_sha256": "e27093de16348494336ec7a6cc6285e2f4f05253ce8e41b1bfaa521c0b77ef7c"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY",
+        "entry_profile": {
+          "command_epoch": 119,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-118-118",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "subphase": "RECOVERY"
+        },
+        "entry_sha256": "0cacaaff2b37c83aa10ba0e40197c3004a37ea61cc042ed5fd37baf237b59018",
+        "entry_sim_step": 11405,
+        "entry_sim_time_s": 95.04166666668837,
+        "entry_transition_index": 10,
+        "entry_transition_row_sha256": "9f3896c843bc1a0820b64a69a9362f15e61bb7dd5045245d597c20533076a46f",
+        "joint_q_rad": [
+          0.014077305793762207,
+          -0.0004722844169009477,
+          -0.027887806296348572,
+          0.021843770518898964,
+          0.015237747691571712,
+          -0.049872688949108124,
+          0.056494589895009995,
+          0.0008962132269516587,
+          -3.6468029022216797,
+          3.3211920261383057,
+          6.185259819030762,
+          5.152976989746094
+        ],
+        "joint_qd_rad_s": [
+          -0.06097516417503357,
+          -0.021553656086325645,
+          0.005933001637458801,
+          0.06820686161518097,
+          -0.007441245019435883,
+          -0.4493594765663147,
+          0.0061991848051548,
+          0.09203463047742844,
+          0.060096532106399536,
+          0.15740546584129333,
+          -0.0603267177939415,
+          0.06606930494308472
+        ],
+        "nominal_servo_targets_deg": [
+          0.5,
+          0.4,
+          -1.6,
+          0.4,
+          -1.6,
+          1.4,
+          -3.7,
+          0.4
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S10_POSTURE_RECOVERY",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S10_POSTURE_RECOVERY",
+        "root_angular_velocity_rad_s": [
+          0.021942997351288795,
+          0.004768078215420246,
+          -0.043270982801914215
+        ],
+        "root_linear_velocity_m_s": [
+          0.007485077250748873,
+          0.008689424954354763,
+          0.0018254481256008148
+        ],
+        "root_orientation_wxyz": [
+          0.9998666644096375,
+          -0.005783642642199993,
+          -0.002826054347679019,
+          0.015016176737844944
+        ],
+        "root_position_m": [
+          1.0124949216842651,
+          -0.021526165306568146,
+          0.15155786275863647
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": null,
+          "command_epoch": 119,
+          "macro_state": "S10_POSTURE_RECOVERY",
+          "profile_fraction": 0.0,
+          "profile_id": "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-118-118",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "subphase": "RECOVERY"
+        },
+        "snapshot_sim_step": 11412,
+        "snapshot_sim_time_s": 95.10000000002175,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "ec47c9ac8f74743d70d6dccb1adeced61284950d1a40fdde184753032af43072",
+          "dispatch_sim_step": 11412,
+          "dispatch_sim_time_s": 95.10000000002175,
+          "owner_state": "S10_POSTURE_RECOVERY",
+          "profile_id": "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-118-118",
+          "profile_source_version": "v008_20260806_211408_578700_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "segment_completion_index": 118,
+          "servo_targets_deg": [
+            0.5,
+            0.4,
+            -1.6,
+            0.4,
+            -1.6,
+            1.4,
+            -3.7,
+            0.4
+          ],
+          "source_action_identity": "9f8a90cd11f3f781e1c9581a073777c008cf9a43eeb7de70568e5aa8d514ce70",
+          "source_action_index": 118,
+          "source_action_row_sha256": "c8a4121138c8a1ecfdbab1ceeb46c082e84239f5f09bf73ab179f210d1b9abd2",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "bfb2045df862749db3105fdcc4aa867f31fdeccf4e0c8854337c7a181343018e",
+          "source_plan_sha256": "a80928c079c0fdca8080999993d2b8705d17a4686f962914eb5effe4e5993b7c",
+          "source_segment_index": 118,
+          "source_step_id": "step_023_recorded_height_050mm_dur_37.00s",
+          "source_step_index": 23,
+          "source_time_s": 0.0,
+          "subphase": "RECOVERY",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v008_20260806_211408_578700_manual",
+        "telemetry_latency_physics_steps": 7,
+        "telemetry_relation_to_entry": "FIRST_POST_ENTRY_TELEMETRY_OBSERVATION",
+        "telemetry_row_index": 1403,
+        "telemetry_row_sha256": "134c743b1bd8132cf9e8779522d5f10cb8dffc3a7e268925dbfc6cc637e70022"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT",
+        "entry_profile": {
+          "command_epoch": 55,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT:ALTERNATE_PROFILE_1:segments-54-73",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "af719125f04bb1adb96b51cb740e12cff1c15be87671f700d868f3fba378b3ea",
+        "entry_sim_step": 6900,
+        "entry_sim_time_s": 57.49999999999738,
+        "entry_transition_index": 5,
+        "entry_transition_row_sha256": "b6d2f3d0bf10eb3d9001f0fdb341b1854f41df5f6550505d31d2a342ded04759",
+        "joint_q_rad": [
+          0.23591969907283783,
+          0.07862792909145355,
+          -0.03313376009464264,
+          0.7890592217445374,
+          -0.2419867068529129,
+          -0.03074539825320244,
+          -0.01587366685271263,
+          0.006060750223696232,
+          -0.43208742141723633,
+          2.0279786586761475,
+          -2.007364273071289,
+          1.6918585300445557
+        ],
+        "joint_qd_rad_s": [
+          -0.09333156794309616,
+          0.0739814043045044,
+          0.03958466649055481,
+          -0.003436706494539976,
+          0.010463873855769634,
+          -0.0196867473423481,
+          0.10687011480331421,
+          -0.12063323706388474,
+          0.08343015611171722,
+          -0.0006498392322100699,
+          -0.018640898168087006,
+          0.009932690300047398
+        ],
+        "nominal_servo_targets_deg": [
+          20.6,
+          5.6,
+          0.0,
+          44.8,
+          13.2,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S4_FRONT_PAIR_ADVANCE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S5_PRE_RR_COM_SHIFT",
+        "root_angular_velocity_rad_s": [
+          -0.0562182292342186,
+          -0.021625161170959473,
+          0.010540583170950413
+        ],
+        "root_linear_velocity_m_s": [
+          -0.0024634068831801414,
+          0.006368194241076708,
+          0.011785419657826424
+        ],
+        "root_orientation_wxyz": [
+          0.9983291029930115,
+          -0.03656517714262009,
+          -0.04421065002679825,
+          -0.006889017764478922
+        ],
+        "root_position_m": [
+          0.7186800837516785,
+          -0.008041761815547943,
+          0.0967235267162323
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 53,
+          "command_epoch": 54,
+          "macro_state": "S4_FRONT_PAIR_ADVANCE",
+          "profile_fraction": 0.5,
+          "profile_id": "v009_20260806_215232_433234_manual:S4_FRONT_PAIR_ADVANCE:ALTERNATE_PROFILE_1:segments-52-53",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "ADVANCE"
+        },
+        "snapshot_sim_step": 6900,
+        "snapshot_sim_time_s": 57.49999999999738,
+        "source_cursor": {
+          "commands": [
+            "servo front_left_hip 21.7"
+          ],
+          "completion_row_sha256": "14714a177f7ad15074390c1ac9bbf0eaa304d8d9eba7c197d4549fb9bf0e03b5",
+          "dispatch_sim_step": 6900,
+          "dispatch_sim_time_s": 57.49999999999738,
+          "owner_state": "S5_PRE_RR_COM_SHIFT",
+          "profile_id": "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT:ALTERNATE_PROFILE_1:segments-54-73",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "segment_completion_index": 54,
+          "servo_targets_deg": [
+            21.7,
+            5.6,
+            0.0,
+            44.8,
+            13.2,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "source_action_identity": "9f77ef8fe0f94186d837ae6ddb4c04a9c4bdb973b44fb31a5d6f609895818349",
+          "source_action_index": 54,
+          "source_action_row_sha256": "20ed4daddfb364cf1c671fc1a6cdba91527507428bffa21ba5403a7418c9fb0d",
+          "source_event_indices": [
+            0
+          ],
+          "source_plan_payload_sha256": "958ac2894ff923867bb12133247996bfab209cfbf1d8d3e127be5f5f182549cc",
+          "source_plan_sha256": "f6c6934f631a01f906280ede55b8eec7fef8a37cf45242d970ef5e5285ff4c12",
+          "source_segment_index": 54,
+          "source_step_id": "step_009_recorded_height_050mm_dur_6.27s",
+          "source_step_index": 9,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v009_20260806_215232_433234_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 839,
+        "telemetry_row_sha256": "033f8f6c3f352dd55a75358b4dfd8335f5169da6068454b1ef5c0c2b8565e016"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP",
+        "entry_profile": {
+          "command_epoch": 92,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP:ALTERNATE_PROFILE_1:segments-91-92",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "cc6d19380cfb5b7f20e83d9c7c07532d3e0d21dc2a7253f9cc4c02a30dea39d8",
+        "entry_sim_step": 7572,
+        "entry_sim_time_s": 63.09999999999706,
+        "entry_transition_index": 7,
+        "entry_transition_row_sha256": "f657681156e0a5dcc7296e9b83e06bca39eea4a80b35e297a8a0adfe89e7c26f",
+        "joint_q_rad": [
+          0.2670554220676422,
+          -0.04667051136493683,
+          -0.03444402664899826,
+          0.7849403023719788,
+          -0.01709919050335884,
+          0.061085980385541916,
+          -0.14464843273162842,
+          0.7727396488189697,
+          0.183563694357872,
+          2.5123507976531982,
+          -2.170325517654419,
+          1.600035548210144
+        ],
+        "joint_qd_rad_s": [
+          0.0568084716796875,
+          0.08178357779979706,
+          -0.2599584758281708,
+          0.09978026896715164,
+          -0.372935026884079,
+          0.15842048823833466,
+          -0.049040280282497406,
+          -0.07277750968933105,
+          0.6899613738059998,
+          -0.21690133213996887,
+          -0.7251367568969727,
+          0.056036077439785004
+        ],
+        "nominal_servo_targets_deg": [
+          15.4,
+          -2.8,
+          0.0,
+          44.8,
+          0.5,
+          -2.8,
+          7.9,
+          -44.1
+        ],
+        "nominal_wheel_targets_rad_s": [
+          -0.69,
+          0.0,
+          0.8,
+          0.0
+        ],
+        "observed_macro_state": "S6_RR_TRAVERSE",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S7_PRE_RL_SUPPORT_SETUP",
+        "root_angular_velocity_rad_s": [
+          -0.10930521786212921,
+          -0.07016874104738235,
+          -0.009425180964171886
+        ],
+        "root_linear_velocity_m_s": [
+          0.012713683769106865,
+          0.015893876552581787,
+          -0.007517368998378515
+        ],
+        "root_orientation_wxyz": [
+          0.9993470311164856,
+          0.012739872559905052,
+          -0.0338020883500576,
+          -0.0007090329891070724
+        ],
+        "root_position_m": [
+          0.761693000793457,
+          -0.02496802806854248,
+          0.11089949309825897
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 90,
+          "command_epoch": 91,
+          "macro_state": "S6_RR_TRAVERSE",
+          "profile_fraction": 0.9411764705882353,
+          "profile_id": "v009_20260806_215232_433234_manual:S6_RR_TRAVERSE:ALTERNATE_PROFILE_1:segments-74-90",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "TOP_PLACE"
+        },
+        "snapshot_sim_step": 7572,
+        "snapshot_sim_time_s": 63.09999999999706,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "8f645577150088d5161d597ff296b87cbcf2bc6b736956f71662c195f426ad89",
+          "dispatch_sim_step": 7580,
+          "dispatch_sim_time_s": 63.16666666666372,
+          "owner_state": "S7_PRE_RL_SUPPORT_SETUP",
+          "profile_id": "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP:ALTERNATE_PROFILE_1:segments-91-92",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "segment_completion_index": 91,
+          "servo_targets_deg": [
+            15.4,
+            -2.8,
+            0.0,
+            44.8,
+            0.5,
+            -2.8,
+            7.9,
+            -44.1
+          ],
+          "source_action_identity": "bfa3096cbaee5a7b6e3f05e9a0f2198ec03cc52e2616ca2ff072c3e5b73bd671",
+          "source_action_index": 91,
+          "source_action_row_sha256": "ea824c97486e92ca92da0541829ebef7ac8c67214f03add2079e685326bb4c1f",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "958ac2894ff923867bb12133247996bfab209cfbf1d8d3e127be5f5f182549cc",
+          "source_plan_sha256": "f6c6934f631a01f906280ede55b8eec7fef8a37cf45242d970ef5e5285ff4c12",
+          "source_segment_index": 91,
+          "source_step_id": "step_013_recorded_height_050mm_dur_30.80s",
+          "source_step_index": 13,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v009_20260806_215232_433234_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 923,
+        "telemetry_row_sha256": "1ab8be4743881252d3c12c21c8b79eb0d1f78cbac496925d7a23e12955b68a0f"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "entry_profile": {
+          "command_epoch": 94,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_1:segments-93-130",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "PRELOAD"
+        },
+        "entry_sha256": "29257aa2ad85b57cb2ff234b25b6196086699f4416671873b3694785069df2b2",
+        "entry_sim_step": 7732,
+        "entry_sim_time_s": 64.43333333333068,
+        "entry_transition_index": 8,
+        "entry_transition_row_sha256": "3ad8efd255b326347d3635b94149132a4aba8515d16b185e36daf03499de56b7",
+        "joint_q_rad": [
+          0.2689410448074341,
+          -0.04659857228398323,
+          0.019664591178297997,
+          0.7885507941246033,
+          -0.05136928707361221,
+          -0.2627847194671631,
+          -0.14451485872268677,
+          0.7760123610496521,
+          0.2019205242395401,
+          2.517301082611084,
+          -1.5669968128204346,
+          1.6032625436782837
+        ],
+        "joint_qd_rad_s": [
+          -0.017066538333892822,
+          -0.0050689056515693665,
+          -0.20164236426353455,
+          0.10179746896028519,
+          -0.1812029331922531,
+          0.06826857477426529,
+          -0.17481547594070435,
+          0.11355356127023697,
+          -0.038380131125450134,
+          -0.3041205406188965,
+          0.2495223432779312,
+          0.030546829104423523
+        ],
+        "nominal_servo_targets_deg": [
+          15.4,
+          -2.8,
+          0.0,
+          44.8,
+          0.5,
+          15.2,
+          7.9,
+          -44.1
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          -0.47,
+          0.0
+        ],
+        "observed_macro_state": "S7_PRE_RL_SUPPORT_SETUP",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+        "root_angular_velocity_rad_s": [
+          -0.0355314239859581,
+          -0.06987597048282623,
+          0.004588481970131397
+        ],
+        "root_linear_velocity_m_s": [
+          -0.004405920393764973,
+          0.0020010864827781916,
+          -0.012332027778029442
+        ],
+        "root_orientation_wxyz": [
+          0.9994964599609375,
+          0.005224109627306461,
+          -0.02231386862695217,
+          -0.021947510540485382
+        ],
+        "root_position_m": [
+          0.8061772584915161,
+          -0.03798186033964157,
+          0.10075342655181885
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": 92,
+          "command_epoch": 93,
+          "macro_state": "S7_PRE_RL_SUPPORT_SETUP",
+          "profile_fraction": 0.5,
+          "profile_id": "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP:ALTERNATE_PROFILE_1:segments-91-92",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "subphase": "PRELOAD"
+        },
+        "snapshot_sim_step": 7732,
+        "snapshot_sim_time_s": 64.43333333333068,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "68a2fec00399f03299dd3d639239ef2288949c44a52837f9b0883bb61e8299ee",
+          "dispatch_sim_step": 7740,
+          "dispatch_sim_time_s": 64.4999999999974,
+          "owner_state": "S8_RL_COM_SHIFT_AND_TRAVERSE",
+          "profile_id": "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE:ALTERNATE_PROFILE_1:segments-93-130",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "ALTERNATE_PROFILE_1",
+          "segment_completion_index": 93,
+          "servo_targets_deg": [
+            15.4,
+            -2.8,
+            0.0,
+            44.8,
+            0.5,
+            15.2,
+            7.9,
+            -44.1
+          ],
+          "source_action_identity": "1b06c8894b05ffae2e71a9a89d27624e6222314575822638980aabd4351955db",
+          "source_action_index": 93,
+          "source_action_row_sha256": "364832f883a9f3dce0d45978aafac461d787cb3746192cee428da6e32261d650",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "958ac2894ff923867bb12133247996bfab209cfbf1d8d3e127be5f5f182549cc",
+          "source_plan_sha256": "f6c6934f631a01f906280ede55b8eec7fef8a37cf45242d970ef5e5285ff4c12",
+          "source_segment_index": 93,
+          "source_step_id": "step_014_recorded_height_050mm_dur_12.87s",
+          "source_step_index": 14,
+          "source_time_s": 0.0,
+          "subphase": "PRELOAD",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v009_20260806_215232_433234_manual",
+        "telemetry_latency_physics_steps": 0,
+        "telemetry_relation_to_entry": "SAME_STEP_PRE_DECISION_OBSERVATION",
+        "telemetry_row_index": 943,
+        "telemetry_row_sha256": "d954673550eca4f08f0653271f9f7a9ed716f2524ad3e1fe577cb4670c46a42e"
+      },
+      {
+        "coalesced_successor_state": "",
+        "coalesced_transition_index": null,
+        "entry_id": "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY",
+        "entry_profile": {
+          "command_epoch": 132,
+          "profile_fraction": 0.0,
+          "profile_free": false,
+          "profile_id": "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-131-131",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "subphase": "RECOVERY"
+        },
+        "entry_sha256": "63f4f20b5112638fb10d74eb19f225686b852f7663e74baccee18abb4a5378ca",
+        "entry_sim_step": 10869,
+        "entry_sim_time_s": 90.57500000001815,
+        "entry_transition_index": 10,
+        "entry_transition_row_sha256": "463c56882b8bb2c05fc56ac13be3f6d073479a2550cc3913a6cf4dd8994dc215",
+        "joint_q_rad": [
+          0.020021263509988785,
+          0.020340213552117348,
+          0.01986713893711567,
+          0.039669692516326904,
+          -0.016799921169877052,
+          0.008980272337794304,
+          0.015606087632477283,
+          0.028709053993225098,
+          -1.417309045791626,
+          4.39625358581543,
+          -4.3184309005737305,
+          5.532668590545654
+        ],
+        "joint_qd_rad_s": [
+          0.10995247960090637,
+          -0.12645015120506287,
+          0.025862906128168106,
+          -0.04581397771835327,
+          -0.004221767652779818,
+          -0.011992239393293858,
+          0.16532844305038452,
+          -0.15499532222747803,
+          -0.00023010684526525438,
+          -0.0001511939917691052,
+          0.014884901233017445,
+          0.16637948155403137
+        ],
+        "nominal_servo_targets_deg": [
+          0.5,
+          1.4,
+          1.6,
+          2.5,
+          0.5,
+          -0.7,
+          -1.6,
+          -1.8
+        ],
+        "nominal_wheel_targets_rad_s": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "observed_macro_state": "S10_POSTURE_RECOVERY",
+        "obstacle_identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+        "phase_state": "S10_POSTURE_RECOVERY",
+        "root_angular_velocity_rad_s": [
+          -0.07194597274065018,
+          0.015146985650062561,
+          0.00560414744541049
+        ],
+        "root_linear_velocity_m_s": [
+          0.005308988504111767,
+          0.013386931270360947,
+          0.0031186894048005342
+        ],
+        "root_orientation_wxyz": [
+          0.9945120215415955,
+          -0.004029917996376753,
+          -0.006006774492561817,
+          0.10437191277742386
+        ],
+        "root_position_m": [
+          1.0070898532867432,
+          -0.030026644468307495,
+          0.1479015350341797
+        ],
+        "snapshot_context": {
+          "active_completion_source_segment_index": null,
+          "command_epoch": 132,
+          "macro_state": "S10_POSTURE_RECOVERY",
+          "profile_fraction": 0.0,
+          "profile_id": "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-131-131",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "subphase": "RECOVERY"
+        },
+        "snapshot_sim_step": 10876,
+        "snapshot_sim_time_s": 90.63333333335153,
+        "source_cursor": {
+          "commands": [
+            "wheel stop"
+          ],
+          "completion_row_sha256": "c42ae3ada34dbb135e15d47e345623fe7751be463557aa00de4b4dffd7e0267f",
+          "dispatch_sim_step": 10876,
+          "dispatch_sim_time_s": 90.63333333335153,
+          "owner_state": "S10_POSTURE_RECOVERY",
+          "profile_id": "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY:RECOVERY_PROFILE_1:segments-131-131",
+          "profile_source_version": "v009_20260806_215232_433234_manual",
+          "profile_strategy": "RECOVERY_PROFILE_1",
+          "segment_completion_index": 131,
+          "servo_targets_deg": [
+            0.5,
+            1.4,
+            1.6,
+            2.5,
+            0.5,
+            -0.7,
+            -1.6,
+            -1.8
+          ],
+          "source_action_identity": "ca624241ac14818a120f50449ec646434b9f013631de030321ec0dd34c10475b",
+          "source_action_index": 131,
+          "source_action_row_sha256": "6be5f6fc9848a5f8cb93e8787057733fd5372b26f05ca08d7e8c1cae25326738",
+          "source_event_indices": [
+            1
+          ],
+          "source_plan_payload_sha256": "958ac2894ff923867bb12133247996bfab209cfbf1d8d3e127be5f5f182549cc",
+          "source_plan_sha256": "f6c6934f631a01f906280ede55b8eec7fef8a37cf45242d970ef5e5285ff4c12",
+          "source_segment_index": 131,
+          "source_step_id": "step_023_recorded_height_050mm_dur_39.87s",
+          "source_step_index": 23,
+          "source_time_s": 0.0,
+          "subphase": "RECOVERY",
+          "wheel_targets_rad_s": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "source_version": "v009_20260806_215232_433234_manual",
+        "telemetry_latency_physics_steps": 7,
+        "telemetry_relation_to_entry": "FIRST_POST_ENTRY_TELEMETRY_OBSERVATION",
+        "telemetry_row_index": 1336,
+        "telemetry_row_sha256": "552acaf777bb5e5d81ef6b222f3d746708052a4ee925312920a4dc1b56b7926d"
+      }
+    ],
+    "joint_order": {
+      "all": [
+        "front_left_hip",
+        "front_left_knee",
+        "front_right_hip",
+        "front_right_knee",
+        "rear_left_hip",
+        "rear_left_knee",
+        "rear_right_hip",
+        "rear_right_knee",
+        "front_left_ankle",
+        "front_right_ankle",
+        "rear_left_ankle",
+        "rear_right_ankle"
+      ],
+      "servo": [
+        "front_left_hip",
+        "front_left_knee",
+        "front_right_hip",
+        "front_right_knee",
+        "rear_left_hip",
+        "rear_left_knee",
+        "rear_right_hip",
+        "rear_right_knee"
+      ],
+      "wheel": [
+        "front_left_ankle",
+        "front_right_ankle",
+        "rear_left_ankle",
+        "rear_right_ankle"
+      ]
+    },
+    "obstacle_identity": {
+      "bottom_z_m": 0.0,
+      "center_x_m": 1.5499999523162842,
+      "center_y_m": 0.0,
+      "env_namespace_token": "{ENV_REGEX_NS}",
+      "front_face_x_m": 0.5213121737735307,
+      "height_m": 0.05,
+      "identity_sha256": "85b107bb31b64c5aa813b65a915a7c2ee6a7bb59b511563b51980c53b5285bea",
+      "length_m": 2.057375557085507,
+      "prim_path": "{ENV_REGEX_NS}/Obstacle",
+      "rear_face_x_m": 2.5786877308590377,
+      "schema_version": "fsm50.formal_obstacle_identity.v1",
+      "top_z_m": 0.05,
+      "width_m": 2.0
+    },
+    "phase_states": [
+      "S5_PRE_RR_COM_SHIFT",
+      "S7_PRE_RL_SUPPORT_SETUP",
+      "S8_RL_COM_SHIFT_AND_TRAVERSE",
+      "S10_POSTURE_RECOVERY"
+    ],
+    "selection_policy": "FIRST_TELEMETRY_ROW_AT_OR_AFTER_STATE_ENTRY",
+    "source_bindings": [
+      {
+        "artifacts": {
+          "completion": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/macro_segment_completion_ledger.jsonl",
+            "sha256": "046704d92da8728e1c6a4791f7855d11922b99ecea4d30f9a67d53596a618a1a"
+          },
+          "manifest": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/macro_fsm_runner_manifest.json",
+            "sha256": "e4f74586cda839724ae070473e1dfd34704e1750d44e9129751ec0e6d12fb499"
+          },
+          "request": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/worker_macro_fsm_request.json",
+            "sha256": "56279c4739378a055ea29d6457202c383623ab24d51bf4b663bd09cd45f932ce"
+          },
+          "result": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/worker_macro_fsm_result.json",
+            "sha256": "dc7dd6d4e08d82ad82e5eab847194c25342a6cab72d6df7e4ae0cae75d5daa30"
+          },
+          "source": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/macro_source_action_consumption.jsonl",
+            "sha256": "41c3907d79dd429cb5e3831ac4bbc9725288be8ee3be8a950746c6c28ad0eb6a"
+          },
+          "telemetry": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/minimal_macro_telemetry.jsonl",
+            "sha256": "72e2bedc991c455e318865aa92f2b62e14a1ff042b93fa54bc622915d2c805ea"
+          },
+          "transition": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/macro_transition_evidence.jsonl",
+            "sha256": "c3424f4b67b43ce34e9c923231758300b81f35b651cba9bd86d777b4dd05bca9"
+          },
+          "verdict": {
+            "path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438/manual_macro_video_verdict.json",
+            "sha256": "63141b536216b8aac1c123df13db3eb39392d00ac3a6a808b481f023235f1782"
+          }
+        },
+        "binding_sha256": "19df91d68305cc907d69580231be3d44ed85e7f3adf80de394df03fd92d4df99",
+        "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+        "expected_segment_completion_count": 112,
+        "expected_source_action_count": 112,
+        "graph_id": "fsm50-recording-derived-macro-v1",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "manual_review_status": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "profile_library_id": "fsm50-gate-c-successful-recording-profiles-v1",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "request_id": "be0dbf299aad417fb80435d10cd3fad2",
+        "reviewed_utc": "2026-08-15T11:08:43.0273751Z",
+        "run_relative_path": "runs/v003_macro_fsm_completion_aware_coalesced_r4/v003_20260805_224517_157723_manual/baseline/20260815T105857_601132Z_baseline_00_5742cda6e438",
+        "source_version": "v003_20260805_224517_157723_manual",
+        "trial_index": 0,
+        "trial_kind": "baseline"
+      },
+      {
+        "artifacts": {
+          "completion": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/macro_segment_completion_ledger.jsonl",
+            "sha256": "c34bc3b14c37d6d59396f26a9e454d484b53314db17c2f80518b95c03157483c"
+          },
+          "manifest": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/macro_fsm_runner_manifest.json",
+            "sha256": "7108c69d9f03a843a19405114a61c696616d068e5e05e8f7dc4c4d1d68ef619e"
+          },
+          "request": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/worker_macro_fsm_request.json",
+            "sha256": "50db1315559ca58b9949e9dbaea4b31e09fba9c8e5647bfa19dd0afd472ce8a8"
+          },
+          "result": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/worker_macro_fsm_result.json",
+            "sha256": "332ba356dbf2d52d271bed991509d9f9378a6aec9898df035bda7a96725abbc9"
+          },
+          "source": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/macro_source_action_consumption.jsonl",
+            "sha256": "e70a39b4948bfec60705885cd49a83753b01c3b0272ffd195f0323557afc9620"
+          },
+          "telemetry": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/minimal_macro_telemetry.jsonl",
+            "sha256": "fe6092d5abf2189b39ca16b40886c966e25376e8a783b25d0f54c9f6d8a0859e"
+          },
+          "transition": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/macro_transition_evidence.jsonl",
+            "sha256": "cb497ac87ceb241c0bb72dfb66afa4e3f6c4bf56816c383a14015966c8959674"
+          },
+          "verdict": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb/manual_macro_video_verdict.json",
+            "sha256": "05721928e11a83708bb542538a5c06884fd47023d9353a614d73900ab05095b1"
+          }
+        },
+        "binding_sha256": "890c9f8d6875867d4480b34edc679c656c3e387f400d9c2ffcd5e7dc170ba569",
+        "bundle_sha256": "0a47cee05cbb41a3a09b23836386bddcf9ae1ab2aca5bbe451ee20a0cbaa8c41",
+        "expected_segment_completion_count": 119,
+        "expected_source_action_count": 119,
+        "graph_id": "fsm50-recording-derived-macro-v1",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "manual_review_status": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "profile_library_id": "fsm50-gate-c-successful-recording-profiles-v1",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "request_id": "e09470b4ce5e4c2bb8f49d47c393b91e",
+        "reviewed_utc": "2026-08-15T11:41:17.2315581Z",
+        "run_relative_path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v008_20260806_211408_578700_manual/trials/20260815T113449_254770Z_cross_version_00_0a47cee05cbb",
+        "source_version": "v008_20260806_211408_578700_manual",
+        "trial_index": 0,
+        "trial_kind": "cross_version"
+      },
+      {
+        "artifacts": {
+          "completion": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/macro_segment_completion_ledger.jsonl",
+            "sha256": "a29f4961dc73524a7b163695bedeaf0f0049dc9a0b937cd6a4f06512ab5e4357"
+          },
+          "manifest": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/macro_fsm_runner_manifest.json",
+            "sha256": "e46d6d06fb02ce967c911b93f14a8fdfed4b7bef13a41a4b0f66bfd3df000691"
+          },
+          "request": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/worker_macro_fsm_request.json",
+            "sha256": "54c935fb20aa2e80a3b5fc9f971844682ebdc9eb33263a139d0456e5e6915002"
+          },
+          "result": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/worker_macro_fsm_result.json",
+            "sha256": "64c3ad74ae5248a0371344a9f166db00f0c5eb7ca0e3461fe985573de697ba0f"
+          },
+          "source": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/macro_source_action_consumption.jsonl",
+            "sha256": "9017275f103d53fddd6653aae33da1f3a34f985ac7d455ee390184ec1a6aff47"
+          },
+          "telemetry": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/minimal_macro_telemetry.jsonl",
+            "sha256": "d54addcd284719ced25a64d534d090bca728b8cbcad40bb17af2d24e1f26c962"
+          },
+          "transition": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/macro_transition_evidence.jsonl",
+            "sha256": "8470d9a351572575807712c46daaf30d4d75e3b2f4134ad778efd30fd6d224f0"
+          },
+          "verdict": {
+            "path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed/manual_macro_video_verdict.json",
+            "sha256": "1fe1e673b44b812a10698d043554f8c761695699f289fb3da1741fb317daaa93"
+          }
+        },
+        "binding_sha256": "8f079554bb87eaf0ee41ef33b02d59e0725a4dda58abccc457d5f12b4af2d161",
+        "bundle_sha256": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919",
+        "expected_segment_completion_count": 132,
+        "expected_source_action_count": 132,
+        "graph_id": "fsm50-recording-derived-macro-v1",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "manual_review_status": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "profile_library_id": "fsm50-gate-c-successful-recording-profiles-v1",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "request_id": "289876a6de16490fa63a28ced73da4fe",
+        "reviewed_utc": "2026-08-15T11:48:48.0978190Z",
+        "run_relative_path": "runs/cross_version_macro_fsm_completion_aware_coalesced_r4/v009_20260806_215232_433234_manual/trials/20260815T114309_706871Z_cross_version_00_0e5686354eed",
+        "source_version": "v009_20260806_215232_433234_manual",
+        "trial_index": 0,
+        "trial_kind": "cross_version"
+      }
+    ],
+    "source_versions": [
+      "v003_20260805_224517_157723_manual",
+      "v008_20260806_211408_578700_manual",
+      "v009_20260806_215232_433234_manual"
+    ]
+  },
+  "schema_version": "fsm50.phase_entry_bank.v1"
+}

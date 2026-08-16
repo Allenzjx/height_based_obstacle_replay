@@ -1,0 +1,22 @@
+{
+  "accepted_steps_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\saved_height_steps_fsm_reference_v2\\height_050mm\\versions\\v007_20260806_190636_100857_manual\\accepted_steps.jsonl",
+  "accepted_steps_sha256": "95d14e0a7babfff79f88fddb271b02107e3afc6d6ab1046bd060a707f73cacb6",
+  "capture_video": true,
+  "enabled": true,
+  "execution_mode": "normal_development",
+  "filtered_contact_bank_enabled": false,
+  "height_mm": 50,
+  "plan_event_count": 119,
+  "plan_id": "fsm50-task-v007-a7e57fa9d0a7",
+  "plan_segment_count": 92,
+  "plan_sha256": "1ac372f238ad10055b116c49aab0bb2a220ab68bd86708169dac950220a14898",
+  "post_run_settle_s": 0.5,
+  "request_id": "4e29c8fb21cc4e39a048187e7b05bd0e",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v007_20260806_190636_100857_manual\\20260815T001310_080566Z_production_fast_2f82878ac6",
+  "schema_version": "fsm50.worker_task_replay_request.v1",
+  "source_version": "v007_20260806_190636_100857_manual",
+  "step_count": 21,
+  "telemetry_hz": 15.0,
+  "timeout_s": 104.65066666563058,
+  "video_fps": 15.0
+}

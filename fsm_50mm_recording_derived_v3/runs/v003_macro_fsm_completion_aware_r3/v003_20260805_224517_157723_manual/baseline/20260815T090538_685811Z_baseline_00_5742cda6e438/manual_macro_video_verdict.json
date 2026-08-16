@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+  "request_id": "affdb695c68d467db30da1722e73e607",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T09:23:31.1123078Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_r3\\v003_20260805_224517_157723_manual\\baseline\\20260815T090538_685811Z_baseline_00_5742cda6e438",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_r3\\v003_20260805_224517_157723_manual\\baseline\\20260815T090538_685811Z_baseline_00_5742cda6e438\\macro_task_inputs.json",
+  "task_inputs_sha256": "9fc20642fbd30b51e017505909a02467072ab6101acbc0035e7b302334b82406",
+  "verdict": {
+    "body_crossed_front_face": true,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": true,
+    "joint_limit_violation": false,
+    "notes": "Full 1,359-frame decode (1280x720 at 15 fps) reviewed against the SHA-bound frame ledger. FR, FL, RR, and RL visibly lift before crossing the obstacle front face and subsequently reach the top; no wheel-only drive-up, fall, stuck body, dangerous body collision, severe penetration, or visible joint-limit violation was observed. The body clears the front face. The final frame is recoverable but posture-incomplete: FL remains unloaded/AIR while FR, RL, and RR are TOP-supported.",
+    "posture_incomplete": true,
+    "required_leg_lift_completed": true,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": true,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_r3\\v003_20260805_224517_157723_manual\\baseline\\20260815T090538_685811Z_baseline_00_5742cda6e438\\actual_viewport_video.mp4",
+  "video_sha256": "5a695bf35f929ac568243bbee8305657494bb30d546c666b170a369221b79b81",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_r3\\v003_20260805_224517_157723_manual\\baseline\\20260815T090538_685811Z_baseline_00_5742cda6e438\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "271cafbfdcf994c962d56f32a1b92ca2822784e592d833dcf1e0e662dbbb0c62"
+}

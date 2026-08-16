@@ -1,0 +1,452 @@
+{
+  "payload": {
+    "action_dim": 12,
+    "actor_observation_dim": 115,
+    "authority_identity": {
+      "action_dim": 12,
+      "actor_observation_dim": 115,
+      "actor_observation_schema_sha256": "6552a6cad5358f36ef4d60b0291658951c4a3901203e3943fd8770e5605bdb83",
+      "bundle_sha256_by_source": {
+        "v003_20260805_224517_157723_manual": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+        "v008_20260806_211408_578700_manual": "0a47cee05cbb41a3a09b23836386bddcf9ae1ab2aca5bbe451ee20a0cbaa8c41",
+        "v009_20260806_215232_433234_manual": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919"
+      },
+      "code_sha256": {
+        "fsm50_direct_command_residual.py": "169fde5d2ba656d0f1ea1aa3a504d2347dcc8b3151d9160fa9ec6bee7e8b54eb",
+        "fsm50_phase_entry_bank.py": "0dc8814b6c565a2d257ff3ab49fc7f372bf2ffc317cff99db60801836159992c",
+        "fsm50_residual_env.py": "3dde9bd36b1bf584cb7cbc62560a894cc9bd9b93ad9f839562a7470b8671da44",
+        "fsm50_residual_envelope.py": "cf13ea71a1aa75d1770f2324faf87a67572f1630a7a4956bdf8641daa6bda2ae",
+        "fsm50_residual_eval.py": "9698f91267cb198fa96239a96b1f5e12fc449cbafb9412d38b9360ceb0d17126",
+        "fsm50_residual_models.py": "7457b8280f9aabcf907b3ad348dfbe24068a3f6d43326c5a311f7d2f07037de3",
+        "fsm50_residual_observation.py": "1a01fc8c1e9d1d89ddd2c4368c36db13be8e0572cf4533cb91aedfc6e24d80f2",
+        "fsm50_residual_outer_cycle.py": "07f2a34e323cf09414a3fe4468733eaab10fb93cc8af190bcc309417b5dc86ce",
+        "fsm50_residual_reward.py": "3bc444fbd019f596569fdbb0af5e0b49adff577c06957dd6c89d1e2522bd0a45",
+        "fsm50_residual_runner.py": "b253d22c9647537a0c9c31e3bc27ac436a76e65fe52f145c36d97d8b4daf47db",
+        "fsm50_residual_scene.py": "76d1117f2ad780226e4b24421d79a76af5efcb0178c3800a78318ebf594390c0",
+        "play_fsm50_residual_ppo.py": "18b81fd195a48ba9a5e37090c94d192184a02b7252196dcf86375a568cfbc342",
+        "train_fsm50_residual_ppo.py": "ac4baee02a311f3550fc874ab3b0fbaa91b2f8a785620c38da49d1ac9aae8e82"
+      },
+      "critic_state_dim": 115,
+      "direct_command_core_sha256": "169fde5d2ba656d0f1ea1aa3a504d2347dcc8b3151d9160fa9ec6bee7e8b54eb",
+      "envelope_canonical_sha256": "fa5002690737d94fab7304f40044293da46de34cd197af19f3f1140047ae7fbe",
+      "envelope_config_file_sha256": "ba1f3f417eede01beca226b402227c216e7211cba0bc6c89f7ebb69626ed3037",
+      "envelope_config_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\configs\\fsm50_residual_r1_envelope.json",
+      "environment_code_sha256": "3dde9bd36b1bf584cb7cbc62560a894cc9bd9b93ad9f839562a7470b8671da44",
+      "episode_metrics_schema_sha256": "1968b9c6f93e1de8e5d6cc7a9453aebb7d74853194991bc7509051608ee59151",
+      "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+      "identity_sha256": "082bf69cb1b69421f988ef658e94aa8171b1b74128848fcdaa4fdd093191f50c",
+      "model_code_sha256": "7457b8280f9aabcf907b3ad348dfbe24068a3f6d43326c5a311f7d2f07037de3",
+      "package_identity": {
+        "identity_sha256": "6f82cc29512b93896c9a5143b073a953de239dd5f160bf92d7a079ef3330910d",
+        "packages": {
+          "gymnasium": {
+            "metadata_sha256": "be5a7ac39e5fbc0123f071b611f1de47cfcd1c771eecc3a2b35526983bea97db",
+            "record_sha256": "59f6d111ffff287043f90f67c8dcfa591b2319135b494ba6a79a740c4922590e",
+            "version": "1.2.1"
+          },
+          "isaaclab": {
+            "metadata_sha256": "6b6f3b71596753d35c327f5ff1dd056774a8b5d4f9dd525f578ffd99da5b2bfe",
+            "record_sha256": "8ce0bd438e4261659752935ace98ad2976bf87c2bf127a82dccbb0162abcf04b",
+            "version": "0.54.3"
+          },
+          "isaaclab_assets": {
+            "metadata_sha256": "207123ea9f27886f82d64023600a3e4f5c7debcbbf6a2f3aea2920e679a35d2e",
+            "record_sha256": "fad89d4ee6e03955c4fd2219cea529c0d667f0513ca8455c7e96c9d1144ba04f",
+            "version": "0.2.4"
+          },
+          "isaaclab_rl": {
+            "metadata_sha256": "f735780d747e3bce1b30f5357c5d82f09aac35910110f7b7432d8bfbe6e485cf",
+            "record_sha256": "c57f737eb8dfbec10f3fa35667b111d6a791708e18af3aa27d252ebc7736a907",
+            "version": "0.5.1"
+          },
+          "isaaclab_tasks": {
+            "metadata_sha256": "8ae26ed61d81fbbbea38c06f1b4b0fd35a904f5e7f1244d60bc1a6d1aef0e610",
+            "record_sha256": "cff5c58ea22f3089bcaac867751220ba57a177e721df5d87d081d25877fdef8e",
+            "version": "0.11.16"
+          },
+          "isaacsim": {
+            "metadata_sha256": "62886aa8eed75cdd927a5865055e4cf957b271a623f9c1c74e1cbcb51a84a7b9",
+            "record_sha256": "4d75b381624d8b01d400db24aab52ff5860f0116ab1508b9a7724850c1cc87ca",
+            "version": "5.1.0.0"
+          },
+          "numpy": {
+            "metadata_sha256": "c0dcd8951914d2310fa1033d67acd56270cf8932cb0f7ce8a576efce57f262e6",
+            "record_sha256": "e67338b8f1c280a940b7c16e51c28461d03eadfd1b6d29a8bf1be508e5908aac",
+            "version": "1.26.0"
+          },
+          "skrl": {
+            "metadata_sha256": "a3cb36badf2ad0944a1ca971b6f6c6d10d2c5c084cc68bdb4b63f40d5bb7ffc0",
+            "record_sha256": "95e0b59552892fd357457cddb0d2abbfb228363d4db7ee25c8c64dcc9840be2b",
+            "version": "2.0.0"
+          },
+          "torch": {
+            "metadata_sha256": "96682ab84dc9c34e549b72d8fae94e1df030d398e72fd3197c12538e75b23e80",
+            "record_sha256": "180c9a9cfd2a1ad5b45e90f089f85f40a41b62347df1adb350f3dfdee8065cce",
+            "version": "2.7.0+cu128"
+          }
+        }
+      },
+      "phase_bank_file_sha256": "d8c7a5ccde107874314216d6805ecbc1dafc8b2e3e3f45e4e8b91d64f75c3e5e",
+      "phase_bank_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\configs\\fsm50_phase_entry_bank.json",
+      "phase_bank_sha256": "46cfd697d130225478e87a7bf890285e682ca455b172d424ef6c04f3c33d8177",
+      "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+      "residual_authority": {
+        "legacy_checkpoint_allowed": false,
+        "normalized_action_order": "canonical_servo8_then_wheel4",
+        "sole_composer": "fsm50_direct_command_residual.compose_direct_command_residual",
+        "stage": "R1",
+        "v010_execution_allowed": false
+      },
+      "reviewed_r0_validator_code_sha256": "b253d22c9647537a0c9c31e3bc27ac436a76e65fe52f145c36d97d8b4daf47db",
+      "reward_code_sha256": "3bc444fbd019f596569fdbb0af5e0b49adff577c06957dd6c89d1e2522bd0a45",
+      "reward_schema_version": "fsm50.residual_reward.v1",
+      "scene_manifest": {
+        "camera": {
+          "eye_m": [
+            1.45,
+            -1.25,
+            0.8
+          ],
+          "target_m": [
+            0.45,
+            0.0,
+            0.12
+          ]
+        },
+        "direct_rl_decimation": 1,
+        "environment_profile_id": "height-obstacle-environment-v2",
+        "environment_reference_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\config\\environment_reference.yaml",
+        "environment_reference_sha256": "822c8e47d75de92e2165a99875a2de484425b25cf15e7404481b60cf05f81604",
+        "formal_scene_source_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\sim_obstacle_scene.py",
+        "formal_scene_source_sha256": "32747b6ee542614529b8f308bf8de09325cea1c70871b967704cb8fede93a745",
+        "ground": {
+          "color_rgb": [
+            0.08,
+            0.09,
+            0.1
+          ],
+          "material": {
+            "dynamic_friction": 1.05,
+            "friction_combine_mode": "max",
+            "restitution": 0.0,
+            "restitution_combine_mode": "min",
+            "static_friction": 1.25
+          },
+          "position_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "size_m": [
+            6.0,
+            6.0
+          ]
+        },
+        "ground_prim_path": "/World/defaultGroundPlane",
+        "lighting": {
+          "dome_color_rgb": [
+            0.85,
+            0.88,
+            0.95
+          ],
+          "dome_intensity": 2500.0,
+          "dome_prim_path": "/World/Light/Dome",
+          "key_angle": 0.35,
+          "key_color_rgb": [
+            1.0,
+            0.96,
+            0.9
+          ],
+          "key_intensity": 1800.0,
+          "key_position_m": [
+            1.5,
+            -2.0,
+            4.0
+          ],
+          "key_prim_path": "/World/Light/Key"
+        },
+        "obstacle_bottom_z_m": 0.0,
+        "obstacle_center_x_m": 1.5499999523162842,
+        "obstacle_center_y_m": 0.0,
+        "obstacle_front_x_m": 0.5213121737735307,
+        "obstacle_height_m": 0.05,
+        "obstacle_length_m": 2.057375557085507,
+        "obstacle_physics": {
+          "color_rgb": [
+            0.55,
+            0.47,
+            0.33
+          ],
+          "contact_offset_m": 0.005,
+          "disable_gravity": true,
+          "kinematic_enabled": true,
+          "material": {
+            "dynamic_friction": 1.0,
+            "friction_combine_mode": "max",
+            "restitution": 0.0,
+            "restitution_combine_mode": "min",
+            "static_friction": 1.2
+          },
+          "rest_offset_m": 0.0,
+          "semantic_tags": [
+            [
+              "class",
+              "height_obstacle"
+            ]
+          ]
+        },
+        "obstacle_position_m": [
+          1.5499999523162842,
+          0.0,
+          0.025
+        ],
+        "obstacle_prim_path": "{ENV_REGEX_NS}/Obstacle",
+        "obstacle_size_m": [
+          2.057375557085507,
+          2.0,
+          0.05
+        ],
+        "obstacle_width_m": 2.0,
+        "physics_dt_s": 0.008333333333333333,
+        "render_interval_physics_steps": 8,
+        "robot_collision_width_m": 0.44110036553592025,
+        "robot_physics": {
+          "contact_sensors_enabled": true,
+          "max_depenetration_velocity_m_s": 1.0,
+          "self_collisions_enabled": false,
+          "solver_position_iterations": 8,
+          "solver_velocity_iterations": 2,
+          "spawn_position_m": [
+            0.0,
+            0.0,
+            0.04
+          ],
+          "spawn_rotation_wxyz": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "robot_prim_path": "{ENV_REGEX_NS}/Robot",
+        "robot_usd_path": "C:\\robotics_sim\\wlr_robot\\usd\\wlr_robot_drive_test.usd",
+        "robot_usd_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+        "schema_version": "fsm50-formal-residual-scene-v1",
+        "servo_actuator": {
+          "armature": 0.005,
+          "damping_nm_s_rad": 60.0,
+          "effort_limit_nm": 2.7,
+          "stiffness_nm_rad": 600.0,
+          "velocity_limit_sim": null
+        },
+        "servo_joint_names": [
+          "front_left_hip",
+          "front_left_knee",
+          "front_right_hip",
+          "front_right_knee",
+          "rear_left_hip",
+          "rear_left_knee",
+          "rear_right_hip",
+          "rear_right_knee"
+        ],
+        "vector_scene": {
+          "clone_in_fabric": false,
+          "default_env_spacing_m": 3.5,
+          "default_num_envs": 1,
+          "replicate_physics": true
+        },
+        "wheel_actuator": {
+          "armature": 0.002,
+          "damping_nm_s_rad": 20.0,
+          "effort_limit_sim": null,
+          "stiffness": 0.0,
+          "velocity_limit_rad_s": 2.0943951023931953
+        },
+        "wheel_joint_names": [
+          "front_left_ankle",
+          "front_right_ankle",
+          "rear_left_ankle",
+          "rear_right_ankle"
+        ]
+      },
+      "scene_manifest_sha256": "af3e05b4294eebdfa14e1688187da89c82826941565f815f6c478a46715ee891",
+      "schema_version": "fsm50.residual_ppo_authority_identity.v1",
+      "stage_config": {
+        "config_sha256": "f84b927e181f532705e426516a836c1a304d64f0fce0bf1a61994bf33656b046",
+        "file_sha256": "8c9d3e3073777f8d57395cc2dc5c3accfde0a6b4dd28bfdd6ba7f141a0bc23fb",
+        "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\configs\\fsm50_residual_ppo_r1_smoke.json",
+        "stage": "R1"
+      }
+    },
+    "canonical_environment_lock": {
+      "environment_lock_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\reports\\environment_lock_50mm.json",
+      "environment_lock_sha256": "f2701ff4c87be5ff182c48e1e5c445ef182362207263f037288a20e0faaeda94",
+      "locked_source_file_count": 126,
+      "required_source_file_count": 126,
+      "source_closure_complete": true,
+      "source_verification_sha256": "4745c45d906f508a61de55838d048ba5aa884a3842bef74f087009fbd92bebe0"
+    },
+    "checkpoint_module_state_sha256": {
+      "observation_preprocessor": "ffe58c5e176fc21ffb7138b90531a0a3aaac03eadc5bc387832af7610ed829f9",
+      "policy": "eee5c7a7336b792c6ac5bf2c205bfe897b539a36bbf30b5e187ae4cc08924ecf",
+      "value": "ada6b43d509f456e677a378b9f4c06d76b50cdeacffed7af78e62a7e0aa24361",
+      "value_preprocessor": "ba16c57b9e6ec152896a5df5c502b455401df500a1440c0900f229bea1518638"
+    },
+    "checkpoint_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint.pt",
+    "checkpoint_sha256": "582df8517f26bd6c1820e54625621813882ca132964b20519ac26b989665d8a0",
+    "created_utc": "2026-08-15T23:12:52.390277Z",
+    "deterministic_evaluation_action": "mean_actions",
+    "legacy_checkpoint": false,
+    "normalization": {
+      "clip_threshold": 5.0,
+      "epsilon": 1e-08,
+      "observation": "RunningStandardScaler",
+      "state_embedded_in_checkpoint": true,
+      "value": "RunningStandardScaler"
+    },
+    "policy_kind": "PPO",
+    "ppo_training_performed": true,
+    "residual_authority": {
+      "legacy_checkpoint_allowed": false,
+      "normalized_action_order": "canonical_servo8_then_wheel4",
+      "sole_composer": "fsm50_direct_command_residual.compose_direct_command_residual",
+      "stage": "R1",
+      "v010_execution_allowed": false
+    },
+    "reviewed_r0_manifests": [
+      {
+        "base_request_id": "28885ea0bea44132ae04084c75c22604",
+        "base_task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\macro_task_inputs.json",
+        "base_task_inputs_sha256": "31874717fc8d051f7052905e5f20c00fc15bddd416c682942782437ebcd35895",
+        "base_worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\worker_macro_fsm_result.json",
+        "base_worker_result_sha256": "6de2dae598c6e05f4e1a5719afcf975920e812c3f8259ab5febc5f58801b3a49",
+        "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+        "canonical_environment_lock_sha256": "f2701ff4c87be5ff182c48e1e5c445ef182362207263f037288a20e0faaeda94",
+        "gate_c_closure_sha256": "800edbe4aa2feb47d690cd545222d77d5d032533553ad945c72794f727088a17",
+        "gate_e_code_identity_sha256": "d7db2ded30e1e71528dbd45f9834da2190460a2b1d4e1f34af6d9bcaea706521",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "macro_fsm_complete": true,
+        "manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\fsm50_residual_r0_manifest.json",
+        "manifest_sha256": "fd3c6cf3dcfa056c0207ea129d990e9f110f575c087ac1f24b03f8cd2e8aac7c",
+        "manual_review_classification": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_review_status": "ZERO_R0_REVIEWED_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_verdict_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\manual_zero_r0_video_verdict.json",
+        "manual_verdict_sha256": "6eaa647188517d1bb6d1f8969d866e7d190ba2730431c0916cc4dc873854fb37",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "reference_semantic_projection_sha256": "8e83b2eaa28ccf3a99723e2a9f4cf78c78b2ed8d9ca772a0848c90b6b2a4bcaf",
+        "request_id": "6832359758c6425ab44e60cbdab547cf",
+        "request_identity_sha256": "3b2576126f1d13973d4cc1b99d4ac3297545114f58c8d1ae63c8b465eec781ad",
+        "reviewed_success": true,
+        "reviewed_utc": "2026-08-15T21:03:41.222015Z",
+        "schema_version": "fsm50.reviewed_zero_r0_manifest_validation.v1",
+        "semantic_projection_equal": true,
+        "shutdown_verified": true,
+        "source_binding_sha256": "b52b770f971a86fff88e3c6b40488453cc1284e64e82d750ae1a7c3a395ea57b",
+        "source_version": "v003_20260805_224517_157723_manual",
+        "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\gate_e_residual_macro_task_inputs.json",
+        "task_inputs_sha256": "8d6a7e8eb26acdda52c13aa6fe886166565503d7ff419e5e6c0afdeae3df5700",
+        "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\actual_viewport_video.mp4",
+        "video_sha256": "74e230be1f98fc13ecefec1198208a18a3766e99e069b5da7d3f1adfc9c7be82",
+        "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v003_lockf270\\worker_residual_macro_fsm_result.json",
+        "worker_result_sha256": "37f3b86eabdf3a736018d0ecaea514a03281a8a71a51a4c600d5bc295788b0d9",
+        "zero_ledger_validation_sha256": "ee67e68409664f86490b30c6cfce4a0b07cf1804e49c5b0997078fa8df6e21e4"
+      },
+      {
+        "base_request_id": "e2443ae4ce614b0fb768503f1337e6ec",
+        "base_task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\macro_task_inputs.json",
+        "base_task_inputs_sha256": "b5330513ce15d1fa68aaf38d03c73884bd8964af64c5ac24dc41972c2bef00d3",
+        "base_worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\worker_macro_fsm_result.json",
+        "base_worker_result_sha256": "9af6c601687f3acd3e4dea76d30ed2342eaf78ae621a9990b0e3d09808c8052e",
+        "bundle_sha256": "0a47cee05cbb41a3a09b23836386bddcf9ae1ab2aca5bbe451ee20a0cbaa8c41",
+        "canonical_environment_lock_sha256": "f2701ff4c87be5ff182c48e1e5c445ef182362207263f037288a20e0faaeda94",
+        "gate_c_closure_sha256": "800edbe4aa2feb47d690cd545222d77d5d032533553ad945c72794f727088a17",
+        "gate_e_code_identity_sha256": "d7db2ded30e1e71528dbd45f9834da2190460a2b1d4e1f34af6d9bcaea706521",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "macro_fsm_complete": true,
+        "manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\fsm50_residual_r0_manifest.json",
+        "manifest_sha256": "bb8928a9f081b67e5744f6f82354591dd82baf6a7e6765e58cb681b452c9b255",
+        "manual_review_classification": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_review_status": "ZERO_R0_REVIEWED_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_verdict_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\manual_zero_r0_video_verdict.json",
+        "manual_verdict_sha256": "e950c57facc8f7dc6c2c750f17b43fbfe00132622b539e7aeed5cd8839fcf37d",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "reference_semantic_projection_sha256": "8ef13553ee982f447d0f6adcf236c38f907b7a0d039f909b91e5f10526a93215",
+        "request_id": "f669d56125864fb6a3fdea3d8e0555a1",
+        "request_identity_sha256": "3a361abda3b28a8dfb989d5c4c9ce9b35080043a8d8dc9b73da53a80d19801af",
+        "reviewed_success": true,
+        "reviewed_utc": "2026-08-15T21:17:02.888260Z",
+        "schema_version": "fsm50.reviewed_zero_r0_manifest_validation.v1",
+        "semantic_projection_equal": true,
+        "shutdown_verified": true,
+        "source_binding_sha256": "0dccfbdaa99fc0ef4004c732389a8c45065cb0f92234423a0a2ee0eed7995580",
+        "source_version": "v008_20260806_211408_578700_manual",
+        "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\gate_e_residual_macro_task_inputs.json",
+        "task_inputs_sha256": "0c425151c5793485f50f3df205bd38d1d3857fb898e05e73dcfb12cb02326b30",
+        "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\actual_viewport_video.mp4",
+        "video_sha256": "d7189fe84bdfb70904af7b0c9f0a9315bc4a712a89b20a69ab645e12768f465b",
+        "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v008_lockf270\\worker_residual_macro_fsm_result.json",
+        "worker_result_sha256": "7c4d8cda2f5cbb49fbffb11a560aad2f13d5022b7e071f70932e8ea2e63c47f3",
+        "zero_ledger_validation_sha256": "be1f6c2165260b43588fabbde67fe62c9fec5c01fa8041eb3fac3c6caf411bab"
+      },
+      {
+        "base_request_id": "7c19e7ba58094029916249b1817208d9",
+        "base_task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\macro_task_inputs.json",
+        "base_task_inputs_sha256": "461195515384676204965a8090e6d453e43d98e2d383cae93e5a992dfd0b6637",
+        "base_worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\worker_macro_fsm_result.json",
+        "base_worker_result_sha256": "f17902812b9fc3a7c571615728182ad7783e3c484116d7178ada6cba7e3c47da",
+        "bundle_sha256": "0e5686354eed7d89fb57d3aba722602eee7115b44749d531b6634dd0420ee919",
+        "canonical_environment_lock_sha256": "f2701ff4c87be5ff182c48e1e5c445ef182362207263f037288a20e0faaeda94",
+        "gate_c_closure_sha256": "800edbe4aa2feb47d690cd545222d77d5d032533553ad945c72794f727088a17",
+        "gate_e_code_identity_sha256": "d7db2ded30e1e71528dbd45f9834da2190460a2b1d4e1f34af6d9bcaea706521",
+        "graph_sha256": "ffa5acfbf64b65c22eee54709a2afae5a56fa0b9345d8db84eb86acac58447c5",
+        "macro_fsm_complete": true,
+        "manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\fsm50_residual_r0_manifest.json",
+        "manifest_sha256": "ce55a614af64e5f1be2a023ebef09a9aa5b3d9a06cd35d070973be97b976b536",
+        "manual_review_classification": "MACRO_FSM_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_review_status": "ZERO_R0_REVIEWED_TASK_SUCCESS_POSTURE_INCOMPLETE",
+        "manual_verdict_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\manual_zero_r0_video_verdict.json",
+        "manual_verdict_sha256": "74c99f040ea4a9bc7fb3330be3dd1127fd65b416d8307634e7366449df4e2cbf",
+        "profile_library_sha256": "762665911785eb755b7000fbb2cb450a52f5579f3945d8f214129f41eaa50066",
+        "reference_semantic_projection_sha256": "f142b8ffb7606deb9c9988dd2b08873c7889302ad0ca67168689c8cf995a1544",
+        "request_id": "2a110b1b5bca4975be86076907ff34d4",
+        "request_identity_sha256": "b07b55647ba425b88cc1d3424e3f25878601ba17827677fae6221bf801ade15f",
+        "reviewed_success": true,
+        "reviewed_utc": "2026-08-15T21:28:11.055748Z",
+        "schema_version": "fsm50.reviewed_zero_r0_manifest_validation.v1",
+        "semantic_projection_equal": true,
+        "shutdown_verified": true,
+        "source_binding_sha256": "a071a1aeb3ccb0e4af8503ccf6d3377242917f3978edc921475d60dd9e4054c8",
+        "source_version": "v009_20260806_215232_433234_manual",
+        "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\gate_e_residual_macro_task_inputs.json",
+        "task_inputs_sha256": "ef03776a86887d6abce06bec3460faebdc0e139c5021ebaf53fcb0ad4ec2a035",
+        "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\actual_viewport_video.mp4",
+        "video_sha256": "9ff6172b184ca6be84b6c7123098423a3f9b27f9edc1f9793a923cd71d900529",
+        "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r0_live_zero_v009_lockf270\\worker_residual_macro_fsm_result.json",
+        "worker_result_sha256": "6a887227e94e639a6b083f3fdad8de9846eb58f2cfa1f9a48a23ef37881318b5",
+        "zero_ledger_validation_sha256": "98f4ec5ecb9dffc60f8f47dce342a839f37a1c688efad6b5f5a6bfba76196aad"
+      }
+    ],
+    "seed": 20260815,
+    "source_split": {
+      "held_out": [
+        "v010_20260806_220745_363972_manual"
+      ],
+      "held_out_execution": "FORBIDDEN_FAILED_PROFILE_IDENTITY_ONLY",
+      "train": [
+        "v003_20260805_224517_157723_manual",
+        "v008_20260806_211408_578700_manual",
+        "v009_20260806_215232_433234_manual"
+      ]
+    },
+    "stage": "R1",
+    "stage_config": {
+      "config_sha256": "f84b927e181f532705e426516a836c1a304d64f0fce0bf1a61994bf33656b046",
+      "file_sha256": "8c9d3e3073777f8d57395cc2dc5c3accfde0a6b4dd28bfdd6ba7f141a0bc23fb",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\configs\\fsm50_residual_ppo_r1_smoke.json",
+      "stage": "R1"
+    },
+    "training_admission_sha256": "0a5ccb6955bd9b48eff65e50bbe4f524e65af67d2e6c7a037ce74c1755c2b349"
+  },
+  "payload_sha256": "ff8cb646f3a8868d52cbafc42aa3a5feec02b5ed9f60d0b681dbb45460a123e8",
+  "schema_version": "fsm50.residual_ppo_checkpoint_manifest.v1"
+}

@@ -2221,6 +2221,15 @@ class RunnerContractTests(unittest.TestCase):
         self.assertEqual(["gone.py"], result["missing"])
         self.assertEqual(["new.py"], result["added"])
 
+    def test_source_closure_includes_recursive_module_json_configs(self) -> None:
+        config_root = Path(run_fsm50_module.MODULE_ROOT) / "configs"
+        expected = {path.resolve() for path in config_root.rglob("*.json")}
+        self.assertEqual(3, len(expected))
+        self.assertTrue(
+            expected.issubset(set(run_fsm50_module._source_files())),
+            "every Gate-E JSON config must be sealed by the environment lock",
+        )
+
     def test_process_preflight_identifies_kit_and_sim_worker_only(self) -> None:
         rows = [
             {"pid": os.getpid(), "name": "python.exe", "command_line": "isaac-sim"},

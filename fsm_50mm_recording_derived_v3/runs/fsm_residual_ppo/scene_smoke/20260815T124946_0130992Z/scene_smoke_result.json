@@ -1,0 +1,139 @@
+{
+  "payload": {
+    "closure": {
+      "application_close_requested": true,
+      "simulation_context_cleared": true
+    },
+    "completed_utc": "2026-08-15T12:50:10.209839+00:00",
+    "error": null,
+    "motion_reference_sha256": "143bbb71fe50fcde22360901552f36b397b9d102bde21172213bf3a316333747",
+    "motion_speed_source_sha256": "5e41f5501b841ff7764ee6c2a9975afb256d6c121d22519ffc38842737b49421",
+    "request_file_sha256": "d55229d0650957d248c12f2f9421b5451e41e585e76032d4fbf93ab91834bcb4",
+    "request_id": "eb2a77ff97134632be904b27c084403d",
+    "request_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\scene_smoke\\20260815T124946_0130992Z\\scene_smoke_request.json",
+    "request_payload_sha256": "f23096796f91a048c53a5bc557567dccbde2ad40edf4cd287bb24dca3f264dde",
+    "robot_usd_sha256": "e8a2a2b1485a32a50e851a07b9dd8ac4945b78ec49b7fada2b61c3eeb1e18892",
+    "runtime": {
+      "actuation": {
+        "final_max_abs_standing_position_error_rad": 0.0031230782624334097,
+        "max_abs_servo_target_echo_error_rad": 0.0,
+        "max_abs_wheel_target_echo_error_rad_s": 0.0,
+        "max_delta_deg_per_physics_step": 1.25,
+        "rate_limit_probe_applied_deg": 1.25,
+        "rate_limit_probe_applied_to_robot": false,
+        "rate_limit_probe_requested_deg": 10.0,
+        "servo_reference_velocity_deg_s": 150.0,
+        "servo_target_write_count": 24,
+        "standing_target_verified_all_steps": true,
+        "target_echo_verified_all_steps": true,
+        "wheel_target_write_count": 24,
+        "zero_servo_command_verified": true,
+        "zero_wheel_command_verified": true
+      },
+      "collision_filter": {
+        "clone_called": true,
+        "copy_from_source": false,
+        "filter_called": true,
+        "global_collision_prim_paths": [
+          "/World/defaultGroundPlane"
+        ]
+      },
+      "device": "cuda:0",
+      "direct_rl_decimation": 1,
+      "env_spacing_m": 3.5,
+      "finite_state": {
+        "all_finite": true,
+        "max_abs_by_tensor": {
+          "environment_origin_m": 1.75,
+          "joint_position_rad": 0.025355452671647072,
+          "joint_velocity_rad_s": 2.9394636154174805,
+          "obstacle_position_m": 3.299999952316284,
+          "root_position_m": 1.7639546394348145,
+          "root_velocity": 2.5093324184417725,
+          "wheel_body_position_m": 2.055305242538452
+        },
+        "physics_frames_checked": 24
+      },
+      "num_envs": 2,
+      "package_versions": {
+        "isaaclab": "0.54.3",
+        "isaacsim": "5.1.0.0",
+        "torch": "2.7.0+cu128"
+      },
+      "physics_dt_s": 0.008333333333333333,
+      "physics_steps_completed": 24,
+      "physics_steps_requested": 24,
+      "process_id": 13544,
+      "render_interval_physics_steps": 8,
+      "scene_env_prim_paths": [
+        "/World/envs/env_0",
+        "/World/envs/env_1"
+      ],
+      "scene_prim_validation": {
+        "all_expected_prims_valid": true,
+        "collision_filter_prim": true,
+        "ground": true,
+        "per_environment": {
+          "/World/envs/env_0": {
+            "obstacle": true,
+            "robot": true
+          },
+          "/World/envs/env_1": {
+            "obstacle": true,
+            "robot": true
+          }
+        }
+      },
+      "servo_joint_ids": [
+        0,
+        4,
+        1,
+        5,
+        2,
+        6,
+        3,
+        7
+      ],
+      "servo_joint_names": [
+        "front_left_hip",
+        "front_left_knee",
+        "front_right_hip",
+        "front_right_knee",
+        "rear_left_hip",
+        "rear_left_knee",
+        "rear_right_hip",
+        "rear_right_knee"
+      ],
+      "wheel_body_ids": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "wheel_body_names": [
+        "front_left_wheel",
+        "front_right_wheel",
+        "rear_left_wheel",
+        "rear_right_wheel"
+      ],
+      "wheel_joint_ids": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "wheel_joint_names": [
+        "front_left_ankle",
+        "front_right_ankle",
+        "rear_left_ankle",
+        "rear_right_ankle"
+      ]
+    },
+    "scene_manifest_sha256": "af3e05b4294eebdfa14e1688187da89c82826941565f815f6c478a46715ee891",
+    "scene_source_sha256": "76d1117f2ad780226e4b24421d79a76af5efcb0178c3800a78318ebf594390c0",
+    "smoke_source_sha256": "b86f1c985fc92df22504d9971082b4edb07f9263a7b1496886a2c30ba7d14b2c",
+    "status": "PASS"
+  },
+  "payload_sha256": "2993be741c2ae0190e987294cfe290e94aa4fae1168fd39bc92315ea63523f3d",
+  "schema_version": "fsm50-residual-scene-smoke-result-v1"
+}

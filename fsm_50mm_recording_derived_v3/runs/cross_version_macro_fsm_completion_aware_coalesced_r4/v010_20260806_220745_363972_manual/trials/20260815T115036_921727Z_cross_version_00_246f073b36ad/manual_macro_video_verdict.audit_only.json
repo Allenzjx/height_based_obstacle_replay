@@ -1,0 +1,29 @@
+{
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "review_complete": true,
+  "source_version": "v010_20260806_220745_363972_manual",
+  "request_id": "73664f93fc1d4042a24b30554db986f7",
+  "bundle_sha256": "246f073b36adda9e23ab325133c7aafea6ccd9cfaa983b33e83af011e071e396",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v010_20260806_220745_363972_manual\\trials\\20260815T115036_921727Z_cross_version_00_246f073b36ad",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v010_20260806_220745_363972_manual\\trials\\20260815T115036_921727Z_cross_version_00_246f073b36ad\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "cc23ed2dce0da87e3d431c442ce114434b8151913f256dd114204047cc51edab",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v010_20260806_220745_363972_manual\\trials\\20260815T115036_921727Z_cross_version_00_246f073b36ad\\macro_task_inputs.json",
+  "task_inputs_sha256": "bcded2c863e1a5f150dbc882b8863f009e3662d497f01aebbe0cf50ca7bea2ae",
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\cross_version_macro_fsm_completion_aware_coalesced_r4\\v010_20260806_220745_363972_manual\\trials\\20260815T115036_921727Z_cross_version_00_246f073b36ad\\actual_viewport_video.mp4",
+  "video_sha256": "72e75e1868c0948458e366a243efdba854286b13134bbf928c50a498cfc20ebe",
+  "reviewed_utc": "2026-08-15T11:56:06.0000405Z",
+  "verdict": {
+    "body_crossed_front_face": false,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": false,
+    "joint_limit_violation": false,
+    "notes": "AUDIT ONLY: this run is machine NOT_ELIGIBLE and cannot be promoted. Independent SHA-bound full decode of 916/916 frames (no decode failures) plus dense full-timeline, executed-phase, safe-stop, and final-window inspection: FR and FL visibly lift and cross; FR reaches TOP and FL reaches the top region but remains airborne in the safe-stop pose. The controller enters SAFE_STOP in S5_PRE_RR_COM_SHIFT after completion-helper actuator_unstable:hard_liveness_in_motion; RR and RL never execute lift->cross->TOP, the body never crosses the obstacle front face, and the task is genuinely incomplete. The terminal pose remains upright on a three-point support pattern (FR TOP, FL AIR, RL/RR GROUND) without visible fall, body jam, dangerous collision, severe penetration, joint-limit violation, or wheel drive-up without required lift, but it is not a qualifying recoverable completed-task posture.",
+    "posture_incomplete": true,
+    "required_leg_lift_completed": false,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": false,
+    "wheel_drive_up_without_required_lift": false
+  }
+}

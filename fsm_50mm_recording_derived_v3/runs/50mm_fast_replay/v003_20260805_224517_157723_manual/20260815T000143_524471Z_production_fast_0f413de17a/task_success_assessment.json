@@ -1,0 +1,38 @@
+{
+  "body_crossed_front_face": true,
+  "classification_reasons": [
+    "task core complete: dispatch, crossing, required lifting, recoverability, and hard-safety checks passed",
+    "final posture or settling remains incomplete but recoverable"
+  ],
+  "evaluation_status": "EVALUATED",
+  "fast_segment_count": 112,
+  "final_recoverable": true,
+  "final_wheel_classes": {
+    "FL": "TOP",
+    "FR": "TOP",
+    "RL": "TOP",
+    "RR": "TOP"
+  },
+  "first_actual_failure_phase": "",
+  "hard_failure_reasons": [],
+  "not_evaluated_reasons": [],
+  "notes": [
+    "The complete 1364-frame active-viewport video was sequentially decoded and reviewed with dense timeline and crossing-window sheets.",
+    "FR, FL, RR, and RL each visibly lifted and crossed the obstacle front face; the body subsequently crossed and remained on the top surface.",
+    "No fall, sustained body stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible.",
+    "The final stance is upright and recoverable with all wheel centers in the geometric TOP region, but it remains asymmetric/non-neutral and final_velocity_stable is false, so posture recovery is incomplete."
+  ],
+  "peak_pitch": 0.14711103241348847,
+  "peak_roll": 0.178786352092263,
+  "posture_result": "POSTURE_INCOMPLETE",
+  "required_leg_lift_completed": true,
+  "secondary_diagnostics": [
+    "SECONDARY_DIAGNOSTIC_UNAVAILABLE:physical_evidence.final_all_loaded",
+    "STRICT_REST_INCOMPLETE",
+    "MANUAL_VIDEO_POSTURE_INCOMPLETE"
+  ],
+  "step_count": 24,
+  "task_result": "REPLAY_TASK_SUCCESS_POSTURE_INCOMPLETE",
+  "version": "v003_20260805_224517_157723_manual",
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\actual_viewport_video.mp4"
+}

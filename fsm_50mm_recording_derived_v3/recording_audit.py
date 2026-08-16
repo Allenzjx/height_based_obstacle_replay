@@ -280,6 +280,9 @@ class RecordingAudit:
         )
         source_candidates.extend(sorted(MODULE_ROOT.glob("*.py")))
         source_candidates.extend(sorted(MODULE_ROOT.glob("*.yaml")))
+        source_candidates.extend(
+            sorted((MODULE_ROOT / "configs").rglob("*.json"))
+        )
         source_hashes = {
             str(path.resolve()): sha256_file(path)
             for path in sorted({path.resolve() for path in source_candidates})

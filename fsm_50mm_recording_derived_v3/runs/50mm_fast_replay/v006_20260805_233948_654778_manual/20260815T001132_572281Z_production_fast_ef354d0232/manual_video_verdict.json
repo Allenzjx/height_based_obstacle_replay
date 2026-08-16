@@ -1,0 +1,33 @@
+{
+  "plan_id": "fsm50-task-v006-bc554464c603",
+  "request_id": "873e014c07844479be09a9e3b540f5e3",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T00:27:00.0000000Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v006_20260805_233948_654778_manual\\20260815T001132_572281Z_production_fast_ef354d0232",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v006_20260805_233948_654778_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v006_20260805_233948_654778_manual\\20260815T001132_572281Z_production_fast_ef354d0232\\classifier_inputs.json",
+  "task_inputs_sha256": "71a74f4d51a07b4a0925a25354e6212d1fde97e8b097466022602aa15d47e394",
+  "verdict": {
+    "body_crossed_front_face": false,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": false,
+    "first_actual_failure_phase": "post-FL placement / pre-rear traversal at 55.7 s (source step 10, segment 37; rear_right_knee actuator_unstable)",
+    "irrecoverable": false,
+    "joint_limit_violation": false,
+    "notes": [
+      "All 848 sealed viewport frames decoded and were reviewed.",
+      "Both front legs reached TOP, but the rear legs remained on GROUND and the body did not cross before dispatch stopped.",
+      "The hard task failure is incomplete command execution after actuator_unstable; no fall, dangerous collision, severe penetration, wheel-only drive-up, or joint-limit-like pose was visible."
+    ],
+    "posture_incomplete": true,
+    "required_leg_lift_completed": false,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": false,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v006_20260805_233948_654778_manual\\20260815T001132_572281Z_production_fast_ef354d0232\\actual_viewport_video.mp4",
+  "video_sha256": "9ea3fc568badbb167a88a01ed7ef5ecddef6567af8d7f8d643a8adcdce54a9fe"
+}

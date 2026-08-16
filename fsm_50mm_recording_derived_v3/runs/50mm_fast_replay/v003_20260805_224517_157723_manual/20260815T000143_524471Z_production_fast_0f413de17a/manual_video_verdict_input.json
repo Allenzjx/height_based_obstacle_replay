@@ -1,0 +1,34 @@
+{
+  "plan_id": "fsm50-task-v003-5a27b306fc93",
+  "request_id": "3f3c42de76a24e04a6d17c6f03dbab0e",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T00:09:37.7659031Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\classifier_inputs.json",
+  "task_inputs_sha256": "90e0e2de63d70f0dcf62cc03e48db87407f9b9d83a817eb19f8e8d439f7347d1",
+  "verdict": {
+    "body_crossed_front_face": true,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": true,
+    "first_actual_failure_phase": "",
+    "irrecoverable": false,
+    "joint_limit_violation": false,
+    "notes": [
+      "The complete 1364-frame active-viewport video was sequentially decoded and reviewed with dense timeline and crossing-window sheets.",
+      "FR, FL, RR, and RL each visibly lifted and crossed the obstacle front face; the body subsequently crossed and remained on the top surface.",
+      "No fall, sustained body stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible.",
+      "The final stance is upright and recoverable with all wheel centers in the geometric TOP region, but it remains asymmetric/non-neutral and final_velocity_stable is false, so posture recovery is incomplete."
+    ],
+    "posture_incomplete": true,
+    "required_leg_lift_completed": true,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": true,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260815T000143_524471Z_production_fast_0f413de17a\\actual_viewport_video.mp4",
+  "video_sha256": "0031f043148db9a68170f31e19154203e99ce4e9337976d65a483b2653a8771b"
+}

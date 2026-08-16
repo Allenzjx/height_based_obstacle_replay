@@ -1,0 +1,34 @@
+{
+  "plan_id": "fsm50-task-v008-0db3016e50b9",
+  "request_id": "cffd3895e20e4369bbb1803ae0a0fb47",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T00:25:34.1703575Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v008_20260806_211408_578700_manual\\20260815T001450_326623Z_production_fast_c3ea3ae898",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v008_20260806_211408_578700_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v008_20260806_211408_578700_manual\\20260815T001450_326623Z_production_fast_c3ea3ae898\\classifier_inputs.json",
+  "task_inputs_sha256": "c5e7652dc0da11629866d307710099a5537815725905674b91124285c6b31714",
+  "verdict": {
+    "body_crossed_front_face": true,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": true,
+    "first_actual_failure_phase": "",
+    "irrecoverable": false,
+    "joint_limit_violation": false,
+    "notes": [
+      "The complete 1407-frame SHA-bound active-viewport video was sequentially decoded with no malformed frames and reviewed across the full trajectory.",
+      "FR, FL, RR, and RL each visibly lifted, crossed the obstacle front face, and reached the top; the body also crossed.",
+      "No fall, sustained stall, wheel-only drive-up, dangerous body collision, severe penetration, or joint-limit-like pose was visible.",
+      "The final all-top stance is upright, recoverable, level, and visually near-neutral; strict final velocity remains a secondary diagnostic."
+    ],
+    "posture_incomplete": false,
+    "required_leg_lift_completed": true,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": true,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v008_20260806_211408_578700_manual\\20260815T001450_326623Z_production_fast_c3ea3ae898\\actual_viewport_video.mp4",
+  "video_sha256": "7ee3c0eb019750843b183060c011572decd45995335bd507e29557fd74f06b5e"
+}

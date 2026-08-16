@@ -66,6 +66,13 @@ DISPATCH_TRACE_COLUMNS = (
     "macro_state_cursor",
 )
 
+_VOLATILE_PLAN_TIMING_KEYS = frozenset(
+    {
+        "plan_build_start",
+        "plan_build_end",
+    }
+)
+
 
 def _event_applied_wheel_targets(event: Any) -> dict[str, float]:
     """Map one sparse source wheel command to its compiled applied targets."""
@@ -652,6 +659,16 @@ def _json_cell(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def _stable_export_timing(timing: dict[str, Any]) -> dict[str, Any]:
+    """Retain planner semantics while omitting process-clock diagnostics."""
+
+    return {
+        key: value
+        for key, value in timing.items()
+        if key not in _VOLATILE_PLAN_TIMING_KEYS
+    }
+
+
 def write_fast_plan(
     *, output_dir: Path, source_version: str, steps: list[dict[str, Any]], max_wheel_speed: float
 ) -> dict[str, Any]:
@@ -674,7 +691,7 @@ def write_fast_plan(
         "event_count": len(plan.events),
         "segment_count": len(plan.segments),
         "final_time_s": float(plan.final_time_s),
-        "timing": plan.timing,
+        "timing": _stable_export_timing(plan.timing),
         "segments": rows,
     }
     json_path.write_text(

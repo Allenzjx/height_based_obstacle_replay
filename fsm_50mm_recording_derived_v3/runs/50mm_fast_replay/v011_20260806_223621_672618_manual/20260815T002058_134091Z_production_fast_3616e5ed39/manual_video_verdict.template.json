@@ -1,0 +1,29 @@
+{
+  "plan_id": "fsm50-task-v011-462f3324ac20",
+  "request_id": "cc68e21d486c4c688c71ad3bbdd391fb",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v011_20260806_223621_672618_manual\\20260815T002058_134091Z_production_fast_3616e5ed39",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v011_20260806_223621_672618_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v011_20260806_223621_672618_manual\\20260815T002058_134091Z_production_fast_3616e5ed39\\classifier_inputs.json",
+  "task_inputs_sha256": "d2d24be9a5b74be1510ac3a95eeef81d340e3b0e7e52c2097a468c2b406635f7",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "first_actual_failure_phase": "",
+    "irrecoverable": null,
+    "joint_limit_violation": null,
+    "notes": [],
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v011_20260806_223621_672618_manual\\20260815T002058_134091Z_production_fast_3616e5ed39\\actual_viewport_video.mp4",
+  "video_sha256": "0bb0c6f2c8a65ae10ebbd0e7085a744049a058b713b67745889e58be83493d6c"
+}

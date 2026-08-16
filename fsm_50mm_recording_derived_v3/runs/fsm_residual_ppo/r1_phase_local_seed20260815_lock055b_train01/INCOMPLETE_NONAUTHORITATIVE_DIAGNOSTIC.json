@@ -1,0 +1,32 @@
+{
+  "schema_version": "fsm50.r1_incomplete_nonauthoritative_diagnostic.v1",
+  "status": "INCOMPLETE_NONAUTHORITATIVE_DIAGNOSTIC",
+  "authoritative_training_result": false,
+  "evaluation_eligible": false,
+  "resume_eligible": false,
+  "interrupted_intentionally": true,
+  "recorded_utc": "2026-08-15T17:33:02.3288284Z",
+  "reason": "The frozen 2000000-step phase-local job stabilized near 1.53 trainer steps/s, implying roughly 360 hours of wall time. It was stopped with ordinary Ctrl-C after a bounded throughput measurement so it would not be misrepresented as a short live smoke.",
+  "environment_lock_sha256": "055bd2e3f30df39e7b02cb56bd0efd9b1649b24132fd2dc9f18aff94a17e7cf5",
+  "training_admission_sha256": "cf97dc387fca9dca3421bf51373d3b379972771dbdd9e5c53c0778afcc71e876",
+  "stage_config_canonical_sha256": "9df218c850a5c19862bca7197da3a200d3b5ec11f75eaba4b09b0e530e773e25",
+  "seed": 20260815,
+  "num_envs": 9,
+  "planned_trainer_steps": 2000000,
+  "last_observed_trainer_step": 541,
+  "observed_trainer_steps_per_second_approx": 1.53,
+  "estimated_full_wall_hours_approx": 360.0,
+  "checkpoint_present": false,
+  "checkpoint_manifest_present": false,
+  "training_manifest_present": false,
+  "simulator_conflicts_after_exit": [],
+  "singleton_stale_owner_pid": 30796,
+  "singleton_reclaimed_by_owner_checked_lock_path": true,
+  "singleton_present_after_reclaim": false,
+  "diagnostic_event_file": {
+    "path": "skrl_internal\\events.out.tfevents.1786814718.Allenzjx.30796.0",
+    "size_bytes": 88,
+    "sha256": "d9c1ca13ad0c26035d913251b482847dbe6698b188f6f03ca7d32408548bc341"
+  },
+  "notes": "No canonical checkpoint or manifest was produced. This directory must never be admitted, evaluated, promoted, resumed, or reused as a fresh output root."
+}

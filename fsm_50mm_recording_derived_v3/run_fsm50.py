@@ -3257,6 +3257,7 @@ def _source_files(robot_usd: Path | None = None) -> list[Path]:
     candidates.extend(sorted((PROJECT_ROOT / "config").rglob("*.json")))
     candidates.extend(sorted(MODULE_ROOT.glob("*.py")))
     candidates.extend(sorted(MODULE_ROOT.glob("*.yaml")))
+    candidates.extend(sorted((MODULE_ROOT / "configs").rglob("*.json")))
     if robot_usd is not None:
         candidates.append(Path(robot_usd).resolve())
     return [path.resolve() for path in candidates if path.is_file()]

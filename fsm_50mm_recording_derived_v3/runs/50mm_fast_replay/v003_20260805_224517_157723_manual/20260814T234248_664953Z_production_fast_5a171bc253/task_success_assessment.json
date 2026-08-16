@@ -1,0 +1,34 @@
+{
+  "body_crossed_front_face": true,
+  "classification_reasons": [
+    "task was not evaluated because infrastructure or required evidence was invalid or incomplete"
+  ],
+  "evaluation_status": "NOT_EVALUATED",
+  "fast_segment_count": 112,
+  "final_recoverable": true,
+  "final_wheel_classes": {
+    "FL": "TOP",
+    "FR": "TOP",
+    "RL": "TOP",
+    "RR": "TOP"
+  },
+  "first_actual_failure_phase": "",
+  "hard_failure_reasons": [],
+  "not_evaluated_reasons": [
+    "EVIDENCE_MISSING:dangerous_collision",
+    "EVIDENCE_MISSING:severe_penetration"
+  ],
+  "notes": [],
+  "peak_pitch": 0.14711103241348847,
+  "peak_roll": 0.178786352092263,
+  "posture_result": "NOT_APPLICABLE",
+  "required_leg_lift_completed": true,
+  "secondary_diagnostics": [
+    "SECONDARY_DIAGNOSTIC_UNAVAILABLE:physical_evidence.final_all_loaded",
+    "STRICT_REST_INCOMPLETE"
+  ],
+  "step_count": 24,
+  "task_result": "NOT_EVALUATED",
+  "version": "v003_20260805_224517_157723_manual",
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v003_20260805_224517_157723_manual\\20260814T234248_664953Z_production_fast_5a171bc253\\actual_viewport_video.mp4"
+}

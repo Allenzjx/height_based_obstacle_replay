@@ -1,0 +1,29 @@
+{
+  "bundle_sha256": "5742cda6e43859833b872a250220f18c6696e3d569a12962581e342966990b78",
+  "request_id": "be0dbf299aad417fb80435d10cd3fad2",
+  "review_complete": false,
+  "reviewed_utc": "",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438",
+  "schema_version": "fsm50.manual_macro_video_verdict.v1",
+  "source_version": "v003_20260805_224517_157723_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\macro_task_inputs.json",
+  "task_inputs_sha256": "10cb7ad90b9b1d5ceeab43b24813596dd8ea02ec4d206c6d950e4983cfdb8848",
+  "verdict": {
+    "body_crossed_front_face": null,
+    "body_stuck": null,
+    "dangerous_body_collision": null,
+    "final_recoverable": null,
+    "joint_limit_violation": null,
+    "notes": "",
+    "posture_incomplete": null,
+    "required_leg_lift_completed": null,
+    "robot_fell": null,
+    "severe_penetration": null,
+    "task_completed": null,
+    "wheel_drive_up_without_required_lift": null
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\actual_viewport_video.mp4",
+  "video_sha256": "9a446fbfab7aae0ae84d167e5ac15e1bf38a3495582c7aa04d884fb27fed00f7",
+  "worker_result_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\v003_macro_fsm_completion_aware_coalesced_r4\\v003_20260805_224517_157723_manual\\baseline\\20260815T105857_601132Z_baseline_00_5742cda6e438\\worker_macro_fsm_result.json",
+  "worker_result_sha256": "dc7dd6d4e08d82ad82e5eab847194c25342a6cab72d6df7e4ae0cae75d5daa30"
+}

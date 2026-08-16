@@ -1,0 +1,33 @@
+{
+  "plan_id": "fsm50-task-v005-9388f6244468",
+  "request_id": "96adbf130938496baf129139b2d1505a",
+  "review_complete": true,
+  "reviewed_utc": "2026-08-15T00:27:00.0000000Z",
+  "run_dir": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v005_20260805_225441_439112_manual\\20260815T001037_476055Z_production_fast_f3273abd30",
+  "schema_version": "fsm50.manual_video_verdict.v1",
+  "source_version": "v005_20260805_225441_439112_manual",
+  "task_inputs_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v005_20260805_225441_439112_manual\\20260815T001037_476055Z_production_fast_f3273abd30\\classifier_inputs.json",
+  "task_inputs_sha256": "09604f998fd181268e9fc0b6baa3390dcab0a5b571812bc9f8391e823833ef9e",
+  "verdict": {
+    "body_crossed_front_face": false,
+    "body_stuck": false,
+    "dangerous_body_collision": false,
+    "final_recoverable": false,
+    "first_actual_failure_phase": "FL lift/placement at 26.5 s (source step 8, segment 36; front_left_knee actuator_unstable)",
+    "irrecoverable": false,
+    "joint_limit_violation": false,
+    "notes": [
+      "All 410 sealed viewport frames decoded and were reviewed.",
+      "FR reached TOP, but FL remained at FRONT_FACE, the rear legs remained on GROUND, and the body did not cross before dispatch stopped.",
+      "The hard task failure is incomplete command execution after actuator_unstable; no fall, dangerous collision, severe penetration, wheel-only drive-up, or joint-limit-like pose was visible."
+    ],
+    "posture_incomplete": true,
+    "required_leg_lift_completed": false,
+    "robot_fell": false,
+    "severe_penetration": false,
+    "task_completed": false,
+    "wheel_drive_up_without_required_lift": false
+  },
+  "video_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\50mm_fast_replay\\v005_20260805_225441_439112_manual\\20260815T001037_476055Z_production_fast_f3273abd30\\actual_viewport_video.mp4",
+  "video_sha256": "90f201b51fadcedccc717c232dd26b92f106c8f63cc9c4ccef2c9a4cda210569"
+}

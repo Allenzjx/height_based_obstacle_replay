@@ -1,0 +1,63 @@
+{
+  "payload": {
+    "action_dim": 12,
+    "actor_observation_dim": 115,
+    "algorithm": "PPO",
+    "authority_identity_sha256": "082bf69cb1b69421f988ef658e94aa8171b1b74128848fcdaa4fdd093191f50c",
+    "checkpoint_manifest_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint_manifest.json",
+    "checkpoint_manifest_sha256": "1058d431000877fbde7d49cb25d4480c610aad466aff191fa9f37c21a6b5ac3a",
+    "checkpoint_module_state_sha256": {
+      "observation_preprocessor": "ffe58c5e176fc21ffb7138b90531a0a3aaac03eadc5bc387832af7610ed829f9",
+      "policy": "eee5c7a7336b792c6ac5bf2c205bfe897b539a36bbf30b5e187ae4cc08924ecf",
+      "value": "ada6b43d509f456e677a378b9f4c06d76b50cdeacffed7af78e62a7e0aa24361",
+      "value_preprocessor": "ba16c57b9e6ec152896a5df5c502b455401df500a1440c0900f229bea1518638"
+    },
+    "checkpoint_path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\runs\\fsm_residual_ppo\\r1_phase_local_seed20260815_lockf270_smoke01\\fsm50_residual_ppo_checkpoint.pt",
+    "checkpoint_sha256": "582df8517f26bd6c1820e54625621813882ca132964b20519ac26b989665d8a0",
+    "deterministic_evaluation_action": "mean_actions",
+    "eval_zero_authority_entry_ids": [
+      "v003_20260805_224517_157723_manual:S5_PRE_RR_COM_SHIFT",
+      "v003_20260805_224517_157723_manual:S7_PRE_RL_SUPPORT_SETUP",
+      "v008_20260806_211408_578700_manual:S7_PRE_RL_SUPPORT_SETUP"
+    ],
+    "exact_substeps_per_action": 8,
+    "framework": "torch",
+    "live_isaac_execution": true,
+    "physical_promotion_claimed": false,
+    "ppo_training_performed": true,
+    "seed": 20260815,
+    "skrl_version": "2.0.0",
+    "source_split": {
+      "held_out": [
+        "v010_20260806_220745_363972_manual"
+      ],
+      "held_out_execution": "FORBIDDEN_FAILED_PROFILE_IDENTITY_ONLY",
+      "train": [
+        "v003_20260805_224517_157723_manual",
+        "v008_20260806_211408_578700_manual",
+        "v009_20260806_215232_433234_manual"
+      ]
+    },
+    "stage": "R1",
+    "stage_config": {
+      "config_sha256": "f84b927e181f532705e426516a836c1a304d64f0fce0bf1a61994bf33656b046",
+      "file_sha256": "8c9d3e3073777f8d57395cc2dc5c3accfde0a6b4dd28bfdd6ba7f141a0bc23fb",
+      "path": "C:\\robotics_sim\\wlr_robot\\height_based_obstacle_replay\\fsm_50mm_recording_derived_v3\\configs\\fsm50_residual_ppo_r1_smoke.json",
+      "stage": "R1"
+    },
+    "train_entry_ids": [
+      "v008_20260806_211408_578700_manual:S5_PRE_RR_COM_SHIFT",
+      "v009_20260806_215232_433234_manual:S5_PRE_RR_COM_SHIFT",
+      "v009_20260806_215232_433234_manual:S7_PRE_RL_SUPPORT_SETUP",
+      "v003_20260805_224517_157723_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+      "v008_20260806_211408_578700_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+      "v009_20260806_215232_433234_manual:S8_RL_COM_SHIFT_AND_TRAVERSE",
+      "v003_20260805_224517_157723_manual:S10_POSTURE_RECOVERY",
+      "v008_20260806_211408_578700_manual:S10_POSTURE_RECOVERY",
+      "v009_20260806_215232_433234_manual:S10_POSTURE_RECOVERY"
+    ],
+    "training_admission_sha256": "0a5ccb6955bd9b48eff65e50bbe4f524e65af67d2e6c7a037ce74c1755c2b349"
+  },
+  "payload_sha256": "ef7d7838128076be430a5fd0a4b4575a7703628eb8d4d6d9f7e3cef96b2dde64",
+  "schema_version": "fsm50.residual_ppo_training_manifest.v1"
+}
